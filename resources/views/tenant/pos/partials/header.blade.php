@@ -5,7 +5,7 @@
                 <i class="fas fa-cash-register text-white text-base md:text-lg"></i>
             </div>
             <div>
-                <h1 class="text-xl md:text-2xl font-bold text-gray-900 dark:text-white">Point of Sale</h1>
+               
                 @if(isset($activeSession))
                     <p class="text-xs md:text-sm text-gray-600 dark:text-gray-400">{{ $activeSession->cashRegister->name }}</p>
                 @endif

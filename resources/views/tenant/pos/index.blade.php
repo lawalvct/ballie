@@ -2,6 +2,12 @@
 
 @section('title', 'Point of Sale - ' . tenant()->name)
 
+@section('page-title', 'Point of Sale')
+@section('page-description')
+    <span class="hidden md:inline">
+        Manage your sales transactions, print receipts, track inventory in real time, and provide a seamless checkout experience for your customers.
+    </span>
+@endsection
 @section('content')
 <div x-data="posSystem()"
      x-init="init()"

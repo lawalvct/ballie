@@ -456,4 +456,136 @@ public function update(Request $request, Tenant $tenant, Product $product)
 }
 
 
+//import function
+
+public function import(Request $request, Tenant $tenant){
+
+return view('tenant.inventory.products.import', compact('tenant'));
+}
+
+public function importProcess(Request $request, Tenant $tenant)
+{
+ 
+    $file = $request->file('import_file');
+
+    if (!$file) {
+        return redirect()->back()->with('error', 'Please upload a valid CSV file.');
+    }
+
+    $imported = 0;
+    $skipped = 0;
+    $errors = [];
+
+    \DB::beginTransaction();
+    try {
+        $data = array_map('str_getcsv', file($file->getRealPath()));
+        $header = array_map('trim', array_shift($data));
+
+        foreach ($data as $index => $row) {
+            $row = array_map('trim', $row);
+            $productData = array_combine($header, $row);
+            if (!$productData) {
+                $errors[] = "Row ".($index+2).": Invalid format.";
+                $skipped++;
+                continue;
+            }
+
+            // Set tenant and user context
+            $productData['tenant_id'] = $tenant->id;
+            $productData['created_by'] = auth()->id();
+
+            // Check for duplicate by SKU (if present)
+            if (!empty($productData['sku'])) {
+                $exists = \App\Models\Product::where('tenant_id', $tenant->id)
+                    ->where('sku', $productData['sku'])
+                    ->exists();
+                if ($exists) {
+                    $errors[] = "Row ".($index+2).": Duplicate SKU (".$productData['sku']."), skipped.";
+                    $skipped++;
+                    continue;
+                }
+            }
+
+            // Type casting and defaults
+            $productData['type'] = $productData['type'] ?? 'item';
+            $productData['purchase_rate'] = isset($productData['purchase_rate']) ? (float)$productData['purchase_rate'] : 0;
+            $productData['sales_rate'] = isset($productData['sales_rate']) ? (float)$productData['sales_rate'] : 0;
+            $productData['mrp'] = isset($productData['mrp']) ? (float)$productData['mrp'] : null;
+            $productData['opening_stock'] = isset($productData['opening_stock']) ? (float)$productData['opening_stock'] : 0;
+            $productData['current_stock'] = isset($productData['current_stock']) ? (float)$productData['current_stock'] : $productData['opening_stock'];
+            $productData['reorder_level'] = isset($productData['reorder_level']) ? (float)$productData['reorder_level'] : null;
+            $productData['unit_conversion_factor'] = isset($productData['unit_conversion_factor']) ? (float)$productData['unit_conversion_factor'] : 1.0;
+            $productData['tax_rate'] = isset($productData['tax_rate']) ? (float)$productData['tax_rate'] : 0;
+            $productData['maintain_stock'] = isset($productData['maintain_stock']) ? (bool)$productData['maintain_stock'] : true;
+            $productData['is_active'] = isset($productData['is_active']) ? (bool)$productData['is_active'] : true;
+            $productData['is_saleable'] = isset($productData['is_saleable']) ? (bool)$productData['is_saleable'] : true;
+            $productData['is_purchasable'] = isset($productData['is_purchasable']) ? (bool)$productData['is_purchasable'] : true;
+            $productData['tax_inclusive'] = isset($productData['tax_inclusive']) ? (bool)$productData['tax_inclusive'] : false;
+
+            // Calculate stock values
+            $productData['opening_stock_value'] = $productData['opening_stock'] * $productData['purchase_rate'];
+            $productData['current_stock_value'] = $productData['current_stock'] * $productData['purchase_rate'];
+
+            // Validate required fields
+            $validator = \Validator::make($productData, [
+                'type' => 'required|in:item,service',
+                'name' => 'required|string|max:255',
+                'sku' => 'nullable|string|max:100',
+                'category_id' => 'nullable|exists:product_categories,id',
+                'brand' => 'nullable|string|max:255',
+                'description' => 'nullable|string',
+                'purchase_rate' => 'required|numeric|min:0',
+                'sales_rate' => 'required|numeric|min:0',
+                'mrp' => 'nullable|numeric|min:0',
+                'primary_unit_id' => 'required|exists:units,id',
+                'unit_conversion_factor' => 'numeric|min:0.000001',
+                'barcode' => 'nullable|string|max:255',
+                'hsn_code' => 'nullable|string|max:50',
+                'tax_rate' => 'nullable|numeric|min:0|max:100',
+                'opening_stock' => 'nullable|numeric|min:0',
+                'current_stock' => 'nullable|numeric|min:0',
+                'reorder_level' => 'nullable|numeric|min:0',
+                'maintain_stock' => 'boolean',
+                'is_active' => 'boolean',
+                'is_saleable' => 'boolean',
+                'is_purchasable' => 'boolean',
+                'tax_inclusive' => 'boolean',
+            ]);
+
+            if ($validator->fails()) {
+                $errors[] = "Row ".($index+2).": ".implode('; ', $validator->errors()->all());
+                $skipped++;
+                continue;
+            }
+
+            try {
+                \App\Models\Product::create($productData);
+                $imported++;
+            } catch (\Exception $e) {
+                $errors[] = "Row ".($index+2).": ".$e->getMessage();
+                $skipped++;
+            }
+        }
+
+        \DB::commit();
+
+        $message = "$imported products imported. $skipped skipped.";
+        if (count($errors)) {
+            $message .= ' Some errors occurred.';
+        }
+
+        return redirect()->route('tenant.inventory.products.index', ['tenant' => $tenant->slug])
+            ->with('success', $message)
+            ->with('import_errors', $errors);
+
+    } catch (\Exception $e) {
+        \DB::rollBack();
+        \Log::error('Error importing products: ' . $e->getMessage());
+
+        return redirect()->back()
+            ->with('error', 'An error occurred while importing products. Please try again.');
+    }
+}
+
+
 }

@@ -2,6 +2,12 @@
 
 @section('title', 'Accounting Dashboard')
 
+@section('page-title', 'Accounting')
+@section('page-description')
+    <span class="hidden md:inline">Manage all your business finances: invoices, vouchers, revenue and expenses in one place.</span>
+@endsection
+
+
 @section('content')
 <div x-data="{
     moreActionsExpanded: false,
@@ -12,9 +18,7 @@
 
     <!-- Header Section -->
     <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between">
-        <div>
-            <h1 class="text-3xl font-bold text-gray-900">Accounting Dashboard</h1>
-        </div>
+     
 
         <!-- Action Buttons -->
         <div class="mt-4 lg:mt-0 flex flex-wrap gap-3">

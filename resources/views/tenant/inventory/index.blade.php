@@ -2,6 +2,10 @@
 
 @section('title', 'Inventory Dashboard')
 
+@section('page-title', 'Inventory')
+@section('page-description')
+    <span class="hidden md:inline">Manage your products, stock levels, and inventory settings</span>
+@endsection
 @section('content')
 <div x-data="{
     moreActionsExpanded: false,
@@ -12,9 +16,7 @@
 
     <!-- Header Section -->
     <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between">
-        <div>
-            <h1 class="text-3xl font-bold text-gray-900">Inventory Dashboard</h1>
-        </div>
+
 
         <!-- Action Buttons -->
         <div class="mt-4 lg:mt-0 flex flex-wrap gap-3">

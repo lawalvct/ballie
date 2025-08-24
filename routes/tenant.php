@@ -297,9 +297,12 @@ Route::prefix('ledger-accounts')->name('ledger-accounts.')->group(function () {
         // Inventory Module
         Route::prefix('inventory')->name('tenant.inventory.')->group(function () {
             Route::get('/', [InventoryController::class, 'index'])->name('index');
-
+  Route::get('/stock-movement', [ReportsController::class, 'stockMovement'])->name('stock-movement');
             // Products
             Route::prefix('products')->name('products.')->group(function () {
+                  Route::get('/import', [ProductController::class, 'import'])->name('import');
+
+                    Route::post('/import', [ProductController::class, 'importProcess'])->name('import.process');
                 Route::get('/', [ProductController::class, 'index'])->name('index');
                 Route::get('/create', [ProductController::class, 'create'])->name('create');
                 Route::post('/', [ProductController::class, 'store'])->name('store');
@@ -307,9 +310,15 @@ Route::prefix('ledger-accounts')->name('ledger-accounts.')->group(function () {
                 Route::get('/{product}/edit', [ProductController::class, 'edit'])->name('edit');
                 Route::put('/{product}', [ProductController::class, 'update'])->name('update');
                 Route::delete('/{product}', [ProductController::class, 'destroy'])->name('destroy');
+
+
+
+
+
                 Route::patch('/{product}/toggle-status', [ProductController::class, 'toggleStatus'])->name('toggle-status');
                 Route::post('/bulk-action', [ProductController::class, 'bulkAction'])->name('bulk-action');
                 Route::get('/export', [ProductController::class, 'export'])->name('export');
+
             });
 
             // Product Categories
