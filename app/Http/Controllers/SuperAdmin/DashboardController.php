@@ -15,9 +15,7 @@ class DashboardController extends Controller
             'total_tenants' => Tenant::count(),
             'active_tenants' => Tenant::where('subscription_status', 'active')->count(),
             'trial_tenants' => Tenant::where('subscription_status', 'trial')->count(),
-            'monthly_revenue' => Tenant::where('subscription_status', 'active')
-                ->whereMonth('created_at', now()->month)
-                ->sum('subscription_amount') ?? 0,
+            'monthly_revenue' => 0,
         ];
 
         $recentTenants = Tenant::latest()->take(5)->get();

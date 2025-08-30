@@ -23,8 +23,15 @@ class AuthController extends Controller
             'password' => 'required',
         ]);
 
-        if (Auth::guard('super_admin')->attempt($request->only('email', 'password'), $request->boolean('remember'))) {
+        $credentials = $request->only('email', 'password');
+
+        if (Auth::guard('super_admin')->attempt($credentials, $request->boolean('remember'))) {
             $request->session()->regenerate();
+
+            // Update last login time
+            $superAdmin = Auth::guard('super_admin')->user();
+            $superAdmin->update(['last_login_at' => now()]);
+
             return redirect()->intended(route('super-admin.dashboard'));
         }
 

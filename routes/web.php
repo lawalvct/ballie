@@ -44,31 +44,8 @@ Route::middleware(['auth'])->get('/dashboard', function () {
     return redirect()->route('home');
 })->name('dashboard');
 
-// Super Admin Routes
-Route::prefix('super-admin')->name('super-admin.')->group(function () {
-    // Guest routes
-    Route::middleware(['guest:super_admin'])->group(function () {
-        Route::get('/login', [SuperAdminAuthController::class, 'showLoginForm'])->name('login');
-        Route::post('/login', [SuperAdminAuthController::class, 'login']);
-        Route::get('/register', [SuperAdminAuthController::class, 'showRegistrationForm'])->name('register');
-        Route::post('/register', [SuperAdminAuthController::class, 'register']);
-    });
-
-    // Protected Super Admin Routes
-    Route::middleware(['auth:super_admin'])->group(function () {
-        Route::get('/dashboard', [SuperAdminDashboardController::class, 'index'])->name('dashboard');
-        Route::post('/logout', [SuperAdminAuthController::class, 'logout'])->name('logout');
-
-        // Tenant Management
-        Route::resource('tenants', TenantController::class);
-        Route::post('/tenants/{tenant}/suspend', [TenantController::class, 'suspend'])->name('tenants.suspend');
-        Route::post('/tenants/{tenant}/activate', [TenantController::class, 'activate'])->name('tenants.activate');
-
-        // Impersonation
-        Route::post('/impersonate/{tenant}/{user}', [TenantController::class, 'impersonate'])->name('impersonate');
-        Route::post('/stop-impersonation', [TenantController::class, 'stopImpersonation'])->name('stop-impersonation');
-    });
-});
+// Super Admin Routes - Include separate route file
+require __DIR__.'/super-admin.php';
 
 // Tenant Routes (path-based: /tenant1/dashboard, /tenant2/invoices, etc.)
 Route::prefix('{tenant}')->middleware(['tenant'])->group(function () {

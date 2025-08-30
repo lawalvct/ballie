@@ -355,7 +355,7 @@ window.toggleAccountingHelp = function() {
 window.getAISuggestions = function() {
     const aiContent = document.getElementById('ai-suggestions-content');
     if (!aiContent) return;
-    
+
     // Show loading state
     aiContent.innerHTML = `
         <div class="bg-purple-50 border border-purple-200 rounded-lg p-4 mb-4">
@@ -365,7 +365,7 @@ window.getAISuggestions = function() {
             </div>
         </div>
     `;
-    
+
     // Collect current voucher data
     const context = {
         voucherType: document.querySelector('select[name="voucher_type"]')?.value || 'General',
@@ -375,7 +375,7 @@ window.getAISuggestions = function() {
         totalCredits: calculateTotalCredits(),
         isBalanced: Math.abs(calculateTotalDebits() - calculateTotalCredits()) < 0.01
     };
-    
+
     // Make API call to get real AI suggestions
     fetch('/api/ai/accounting-suggestions', {
         method: 'POST',
@@ -403,13 +403,13 @@ window.getAISuggestions = function() {
 function collectCurrentEntries() {
     const entries = [];
     const rows = document.querySelectorAll('#voucher-entries-table tbody tr');
-    
+
     rows.forEach((row, index) => {
         const particulars = row.querySelector('.particulars-input')?.value || '';
         const debitAmount = parseFloat(row.querySelector('.debit-input')?.value || 0);
         const creditAmount = parseFloat(row.querySelector('.credit-input')?.value || 0);
         const ledgerAccountId = row.querySelector('.ledger-account-select')?.value || null;
-        
+
         if (particulars || debitAmount > 0 || creditAmount > 0) {
             entries.push({
                 particulars,
@@ -419,7 +419,7 @@ function collectCurrentEntries() {
             });
         }
     });
-    
+
     return entries;
 }
 
@@ -441,9 +441,9 @@ function calculateTotalCredits() {
 
 function displayAISuggestions(suggestions) {
     const aiContent = document.getElementById('ai-suggestions-content');
-    
+
     let html = '';
-    
+
     // Display corrections
     if (suggestions.corrections && suggestions.corrections.length > 0) {
         html += `
@@ -455,7 +455,7 @@ function displayAISuggestions(suggestions) {
             </div>
         `;
     }
-    
+
     // Display suggestions
     if (suggestions.suggestions && suggestions.suggestions.length > 0) {
         html += `
@@ -467,7 +467,7 @@ function displayAISuggestions(suggestions) {
             </div>
         `;
     }
-    
+
     // Display tips
     if (suggestions.tips && suggestions.tips.length > 0) {
         html += `
@@ -479,7 +479,7 @@ function displayAISuggestions(suggestions) {
             </div>
         `;
     }
-    
+
     // Add action buttons
     html += `
         <div class="mt-4 flex flex-wrap gap-2">
@@ -494,7 +494,7 @@ function displayAISuggestions(suggestions) {
             </button>
         </div>
     `;
-    
+
     aiContent.innerHTML = html;
 }
 
@@ -514,7 +514,7 @@ window.validateWithAI = function(event) {
         event.preventDefault();
         event.stopPropagation();
     }
-    
+
     const context = {
         voucherType: document.querySelector('select[name="voucher_type"]')?.value || 'General',
         narration: document.querySelector('textarea[name="narration"]')?.value || '',
@@ -523,7 +523,7 @@ window.validateWithAI = function(event) {
         totalCredits: calculateTotalCredits(),
         isBalanced: Math.abs(calculateTotalDebits() - calculateTotalCredits()) < 0.01
     };
-    
+
     fetch('/api/ai/validate-transaction', {
         method: 'POST',
         headers: {
@@ -550,13 +550,13 @@ window.getSmartTemplates = function(event) {
         event.preventDefault();
         event.stopPropagation();
     }
-    
+
     const context = {
         voucherType: document.querySelector('select[name="voucher_type"]')?.value || 'General',
         narration: document.querySelector('textarea[name="narration"]')?.value || '',
         amount: Math.max(calculateTotalDebits(), calculateTotalCredits())
     };
-    
+
     fetch('/api/ai/smart-templates', {
         method: 'POST',
         headers: {
@@ -580,18 +580,18 @@ window.getSmartTemplates = function(event) {
 
 function showValidationResults(validation) {
     const aiContent = document.getElementById('ai-suggestions-content');
-    
+
     let html = '';
     const isValid = validation.isValid;
     const bgColor = isValid ? 'green' : 'red';
     const textColor = isValid ? 'green' : 'red';
     const icon = isValid ? '✅' : '❌';
-    
+
     html += `
         <div class="bg-${bgColor}-50 border border-${bgColor}-200 rounded-lg p-4 mb-4">
             <h5 class="font-semibold text-${textColor}-800 mb-2">${icon} Validation Results</h5>
             <p class="text-${textColor}-700 text-sm">${validation.message}</p>
-            
+
             ${validation.insights ? `
                 <div class="mt-3">
                     <h6 class="font-medium text-${textColor}-800 text-sm">AI Insights:</h6>
@@ -600,7 +600,7 @@ function showValidationResults(validation) {
                     </ul>
                 </div>
             ` : ''}
-            
+
             ${validation.warnings && validation.warnings.length > 0 ? `
                 <div class="mt-3">
                     <h6 class="font-medium text-yellow-800 text-sm">⚠️ Warnings:</h6>
@@ -611,23 +611,23 @@ function showValidationResults(validation) {
             ` : ''}
         </div>
     `;
-    
+
     aiContent.innerHTML = html;
 }
 
 function showSmartTemplates(templates) {
     const aiContent = document.getElementById('ai-suggestions-content');
-    
+
     let html = `
         <div class="bg-indigo-50 border border-indigo-200 rounded-lg p-4 mb-4">
             <h5 class="font-semibold text-indigo-800 mb-2">📋 Smart Templates</h5>
             <p class="text-indigo-600 text-sm mb-3">
-                AI-generated voucher templates based on your voucher type and description. 
+                AI-generated voucher templates based on your voucher type and description.
                 Click a template to automatically fill your voucher entries.
             </p>
             <div class="space-y-2">
     `;
-    
+
     if (templates.length === 0) {
         html += `
             <div class="text-center py-4 text-indigo-600">
@@ -658,48 +658,48 @@ function showSmartTemplates(templates) {
             `;
         });
     }
-    
+
     html += `
             </div>
             <div class="mt-3 flex gap-2">
-                <button type="button" onclick="getAISuggestions(); event.stopPropagation();" 
+                <button type="button" onclick="getAISuggestions(); event.stopPropagation();"
                         class="bg-gray-500 text-white px-3 py-1 text-xs rounded hover:bg-gray-600">
                     Back to Suggestions
                 </button>
             </div>
         </div>
     `;
-    
+
     aiContent.innerHTML = html;
-    
+
     // Store templates globally for template application
     window.currentTemplates = templates;
 }
 
 window.applyTemplate = function(templateIndex) {
     if (!window.currentTemplates || !window.currentTemplates[templateIndex]) return;
-    
+
     const template = window.currentTemplates[templateIndex];
     const tbody = document.querySelector('#voucher-entries-table tbody');
-    
+
     // Clear existing entries
     tbody.innerHTML = '';
-    
+
     // Add template entries
     template.entries.forEach((entry, index) => {
         addVoucherEntryRow();
         const row = tbody.children[index];
-        
+
         // Fill particulars
         const particularsInput = row.querySelector('.particulars-input');
         if (particularsInput) {
             particularsInput.value = entry.particulars;
         }
-        
+
         // Note: Amount filling would depend on your actual template structure
         // You might want to set a default amount or let user fill it
     });
-    
+
     showAIError(`Template "${template.name}" applied successfully! Please fill in the amounts.`);
 };
 
@@ -708,38 +708,38 @@ window.showAccountingChat = function(event) {
         event.preventDefault();
         event.stopPropagation();
     }
-    
+
     const aiContent = document.getElementById('ai-suggestions-content');
     aiContent.innerHTML = `
         <div class="bg-gradient-to-r from-green-50 to-blue-50 border border-green-200 rounded-lg p-4 mb-4">
-            <h5 class="font-semibold text-green-800 mb-3">💬 Ask Your Accounting Question</h5>
-            
+            <h5 class="font-semibold text-green-800 mb-3">💬 Ask Ballie Your Accounting Question</h5>
+
             <div class="space-y-3">
                 <div>
-                    <textarea id="accounting-question" 
+                    <textarea id="accounting-question"
                               placeholder="Ask me anything about accounting, vouchers, Nigerian GAAP, or bookkeeping practices..."
                               class="w-full p-3 border border-gray-300 rounded-lg resize-none focus:ring-2 focus:ring-green-500 focus:border-green-500"
                               rows="3"></textarea>
                 </div>
-                
+
                 <div class="flex flex-wrap gap-2">
-                    <button type="button" onclick="askAccountingQuestion(); event.stopPropagation();" 
+                    <button type="button" onclick="askAccountingQuestion(); event.stopPropagation();"
                             class="bg-green-600 text-white px-4 py-2 text-sm rounded hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500">
                         🤔 Get Answer
                     </button>
-                    <button type="button" onclick="showQuickQuestions(); event.stopPropagation();" 
+                    <button type="button" onclick="showQuickQuestions(); event.stopPropagation();"
                             class="bg-blue-500 text-white px-4 py-2 text-sm rounded hover:bg-blue-600">
                         ⚡ Quick Questions
                     </button>
                 </div>
-                
+
                 <div id="chat-response" class="hidden mt-4 p-3 bg-white border border-gray-200 rounded-lg">
                     <!-- AI response will appear here -->
                 </div>
             </div>
         </div>
     `;
-    
+
     // Focus on the textarea
     setTimeout(() => {
         document.getElementById('accounting-question')?.focus();
@@ -751,15 +751,15 @@ window.askAccountingQuestion = function(event) {
         event.preventDefault();
         event.stopPropagation();
     }
-    
+
     const questionTextarea = document.getElementById('accounting-question');
     const question = questionTextarea?.value?.trim();
-    
+
     if (!question) {
         alert('Please enter your accounting question first.');
         return;
     }
-    
+
     const responseDiv = document.getElementById('chat-response');
     responseDiv.classList.remove('hidden');
     responseDiv.innerHTML = `
@@ -768,7 +768,7 @@ window.askAccountingQuestion = function(event) {
             <span class="text-sm">AI is thinking about your question...</span>
         </div>
     `;
-    
+
     // Make API call for accounting Q&A
     fetch('/api/ai/ask-question', {
         method: 'POST',
@@ -777,7 +777,7 @@ window.askAccountingQuestion = function(event) {
             'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
             'Accept': 'application/json'
         },
-        body: JSON.stringify({ 
+        body: JSON.stringify({
             question: question,
             context: {
                 voucherType: document.querySelector('select[name="voucher_type"]')?.value || 'General',
@@ -804,7 +804,7 @@ window.showQuickQuestions = function(event) {
         event.preventDefault();
         event.stopPropagation();
     }
-    
+
     const quickQuestions = [
         "What is the difference between debit and credit?",
         "How do I record a cash payment voucher?",
@@ -815,17 +815,17 @@ window.showQuickQuestions = function(event) {
         "What accounts should I use for salary payments?",
         "How to record equipment purchases?"
     ];
-    
+
     const questionTextarea = document.getElementById('accounting-question');
     const responseDiv = document.getElementById('chat-response');
-    
+
     responseDiv.classList.remove('hidden');
     responseDiv.innerHTML = `
         <div class="space-y-2">
             <h6 class="font-medium text-gray-800 text-sm">💡 Quick Questions - Click to ask:</h6>
             <div class="grid grid-cols-1 gap-2">
                 ${quickQuestions.map(q => `
-                    <button type="button" 
+                    <button type="button"
                             onclick="selectQuickQuestion('${q.replace(/'/g, "\\'")}'); event.stopPropagation();"
                             class="text-left p-2 text-sm bg-gray-50 hover:bg-blue-50 border border-gray-200 hover:border-blue-300 rounded transition-colors">
                         ${q}
@@ -852,18 +852,18 @@ function showAccountingAnswer(answer, question) {
                 <h6 class="font-medium text-blue-800 text-sm mb-1">❓ Your Question:</h6>
                 <p class="text-blue-700 text-sm">${question}</p>
             </div>
-            
+
             <div class="bg-green-50 border-l-4 border-green-400 p-3 rounded">
                 <h6 class="font-medium text-green-800 text-sm mb-2">🤖 AI Expert Answer:</h6>
                 <div class="text-green-700 text-sm whitespace-pre-line">${answer}</div>
             </div>
-            
+
             <div class="flex gap-2 pt-2">
-                <button type="button" onclick="askAnotherQuestion(); event.stopPropagation();" 
+                <button type="button" onclick="askAnotherQuestion(); event.stopPropagation();"
                         class="bg-green-500 text-white px-3 py-1 text-xs rounded hover:bg-green-600">
                     Ask Another Question
                 </button>
-                <button type="button" onclick="getAISuggestions(); event.stopPropagation();" 
+                <button type="button" onclick="getAISuggestions(); event.stopPropagation();"
                         class="bg-gray-500 text-white px-3 py-1 text-xs rounded hover:bg-gray-600">
                     Back to Suggestions
                 </button>
@@ -878,7 +878,7 @@ function showAnswerError(message) {
         <div class="bg-red-50 border border-red-200 p-3 rounded">
             <h6 class="font-medium text-red-800 text-sm">❌ Error</h6>
             <p class="text-red-700 text-sm">${message}</p>
-            <button type="button" onclick="askAccountingQuestion(); event.stopPropagation();" 
+            <button type="button" onclick="askAccountingQuestion(); event.stopPropagation();"
                     class="mt-2 text-red-800 underline text-xs">Try Again</button>
         </div>
     `;
@@ -914,17 +914,17 @@ window.closeAddLedgerModal = function() {
 
 window.addNewLedgerAccount = function(event) {
     event.preventDefault();
-    
+
     const form = event.target;
     const formData = new FormData(form);
     const submitButton = form.querySelector('button[type="submit"]');
     const submitText = document.getElementById('addLedgerSubmitText');
     const spinner = document.getElementById('addLedgerSpinner');
-    
+
     submitButton.disabled = true;
     submitText.textContent = 'Adding...';
     spinner.classList.remove('hidden');
-    
+
     fetch('{{ route("tenant.accounting.ledger-accounts.store", ["tenant" => $tenant->slug]) }}', {
         method: 'POST',
         body: formData,
