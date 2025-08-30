@@ -7,6 +7,11 @@ use App\Http\Controllers\SuperAdmin\DashboardController as SuperAdminDashboardCo
 use App\Http\Controllers\SuperAdmin\TenantController;
 use App\Http\Controllers\SuperAdmin\AuthController as SuperAdminAuthController;
 
+// Firebase Service Worker - Return 404 to prevent auth redirection
+Route::get('/firebase-messaging-sw.js', function () {
+    abort(404);
+});
+
 // Include authentication routes
 require __DIR__.'/auth.php';
 

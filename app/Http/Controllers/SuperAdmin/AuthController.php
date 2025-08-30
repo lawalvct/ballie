@@ -7,17 +7,30 @@ use App\Models\SuperAdmin;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Validation\ValidationException;
+use Illuminate\Support\Facades\Log;
 
 class AuthController extends Controller
 {
     public function showLoginForm()
     {
+        // Debug: Check if user is already authenticated
+        if (Auth::guard('super_admin')->check()) {
+            return redirect()->route('super-admin.dashboard');
+        }
+
+        // Clear any non-super-admin intended URL from session
+        $intendedUrl = session('url.intended');
+        if ($intendedUrl && !str_contains($intendedUrl, '/super-admin/')) {
+            session()->forget('url.intended');
+        }
+
         return view('super-admin.auth.login');
     }
 
     public function login(Request $request)
     {
+        Log::info('Super Admin login attempt', ['email' => $request->email]);
+
         $request->validate([
             'email' => 'required|email',
             'password' => 'required',
@@ -25,19 +38,47 @@ class AuthController extends Controller
 
         $credentials = $request->only('email', 'password');
 
-        if (Auth::guard('super_admin')->attempt($credentials, $request->boolean('remember'))) {
-            $request->session()->regenerate();
+        // Check if super admin exists and is active
+        $superAdmin = SuperAdmin::where('email', $credentials['email'])->first();
 
-            // Update last login time
-            $superAdmin = Auth::guard('super_admin')->user();
-            $superAdmin->update(['last_login_at' => now()]);
-
-            return redirect()->intended(route('super-admin.dashboard'));
+        if (!$superAdmin) {
+            Log::warning('Super Admin not found', ['email' => $credentials['email']]);
+            return back()->withErrors([
+                'email' => 'No super admin account found with this email address.',
+            ])->withInput($request->except('password'));
         }
 
-        throw ValidationException::withMessages([
-            'email' => __('The provided credentials do not match our records.'),
-        ]);
+        if (!$superAdmin->is_active) {
+            Log::warning('Super Admin account inactive', ['email' => $credentials['email']]);
+            return back()->withErrors([
+                'email' => 'This super admin account has been deactivated.',
+            ])->withInput($request->except('password'));
+        }
+
+        if (Auth::guard('super_admin')->attempt($credentials, $request->boolean('remember'))) {
+            $request->session()->regenerate();
+            Log::info('Super Admin login successful', ['email' => $credentials['email']]);
+
+            // Update last login time
+            $superAdmin->update(['last_login_at' => now()]);
+
+            // Get the intended URL and validate it's a super admin route
+            $intendedUrl = $request->session()->get('url.intended');
+
+            // Only redirect to intended URL if it's a super admin route
+            if ($intendedUrl && str_contains($intendedUrl, '/super-admin/')) {
+                return redirect()->intended(route('super-admin.dashboard'));
+            }
+
+            // Otherwise, always redirect to super admin dashboard
+            return redirect()->route('super-admin.dashboard');
+        }
+
+        // Login failed - redirect back to super admin login with error
+        Log::warning('Super Admin login failed', ['email' => $credentials['email']]);
+        return back()->withErrors([
+            'email' => 'These credentials do not match our records.',
+        ])->withInput($request->except('password'));
     }
 
     public function showRegistrationForm()

@@ -18,6 +18,11 @@ class Authenticate extends Middleware
 
         // Check if this is a super admin route
         if ($request->is('super-admin/*')) {
+            // Clear any non-super-admin intended URL from session
+            $intendedUrl = session('url.intended');
+            if ($intendedUrl && !str_contains($intendedUrl, '/super-admin/')) {
+                session()->forget('url.intended');
+            }
             return route('super-admin.login');
         }
 
