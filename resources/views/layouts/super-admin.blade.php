@@ -63,6 +63,23 @@
             }
         }
 
+        @media (min-width: 769px) {
+            .sidebar-mobile-hidden,
+            .sidebar-mobile-visible {
+                transform: translateX(0) !important;
+            }
+        }
+
+        /* Prevent body scroll when mobile menu is open */
+        body.mobile-menu-open {
+            overflow: hidden;
+        }
+
+        /* Improve mobile menu overlay */
+        #mobile-menu-overlay {
+            backdrop-filter: blur(2px);
+        }
+
         /* Scrollbar styling */
         .custom-scrollbar::-webkit-scrollbar {
             width: 6px;
@@ -83,12 +100,22 @@
 <body class="font-sans antialiased bg-gray-50">
     <div class="min-h-screen flex bg-gray-100">
         <!-- Mobile menu overlay -->
-        <div class="fixed inset-0 z-40 md:hidden" id="mobile-menu-overlay" style="display: none;">
-            <div class="fixed inset-0 bg-black opacity-50" onclick="toggleMobileMenu()"></div>
+        <div class="fixed inset-0 z-20 md:hidden" id="mobile-menu-overlay" style="display: none;">
+            <div class="fixed inset-0 bg-black opacity-50"></div>
+            <div class="fixed top-0 left-64 right-0 bottom-0" onclick="closeMobileMenu()"></div>
         </div>
 
         <!-- Sidebar -->
-        <aside class="w-64 sidebar-gradient shadow-2xl flex flex-col fixed h-full z-30 sidebar-mobile-hidden md:sidebar-mobile-visible" id="sidebar">
+        <aside class="w-64 sidebar-gradient shadow-2xl flex flex-col fixed h-full z-50 sidebar-mobile-hidden md:sidebar-mobile-visible" id="sidebar">
+            <!-- Close button for mobile (top right of sidebar) -->
+            <div class="md:hidden absolute top-4 right-4 z-10">
+                <button onclick="closeMobileMenu()" class="p-2 text-white hover:bg-white hover:bg-opacity-20 rounded-lg transition-colors">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                </button>
+            </div>
+
             <!-- Logo Section -->
             <div class="px-6 py-6 border-b border-white border-opacity-10">
                 <div class="flex items-center">
@@ -195,12 +222,14 @@
         <!-- Main Content Area -->
         <div class="flex-1 flex flex-col md:ml-64">
             <!-- Top Header -->
-            <header class="bg-white shadow-lg border-b border-gray-200 sticky top-0 z-20" style="border-image: linear-gradient(90deg, var(--color-gold), var(--color-blue)) 1;">
+            <header class="bg-white shadow-lg border-b border-gray-200 sticky top-0 z-10" style="border-image: linear-gradient(90deg, var(--color-gold), var(--color-blue)) 1;">
                 <div class="px-4 md:px-8 py-5">
                     <div class="flex items-center justify-between">
                         <div class="flex items-center flex-1">
                             <!-- Mobile menu button -->
-                            <button class="md:hidden mr-4 p-2 rounded-lg text-gray-500 hover:bg-gray-100 transition-colors" onclick="toggleMobileMenu()">
+                            <button class="md:hidden mr-4 p-3 rounded-lg text-gray-500 hover:bg-gray-100 active:bg-gray-200 transition-colors touch-manipulation"
+                                    onclick="toggleMobileMenu()"
+                                    aria-label="Toggle mobile menu">
                                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
                                 </svg>
@@ -307,22 +336,79 @@
             const overlay = document.getElementById('mobile-menu-overlay');
 
             if (sidebar.classList.contains('sidebar-mobile-hidden')) {
+                // Show menu
                 sidebar.classList.remove('sidebar-mobile-hidden');
                 sidebar.classList.add('sidebar-mobile-visible');
                 overlay.style.display = 'block';
+                document.body.style.overflow = 'hidden'; // Prevent body scroll
             } else {
+                // Hide menu
                 sidebar.classList.add('sidebar-mobile-hidden');
                 sidebar.classList.remove('sidebar-mobile-visible');
                 overlay.style.display = 'none';
+                document.body.style.overflow = ''; // Restore body scroll
             }
         }
 
-        // Close mobile menu when clicking on overlay
+        function closeMobileMenu() {
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('mobile-menu-overlay');
+
+            sidebar.classList.add('sidebar-mobile-hidden');
+            sidebar.classList.remove('sidebar-mobile-visible');
+            overlay.style.display = 'none';
+            document.body.style.overflow = ''; // Restore body scroll
+        }
+
+        // Initialize mobile menu functionality
         document.addEventListener('DOMContentLoaded', function() {
             const overlay = document.getElementById('mobile-menu-overlay');
+            const sidebar = document.getElementById('sidebar');
+
+            // Close menu when clicking on overlay
             if (overlay) {
-                overlay.addEventListener('click', toggleMobileMenu);
+                overlay.addEventListener('click', function(e) {
+                    // Only close if clicking on the overlay itself or the background, not on child elements
+                    if (e.target === overlay || e.target.classList.contains('bg-black')) {
+                        closeMobileMenu();
+                    }
+                });
             }
+
+            // Close menu when clicking on navigation links (for better UX on mobile)
+            if (sidebar) {
+                const navLinks = sidebar.querySelectorAll('a');
+                navLinks.forEach(link => {
+                    link.addEventListener('click', function() {
+                        // Only close on mobile
+                        if (window.innerWidth < 768) {
+                            closeMobileMenu();
+                        }
+                    });
+                });
+            }
+
+            // Handle window resize
+            window.addEventListener('resize', function() {
+                if (window.innerWidth >= 768) {
+                    // Desktop view - ensure menu is visible and overlay is hidden
+                    const sidebar = document.getElementById('sidebar');
+                    const overlay = document.getElementById('mobile-menu-overlay');
+                    if (sidebar && overlay) {
+                        sidebar.classList.remove('sidebar-mobile-hidden');
+                        sidebar.classList.add('sidebar-mobile-visible');
+                        overlay.style.display = 'none';
+                        document.body.style.overflow = '';
+                    }
+                }
+            });
+
+            // Close menu on escape key
+            document.addEventListener('keydown', function(e) {
+                if (e.key === 'Escape' && window.innerWidth < 768) {
+                    closeMobileMenu();
+                }
+            });
         });
     </script>
 </body>
