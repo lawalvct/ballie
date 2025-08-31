@@ -95,6 +95,14 @@ class Tenant extends Model
         return $this->hasMany(Subscription::class);
     }
 
+    /**
+     * Get the current active subscription
+     */
+    public function subscription()
+    {
+        return $this->hasOne(Subscription::class)->latest();
+    }
+
     // Pricing methods
     public function getPlanPrice(): int
     {

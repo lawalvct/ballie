@@ -46,6 +46,7 @@ use App\Http\Controllers\Tenant\Api\SearchController;
 use App\Http\Controllers\Tenant\Api\NotificationController;
 use App\Http\Controllers\Tenant\Api\UploadController;
 use App\Http\Controllers\Tenant\Api\ExportController;
+use App\Http\Controllers\Tenant\SubscriptionController;
 
 /*
 |--------------------------------------------------------------------------
@@ -292,6 +293,26 @@ Route::prefix('ledger-accounts')->name('ledger-accounts.')->group(function () {
 
             // Cash Flow
             Route::get('/cash-flow', [ReportsController::class, 'cashFlow'])->name('cash-flow');
+        });
+
+        // Subscription & Plan Management
+        Route::prefix('subscription')->name('tenant.subscription.')->group(function () {
+            Route::get('/', [SubscriptionController::class, 'index'])->name('index');
+            Route::get('/plans', [SubscriptionController::class, 'plans'])->name('plans');
+            Route::get('/upgrade/{plan}', [SubscriptionController::class, 'upgrade'])->name('upgrade');
+            Route::post('/upgrade/{plan}', [SubscriptionController::class, 'processUpgrade'])->name('upgrade.process');
+            Route::get('/downgrade/{plan}', [SubscriptionController::class, 'downgrade'])->name('downgrade');
+            Route::post('/downgrade/{plan}', [SubscriptionController::class, 'processDowngrade'])->name('downgrade.process');
+            Route::get('/cancel', [SubscriptionController::class, 'cancel'])->name('cancel');
+            Route::post('/cancel', [SubscriptionController::class, 'processCancel'])->name('cancel.process');
+            Route::get('/history', [SubscriptionController::class, 'history'])->name('history');
+            Route::get('/invoice/{payment}', [SubscriptionController::class, 'invoice'])->name('invoice');
+            Route::get('/invoice/{payment}/download', [SubscriptionController::class, 'downloadInvoice'])->name('invoice.download');
+
+            // Payment callbacks
+            Route::get('/payment/success', [SubscriptionController::class, 'paymentSuccess'])->name('payment.success');
+            Route::get('/payment/cancel', [SubscriptionController::class, 'paymentCancel'])->name('payment.cancel');
+            Route::post('/webhook', [SubscriptionController::class, 'webhook'])->name('webhook');
         });
 
         // Inventory Module
