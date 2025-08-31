@@ -95,6 +95,76 @@
         .custom-scrollbar::-webkit-scrollbar-thumb:hover {
             background: rgba(255, 255, 255, 0.5);
         }
+
+        /* Sidebar collapse/expand functionality */
+        .sidebar-collapsed {
+            width: 5rem !important;
+        }
+
+        .sidebar-expanded {
+            width: 16rem !important;
+        }
+
+        .content-area-collapsed {
+            margin-left: 5rem !important;
+        }
+
+        .content-area-expanded {
+            margin-left: 16rem !important;
+        }
+
+        .sidebar-title {
+            transition: opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1), transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .sidebar-collapsed .sidebar-title {
+            opacity: 0;
+            transform: translateX(-10px);
+        }
+
+        .menu-title {
+            transition: opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1), transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .sidebar-collapsed .menu-title {
+            opacity: 0;
+            transform: translateX(-10px);
+        }
+
+        .sidebar-section-title {
+            transition: opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1), transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .sidebar-collapsed .sidebar-section-title {
+            opacity: 0;
+            transform: translateX(-10px);
+        }
+
+        .sidebar-collapse-btn {
+            position: absolute;
+            right: -12px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            z-index: 10;
+        }
+
+        .sidebar-collapsed .sidebar-collapse-btn svg {
+            transform: scaleX(-1);
+        }
+
+        /* Adjust main content area */
+        .main-content-area {
+            transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            margin-left: 16rem;
+        }
+
+        @media (max-width: 1024px) {
+            .main-content-area {
+                margin-left: 0 !important;
+            }
+        }
     </style>
 </head>
 <body class="font-sans antialiased bg-gray-50">
@@ -118,14 +188,22 @@
 
             <!-- Logo Section -->
             <div class="px-6 py-6 border-b border-white border-opacity-10">
-                <div class="flex items-center">
-                    <div class="w-12 h-12 bg-white bg-opacity-20 rounded-xl flex items-center justify-center backdrop-blur-sm border border-white border-opacity-20">
-                        <img src="{{ asset('images/ballie_logo.png') }}" alt="Ballie Logo" class="w-10 h-10 object-contain">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center">
+                        <div class="w-12 h-12 bg-white bg-opacity-20 rounded-xl flex items-center justify-center backdrop-blur-sm border border-white border-opacity-20">
+                            <img src="{{ asset('images/ballie_logo.png') }}" alt="Ballie Logo" class="w-10 h-10 object-contain">
+                        </div>
+                        <div class="ml-3 sidebar-title overflow-hidden whitespace-nowrap transition-opacity">
+                            <h1 class="text-xl font-bold text-white">Ballie Admin</h1>
+                            <p class="text-xs text-gray-300 opacity-75">Super Administrator</p>
+                        </div>
                     </div>
-                    <div class="ml-3">
-                        <h1 class="text-xl font-bold text-white">Ballie Admin</h1>
-                        <p class="text-xs text-gray-300 opacity-75">Super Administrator</p>
-                    </div>
+                    <!-- Sidebar Collapse Button -->
+                    <button id="sidebarCollapseBtn" style="color:wheat" class="p-2 rounded-lg hover:bg-white hover:bg-opacity-10 hidden lg:block transition-all duration-200 sidebar-collapse-btn">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 transition-transform duration-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 19l-7-7 7-7m8 14l-7-7 7-7" />
+                        </svg>
+                    </button>
                 </div>
             </div>
 
@@ -157,7 +235,7 @@
         </aside>
 
         <!-- Main Content Area -->
-        <div class="flex-1 flex flex-col md:ml-64">
+        <div class="flex-1 flex flex-col main-content-area" id="main-content">
             <!-- Top Header -->
           @include('layouts.superadmin.header')
 
@@ -236,6 +314,46 @@
         document.addEventListener('DOMContentLoaded', function() {
             const overlay = document.getElementById('mobile-menu-overlay');
             const sidebar = document.getElementById('sidebar');
+            const sidebarCollapseBtn = document.getElementById('sidebarCollapseBtn');
+            const mainContent = document.getElementById('main-content');
+            const sidebarTitles = document.querySelectorAll('.sidebar-title');
+            const menuTitles = document.querySelectorAll('.menu-title');
+            const sectionTitles = document.querySelectorAll('.sidebar-section-title');
+
+            // Desktop sidebar collapse/expand
+            if (sidebarCollapseBtn) {
+                sidebarCollapseBtn.addEventListener('click', function() {
+                    if (sidebar.classList.contains('sidebar-collapsed')) {
+                        // Expand sidebar
+                        sidebar.classList.remove('sidebar-collapsed');
+                        sidebar.classList.add('sidebar-expanded');
+                        mainContent.classList.remove('content-area-collapsed');
+                        mainContent.classList.add('content-area-expanded');
+                        localStorage.setItem('superAdminSidebarCollapsed', 'false');
+                    } else {
+                        // Collapse sidebar
+                        sidebar.classList.add('sidebar-collapsed');
+                        sidebar.classList.remove('sidebar-expanded');
+                        mainContent.classList.add('content-area-collapsed');
+                        mainContent.classList.remove('content-area-expanded');
+                        localStorage.setItem('superAdminSidebarCollapsed', 'true');
+                    }
+                });
+            }
+
+            // Restore sidebar state from localStorage
+            const sidebarCollapsed = localStorage.getItem('superAdminSidebarCollapsed');
+            if (sidebarCollapsed === 'true' && window.innerWidth >= 1024) {
+                sidebar.classList.add('sidebar-collapsed');
+                sidebar.classList.remove('sidebar-expanded');
+                mainContent.classList.add('content-area-collapsed');
+                mainContent.classList.remove('content-area-expanded');
+            } else {
+                sidebar.classList.remove('sidebar-collapsed');
+                sidebar.classList.add('sidebar-expanded');
+                mainContent.classList.remove('content-area-collapsed');
+                mainContent.classList.add('content-area-expanded');
+            }
 
             // Close menu when clicking on overlay
             if (overlay) {
@@ -272,6 +390,12 @@
                         overlay.style.display = 'none';
                         document.body.style.overflow = '';
                     }
+                }
+
+                // Reset sidebar state on mobile
+                if (window.innerWidth < 1024) {
+                    sidebar.classList.remove('sidebar-collapsed', 'sidebar-expanded');
+                    mainContent.classList.remove('content-area-collapsed', 'content-area-expanded');
                 }
             });
 
