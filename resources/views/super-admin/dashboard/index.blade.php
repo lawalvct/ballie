@@ -20,7 +20,7 @@
 
     <!-- Key Metrics Cards -->
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <!-- Total Tenants -->
+        <!-- Total Companies -->
         <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-lg transition-shadow">
             <div class="flex items-center">
                 <div class="flex-shrink-0">
@@ -31,14 +31,14 @@
                     </div>
                 </div>
                 <div class="ml-4">
-                    <p class="text-sm font-medium text-gray-500">Total Tenants</p>
+                    <p class="text-sm font-medium text-gray-500">Total Companies</p>
                     <p class="text-2xl font-bold text-gray-900">{{ number_format($stats['total_tenants']) }}</p>
                     <p class="text-sm text-green-600">All registered</p>
                 </div>
             </div>
         </div>
 
-        <!-- Active Tenants -->
+        <!-- Active Companies -->
         <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-lg transition-shadow">
             <div class="flex items-center">
                 <div class="flex-shrink-0">
@@ -49,7 +49,7 @@
                     </div>
                 </div>
                 <div class="ml-4">
-                    <p class="text-sm font-medium text-gray-500">Active Tenants</p>
+                    <p class="text-sm font-medium text-gray-500">Active Companies</p>
                     <p class="text-2xl font-bold text-gray-900">{{ number_format($stats['active_tenants']) }}</p>
                     <p class="text-sm text-gray-600">{{ $stats['total_tenants'] > 0 ? number_format(($stats['active_tenants'] / $stats['total_tenants']) * 100, 1) : 0 }}% of total</p>
                 </div>
@@ -67,7 +67,7 @@
                     </div>
                 </div>
                 <div class="ml-4">
-                    <p class="text-sm font-medium text-gray-500">Trial Tenants</p>
+                    <p class="text-sm font-medium text-gray-500">Trial Companies</p>
                     <p class="text-2xl font-bold text-gray-900">{{ number_format($stats['trial_tenants']) }}</p>
                     <p class="text-sm text-yellow-600">On trial period</p>
                 </div>
@@ -95,11 +95,11 @@
 
     <!-- Content Row -->
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        <!-- Recent Tenants -->
+        <!-- Recent Companies -->
         <div class="lg:col-span-2 bg-white rounded-xl shadow-sm border border-gray-200">
             <div class="p-6 border-b border-gray-200">
                 <div class="flex items-center justify-between">
-                    <h3 class="text-lg font-semibold text-gray-900">Recent Tenants</h3>
+                    <h3 class="text-lg font-semibold text-gray-900">Recent Companies</h3>
                     <a href="{{ route('super-admin.tenants.index') }}" class="text-sm text-blue-600 hover:text-blue-500">View all</a>
                 </div>
             </div>
