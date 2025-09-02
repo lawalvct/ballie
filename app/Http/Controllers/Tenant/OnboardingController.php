@@ -57,12 +57,99 @@ class OnboardingController extends Controller
 
     private function refreshDatabaseConnection()
     {
-        // Disconnect and reconnect to refresh prepared statements
-        DB::disconnect();
-        DB::reconnect();
+        try {
+            // Disconnect and reconnect to refresh prepared statements
+            DB::disconnect();
+            DB::reconnect();
 
-        // Clear query cache
-        DB::getQueryLog();
+            // Clear query cache and reset prepared statements
+            DB::getQueryLog();
+
+            // Test the connection to make sure it's working
+            DB::connection()->getPdo();
+
+            // Small delay to ensure connection is stable
+            usleep(100000); // 100ms delay
+
+        } catch (\Exception $e) {
+            Log::warning('Database connection refresh failed, retrying: ' . $e->getMessage());
+
+            // Try one more time with a longer delay
+            sleep(1);
+            DB::disconnect();
+            DB::reconnect();
+        }
+    }
+
+    /**
+     * Safely update a model with connection refresh and retry
+     */
+    private function safeModelUpdate($model, $data, $maxAttempts = 3)
+    {
+        $attempts = 0;
+
+        while ($attempts < $maxAttempts) {
+            try {
+                if ($attempts > 0) {
+                    sleep(1); // Wait before retry
+                }
+
+                $this->refreshDatabaseConnection();
+                $model->update($data);
+                return;
+
+            } catch (\Exception $e) {
+                $attempts++;
+                Log::warning("Model update failed on attempt {$attempts}: " . $e->getMessage());
+
+                if ($attempts >= $maxAttempts) {
+                    throw $e;
+                }
+
+                // If it's the prepared statement error, definitely refresh connection
+                if (strpos($e->getMessage(), '1615') !== false ||
+                    strpos($e->getMessage(), 'Prepared statement') !== false) {
+                    $this->refreshDatabaseConnection();
+                }
+            }
+        }
+    }
+
+    /**
+     * Perform multiple database operations with connection refresh between each
+     */
+    private function safeCombinedUpdate($model, $data, $maxAttempts = 3)
+    {
+        $attempts = 0;
+
+        while ($attempts < $maxAttempts) {
+            try {
+                if ($attempts > 0) {
+                    sleep(1); // Wait before retry
+                }
+
+                // Always refresh connection before update
+                $this->refreshDatabaseConnection();
+
+                // Perform update within a micro-transaction
+                DB::transaction(function() use ($model, $data) {
+                    $model->update($data);
+                });
+
+                return;
+
+            } catch (\Exception $e) {
+                $attempts++;
+                Log::warning("Combined update failed on attempt {$attempts}: " . $e->getMessage());
+
+                if ($attempts >= $maxAttempts) {
+                    throw $e;
+                }
+
+                // Force connection refresh on any database error
+                $this->refreshDatabaseConnection();
+            }
+        }
     }
 
    private function seedDefaultData($tenant)
@@ -275,13 +362,18 @@ class OnboardingController extends Controller
             $data['logo'] = $logoPath;
         }
 
-        // Refresh connection before update
-        $this->refreshDatabaseConnection();
-        $tenant->update($data);
-
+        // Combine data and progress updates in a single transaction
         $progress = $tenant->onboarding_progress ?? [];
         $progress['company'] = true;
-        $tenant->update(['onboarding_progress' => $progress]);
+
+        // Use a single transaction for both updates to prevent connection drops
+        DB::transaction(function() use ($tenant, $data, $progress) {
+            $this->refreshDatabaseConnection();
+            $tenant->update($data);
+
+            $this->refreshDatabaseConnection();
+            $tenant->update(['onboarding_progress' => $progress]);
+        }, 3);
 
         return redirect()->route('tenant.onboarding.step', [
             'tenant' => $tenant->slug,
@@ -314,15 +406,18 @@ class OnboardingController extends Controller
         $settings = $tenant->settings ?? [];
         $settings = array_merge($settings, $data);
 
-        // Refresh connection before update
-        $this->refreshDatabaseConnection();
-        $tenant->update(['settings' => $settings]);
-
+        // Combine both settings and progress updates
         $progress = $tenant->onboarding_progress ?? [];
         $progress['preferences'] = true;
-        $tenant->update(['onboarding_progress' => $progress]);
 
-        return redirect()->route('tenant.onboarding.step', [
+        // Use a single transaction for both updates to prevent connection drops
+        DB::transaction(function() use ($tenant, $settings, $progress) {
+            $this->refreshDatabaseConnection();
+            $tenant->update(['settings' => $settings]);
+
+            $this->refreshDatabaseConnection();
+            $tenant->update(['onboarding_progress' => $progress]);
+        }, 3);        return redirect()->route('tenant.onboarding.step', [
             'tenant' => $tenant->slug,
             'step' => 'team'
         ])->with('success', 'Preferences saved successfully!');
@@ -374,9 +469,8 @@ class OnboardingController extends Controller
         $progress = $tenant->onboarding_progress ?? [];
         $progress['team'] = true;
 
-        // Refresh connection before update
-        $this->refreshDatabaseConnection();
-        $tenant->update(['onboarding_progress' => $progress]);
+        // Use safe update method for progress
+        $this->safeModelUpdate($tenant, ['onboarding_progress' => $progress]);
 
         return redirect()->route('tenant.onboarding.step', [
             'tenant' => $tenant->slug,
