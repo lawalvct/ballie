@@ -152,6 +152,95 @@ class OnboardingController extends Controller
         }
     }
 
+    /**
+     * Update tenant data field by field to avoid prepared statement issues on shared hosting
+     */
+    private function updateTenantFieldByField($tenant, $data, $maxAttempts = 3)
+    {
+        $updatedFields = [];
+        $failedFields = [];
+
+        foreach ($data as $field => $value) {
+            $attempts = 0;
+            $fieldUpdated = false;
+
+            while ($attempts < $maxAttempts && !$fieldUpdated) {
+                try {
+                    if ($attempts > 0) {
+                        sleep(0.5); // Small delay between retries
+                    }
+
+                    // Refresh connection before each field update
+                    $this->refreshDatabaseConnection();
+
+                    // Update single field with micro-transaction
+                    DB::transaction(function() use ($tenant, $field, $value) {
+                        $tenant->update([$field => $value]);
+                    });
+
+                    $updatedFields[] = $field;
+                    $fieldUpdated = true;
+
+                    Log::info("Field updated successfully", [
+                        'tenant_id' => $tenant->id,
+                        'field' => $field,
+                        'attempt' => $attempts + 1
+                    ]);
+
+                } catch (\Exception $e) {
+                    $attempts++;
+                    Log::warning("Field update failed", [
+                        'tenant_id' => $tenant->id,
+                        'field' => $field,
+                        'attempt' => $attempts,
+                        'error' => $e->getMessage()
+                    ]);
+
+                    if ($attempts >= $maxAttempts) {
+                        $failedFields[] = [
+                            'field' => $field,
+                            'value' => $value,
+                            'error' => $e->getMessage()
+                        ];
+                    }
+
+                    // Refresh connection on any error
+                    $this->refreshDatabaseConnection();
+                }
+            }
+
+            // Small delay between field updates to prevent overwhelming the server
+            usleep(100000); // 100ms delay
+        }
+
+        // Log summary
+        Log::info("Tenant update summary", [
+            'tenant_id' => $tenant->id,
+            'updated_fields' => $updatedFields,
+            'failed_fields' => $failedFields,
+            'total_fields' => count($data),
+            'success_count' => count($updatedFields),
+            'failed_count' => count($failedFields)
+        ]);
+
+        // If any critical fields failed, throw an exception
+        if (!empty($failedFields)) {
+            $criticalFields = ['name', 'business_type']; // Define which fields are critical
+            $failedCritical = array_filter($failedFields, function($failed) use ($criticalFields) {
+                return in_array($failed['field'], $criticalFields);
+            });
+
+            if (!empty($failedCritical)) {
+                throw new \Exception("Critical fields failed to update: " . json_encode($failedCritical));
+            }
+        }
+
+        return [
+            'updated' => $updatedFields,
+            'failed' => $failedFields
+        ];
+    }
+
    private function seedDefaultData($tenant)
     {
         try {
@@ -366,14 +455,31 @@ class OnboardingController extends Controller
         $progress = $tenant->onboarding_progress ?? [];
         $progress['company'] = true;
 
-        // Use a single transaction for both updates to prevent connection drops
-        DB::transaction(function() use ($tenant, $data, $progress) {
-            $this->refreshDatabaseConnection();
-            $tenant->update($data);
+        // Use field-by-field update to prevent prepared statement issues on shared hosting
+        try {
+            // Update company data field by field
+            $updateResult = $this->updateTenantFieldByField($tenant, $data);
 
+            // Update progress separately with safe method
             $this->refreshDatabaseConnection();
-            $tenant->update(['onboarding_progress' => $progress]);
-        }, 3);
+            $this->safeModelUpdate($tenant, ['onboarding_progress' => $progress]);
+
+            Log::info("Company step completed successfully", [
+                'tenant_id' => $tenant->id,
+                'updated_fields' => $updateResult['updated'],
+                'failed_fields' => $updateResult['failed']
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error("Company step failed", [
+                'tenant_id' => $tenant->id,
+                'error' => $e->getMessage()
+            ]);
+
+            return redirect()->back()
+                ->with('error', 'There was an error saving your company information. Please try again.')
+                ->withInput();
+        }
 
         return redirect()->route('tenant.onboarding.step', [
             'tenant' => $tenant->slug,
@@ -410,14 +516,33 @@ class OnboardingController extends Controller
         $progress = $tenant->onboarding_progress ?? [];
         $progress['preferences'] = true;
 
-        // Use a single transaction for both updates to prevent connection drops
-        DB::transaction(function() use ($tenant, $settings, $progress) {
+        // Use field-by-field update approach for preferences
+        try {
+            // Update settings field safely (single field update)
             $this->refreshDatabaseConnection();
-            $tenant->update(['settings' => $settings]);
+            $this->safeModelUpdate($tenant, ['settings' => $settings]);
 
+            // Update progress separately
             $this->refreshDatabaseConnection();
-            $tenant->update(['onboarding_progress' => $progress]);
-        }, 3);        return redirect()->route('tenant.onboarding.step', [
+            $this->safeModelUpdate($tenant, ['onboarding_progress' => $progress]);
+
+            Log::info("Preferences step completed successfully", [
+                'tenant_id' => $tenant->id,
+                'settings_count' => count($data)
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error("Preferences step failed", [
+                'tenant_id' => $tenant->id,
+                'error' => $e->getMessage()
+            ]);
+
+            return redirect()->back()
+                ->with('error', 'There was an error saving your preferences. Please try again.')
+                ->withInput();
+        }
+
+        return redirect()->route('tenant.onboarding.step', [
             'tenant' => $tenant->slug,
             'step' => 'team'
         ])->with('success', 'Preferences saved successfully!');
@@ -516,21 +641,28 @@ class OnboardingController extends Controller
             // Refresh connection before completion
             $this->refreshDatabaseConnection();
 
-            // Use transaction with retry for the completion process
-            DB::transaction(function () use ($tenant) {
-                // Seed default data for the tenant
-                $this->seedDefaultData($tenant);
+            // Seed default data for the tenant first
+            $this->seedDefaultData($tenant);
 
-                $tenant->update([
-                    'onboarding_completed_at' => now(),
-                    'onboarding_progress' => [
-                        'company' => true,
-                        'preferences' => true,
-                        'team' => true,
-                        'complete' => true
-                    ]
-                ]);
-            }, 3);
+            // Update completion status using safe method (field by field)
+            $completionData = [
+                'onboarding_completed_at' => now(),
+                'onboarding_progress' => [
+                    'company' => true,
+                    'preferences' => true,
+                    'team' => true,
+                    'complete' => true
+                ]
+            ];
+
+            // Use field-by-field update for completion
+            $updateResult = $this->updateTenantFieldByField($tenant, $completionData);
+
+            Log::info("Onboarding completion successful", [
+                'tenant_id' => $tenant->id,
+                'updated_fields' => $updateResult['updated'],
+                'failed_fields' => $updateResult['failed']
+            ]);
 
             return redirect()->route('tenant.dashboard', ['tenant' => $tenant->slug])
                 ->with('success', 'Welcome to Ballie! Your account is now fully set up and ready to use.');
