@@ -26,17 +26,28 @@ class OnboardingController extends Controller
     public function store(Request $request)
     {
         try {
-            DB::transaction(function () use ($request) {
+            // Clear any existing prepared statements and reconnect
+            $this->refreshDatabaseConnection();
+
+            $result = DB::transaction(function () use ($request) {
                 $tenant = $this->createTenant($request);
                 $this->seedDefaultData($tenant);
 
-                return response()->json([
+                return [
                     'success' => true,
                     'message' => 'Tenant onboarded successfully with default data',
                     'tenant' => $tenant
-                ]);
-            });
+                ];
+            }, 3); // Retry up to 3 times
+
+            return response()->json($result);
         } catch (\Exception $e) {
+            Log::error('Onboarding failed', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+                'request_data' => $request->except(['password', 'password_confirmation'])
+            ]);
+
             return response()->json([
                 'success' => false,
                 'message' => 'Onboarding failed: ' . $e->getMessage()
@@ -44,28 +55,46 @@ class OnboardingController extends Controller
         }
     }
 
+    private function refreshDatabaseConnection()
+    {
+        // Disconnect and reconnect to refresh prepared statements
+        DB::disconnect();
+        DB::reconnect();
+
+        // Clear query cache
+        DB::getQueryLog();
+    }
+
    private function seedDefaultData($tenant)
     {
         try {
-            // Seed Account Groups
-            AccountGroupSeeder::seedForTenant($tenant->id);
-            Log::info("Account groups seeded for tenant: {$tenant->id}");
+            // Refresh connection before each seeding operation
+            $this->refreshDatabaseConnection();
 
-            // Seed Voucher Types
-            VoucherTypeSeeder::seedForTenant($tenant->id);
-            Log::info("Voucher types seeded for tenant: {$tenant->id}");
+            // Seed Account Groups with retry mechanism
+            $this->retryOperation(function() use ($tenant) {
+                AccountGroupSeeder::seedForTenant($tenant->id);
+            }, "Account groups seeding for tenant: {$tenant->id}");
 
-            // Seed Default Ledger Accounts
-            DefaultLedgerAccountsSeeder::seedForTenant($tenant->id);
-            Log::info("Ledger accounts seeded for tenant: {$tenant->id}");
+            // Seed Voucher Types with retry mechanism
+            $this->retryOperation(function() use ($tenant) {
+                VoucherTypeSeeder::seedForTenant($tenant->id);
+            }, "Voucher types seeding for tenant: {$tenant->id}");
 
-            // Seed Product Categories
-            DefaultProductCategoriesSeeder::seedForTenant($tenant->id);
-            Log::info("Product categories seeded for tenant: {$tenant->id}");
+            // Seed Default Ledger Accounts with retry mechanism
+            $this->retryOperation(function() use ($tenant) {
+                DefaultLedgerAccountsSeeder::seedForTenant($tenant->id);
+            }, "Ledger accounts seeding for tenant: {$tenant->id}");
 
-            // Seed Units
-            DefaultUnitsSeeder::seedForTenant($tenant->id);
-            Log::info("Units seeded for tenant: {$tenant->id}");
+            // Seed Product Categories with retry mechanism
+            $this->retryOperation(function() use ($tenant) {
+                DefaultProductCategoriesSeeder::seedForTenant($tenant->id);
+            }, "Product categories seeding for tenant: {$tenant->id}");
+
+            // Seed Units with retry mechanism
+            $this->retryOperation(function() use ($tenant) {
+                DefaultUnitsSeeder::seedForTenant($tenant->id);
+            }, "Units seeding for tenant: {$tenant->id}");
 
             Log::info("All default data seeded successfully for tenant: {$tenant->name} (ID: {$tenant->id})");
 
@@ -75,14 +104,55 @@ class OnboardingController extends Controller
         }
     }
 
+    private function retryOperation($callback, $logMessage, $maxAttempts = 3)
+    {
+        $attempts = 0;
+
+        while ($attempts < $maxAttempts) {
+            try {
+                if ($attempts > 0) {
+                    // Wait a bit before retry and refresh connection
+                    sleep(1);
+                    $this->refreshDatabaseConnection();
+                }
+
+                $callback();
+                Log::info($logMessage . " - Success on attempt " . ($attempts + 1));
+                return;
+
+            } catch (\Exception $e) {
+                $attempts++;
+                Log::warning($logMessage . " - Failed on attempt {$attempts}: " . $e->getMessage());
+
+                if ($attempts >= $maxAttempts) {
+                    throw $e;
+                }
+
+                // If it's the prepared statement error, definitely refresh connection
+                if (strpos($e->getMessage(), '1615') !== false ||
+                    strpos($e->getMessage(), 'Prepared statement') !== false) {
+                    $this->refreshDatabaseConnection();
+                }
+            }
+        }
+    }
+
     private function createTenant($request)
     {
-        return Tenant::create([]);
+        // Refresh connection before creating tenant
+        $this->refreshDatabaseConnection();
+
+        return Tenant::create([
+            // Add any default tenant data here if needed
+        ]);
     }
 
    public function checkOnboardingStatus($tenantId)
     {
         try {
+            // Refresh connection before status check
+            $this->refreshDatabaseConnection();
+
             $accountGroupsCount = \App\Models\AccountGroup::where('tenant_id', $tenantId)->count();
             $voucherTypesCount = \App\Models\VoucherType::where('tenant_id', $tenantId)->count();
             $ledgerAccountsCount = \App\Models\LedgerAccount::where('tenant_id', $tenantId)->count();
@@ -101,6 +171,11 @@ class OnboardingController extends Controller
                 ]
             ]);
         } catch (\Exception $e) {
+            Log::error('Error checking onboarding status', [
+                'tenant_id' => $tenantId,
+                'error' => $e->getMessage()
+            ]);
+
             return response()->json([
                 'success' => false,
                 'message' => 'Error checking onboarding status: ' . $e->getMessage()
@@ -113,15 +188,23 @@ class OnboardingController extends Controller
         try {
             $tenant = \App\Models\Tenant::findOrFail($tenantId);
 
+            // Refresh connection before reseeding
+            $this->refreshDatabaseConnection();
+
             DB::transaction(function () use ($tenant) {
                 $this->seedDefaultData($tenant);
-            });
+            }, 3); // Retry transaction up to 3 times
 
             return response()->json([
                 'success' => true,
                 'message' => 'Default data re-seeded successfully'
             ]);
         } catch (\Exception $e) {
+            Log::error('Re-seeding failed', [
+                'tenant_id' => $tenantId,
+                'error' => $e->getMessage()
+            ]);
+
             return response()->json([
                 'success' => false,
                 'message' => 'Re-seeding failed: ' . $e->getMessage()
@@ -192,6 +275,8 @@ class OnboardingController extends Controller
             $data['logo'] = $logoPath;
         }
 
+        // Refresh connection before update
+        $this->refreshDatabaseConnection();
         $tenant->update($data);
 
         $progress = $tenant->onboarding_progress ?? [];
@@ -228,6 +313,9 @@ class OnboardingController extends Controller
 
         $settings = $tenant->settings ?? [];
         $settings = array_merge($settings, $data);
+
+        // Refresh connection before update
+        $this->refreshDatabaseConnection();
         $tenant->update(['settings' => $settings]);
 
         $progress = $tenant->onboarding_progress ?? [];
@@ -285,6 +373,9 @@ class OnboardingController extends Controller
 
         $progress = $tenant->onboarding_progress ?? [];
         $progress['team'] = true;
+
+        // Refresh connection before update
+        $this->refreshDatabaseConnection();
         $tenant->update(['onboarding_progress' => $progress]);
 
         return redirect()->route('tenant.onboarding.step', [
@@ -325,22 +416,40 @@ class OnboardingController extends Controller
 
     public function complete(Request $request, Tenant $tenant)
     {
-        $tenant = $request->route('tenant');
+        try {
+            $tenant = $request->route('tenant');
 
+            // Refresh connection before completion
+            $this->refreshDatabaseConnection();
 
-   // Seed default data for the tenant
+            // Use transaction with retry for the completion process
+            DB::transaction(function () use ($tenant) {
+                // Seed default data for the tenant
                 $this->seedDefaultData($tenant);
-        $tenant->update([
-            'onboarding_completed_at' => now(),
-            'onboarding_progress' => [
-                'company' => true,
-                'preferences' => true,
-                'team' => true,
-                'complete' => true
-            ]
-        ]);
 
-        return redirect()->route('tenant.dashboard', ['tenant' => $tenant->slug])
-            ->with('success', 'Welcome to Ballie! Your account is now fully set up and ready to use.');
+                $tenant->update([
+                    'onboarding_completed_at' => now(),
+                    'onboarding_progress' => [
+                        'company' => true,
+                        'preferences' => true,
+                        'team' => true,
+                        'complete' => true
+                    ]
+                ]);
+            }, 3);
+
+            return redirect()->route('tenant.dashboard', ['tenant' => $tenant->slug])
+                ->with('success', 'Welcome to Ballie! Your account is now fully set up and ready to use.');
+
+        } catch (\Exception $e) {
+            Log::error('Onboarding completion failed', [
+                'tenant_id' => $tenant->id ?? 'unknown',
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+
+            return redirect()->back()
+                ->with('error', 'There was an error completing your onboarding. Please try again or contact support.');
+        }
     }
 }
