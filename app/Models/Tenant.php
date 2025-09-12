@@ -28,7 +28,7 @@ class Tenant extends Model
         'tax_identification_number',
         'logo',
         'website',
-        'subscription_plan',
+        'plan_id', // References plans table
         'subscription_status',
         'subscription_starts_at',
         'subscription_ends_at',
@@ -90,9 +90,25 @@ class Tenant extends Model
         return $this->belongsTo(SuperAdmin::class, 'created_by');
     }
 
+    /**
+     * Get the current plan
+     */
+    public function plan(): BelongsTo
+    {
+        return $this->belongsTo(Plan::class);
+    }
+
     public function subscriptions(): HasMany
     {
         return $this->hasMany(Subscription::class);
+    }
+
+    /**
+     * Get subscription payments
+     */
+    public function subscriptionPayments(): HasMany
+    {
+        return $this->hasMany(SubscriptionPayment::class);
     }
 
     /**
@@ -141,6 +157,61 @@ class Tenant extends Model
     public function canAccess(): bool
     {
         return $this->is_active && ($this->isOnTrial() || $this->hasActiveSubscription());
+    }
+
+    // Additional Subscription Helper Methods
+
+    /**
+     * Get days remaining in trial
+     */
+    public function trialDaysRemaining(): int
+    {
+        if (!$this->trial_ends_at || $this->trial_ends_at < now()) {
+            return 0;
+        }
+        return now()->diffInDays($this->trial_ends_at);
+    }
+
+    /**
+     * Start trial for new tenant with plan
+     */
+    public function startTrial(Plan $plan): void
+    {
+        $this->update([
+            'plan_id' => $plan->id,
+            'subscription_status' => self::STATUS_TRIAL,
+            'trial_ends_at' => now()->addDays(30),
+            'subscription_starts_at' => now(),
+            'subscription_ends_at' => now()->addDays(30),
+        ]);
+    }
+
+    /**
+     * Upgrade to paid subscription
+     */
+    public function upgradeToPaid(Plan $plan, string $billingCycle = 'monthly'): Subscription
+    {
+        // Create subscription record for history
+        $subscription = $this->subscriptions()->create([
+            'plan_id' => $plan->id,
+            'billing_cycle' => $billingCycle,
+            'amount' => $billingCycle === 'yearly' ? $plan->yearly_price : $plan->monthly_price,
+            'status' => 'active',
+            'starts_at' => now(),
+            'ends_at' => $billingCycle === 'yearly' ? now()->addYear() : now()->addMonth(),
+        ]);
+
+        // Update tenant current subscription status
+        $this->update([
+            'plan_id' => $plan->id,
+            'subscription_status' => self::STATUS_ACTIVE,
+            'billing_cycle' => $billingCycle,
+            'subscription_starts_at' => now(),
+            'subscription_ends_at' => $subscription->ends_at,
+            'trial_ends_at' => null, // Clear trial
+        ]);
+
+        return $subscription;
     }
 
     public function getRouteKeyName(): string

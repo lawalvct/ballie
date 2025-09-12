@@ -9,7 +9,20 @@
                 <span class="text-xl font-bold bg-gradient-to-r from-white to-gray-200 bg-clip-text text-transparent">
                     {{ $tenant->name ?? 'Ballie' }}
                 </span>
-                <div class="text-xs text-gray-300 mt-1">Professional</div>
+                <div class="flex items-center space-x-2 mt-1">
+                    <div class="text-xs text-gray-300">
+                        {{ $tenant->plan ? $tenant->plan->name : 'Free' }}
+                    </div>
+                    @if($tenant->isOnTrial())
+                        <span class="text-xs bg-yellow-500 text-yellow-900 px-2 py-0.5 rounded-full font-medium">
+                            {{ $tenant->trialDaysRemaining() }} days left
+                        </span>
+                    @elseif($tenant->hasActiveSubscription())
+                        <span class="text-xs bg-green-500 text-green-900 px-2 py-0.5 rounded-full font-medium">
+                            Active
+                        </span>
+                    @endif
+                </div>
             </div>
         </div>
         <button id="sidebarCollapseBtn" class="p-2 rounded-lg hover:bg-white hover:bg-opacity-10 hidden lg:block transition-all duration-200 -mr-2 sidebar-collapse-btn">

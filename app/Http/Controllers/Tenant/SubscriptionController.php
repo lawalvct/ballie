@@ -18,35 +18,33 @@ class SubscriptionController extends Controller
     public function index()
     {
         $tenant = tenant();
-        $currentSubscription = $tenant->subscription()->latest()->first();
+        $currentPlan = $tenant->plan; // Get current plan from relationship
         $plans = Plan::where('is_active', true)->orderBy('sort_order')->get();
 
         // Get recent payment history
-        $recentPayments = SubscriptionPayment::where('tenant_id', $tenant->id)
+        $recentPayments = $tenant->subscriptionPayments()
             ->latest()
             ->limit(5)
             ->get();
 
         return view('tenant.subscription.index', compact(
             'tenant',
-            'currentSubscription',
+            'currentPlan',
             'plans',
             'recentPayments'
         ));
-    }
-
-    /**
+    }    /**
      * Display available plans
      */
     public function plans()
     {
         $tenant = tenant();
-        $currentSubscription = $tenant->subscription()->latest()->first();
+        $currentPlan = $tenant->plan;
         $plans = Plan::where('is_active', true)->orderBy('sort_order')->get();
 
         return view('tenant.subscription.plans', compact(
             'tenant',
-            'currentSubscription',
+            'currentPlan',
             'plans'
         ));
     }
@@ -57,10 +55,10 @@ class SubscriptionController extends Controller
     public function upgrade(Plan $plan)
     {
         $tenant = tenant();
-        $currentSubscription = $tenant->subscription()->latest()->first();
+        $currentPlan = $tenant->plan;
 
         // Check if upgrade is valid
-        if ($currentSubscription && $currentSubscription->plan === $plan->slug) {
+        if ($currentPlan && $currentPlan->id === $plan->id) {
             return redirect()->route('tenant.subscription.index', tenant()->slug)
                 ->with('error', 'You are already on this plan.');
         }
@@ -68,7 +66,7 @@ class SubscriptionController extends Controller
         return view('tenant.subscription.upgrade', compact(
             'tenant',
             'plan',
-            'currentSubscription'
+            'currentPlan'
         ));
     }
 
@@ -83,34 +81,17 @@ class SubscriptionController extends Controller
         ]);
 
         $tenant = tenant();
-        $billingCycle = $request->billing_cycle;
-
-        // Calculate amount based on billing cycle
-        $amount = $billingCycle === 'yearly' ? $plan->yearly_price : $plan->monthly_price;
 
         try {
             DB::beginTransaction();
 
-            // Create new subscription
-            $subscription = $tenant->subscriptions()->create([
-                'plan' => $plan->slug,
-                'billing_cycle' => $billingCycle,
-                'amount' => $amount,
-                'status' => 'active',
-                'starts_at' => now(),
-                'ends_at' => $billingCycle === 'yearly' ? now()->addYear() : now()->addMonth(),
-                'metadata' => [
-                    'plan_name' => $plan->name,
-                    'features' => $plan->features,
-                    'upgraded_at' => now(),
-                    'previous_plan' => $tenant->subscription()->latest()->first()?->plan,
-                ]
-            ]);
+            // Use the tenant method to upgrade
+            $subscription = $tenant->upgradeToPaid($plan, $request->billing_cycle);
 
             // Create payment record
-            $payment = $subscription->payments()->create([
-                'tenant_id' => $tenant->id,
-                'amount' => $amount,
+            $payment = $tenant->subscriptionPayments()->create([
+                'subscription_id' => $subscription->id,
+                'amount' => $subscription->amount,
                 'status' => 'successful', // In real implementation, integrate with payment gateway
                 'payment_method' => $request->payment_method,
                 'payment_reference' => 'PAY_' . strtoupper(uniqid()),
@@ -128,7 +109,7 @@ class SubscriptionController extends Controller
             DB::rollBack();
             Log::error('Subscription upgrade failed', [
                 'tenant_id' => $tenant->id,
-                'plan' => $plan->slug,
+                'plan_id' => $plan->id,
                 'error' => $e->getMessage()
             ]);
 
@@ -142,12 +123,12 @@ class SubscriptionController extends Controller
     public function downgrade(Plan $plan)
     {
         $tenant = tenant();
-        $currentSubscription = $tenant->subscription()->latest()->first();
+        $currentPlan = $tenant->plan;
 
         return view('tenant.subscription.downgrade', compact(
             'tenant',
             'plan',
-            'currentSubscription'
+            'currentPlan'
         ));
     }
 
@@ -162,23 +143,43 @@ class SubscriptionController extends Controller
         ]);
 
         $tenant = tenant();
-        $currentSubscription = $tenant->subscription()->latest()->first();
+        $currentPlan = $tenant->plan;
 
-        // Schedule downgrade for next billing cycle
-        $currentSubscription->update([
-            'metadata' => array_merge($currentSubscription->metadata ?? [], [
-                'scheduled_downgrade' => [
-                    'plan' => $plan->slug,
-                    'billing_cycle' => $request->billing_cycle,
-                    'effective_date' => $currentSubscription->ends_at,
-                    'reason' => $request->reason,
+        try {
+            DB::beginTransaction();
+
+            // Create a subscription record for the downgrade
+            $subscription = $tenant->subscriptions()->create([
+                'plan_id' => $plan->id,
+                'billing_cycle' => $request->billing_cycle,
+                'amount' => $request->billing_cycle === 'yearly' ? $plan->yearly_price : $plan->monthly_price,
+                'status' => 'scheduled',
+                'starts_at' => $tenant->trial_ends_at ?? now()->addMonth(), // Start after current period
+                'ends_at' => $request->billing_cycle === 'yearly' ?
+                    ($tenant->trial_ends_at ?? now()->addMonth())->addYear() :
+                    ($tenant->trial_ends_at ?? now()->addMonth())->addMonth(),
+                'metadata' => [
+                    'downgrade_reason' => $request->reason,
+                    'previous_plan_id' => $currentPlan->id,
                     'scheduled_at' => now(),
                 ]
-            ])
-        ]);
+            ]);
 
-        return redirect()->route('tenant.subscription.index', tenant()->slug)
-            ->with('success', 'Downgrade scheduled for ' . $currentSubscription->ends_at->format('M j, Y'));
+            DB::commit();
+
+            return redirect()->route('tenant.subscription.index', tenant()->slug)
+                ->with('success', 'Downgrade scheduled for ' . $subscription->starts_at->format('M j, Y'));
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('Subscription downgrade failed', [
+                'tenant_id' => $tenant->id,
+                'plan_id' => $plan->id,
+                'error' => $e->getMessage()
+            ]);
+
+            return back()->with('error', 'Failed to schedule downgrade. Please try again.');
+        }
     }
 
     /**
@@ -187,11 +188,11 @@ class SubscriptionController extends Controller
     public function cancel()
     {
         $tenant = tenant();
-        $currentSubscription = $tenant->subscription()->latest()->first();
+        $currentPlan = $tenant->plan;
 
         return view('tenant.subscription.cancel', compact(
             'tenant',
-            'currentSubscription'
+            'currentPlan'
         ));
     }
 
@@ -206,25 +207,49 @@ class SubscriptionController extends Controller
         ]);
 
         $tenant = tenant();
-        $currentSubscription = $tenant->subscription()->latest()->first();
 
-        if ($currentSubscription) {
-            $currentSubscription->update([
+        try {
+            DB::beginTransaction();
+
+            // Create a cancellation record in subscriptions
+            $subscription = $tenant->subscriptions()->create([
+                'plan_id' => $tenant->plan_id,
+                'billing_cycle' => 'cancelled',
+                'amount' => 0,
                 'status' => 'cancelled',
-                'cancelled_at' => now(),
-                'metadata' => array_merge($currentSubscription->metadata ?? [], [
-                    'cancellation' => [
-                        'reason' => $request->reason,
-                        'feedback' => $request->feedback,
-                        'cancelled_at' => now(),
-                    ]
-                ])
+                'starts_at' => now(),
+                'ends_at' => $tenant->trial_ends_at ?? now(),
+                'metadata' => [
+                    'cancellation_reason' => $request->reason,
+                    'feedback' => $request->feedback,
+                    'cancelled_at' => now(),
+                ]
             ]);
-        }
 
-        return redirect()->route('tenant.subscription.index', tenant()->slug)
-            ->with('success', 'Your subscription has been cancelled. Access will continue until ' .
-                   $currentSubscription->ends_at->format('M j, Y'));
+            // Update tenant to free plan if exists, or remove plan
+            $freePlan = Plan::where('slug', 'free')->first();
+            if ($freePlan) {
+                $tenant->update(['plan_id' => $freePlan->id]);
+            } else {
+                $tenant->update(['plan_id' => null]);
+            }
+
+            DB::commit();
+
+            $accessUntil = $tenant->trial_ends_at ?? now();
+            return redirect()->route('tenant.subscription.index', tenant()->slug)
+                ->with('success', 'Your subscription has been cancelled. Access will continue until ' .
+                       $accessUntil->format('M j, Y'));
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('Subscription cancellation failed', [
+                'tenant_id' => $tenant->id,
+                'error' => $e->getMessage()
+            ]);
+
+            return back()->with('error', 'Failed to cancel subscription. Please try again.');
+        }
     }
 
     /**
@@ -234,9 +259,7 @@ class SubscriptionController extends Controller
     {
         $tenant = tenant();
         $subscriptions = $tenant->subscriptions()->latest()->paginate(10);
-        $payments = SubscriptionPayment::where('tenant_id', $tenant->id)
-            ->latest()
-            ->paginate(15);
+        $payments = $tenant->subscriptionPayments()->latest()->paginate(15);
 
         return view('tenant.subscription.history', compact(
             'tenant',

@@ -47,8 +47,22 @@ class TenantHelper
         return route('tenant.dashboard', ['tenant' => $tenant]);
     }
 
-    public static function getPlanFeatures(string $plan): array
+    public static function getPlanFeatures($plan): array
     {
+        // If plan is a Plan model, get its features
+        if (is_object($plan) && isset($plan->features)) {
+            return $plan->features ?? [];
+        }
+
+        // Legacy support for plan slugs
+        if (is_string($plan)) {
+            $planModel = \App\Models\Plan::where('slug', $plan)->first();
+            if ($planModel) {
+                return $planModel->features ?? [];
+            }
+        }
+
+        // Fallback to legacy hardcoded features for compatibility
         $features = [
             'starter' => [
                 'users' => 5,
@@ -99,13 +113,22 @@ class TenantHelper
             ]
         ];
 
-        return $features[$plan] ?? [];
+        if (is_string($plan)) {
+            return $features[$plan] ?? [];
+        }
+
+        return [];
     }
 
     public static function canAccessFeature(string $feature): bool
     {
         $tenant = self::getCurrentTenant();
-        $planFeatures = self::getPlanFeatures($tenant->subscription_plan);
+
+        if (!$tenant || !$tenant->plan) {
+            return false;
+        }
+
+        $planFeatures = self::getPlanFeatures($tenant->plan);
 
         return in_array($feature, $planFeatures['features'] ?? []);
     }
@@ -128,11 +151,11 @@ class TenantHelper
     {
         $tenant = self::getCurrentTenant();
 
-        if (!$tenant->trial_ends_at) {
+        if (!$tenant) {
             return 0;
         }
 
-        return max(0, now()->diffInDays($tenant->trial_ends_at, false));
+        return $tenant->trialDaysRemaining();
     }
 }
 

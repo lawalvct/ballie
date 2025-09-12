@@ -153,7 +153,7 @@ class OnboardingController extends Controller
     }
 
     /**
-     * Update tenant data field by field using raw SQL to avoid prepared statement issues on shared hosting
+     * Update tenant data field by field to avoid prepared statement issues on shared hosting
      */
     private function updateTenantFieldByField($tenant, $data, $maxAttempts = 3)
     {
@@ -173,29 +173,19 @@ class OnboardingController extends Controller
                     // Refresh connection before each field update
                     $this->refreshDatabaseConnection();
 
-                    // Use raw SQL to completely avoid prepared statements
-                    if ($value === null) {
-                        $updateQuery = "UPDATE tenants SET `{$field}` = NULL WHERE id = ?";
-                    } else {
-                        // Escape the value to prevent SQL injection
-                        $escapedValue = DB::connection()->getPdo()->quote($value);
-                        $updateQuery = "UPDATE tenants SET `{$field}` = {$escapedValue} WHERE id = {$tenant->id}";
-                    }
+                    // Update single field with micro-transaction
+                    DB::transaction(function() use ($tenant, $field, $value) {
+                        $tenant->update([$field => $value]);
+                    });
 
-                    $affected = DB::statement($updateQuery);
+                    $updatedFields[] = $field;
+                    $fieldUpdated = true;
 
-                    if ($affected !== false) {
-                        $updatedFields[] = $field;
-                        $fieldUpdated = true;
-
-                        Log::info("Field updated successfully via raw SQL", [
-                            'tenant_id' => $tenant->id,
-                            'field' => $field,
-                            'attempt' => $attempts + 1
-                        ]);
-                    } else {
-                        throw new \Exception("Raw SQL update returned false");
-                    }
+                    Log::info("Field updated successfully", [
+                        'tenant_id' => $tenant->id,
+                        'field' => $field,
+                        'attempt' => $attempts + 1
+                    ]);
 
                 } catch (\Exception $e) {
                     $attempts++;
@@ -249,61 +239,6 @@ class OnboardingController extends Controller
             'updated' => $updatedFields,
             'failed' => $failedFields
         ];
-    }
-
-    /**
-     * Update tenant field with JSON data using raw SQL
-     */
-    private function updateTenantJsonField($tenant, $field, $jsonData, $maxAttempts = 3)
-    {
-        $attempts = 0;
-
-        while ($attempts < $maxAttempts) {
-            try {
-                if ($attempts > 0) {
-                    sleep(0.5);
-                }
-
-                // Refresh connection
-                $this->refreshDatabaseConnection();
-
-                // Convert to JSON and escape
-                $jsonValue = json_encode($jsonData);
-                $escapedValue = DB::connection()->getPdo()->quote($jsonValue);
-
-                $updateQuery = "UPDATE tenants SET `{$field}` = {$escapedValue} WHERE id = {$tenant->id}";
-                $affected = DB::statement($updateQuery);
-
-                if ($affected !== false) {
-                    Log::info("JSON field updated successfully", [
-                        'tenant_id' => $tenant->id,
-                        'field' => $field,
-                        'attempt' => $attempts + 1
-                    ]);
-                    return true;
-                } else {
-                    throw new \Exception("Raw SQL JSON update returned false");
-                }
-
-            } catch (\Exception $e) {
-                $attempts++;
-                Log::warning("JSON field update failed", [
-                    'tenant_id' => $tenant->id,
-                    'field' => $field,
-                    'attempt' => $attempts,
-                    'error' => $e->getMessage()
-                ]);
-
-                if ($attempts >= $maxAttempts) {
-                    throw $e;
-                }
-
-                // Refresh connection on error
-                $this->refreshDatabaseConnection();
-            }
-        }
-
-        return false;
     }
 
    private function seedDefaultData($tenant)
@@ -525,8 +460,9 @@ class OnboardingController extends Controller
             // Update company data field by field
             $updateResult = $this->updateTenantFieldByField($tenant, $data);
 
-            // Update progress separately using JSON method
-            $this->updateTenantJsonField($tenant, 'onboarding_progress', $progress);
+            // Update progress separately with safe method
+            $this->refreshDatabaseConnection();
+            $this->safeModelUpdate($tenant, ['onboarding_progress' => $progress]);
 
             Log::info("Company step completed successfully", [
                 'tenant_id' => $tenant->id,
@@ -537,8 +473,7 @@ class OnboardingController extends Controller
         } catch (\Exception $e) {
             Log::error("Company step failed", [
                 'tenant_id' => $tenant->id,
-                'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString()
+                'error' => $e->getMessage()
             ]);
 
             return redirect()->back()
@@ -583,11 +518,13 @@ class OnboardingController extends Controller
 
         // Use field-by-field update approach for preferences
         try {
-            // Update settings field using JSON method
-            $this->updateTenantJsonField($tenant, 'settings', $settings);
+            // Update settings field safely (single field update)
+            $this->refreshDatabaseConnection();
+            $this->safeModelUpdate($tenant, ['settings' => $settings]);
 
-            // Update progress separately using JSON method
-            $this->updateTenantJsonField($tenant, 'onboarding_progress', $progress);
+            // Update progress separately
+            $this->refreshDatabaseConnection();
+            $this->safeModelUpdate($tenant, ['onboarding_progress' => $progress]);
 
             Log::info("Preferences step completed successfully", [
                 'tenant_id' => $tenant->id,
@@ -597,8 +534,7 @@ class OnboardingController extends Controller
         } catch (\Exception $e) {
             Log::error("Preferences step failed", [
                 'tenant_id' => $tenant->id,
-                'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString()
+                'error' => $e->getMessage()
             ]);
 
             return redirect()->back()
@@ -658,16 +594,8 @@ class OnboardingController extends Controller
         $progress = $tenant->onboarding_progress ?? [];
         $progress['team'] = true;
 
-        // Use JSON update method for progress
-        try {
-            $this->updateTenantJsonField($tenant, 'onboarding_progress', $progress);
-        } catch (\Exception $e) {
-            Log::error("Team step progress update failed", [
-                'tenant_id' => $tenant->id,
-                'error' => $e->getMessage()
-            ]);
-            // Continue anyway - team invitations are more important than progress tracking
-        }
+        // Use safe update method for progress
+        $this->safeModelUpdate($tenant, ['onboarding_progress' => $progress]);
 
         return redirect()->route('tenant.onboarding.step', [
             'tenant' => $tenant->slug,
@@ -718,21 +646,17 @@ class OnboardingController extends Controller
 
             // Update completion status using safe method (field by field)
             $completionData = [
-                'onboarding_completed_at' => now()
+                'onboarding_completed_at' => now(),
+                'onboarding_progress' => [
+                    'company' => true,
+                    'preferences' => true,
+                    'team' => true,
+                    'complete' => true
+                ]
             ];
 
-            $progressData = [
-                'company' => true,
-                'preferences' => true,
-                'team' => true,
-                'complete' => true
-            ];
-
-            // Use field-by-field update for completion timestamp
+            // Use field-by-field update for completion
             $updateResult = $this->updateTenantFieldByField($tenant, $completionData);
-
-            // Update progress separately using JSON method
-            $this->updateTenantJsonField($tenant, 'onboarding_progress', $progressData);
 
             Log::info("Onboarding completion successful", [
                 'tenant_id' => $tenant->id,

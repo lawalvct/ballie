@@ -117,7 +117,7 @@
         <div class="bg-white rounded-2xl shadow-2xl p-8 md:p-12">
             <form id="registration-form" method="POST" action="{{ route('register') }}">
                 @csrf
-                <input type="hidden" name="selected_plan" value="{{ request('plan') }}">
+                <input type="hidden" name="selected_plan_id" value="{{ request('plan_id') }}">
 
                 <!-- Step 1: Business Type -->
                 <div class="step-content" id="step-content-1">
@@ -312,7 +312,7 @@
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
                         @foreach($plans as $plan)
                         <div class="plan-card border-2 border-gray-200 rounded-xl p-6 cursor-pointer transition-all duration-300 hover:border-yellow-400 {{ $plan->is_popular ? 'border-yellow-400 bg-yellow-50' : '' }}"
-                             data-plan="{{ $plan->slug }}">
+                             data-plan-id="{{ $plan->id }}" data-plan-name="{{ $plan->name }}">
                             @if($plan->is_popular)
                                 <div class="text-center mb-4">
                                     <span class="inline-block px-3 py-1 text-xs font-semibold text-yellow-800 bg-yellow-200 rounded-full">
@@ -345,7 +345,7 @@
                     </div>
                     @endif
 
-                    <input type="hidden" name="plan" id="selected_plan" value="{{ request('plan') }}">
+                    <input type="hidden" name="plan_id" id="selected_plan_id" value="{{ request('plan_id') }}">
 
                     <div class="mb-6">
                         <label class="flex items-center">
@@ -401,7 +401,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Plan selection
     const planCards = document.querySelectorAll('.plan-card');
-    const selectedPlanInput = document.getElementById('selected_plan');
+    const selectedPlanInput = document.getElementById('selected_plan_id');
 
     planCards.forEach(card => {
         card.addEventListener('click', function() {
@@ -411,7 +411,7 @@ document.addEventListener('DOMContentLoaded', function() {
             });
             this.classList.remove('border-gray-200');
             this.classList.add('border-yellow-400', 'bg-yellow-50');
-            selectedPlanInput.value = this.dataset.plan;
+            selectedPlanInput.value = this.dataset.planId;
         });
     });
 

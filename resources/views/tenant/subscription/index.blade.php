@@ -21,43 +21,85 @@
     </div>
 
     <!-- Current Subscription -->
-    @if($currentSubscription)
+    @if($currentPlan)
     <div class="bg-gradient-to-r from-blue-500 to-purple-600 rounded-xl text-white p-6">
         <div class="flex items-center justify-between">
             <div>
                 <h2 class="text-xl font-semibold">Current Plan</h2>
-                <p class="text-blue-100 mt-1">{{ ucfirst($currentSubscription->plan) }} Plan</p>
+                <p class="text-blue-100 mt-1">{{ $currentPlan->name }} Plan</p>
             </div>
             <div class="text-right">
-                <div class="text-2xl font-bold">{{ $currentSubscription->formatted_amount }}</div>
-                <div class="text-blue-100">{{ $currentSubscription->billing_cycle }}</div>
+                <div class="text-2xl font-bold">
+                    @if($tenant->isOnTrial())
+                        <span class="text-yellow-300">Trial</span>
+                    @else
+                        {{ $tenant->billing_cycle === 'yearly' ? $currentPlan->formatted_yearly_price : $currentPlan->formatted_monthly_price }}
+                    @endif
+                </div>
+                <div class="text-blue-100">
+                    @if($tenant->isOnTrial())
+                        Trial Period
+                    @else
+                        {{ ucfirst($tenant->billing_cycle ?? 'monthly') }}
+                    @endif
+                </div>
             </div>
         </div>
 
         <div class="mt-6 grid grid-cols-1 md:grid-cols-3 gap-4">
             <div class="bg-white bg-opacity-10 rounded-lg p-4">
                 <div class="text-sm text-blue-100">Status</div>
-                <div class="font-semibold">{{ ucfirst($currentSubscription->status) }}</div>
+                <div class="font-semibold">
+                    @if($tenant->isOnTrial())
+                        Trial
+                    @elseif($tenant->hasActiveSubscription())
+                        Active
+                    @else
+                        Inactive
+                    @endif
+                </div>
             </div>
             <div class="bg-white bg-opacity-10 rounded-lg p-4">
-                <div class="text-sm text-blue-100">Renewal Date</div>
-                <div class="font-semibold">{{ $currentSubscription->renewal_date }}</div>
+                <div class="text-sm text-blue-100">
+                    @if($tenant->isOnTrial())
+                        Trial Ends
+                    @else
+                        Renewal Date
+                    @endif
+                </div>
+                <div class="font-semibold">
+                    @if($tenant->trial_ends_at)
+                        {{ $tenant->trial_ends_at->format('M j, Y') }}
+                    @elseif($tenant->subscription_ends_at)
+                        {{ $tenant->subscription_ends_at->format('M j, Y') }}
+                    @else
+                        N/A
+                    @endif
+                </div>
             </div>
             <div class="bg-white bg-opacity-10 rounded-lg p-4">
                 <div class="text-sm text-blue-100">Days Remaining</div>
-                <div class="font-semibold">{{ $currentSubscription->days_until_expiration }} days</div>
+                <div class="font-semibold">
+                    @if($tenant->isOnTrial())
+                        {{ $tenant->trialDaysRemaining() }} days
+                    @elseif($tenant->subscription_ends_at)
+                        {{ now()->diffInDays($tenant->subscription_ends_at, false) }} days
+                    @else
+                        N/A
+                    @endif
+                </div>
             </div>
         </div>
 
-        @if($currentSubscription->hasScheduledDowngrade())
+        @if($tenant->isOnTrial())
         <div class="mt-4 bg-yellow-500 bg-opacity-20 border border-yellow-300 rounded-lg p-3">
             <div class="flex items-center">
                 <svg class="w-5 h-5 text-yellow-200 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z"></path>
                 </svg>
                 <span class="text-yellow-100">
-                    Scheduled to downgrade to {{ ucfirst($currentSubscription->scheduled_downgrade['plan']) }}
-                    on {{ \Carbon\Carbon::parse($currentSubscription->scheduled_downgrade['effective_date'])->format('M j, Y') }}
+                    Your {{ $currentPlan->name }} trial expires on {{ $tenant->trial_ends_at->format('M j, Y') }}
+                    ({{ $tenant->trialDaysRemaining() }} days remaining)
                 </span>
             </div>
         </div>
@@ -66,7 +108,7 @@
     @else
     <div class="bg-yellow-50 border border-yellow-200 rounded-xl p-6">
         <div class="text-center">
-            <h2 class="text-xl font-semibold text-yellow-800">No Active Subscription</h2>
+            <h2 class="text-xl font-semibold text-yellow-800">No Active Plan</h2>
             <p class="text-yellow-600 mt-2">Choose a plan to get started with premium features</p>
             <a href="{{ route('tenant.subscription.plans', tenant()->slug) }}"
                class="inline-block mt-4 bg-yellow-600 text-white px-6 py-2 rounded-lg hover:bg-yellow-700 transition-colors">
@@ -119,14 +161,14 @@
                 </div>
                 <h3 class="font-semibold text-gray-900">Cancel Subscription</h3>
                 <p class="text-gray-600 text-sm mt-1">Cancel your current subscription</p>
-                @if($currentSubscription)
+                @if($currentPlan)
                 <a href="{{ route('tenant.subscription.cancel', tenant()->slug) }}"
                    class="inline-block mt-3 text-red-600 hover:text-red-700 text-sm font-medium">
                     Cancel →
                 </a>
                 @else
                 <span class="inline-block mt-3 text-gray-400 text-sm">
-                    No active subscription
+                    No active plan
                 </span>
                 @endif
             </div>

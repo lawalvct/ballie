@@ -13,7 +13,8 @@ class Subscription extends Model
 
     protected $fillable = [
         'tenant_id',
-        'plan',
+        'plan_id', // Reference to plans table
+        'plan', // Keep for backward compatibility if needed
         'billing_cycle',
         'amount',
         'currency',
@@ -50,7 +51,15 @@ class Subscription extends Model
     }
 
     /**
-     * Get the plan model
+     * Get the plan for this subscription
+     */
+    public function plan(): BelongsTo
+    {
+        return $this->belongsTo(Plan::class);
+    }
+
+    /**
+     * Get the plan model (legacy - using plan slug)
      */
     public function planModel(): BelongsTo
     {

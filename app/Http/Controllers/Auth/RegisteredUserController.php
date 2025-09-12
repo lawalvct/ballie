@@ -48,7 +48,7 @@ class RegisteredUserController extends Controller
             'business_name' => ['required', 'string', 'max:255'],
             'business_type' => ['required', 'string', 'in:retail,service,restaurant,manufacturing,wholesale,other'],
             'phone' => ['nullable', 'string', 'max:20'],
-            'plan' => ['nullable', 'string', 'in:starter,professional,enterprise'],
+            'plan_id' => ['required', 'integer', 'exists:plans,id'],
             'terms' => ['required', 'accepted'],
         ]);
 
@@ -61,16 +61,18 @@ class RegisteredUserController extends Controller
             DB::transaction(function () use ($request, &$tenant, &$user) {
                 Log::info('Starting database transaction');
 
-                // Create tenant first
+                // Get the selected plan
+                $selectedPlan = Plan::findOrFail($request->plan_id);
+                Log::info('Selected plan', ['plan_id' => $selectedPlan->id, 'plan_name' => $selectedPlan->name]);
+
+                // Create tenant with the selected plan
                 $tenantData = [
                     'name' => $request->business_name,
                     'slug' => TenantHelper::generateUniqueSlug($request->business_name),
                     'email' => $request->email,
                     'phone' => $request->phone,
                     'business_type' => $request->business_type,
-                    'subscription_plan' => $request->plan ?? Tenant::PLAN_STARTER,
-                    'subscription_status' => Tenant::STATUS_TRIAL,
-                    'billing_cycle' => Tenant::BILLING_MONTHLY,
+                    'plan_id' => $selectedPlan->id,
                     'trial_ends_at' => now()->addDays(30), // 30-day trial
                     'is_active' => true,
                     'onboarding_completed' => false,
@@ -81,6 +83,11 @@ class RegisteredUserController extends Controller
                 $tenant = Tenant::create($tenantData);
 
                 Log::info('Tenant created successfully', ['tenant_id' => $tenant->id, 'slug' => $tenant->slug]);
+
+                // Start trial for the selected plan using the tenant method
+                $tenant->startTrial($selectedPlan);
+
+                Log::info('Trial started successfully', ['plan' => $selectedPlan->name, 'trial_ends_at' => $tenant->trial_ends_at]);
 
                 // Create user associated with the tenant
                 $userData = [
@@ -108,9 +115,9 @@ class RegisteredUserController extends Controller
 
             Log::info('Registration completed successfully');
 
-            // Redirect to tenant-specific dashboard
+            // Redirect to tenant-specific dashboard with trial welcome message
             return redirect()->route('tenant.dashboard', ['tenant' => $tenant->slug])
-                ->with('success', 'Registration successful! Welcome to Ballie.');
+                ->with('success', 'Registration successful! Welcome to Ballie. Your 30-day trial for the ' . $tenant->plan->name . ' plan has started.');
 
         } catch (\Exception $e) {
             Log::error('Registration failed', [
