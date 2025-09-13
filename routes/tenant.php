@@ -64,6 +64,11 @@ Route::bind('tenant', function ($value) {
     return Tenant::where('slug', $value)->firstOrFail();
 });
 
+// Route model binding for plan
+Route::bind('plan', function ($value) {
+    return \App\Models\Plan::findOrFail($value);
+});
+
 // Route model bindings for admin management
 Route::bind('role', function ($value) {
     return \App\Models\Tenant\Role::where('tenant_id', tenant('id'))->findOrFail($value);
@@ -312,6 +317,7 @@ Route::prefix('ledger-accounts')->name('ledger-accounts.')->group(function () {
             // Payment callbacks
             Route::get('/payment/success', [SubscriptionController::class, 'paymentSuccess'])->name('payment.success');
             Route::get('/payment/cancel', [SubscriptionController::class, 'paymentCancel'])->name('payment.cancel');
+            Route::get('/payment/callback/{payment}', [SubscriptionController::class, 'paymentCallback'])->name('payment.callback');
             Route::post('/webhook', [SubscriptionController::class, 'webhook'])->name('webhook');
         });
 

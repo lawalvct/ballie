@@ -168,4 +168,17 @@ class Subscription extends Model
     {
         return $this->metadata['scheduled_downgrade'] ?? null;
     }
+
+    /**
+     * Set plan attribute - ensure slug is used for backward compatibility
+     */
+    public function setPlanAttribute($value)
+    {
+        // If plan_id is set and plan is null, try to get slug from plan relationship
+        if (!$value && $this->plan_id && $this->relationLoaded('plan')) {
+            $value = $this->plan->slug ?? null;
+        }
+
+        $this->attributes['plan'] = $value;
+    }
 }

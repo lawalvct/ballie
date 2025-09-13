@@ -6,9 +6,11 @@ use App\Http\Controllers\Controller;
 use App\Models\Plan;
 use App\Models\Subscription;
 use App\Models\SubscriptionPayment;
+use App\Helpers\PaymentHelper;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Str;
 
 class SubscriptionController extends Controller
 {
@@ -52,9 +54,9 @@ class SubscriptionController extends Controller
     /**
      * Show upgrade form for a specific plan
      */
-    public function upgrade(Plan $plan)
+    public function upgrade($tenant, Plan $plan)
     {
-        $tenant = tenant();
+        $tenant = tenant(); // Use the tenant() helper instead of the route parameter
         $currentPlan = $tenant->plan;
 
         // Check if upgrade is valid
@@ -73,44 +75,147 @@ class SubscriptionController extends Controller
     /**
      * Process upgrade to a new plan
      */
-    public function processUpgrade(Request $request, Plan $plan)
+    public function processUpgrade(Request $request, $tenant, Plan $plan)
     {
         $request->validate([
             'billing_cycle' => 'required|in:monthly,yearly',
-            'payment_method' => 'required|string',
         ]);
 
-        $tenant = tenant();
+        $tenant = tenant(); // Use the tenant() helper instead of the route parameter
+        $currentPlan = $tenant->plan;
+
+        // Calculate amount based on billing cycle
+        $amount = $request->billing_cycle === 'yearly' ? $plan->yearly_price : $plan->monthly_price;
+
+        // Debug logging
+        Log::info('ProcessUpgrade started', [
+            'tenant_id' => $tenant->id,
+            'plan_id' => $plan->id,
+            'billing_cycle' => $request->billing_cycle,
+            'amount' => $amount
+        ]);
 
         try {
             DB::beginTransaction();
 
-            // Use the tenant method to upgrade
-            $subscription = $tenant->upgradeToPaid($plan, $request->billing_cycle);
-
-            // Create payment record
-            $payment = $tenant->subscriptionPayments()->create([
-                'subscription_id' => $subscription->id,
-                'amount' => $subscription->amount,
-                'status' => 'successful', // In real implementation, integrate with payment gateway
-                'payment_method' => $request->payment_method,
-                'payment_reference' => 'PAY_' . strtoupper(uniqid()),
-                'paid_at' => now(),
+            // Create a pending subscription record
+            $subscription = $tenant->subscriptions()->create([
+                'plan_id' => $plan->id,
+                'plan' => $plan->slug, // Add this for backward compatibility
+                'billing_cycle' => $request->billing_cycle,
+                'amount' => $amount,
+                'currency' => 'NGN',
+                'status' => 'pending',
+                'starts_at' => now(),
+                'ends_at' => $request->billing_cycle === 'yearly' ? now()->addYear() : now()->addMonth(),
+                'metadata' => [
+                    'upgrade_from' => $currentPlan?->id,
+                    'initiated_at' => now(),
+                ]
             ]);
 
-            DB::commit();
+            // Generate unique payment reference
+            $paymentReference = 'SUB_' . strtoupper(Str::random(8)) . '_' . $tenant->id;
 
-            return redirect()->route('tenant.subscription.payment.success', [
-                'tenant' => tenant()->slug,
+            // Create pending payment record
+            $payment = $tenant->subscriptionPayments()->create([
+                'subscription_id' => $subscription->id,
+                'amount' => $amount,
+                'currency' => 'NGN',
+                'status' => 'pending',
+                'payment_method' => 'nomba',
+                'payment_reference' => $paymentReference,
+                'gateway_reference' => null, // Will be updated after Nomba response
+            ]);
+
+            Log::info('Payment record created', [
+                'payment_id' => $payment->id,
+                'payment_reference' => $paymentReference
+            ]);
+
+            // Initialize payment helper
+            $paymentHelper = new PaymentHelper();
+
+            // Check if Nomba credentials are configured
+            $tokenData = $paymentHelper->nombaAccessToken();
+            if (!$tokenData) {
+                DB::rollBack();
+                Log::error('Nomba credentials not configured', [
+                    'tenant_id' => $tenant->id,
+                    'plan_id' => $plan->id
+                ]);
+                return back()->with('error', 'Payment gateway not configured. Please contact administrator.');
+            }
+
+            // Prepare callback URLs
+            $successUrl = route('tenant.subscription.payment.success', [
+                'tenant' => $tenant->slug,
                 'payment' => $payment->id
-            ])->with('success', 'Successfully upgraded to ' . $plan->name . ' plan!');
+            ]);
+            $callbackUrl = route('tenant.subscription.payment.callback', [
+                'tenant' => $tenant->slug,
+                'payment' => $payment->id
+            ]);
+
+            // Get user email (from tenant's primary user or current user)
+            $userEmail = $tenant->users()->first()?->email ?? auth()->user()?->email;
+
+            Log::info('Initiating Nomba payment', [
+                'amount' => $amount / 100,
+                'userEmail' => $userEmail,
+                'callbackUrl' => $callbackUrl,
+                'paymentReference' => $paymentReference
+            ]);
+
+            // Process payment with Nomba
+            $paymentResult = $paymentHelper->processPayment(
+                $amount / 100, // Convert to naira (amount is in kobo)
+                'NGN',
+                $userEmail,
+                $callbackUrl,
+                $paymentReference
+            );
+
+            Log::info('Nomba payment result', $paymentResult);
+
+            if ($paymentResult['status']) {
+                // Update payment record with gateway reference
+                $payment->update([
+                    'gateway_reference' => $paymentResult['orderReference'],
+                    'gateway_response' => $paymentResult,
+                ]);
+
+                DB::commit();
+
+                Log::info('Redirecting to Nomba checkout', [
+                    'checkoutLink' => $paymentResult['checkoutLink']
+                ]);
+
+                // Redirect to Nomba checkout
+                return redirect($paymentResult['checkoutLink']);
+
+            } else {
+                // Payment initiation failed
+                DB::rollBack();
+
+                Log::error('Nomba payment initiation failed', [
+                    'tenant_id' => $tenant->id,
+                    'plan_id' => $plan->id,
+                    'amount' => $amount,
+                    'error' => $paymentResult['message'] ?? 'Unknown error',
+                    'full_result' => $paymentResult
+                ]);
+
+                return back()->with('error', 'Failed to initiate payment: ' . ($paymentResult['message'] ?? 'Payment service unavailable'));
+            }
 
         } catch (\Exception $e) {
             DB::rollBack();
             Log::error('Subscription upgrade failed', [
                 'tenant_id' => $tenant->id,
                 'plan_id' => $plan->id,
-                'error' => $e->getMessage()
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
             ]);
 
             return back()->with('error', 'Failed to process upgrade. Please try again.');
@@ -120,9 +225,9 @@ class SubscriptionController extends Controller
     /**
      * Show downgrade form
      */
-    public function downgrade(Plan $plan)
+    public function downgrade($tenant, Plan $plan)
     {
-        $tenant = tenant();
+        $tenant = tenant(); // Use the tenant() helper instead of the route parameter
         $currentPlan = $tenant->plan;
 
         return view('tenant.subscription.downgrade', compact(
@@ -135,14 +240,14 @@ class SubscriptionController extends Controller
     /**
      * Process downgrade to a lower plan
      */
-    public function processDowngrade(Request $request, Plan $plan)
+    public function processDowngrade(Request $request, $tenant, Plan $plan)
     {
         $request->validate([
             'billing_cycle' => 'required|in:monthly,yearly',
             'reason' => 'nullable|string|max:500',
         ]);
 
-        $tenant = tenant();
+        $tenant = tenant(); // Use the tenant() helper instead of the route parameter
         $currentPlan = $tenant->plan;
 
         try {
@@ -151,16 +256,16 @@ class SubscriptionController extends Controller
             // Create a subscription record for the downgrade
             $subscription = $tenant->subscriptions()->create([
                 'plan_id' => $plan->id,
+                'plan' => $plan->slug, // Add this for backward compatibility
                 'billing_cycle' => $request->billing_cycle,
                 'amount' => $request->billing_cycle === 'yearly' ? $plan->yearly_price : $plan->monthly_price,
+                'currency' => 'NGN',
                 'status' => 'scheduled',
-                'starts_at' => $tenant->trial_ends_at ?? now()->addMonth(), // Start after current period
-                'ends_at' => $request->billing_cycle === 'yearly' ?
-                    ($tenant->trial_ends_at ?? now()->addMonth())->addYear() :
-                    ($tenant->trial_ends_at ?? now()->addMonth())->addMonth(),
+                'starts_at' => now(),
+                'ends_at' => $request->billing_cycle === 'yearly' ? now()->addYear() : now()->addMonth(),
                 'metadata' => [
-                    'downgrade_reason' => $request->reason,
-                    'previous_plan_id' => $currentPlan->id,
+                    'downgrade_from' => $currentPlan?->id,
+                    'reason' => $request->reason,
                     'scheduled_at' => now(),
                 ]
             ]);
@@ -213,12 +318,15 @@ class SubscriptionController extends Controller
 
             // Create a cancellation record in subscriptions
             $subscription = $tenant->subscriptions()->create([
-                'plan_id' => $tenant->plan_id,
-                'billing_cycle' => 'cancelled',
+                'plan_id' => $currentPlan?->id,
+                'plan' => $currentPlan?->slug, // Add this for backward compatibility
+                'billing_cycle' => 'monthly', // Default for cancellation record
                 'amount' => 0,
+                'currency' => 'NGN',
                 'status' => 'cancelled',
                 'starts_at' => now(),
-                'ends_at' => $tenant->trial_ends_at ?? now(),
+                'ends_at' => now(),
+                'cancelled_at' => now(),
                 'metadata' => [
                     'cancellation_reason' => $request->reason,
                     'feedback' => $request->feedback,
@@ -345,5 +453,80 @@ class SubscriptionController extends Controller
         ]);
 
         return response()->json(['status' => 'received']);
+    }
+
+    /**
+     * Handle payment callback from Nomba
+     */
+    public function paymentCallback(Request $request, $tenantSlug, $paymentId)
+    {
+        try {
+            $payment = SubscriptionPayment::findOrFail($paymentId);
+            $tenant = tenant();
+
+            // Verify payment belongs to current tenant
+            if ($payment->tenant_id !== $tenant->id) {
+                abort(403, 'Unauthorized access to payment record');
+            }
+
+            // Initialize payment helper
+            $paymentHelper = new PaymentHelper();
+
+            // Verify payment with Nomba
+            $verificationResult = $paymentHelper->verifyPayment($payment->gateway_reference);
+
+            if ($verificationResult['status'] && $verificationResult['payment_status'] === 'successful') {
+                DB::beginTransaction();
+
+                // Update payment record
+                $payment->update([
+                    'status' => 'successful',
+                    'paid_at' => now(),
+                    'gateway_response' => $verificationResult['response'],
+                ]);
+
+                // Update subscription status
+                $subscription = $payment->subscription;
+                $subscription->update(['status' => 'active']);
+
+                // Upgrade tenant to the new plan
+                $plan = $subscription->plan;
+                $tenant->upgradeToPaid($plan, $subscription->billing_cycle);
+
+                DB::commit();
+
+                // Redirect to success page
+                return redirect()->route('tenant.subscription.payment.success', [
+                    'tenant' => $tenant->slug,
+                    'payment' => $payment->id
+                ])->with('success', 'Payment successful! You have been upgraded to ' . $plan->name . ' plan.');
+
+            } else {
+                // Payment failed or pending
+                DB::beginTransaction();
+
+                $payment->update([
+                    'status' => 'failed',
+                    'gateway_response' => $verificationResult['response'] ?? null,
+                ]);
+
+                $payment->subscription->update(['status' => 'failed']);
+
+                DB::commit();
+
+                return redirect()->route('tenant.subscription.plans', $tenant->slug)
+                    ->with('error', 'Payment was not successful. Please try again.');
+            }
+
+        } catch (\Exception $e) {
+            Log::error('Payment callback processing failed', [
+                'payment_id' => $paymentId,
+                'tenant_slug' => $tenantSlug,
+                'error' => $e->getMessage()
+            ]);
+
+            return redirect()->route('tenant.subscription.plans', tenant()->slug)
+                ->with('error', 'An error occurred while processing your payment. Please contact support.');
+        }
     }
 }
