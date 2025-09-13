@@ -379,13 +379,16 @@ class SubscriptionController extends Controller
     /**
      * Display invoice for a payment
      */
-    public function invoice(SubscriptionPayment $payment)
+    public function invoice($tenant, SubscriptionPayment $payment)
     {
-        $tenant = tenant();
+        $tenant = tenant(); // Use the tenant helper instead of the route parameter
 
         if ($payment->tenant_id !== $tenant->id) {
             abort(403);
         }
+
+        // Load the subscription and plan relationships
+        $payment->load(['subscription.plan']);
 
         return view('tenant.subscription.invoice', compact(
             'tenant',
@@ -396,13 +399,16 @@ class SubscriptionController extends Controller
     /**
      * Download invoice PDF
      */
-    public function downloadInvoice(SubscriptionPayment $payment)
+    public function downloadInvoice($tenant, SubscriptionPayment $payment)
     {
-        $tenant = tenant();
+        $tenant = tenant(); // Use the tenant helper instead of the route parameter
 
         if ($payment->tenant_id !== $tenant->id) {
             abort(403);
         }
+
+        // Load the subscription and plan relationships
+        $payment->load(['subscription.plan']);
 
         // In real implementation, generate PDF
         // For now, redirect to invoice view
@@ -487,10 +493,27 @@ class SubscriptionController extends Controller
 
                 // Update subscription status
                 $subscription = $payment->subscription;
+
+                Log::info('Subscription details before update', [
+                    'subscription_id' => $subscription->id,
+                    'plan_id' => $subscription->plan_id,
+                    'plan_slug' => $subscription->plan,
+                    'billing_cycle' => $subscription->billing_cycle
+                ]);
+
                 $subscription->update(['status' => 'active']);
 
                 // Upgrade tenant to the new plan
-                $plan = $subscription->plan;
+                // Load the plan relationship to ensure we have the Plan model
+                $plan = Plan::findOrFail($subscription->plan_id);
+
+                Log::info('About to call upgradeToPaid', [
+                    'plan_id' => $plan->id,
+                    'plan_name' => $plan->name,
+                    'billing_cycle' => $subscription->billing_cycle,
+                    'tenant_id' => $tenant->id
+                ]);
+
                 $tenant->upgradeToPaid($plan, $subscription->billing_cycle);
 
                 DB::commit();

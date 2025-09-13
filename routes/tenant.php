@@ -32,6 +32,7 @@ use App\Models\Tenant;
 use App\Models\Tenant\Role;
 use App\Models\Tenant\Permission;
 use App\Models\Tenant\Team;
+use App\Models\SubscriptionPayment;
 use App\Http\Controllers\Tenant\Accounting\LedgerAccountController;
 use App\Http\Controllers\Auth\SocialAuthController;
 
@@ -67,6 +68,11 @@ Route::bind('tenant', function ($value) {
 // Route model binding for plan
 Route::bind('plan', function ($value) {
     return \App\Models\Plan::findOrFail($value);
+});
+
+// Route model binding for subscription payment
+Route::bind('payment', function ($value) {
+    return SubscriptionPayment::findOrFail($value);
 });
 
 // Route model bindings for admin management
