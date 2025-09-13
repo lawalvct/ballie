@@ -628,6 +628,8 @@ Route::prefix('ledger-accounts')->name('ledger-accounts.')->group(function () {
         Route::prefix('subscription')->name('tenant.subscription.')->group(function () {
             Route::get('/', [SubscriptionController::class, 'index'])->name('index');
             Route::get('/plans', [SubscriptionController::class, 'plans'])->name('plans');
+            Route::get('/renew', [SubscriptionController::class, 'renew'])->name('renew');
+            Route::post('/renew', [SubscriptionController::class, 'processRenewal'])->name('renew.process');
             Route::get('/upgrade/{plan}', [SubscriptionController::class, 'upgrade'])->name('upgrade');
             Route::post('/upgrade/{plan}', [SubscriptionController::class, 'processUpgrade'])->name('upgrade.process');
             Route::get('/downgrade/{plan}', [SubscriptionController::class, 'downgrade'])->name('downgrade');

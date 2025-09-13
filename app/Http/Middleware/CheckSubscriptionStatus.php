@@ -45,7 +45,7 @@ class CheckSubscriptionStatus
 
             // Redirect to subscription renewal page
             return redirect()
-                ->route('tenant.subscription.index', ['tenant' => $tenant->slug])
+                ->route('tenant.subscription.renew', ['tenant' => $tenant->slug])
                 ->with('warning', 'Your subscription has expired. Please renew to continue using our services.');
         }
 

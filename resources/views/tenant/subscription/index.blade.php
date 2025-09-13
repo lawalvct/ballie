@@ -23,6 +23,29 @@
     <!-- Current Subscription -->
     @if($currentPlan)
     <div class="bg-gradient-to-r from-blue-500 to-purple-600 rounded-xl text-white p-6">
+        <!-- Expired Subscription Alert -->
+        @if($tenant->hasExpiredSubscription() || $tenant->subscription_status === 'expired')
+        <div class="bg-red-500 bg-opacity-20 border border-red-300 rounded-lg p-4 mb-6">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center">
+                    <svg class="w-6 h-6 text-red-200 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z"></path>
+                    </svg>
+                    <div>
+                        <div class="font-semibold text-red-100">Subscription Expired</div>
+                        <div class="text-red-200 text-sm">
+                            Your subscription expired on {{ $tenant->subscription_ends_at ? $tenant->subscription_ends_at->format('M j, Y') : 'N/A' }}
+                        </div>
+                    </div>
+                </div>
+                <a href="{{ route('tenant.subscription.renew', tenant()->slug) }}"
+                   class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg font-medium transition-colors">
+                    Renew Now
+                </a>
+            </div>
+        </div>
+        @endif
+
         <div class="flex items-center justify-between">
             <div>
                 <h2 class="text-xl font-semibold">Current Plan</h2>
@@ -120,8 +143,22 @@
 
     <!-- Quick Actions -->
     <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <!-- Renew/Upgrade Card -->
         <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
             <div class="text-center">
+                @if($tenant->hasExpiredSubscription() || $tenant->subscription_status === 'expired')
+                <div class="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <svg class="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+                    </svg>
+                </div>
+                <h3 class="font-semibold text-gray-900">Renew Subscription</h3>
+                <p class="text-gray-600 text-sm mt-1">Renew your {{ $currentPlan->name }} plan</p>
+                <a href="{{ route('tenant.subscription.renew', tenant()->slug) }}"
+                   class="inline-block mt-3 text-red-600 hover:text-red-700 text-sm font-medium">
+                    Renew Now →
+                </a>
+                @else
                 <div class="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
                     <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path>
@@ -133,6 +170,7 @@
                    class="inline-block mt-3 text-green-600 hover:text-green-700 text-sm font-medium">
                     View Plans →
                 </a>
+                @endif
             </div>
         </div>
 

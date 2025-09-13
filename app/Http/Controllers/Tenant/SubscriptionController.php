@@ -479,12 +479,29 @@ class SubscriptionController extends Controller
      */
     public function paymentCallback(Request $request, $tenantSlug, $paymentId)
     {
+        Log::info('Payment callback started', [
+            'tenant_slug' => $tenantSlug,
+            'payment_id' => $paymentId,
+            'request_data' => $request->all()
+        ]);
+
         try {
             $payment = SubscriptionPayment::findOrFail($paymentId);
             $tenant = tenant();
 
+            Log::info('Payment callback - loaded data', [
+                'payment_id' => $payment->id,
+                'payment_tenant_id' => $payment->tenant_id,
+                'current_tenant_id' => $tenant ? $tenant->id : null,
+                'current_tenant_slug' => $tenant ? $tenant->slug : null
+            ]);
+
             // Verify payment belongs to current tenant
-            if ($payment->tenant_id !== $tenant->id) {
+            if (!$tenant || $payment->tenant_id !== $tenant->id) {
+                Log::error('Payment callback - tenant mismatch', [
+                    'payment_tenant_id' => $payment->tenant_id,
+                    'current_tenant_id' => $tenant ? $tenant->id : null
+                ]);
                 abort(403, 'Unauthorized access to payment record');
             }
 
@@ -516,18 +533,51 @@ class SubscriptionController extends Controller
 
                 $subscription->update(['status' => 'active']);
 
-                // Upgrade tenant to the new plan
                 // Load the plan relationship to ensure we have the Plan model
                 $plan = Plan::findOrFail($subscription->plan_id);
 
-                Log::info('About to call upgradeToPaid', [
+                Log::info('About to process subscription update', [
                     'plan_id' => $plan->id,
                     'plan_name' => $plan->name,
                     'billing_cycle' => $subscription->billing_cycle,
-                    'tenant_id' => $tenant->id
+                    'tenant_id' => $tenant->id,
+                    'subscription_metadata' => $subscription->metadata
                 ]);
 
-                $tenant->upgradeToPaid($plan, $subscription->billing_cycle);
+                // Check if this is a renewal (check metadata or payment reference)
+                $isRenewal = (
+                    isset($subscription->metadata['renewal']) && $subscription->metadata['renewal']
+                ) || str_starts_with($payment->payment_reference, 'REN_');
+
+                if ($isRenewal) {
+                    // For renewals, just update the tenant's subscription dates
+                    $tenant->update([
+                        'subscription_status' => 'active',
+                        'subscription_starts_at' => now(),
+                        'subscription_ends_at' => $subscription->ends_at,
+                        'billing_cycle' => $subscription->billing_cycle,
+                    ]);
+
+                    Log::info('Subscription renewed successfully', [
+                        'tenant_id' => $tenant->id,
+                        'plan_name' => $plan->name,
+                        'billing_cycle' => $subscription->billing_cycle,
+                        'new_end_date' => $subscription->ends_at
+                    ]);
+
+                    $successMessage = 'Payment successful! Your ' . $plan->name . ' subscription has been renewed.';
+                } else {
+                    // For upgrades/new subscriptions, use the upgradeToPaid method
+                    $tenant->upgradeToPaid($plan, $subscription->billing_cycle);
+
+                    Log::info('Subscription upgraded successfully', [
+                        'tenant_id' => $tenant->id,
+                        'plan_name' => $plan->name,
+                        'billing_cycle' => $subscription->billing_cycle
+                    ]);
+
+                    $successMessage = 'Payment successful! You have been upgraded to ' . $plan->name . ' plan.';
+                }
 
                 DB::commit();
 
@@ -535,11 +585,11 @@ class SubscriptionController extends Controller
                 return redirect()->route('tenant.subscription.payment.success', [
                     'tenant' => $tenant->slug,
                     'payment' => $payment->id
-                ])->with('success', 'Payment successful! You have been upgraded to ' . $plan->name . ' plan.');
+                ])->with('success', $successMessage);
 
             } else {
                 // Payment failed or pending
-                DB::beginTransaction();
+                DB::rollBack();
 
                 $payment->update([
                     'status' => 'failed',
@@ -548,21 +598,194 @@ class SubscriptionController extends Controller
 
                 $payment->subscription->update(['status' => 'failed']);
 
-                DB::commit();
-
                 return redirect()->route('tenant.subscription.plans', $tenant->slug)
                     ->with('error', 'Payment was not successful. Please try again.');
             }
 
         } catch (\Exception $e) {
+            DB::rollBack();
             Log::error('Payment callback processing failed', [
                 'payment_id' => $paymentId,
                 'tenant_slug' => $tenantSlug,
-                'error' => $e->getMessage()
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+                'request_data' => $request->all()
             ]);
 
             return redirect()->route('tenant.subscription.plans', tenant()->slug)
                 ->with('error', 'An error occurred while processing your payment. Please contact support.');
+        }
+    }
+
+    /**
+     * Show renewal form for current plan
+     */
+    public function renew()
+    {
+        $tenant = tenant();
+        $currentPlan = $tenant->plan;
+
+        if (!$currentPlan) {
+            return redirect()->route('tenant.subscription.plans', tenant()->slug)
+                ->with('error', 'No current plan to renew. Please choose a plan.');
+        }
+
+        return view('tenant.subscription.renew', compact(
+            'tenant',
+            'currentPlan'
+        ));
+    }
+
+    /**
+     * Process renewal for current plan
+     */
+    public function processRenewal(Request $request)
+    {
+        $request->validate([
+            'billing_cycle' => 'required|in:monthly,yearly',
+        ]);
+
+        $tenant = tenant();
+        $currentPlan = $tenant->plan;
+
+        if (!$currentPlan) {
+            return redirect()->route('tenant.subscription.plans', tenant()->slug)
+                ->with('error', 'No current plan to renew. Please choose a plan.');
+        }
+
+        // Calculate amount based on billing cycle
+        $amount = $request->billing_cycle === 'yearly' ? $currentPlan->yearly_price : $currentPlan->monthly_price;
+
+        // Debug logging
+        Log::info('ProcessRenewal started', [
+            'tenant_id' => $tenant->id,
+            'plan_id' => $currentPlan->id,
+            'billing_cycle' => $request->billing_cycle,
+            'amount' => $amount
+        ]);
+
+        try {
+            DB::beginTransaction();
+
+            // Create a pending subscription record for renewal
+            $subscription = $tenant->subscriptions()->create([
+                'plan_id' => $currentPlan->id,
+                'plan' => $currentPlan->slug,
+                'billing_cycle' => $request->billing_cycle,
+                'amount' => $amount,
+                'currency' => 'NGN',
+                'status' => 'pending',
+                'starts_at' => now(),
+                'ends_at' => $request->billing_cycle === 'yearly' ? now()->addYear() : now()->addMonth(),
+                'metadata' => [
+                    'renewal' => true,
+                    'initiated_at' => now(),
+                ]
+            ]);
+
+            // Generate unique payment reference
+            $paymentReference = 'REN_' . strtoupper(Str::random(8)) . '_' . $tenant->id;
+
+            // Create pending payment record
+            $payment = $tenant->subscriptionPayments()->create([
+                'subscription_id' => $subscription->id,
+                'amount' => $amount,
+                'currency' => 'NGN',
+                'status' => 'pending',
+                'payment_method' => 'nomba',
+                'payment_reference' => $paymentReference,
+                'gateway_reference' => null,
+            ]);
+
+            Log::info('Renewal payment record created', [
+                'payment_id' => $payment->id,
+                'payment_reference' => $paymentReference
+            ]);
+
+            // Initialize payment helper
+            $paymentHelper = new PaymentHelper();
+
+            // Check if Nomba credentials are configured
+            $tokenData = $paymentHelper->nombaAccessToken();
+            if (!$tokenData) {
+                DB::rollBack();
+                Log::error('Nomba credentials not configured for renewal', [
+                    'tenant_id' => $tenant->id,
+                    'plan_id' => $currentPlan->id
+                ]);
+                return back()->with('error', 'Payment gateway not configured. Please contact administrator.');
+            }
+
+            Log::info('Nomba payment processing for renewal', [
+                'payment_reference' => $paymentReference,
+                'amount' => $amount,
+                'currency' => 'NGN',
+                'tenant_email' => $tenant->email ?? 'noreply@' . $tenant->slug . '.com',
+                'callback_url' => route('tenant.subscription.payment.callback', [
+                    'tenant' => $tenant->slug,
+                    'payment' => $payment->id
+                ])
+            ]);
+
+            // Create payment link
+            $paymentLinkResponse = $paymentHelper->processPayment(
+                $amount,
+                'NGN',
+                $tenant->email ?? 'noreply@' . $tenant->slug . '.com',
+                route('tenant.subscription.payment.callback', [
+                    'tenant' => $tenant->slug,
+                    'payment' => $payment->id
+                ]),
+                $paymentReference
+            );
+
+            Log::info('Nomba payment response for renewal', [
+                'payment_reference' => $paymentReference,
+                'response' => $paymentLinkResponse
+            ]);
+
+            if (!$paymentLinkResponse || !$paymentLinkResponse['status'] || !isset($paymentLinkResponse['checkoutLink'])) {
+                DB::rollBack();
+                Log::error('Failed to create Nomba payment link for renewal', [
+                    'response' => $paymentLinkResponse,
+                    'payment_reference' => $paymentReference
+                ]);
+
+                $errorMessage = 'Failed to create payment link. Please try again.';
+                if (isset($paymentLinkResponse['message'])) {
+                    $errorMessage = $paymentLinkResponse['message'];
+                }
+
+                return back()->with('error', $errorMessage);
+            }
+
+            // Update payment with gateway reference
+            $payment->update([
+                'gateway_reference' => $paymentLinkResponse['orderReference'] ?? $paymentReference,
+                'gateway_response' => $paymentLinkResponse,
+            ]);
+
+            DB::commit();
+
+            Log::info('Renewal payment link created successfully', [
+                'payment_id' => $payment->id,
+                'checkout_url' => $paymentLinkResponse['checkoutLink'],
+                'gateway_reference' => $paymentLinkResponse['orderReference'] ?? $paymentReference
+            ]);
+
+            // Redirect to Nomba payment page
+            return redirect()->away($paymentLinkResponse['checkoutLink']);
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('Renewal process failed', [
+                'tenant_id' => $tenant->id,
+                'plan_id' => $currentPlan->id,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+
+            return back()->with('error', 'An error occurred while processing your renewal. Please try again.');
         }
     }
 }

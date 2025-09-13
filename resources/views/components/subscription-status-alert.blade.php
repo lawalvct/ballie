@@ -18,7 +18,7 @@
             </div>
             <div class="mt-4">
                 <div class="flex space-x-2">
-                    <a href="{{ route('tenant.subscription.plans', ['tenant' => $tenant->slug]) }}"
+                     <a href="{{ route('tenant.subscription.renew', tenant()->slug) }}"
                        class="bg-red-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-red-700 transition-colors">
                         Renew Subscription
                     </a>
