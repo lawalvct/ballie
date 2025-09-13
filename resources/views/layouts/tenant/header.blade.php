@@ -32,6 +32,92 @@
             </div>
         </div>
 
+        <!-- Calculator Widget -->
+        <div class="relative" x-data="calculatorWidget()">
+            <button @click="toggleCalculator()"
+                    class="p-2 rounded-xl hover:bg-gray-100 transition-colors duration-200 relative">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                </svg>
+                <span x-show="isOpen" class="absolute -top-1 -right-1 h-3 w-3 bg-blue-500 rounded-full"></span>
+            </button>
+
+            <!-- Calculator Popup -->
+            <div x-show="isOpen"
+                 x-transition:enter="transition ease-out duration-200"
+                 x-transition:enter-start="opacity-0 scale-95 transform translate-y-2"
+                 x-transition:enter-end="opacity-100 scale-100 transform translate-y-0"
+                 x-transition:leave="transition ease-in duration-150"
+                 x-transition:leave-start="opacity-100 scale-100 transform translate-y-0"
+                 x-transition:leave-end="opacity-0 scale-95 transform translate-y-2"
+                 @click.outside="closeCalculator()"
+                 class="absolute right-0 mt-2 w-72 bg-white shadow-2xl rounded-xl border border-gray-200 p-4 z-50">
+
+                <!-- Calculator Header -->
+                <div class="flex items-center justify-between mb-3">
+                    <h3 class="font-semibold text-gray-800 text-sm">Calculator</h3>
+                    <div class="flex items-center space-x-2">
+                        <button @click="clearAll()" class="text-xs text-red-500 hover:text-red-700 transition-colors">Clear</button>
+                        <button @click="closeCalculator()" class="text-gray-400 hover:text-gray-600 transition-colors">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Display -->
+                <div class="mb-3">
+                    <input x-model="expression"
+                           @keyup.enter="calculate()"
+                           class="w-full border border-gray-300 rounded-lg px-3 py-2 text-right font-mono text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                           placeholder="Enter calculation..."/>
+                    <div class="text-right text-xl font-bold text-gray-800 mt-2 min-h-[28px]" x-text="result || '0'"></div>
+                </div>
+
+                <!-- Calculator Buttons -->
+                <div class="grid grid-cols-4 gap-2">
+                    <!-- Row 1 -->
+                    <button @click="clearAll()" class="calc-btn bg-red-500 hover:bg-red-600 text-white text-xs">C</button>
+                    <button @click="deleteLast()" class="calc-btn bg-orange-500 hover:bg-orange-600 text-white text-xs">⌫</button>
+                    <button @click="addToExpression('%')" class="calc-btn bg-gray-500 hover:bg-gray-600 text-white text-xs">%</button>
+                    <button @click="addToExpression('/')" class="calc-btn bg-blue-500 hover:bg-blue-600 text-white text-xs">÷</button>
+
+                    <!-- Row 2 -->
+                    <button @click="addToExpression('7')" class="calc-btn">7</button>
+                    <button @click="addToExpression('8')" class="calc-btn">8</button>
+                    <button @click="addToExpression('9')" class="calc-btn">9</button>
+                    <button @click="addToExpression('*')" class="calc-btn bg-blue-500 hover:bg-blue-600 text-white text-xs">×</button>
+
+                    <!-- Row 3 -->
+                    <button @click="addToExpression('4')" class="calc-btn">4</button>
+                    <button @click="addToExpression('5')" class="calc-btn">5</button>
+                    <button @click="addToExpression('6')" class="calc-btn">6</button>
+                    <button @click="addToExpression('-')" class="calc-btn bg-blue-500 hover:bg-blue-600 text-white text-xs">−</button>
+
+                    <!-- Row 4 -->
+                    <button @click="addToExpression('1')" class="calc-btn">1</button>
+                    <button @click="addToExpression('2')" class="calc-btn">2</button>
+                    <button @click="addToExpression('3')" class="calc-btn">3</button>
+                    <button @click="addToExpression('+')" class="calc-btn bg-blue-500 hover:bg-blue-600 text-white text-xs row-span-2">+</button>
+
+                    <!-- Row 5 -->
+                    <button @click="addToExpression('0')" class="calc-btn col-span-2">0</button>
+                    <button @click="addToExpression('.')" class="calc-btn">.</button>
+                    <button @click="calculate()" class="calc-btn bg-green-500 hover:bg-green-600 text-white text-xs">=</button>
+                </div>
+
+                <!-- Quick Functions -->
+                <div class="mt-3 pt-3 border-t border-gray-200">
+                    <div class="flex flex-wrap gap-1">
+                        <button @click="addVat()" class="px-2 py-1 text-xs bg-emerald-100 text-emerald-700 rounded hover:bg-emerald-200 transition-colors">+VAT 7.5%</button>
+                        <button @click="removeVat()" class="px-2 py-1 text-xs bg-orange-100 text-orange-700 rounded hover:bg-orange-200 transition-colors">-VAT 7.5%</button>
+                        <button @click="copyResult()" class="px-2 py-1 text-xs bg-blue-100 text-blue-700 rounded hover:bg-blue-200 transition-colors">Copy</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <!-- Notifications -->
         <button class="relative p-2 rounded-xl hover:bg-gray-100 transition-colors duration-200">
             <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -165,18 +251,151 @@
 }
 
 @keyframes fadeIn {
-    from {
-        opacity: 0;
-        transform: translateY(-10px);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
+    from { opacity: 0; transform: translateY(-10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* Calculator Styles */
+.calc-btn {
+    @apply py-2 px-1 rounded-lg font-medium text-sm bg-gray-100 hover:bg-gray-200 transition-colors duration-150 active:scale-95;
+}
+
+.calc-btn:active {
+    transform: scale(0.95);
 }
 </style>
 
 <script>
+// Calculator Widget Component - Must be global for Alpine.js
+function calculatorWidget() {
+    return {
+        isOpen: false,
+        expression: '',
+        result: '',
+        lastResult: '',
+
+        toggleCalculator() {
+            this.isOpen = !this.isOpen;
+        },
+
+        closeCalculator() {
+            this.isOpen = false;
+        },
+
+        addToExpression(value) {
+            if (this.result && !this.expression) {
+                // If we just calculated and user enters an operator, use the result
+                if (['+', '-', '*', '/', '%'].includes(value)) {
+                    this.expression = this.result + value;
+                    this.result = '';
+                    return;
+                }
+                // If user enters a number after calculation, start fresh
+                if (!isNaN(value)) {
+                    this.expression = value;
+                    this.result = '';
+                    return;
+                }
+            }
+            this.expression += value;
+        },
+
+        deleteLast() {
+            this.expression = this.expression.slice(0, -1);
+            if (!this.expression) {
+                this.result = '';
+            }
+        },
+
+        clearAll() {
+            this.expression = '';
+            this.result = '';
+        },
+
+        calculate() {
+            if (!this.expression) return;
+
+            try {
+                // Replace display operators with JS operators
+                let expr = this.expression
+                    .replace(/×/g, '*')
+                    .replace(/÷/g, '/')
+                    .replace(/−/g, '-');
+
+                // Handle percentage calculations
+                expr = expr.replace(/(\d+(?:\.\d+)?)%/g, '($1/100)');
+                
+                // Security: only allow numbers, operators, parentheses, and decimal points
+                if (!/^[0-9+\-*\/().%\s]+$/.test(expr)) {
+                    throw new Error('Invalid characters in expression');
+                }
+
+                // Use Function constructor for safe evaluation (better than eval)
+                const result = new Function('return ' + expr)();
+                
+                if (!isFinite(result)) {
+                    throw new Error('Invalid calculation');
+                }
+
+                this.result = this.formatNumber(result);
+                this.lastResult = result;
+            } catch (error) {
+                this.result = 'Error';
+                console.error('Calculation error:', error);
+            }
+        },
+
+        formatNumber(num) {
+            // Format numbers with appropriate decimal places
+            if (num % 1 === 0) {
+                return num.toString();
+            } else {
+                return parseFloat(num.toFixed(8)).toString();
+            }
+        },
+
+        addVat() {
+            if (this.result) {
+                const currentValue = parseFloat(this.result);
+                const withVat = currentValue * 1.075;
+                this.result = this.formatNumber(withVat);
+                this.expression = `${currentValue} * 1.075`;
+            } else if (this.expression) {
+                this.expression = `(${this.expression}) * 1.075`;
+                this.calculate();
+            }
+        },
+
+        removeVat() {
+            if (this.result) {
+                const currentValue = parseFloat(this.result);
+                const withoutVat = currentValue / 1.075;
+                this.result = this.formatNumber(withoutVat);
+                this.expression = `${currentValue} / 1.075`;
+            } else if (this.expression) {
+                this.expression = `(${this.expression}) / 1.075`;
+                this.calculate();
+            }
+        },
+
+        async copyResult() {
+            if (this.result && this.result !== 'Error') {
+                try {
+                    await navigator.clipboard.writeText(this.result);
+                    // Show brief success feedback
+                    const originalText = this.result;
+                    this.result = 'Copied!';
+                    setTimeout(() => {
+                        this.result = originalText;
+                    }, 1000);
+                } catch (err) {
+                    console.error('Failed to copy:', err);
+                }
+            }
+        }
+    }
+}
+
 // Header Ledger Search Autocomplete
 document.addEventListener('DOMContentLoaded', function() {
     const searchInput = document.getElementById('header-ledger-search');
@@ -376,6 +595,9 @@ document.addEventListener('DOMContentLoaded', function() {
             });
         });
     }
+
+    function setActiveHeaderItem(items, index) {/* Lines 470-475 omitted */}
+});
 
     function setActiveHeaderItem(items, index) {
         items.forEach(item => item.classList.remove('active'));
