@@ -344,6 +344,7 @@ Route::prefix('ledger-accounts')->name('ledger-accounts.')->group(function () {
         Route::prefix('crm')->name('tenant.crm.')->group(function () {
             // Customers
             Route::resource('customers', CustomerController::class);
+            Route::get('customers/statements', [CustomerController::class, 'statements'])->name('customers.statements');
             Route::get('customers/export/all', [CustomerController::class, 'export'])->name('customers.export');
             Route::get('customers/export/template', [CustomerController::class, 'exportTemplate'])->name('customers.export.template');
             Route::post('customers/import', [CustomerController::class, 'import'])->name('customers.import');
@@ -366,6 +367,11 @@ Route::prefix('ledger-accounts')->name('ledger-accounts.')->group(function () {
         // POS - Point of Sale System
         Route::prefix('pos')->name('tenant.pos.')->group(function () {
             Route::get('/', [PosController::class, 'index'])->name('index');
+            Route::post('/', [PosController::class, 'store'])->name('store');
+            Route::get('/register-session', [PosController::class, 'registerSession'])->name('register-session');
+            Route::post('/open-session', [PosController::class, 'openSession'])->name('open-session');
+            Route::get('/close-session', [PosController::class, 'closeSession'])->name('close-session');
+            Route::post('/close-session', [PosController::class, 'storeCloseSession'])->name('store-close-session');
             Route::get('/sale', [PosController::class, 'sale'])->name('sale');
             Route::post('/sale', [PosController::class, 'processSale'])->name('sale.process');
             Route::get('/transactions', [PosController::class, 'transactions'])->name('transactions');
@@ -452,6 +458,8 @@ Route::prefix('ledger-accounts')->name('ledger-accounts.')->group(function () {
             // Payroll Reports
             Route::prefix('reports')->name('reports.')->group(function () {
                 Route::get('/summary', [PayrollController::class, 'payrollSummary'])->name('summary');
+                Route::get('/detailed', [PayrollController::class, 'detailedReport'])->name('detailed');
+                Route::get('/tax-report', [PayrollController::class, 'taxReport'])->name('tax-report');
                 Route::get('/tax-summary', [PayrollController::class, 'taxSummary'])->name('tax-summary');
                 Route::get('/employee-summary', [PayrollController::class, 'employeeSummary'])->name('employee-summary');
                 Route::get('/bank-schedule', [PayrollController::class, 'bankSchedule'])->name('bank-schedule');
