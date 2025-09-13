@@ -78,6 +78,7 @@ class Kernel extends HttpKernel
 
         // Custom middleware aliases
         'tenant.context' => \App\Http\Middleware\TenantContext::class,
+        'subscription.check' => \App\Http\Middleware\CheckSubscriptionStatus::class,
         'super.admin' => \App\Http\Middleware\SuperAdminImpersonation::class,
         'check.onboarding' => \App\Http\Middleware\CheckOnboarding::class,
         'onboarding.completed' => \App\Http\Middleware\OnboardingCompleted::class,

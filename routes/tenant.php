@@ -120,8 +120,8 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/show-step', [OnboardingController::class, 'showStep'])->name('show-step');
     });
 
-    // Routes that require completed onboarding
-    Route::middleware(['onboarding.completed'])->group(function () {
+    // Routes that require completed onboarding and active subscription
+    Route::middleware(['onboarding.completed', 'subscription.check'])->group(function () {
         // Dashboard
         Route::get('/dashboard', [DashboardController::class, 'index'])->name('tenant.dashboard');
 
@@ -306,7 +306,325 @@ Route::prefix('ledger-accounts')->name('ledger-accounts.')->group(function () {
             Route::get('/cash-flow', [ReportsController::class, 'cashFlow'])->name('cash-flow');
         });
 
-        // Subscription & Plan Management
+        // Inventory Management
+        Route::prefix('inventory')->name('tenant.inventory.')->group(function () {
+            // Products
+            Route::resource('products', ProductController::class);
+            Route::get('products/export/all', [ProductController::class, 'export'])->name('products.export');
+            Route::get('products/export/template', [ProductController::class, 'exportTemplate'])->name('products.export.template');
+            Route::post('products/import', [ProductController::class, 'import'])->name('products.import');
+            Route::post('products/bulk', [ProductController::class, 'bulk'])->name('products.bulk');
+            Route::post('products/bulk-action', [ProductController::class, 'bulkAction'])->name('products.bulk-action');
+
+            // Product Categories
+            Route::resource('categories', ProductCategoryController::class);
+            Route::get('categories/export/all', [ProductCategoryController::class, 'export'])->name('categories.export');
+            Route::get('categories/export/template', [ProductCategoryController::class, 'exportTemplate'])->name('categories.export.template');
+            Route::post('categories/import', [ProductCategoryController::class, 'import'])->name('categories.import');
+            Route::post('categories/bulk', [ProductCategoryController::class, 'bulk'])->name('categories.bulk');
+            Route::post('categories/bulk-action', [ProductCategoryController::class, 'bulkAction'])->name('categories.bulk-action');
+
+            // Units
+            Route::resource('units', UnitController::class);
+            Route::get('units/export/all', [UnitController::class, 'export'])->name('units.export');
+            Route::get('units/export/template', [UnitController::class, 'exportTemplate'])->name('units.export.template');
+            Route::post('units/import', [UnitController::class, 'import'])->name('units.import');
+            Route::post('units/bulk', [UnitController::class, 'bulk'])->name('units.bulk');
+            Route::post('units/bulk-action', [UnitController::class, 'bulkAction'])->name('units.bulk-action');
+
+            // Main Inventory
+            Route::get('/', [InventoryController::class, 'index'])->name('index');
+            Route::get('reports', [InventoryController::class, 'reports'])->name('reports');
+            Route::get('movements', [InventoryController::class, 'movements'])->name('movements');
+            Route::post('adjust', [InventoryController::class, 'adjust'])->name('adjust');
+            Route::get('low-stock', [InventoryController::class, 'lowStock'])->name('low-stock');
+        });
+
+        // CRM - Customer & Vendor Management
+        Route::prefix('crm')->name('tenant.crm.')->group(function () {
+            // Customers
+            Route::resource('customers', CustomerController::class);
+            Route::get('customers/export/all', [CustomerController::class, 'export'])->name('customers.export');
+            Route::get('customers/export/template', [CustomerController::class, 'exportTemplate'])->name('customers.export.template');
+            Route::post('customers/import', [CustomerController::class, 'import'])->name('customers.import');
+            Route::post('customers/bulk', [CustomerController::class, 'bulk'])->name('customers.bulk');
+            Route::post('customers/bulk-action', [CustomerController::class, 'bulkAction'])->name('customers.bulk-action');
+
+            // Vendors
+            Route::resource('vendors', VendorController::class);
+            Route::get('vendors/export/all', [VendorController::class, 'export'])->name('vendors.export');
+            Route::get('vendors/export/template', [VendorController::class, 'exportTemplate'])->name('vendors.export.template');
+            Route::post('vendors/import', [VendorController::class, 'import'])->name('vendors.import');
+            Route::post('vendors/bulk', [VendorController::class, 'bulk'])->name('vendors.bulk');
+            Route::post('vendors/bulk-action', [VendorController::class, 'bulkAction'])->name('vendors.bulk-action');
+
+            // CRM Dashboard
+            Route::get('/', [CrmController::class, 'index'])->name('index');
+            Route::get('reports', [CrmController::class, 'reports'])->name('reports');
+        });
+
+        // POS - Point of Sale System
+        Route::prefix('pos')->name('tenant.pos.')->group(function () {
+            Route::get('/', [PosController::class, 'index'])->name('index');
+            Route::get('/sale', [PosController::class, 'sale'])->name('sale');
+            Route::post('/sale', [PosController::class, 'processSale'])->name('sale.process');
+            Route::get('/transactions', [PosController::class, 'transactions'])->name('transactions');
+            Route::get('/transaction/{transaction}', [PosController::class, 'showTransaction'])->name('transaction.show');
+            Route::get('/transaction/{transaction}/receipt', [PosController::class, 'receipt'])->name('transaction.receipt');
+            Route::get('/transaction/{transaction}/print', [PosController::class, 'printReceipt'])->name('transaction.print');
+            Route::post('/transaction/{transaction}/void', [PosController::class, 'voidTransaction'])->name('transaction.void');
+            Route::post('/transaction/{transaction}/refund', [PosController::class, 'refundTransaction'])->name('transaction.refund');
+
+            // POS Reports
+            Route::get('/reports', [PosController::class, 'reports'])->name('reports');
+            Route::get('/reports/daily-sales', [PosController::class, 'dailySalesReport'])->name('reports.daily-sales');
+            Route::get('/reports/monthly-sales', [PosController::class, 'monthlySalesReport'])->name('reports.monthly-sales');
+            Route::get('/reports/top-products', [PosController::class, 'topProductsReport'])->name('reports.top-products');
+        });
+
+        // Payroll Management Routes
+        Route::prefix('payroll')->name('tenant.payroll.')->group(function () {
+            Route::get('/', [PayrollController::class, 'index'])->name('index');
+
+            // Employees Management
+            Route::prefix('employees')->name('employees.')->group(function () {
+                Route::get('/', [PayrollController::class, 'employees'])->name('index');
+                Route::get('/create', [PayrollController::class, 'createEmployee'])->name('create');
+                Route::post('/', [PayrollController::class, 'storeEmployee'])->name('store');
+                Route::get('/{employee}', [PayrollController::class, 'showEmployee'])->name('show');
+                Route::get('/{employee}/edit', [PayrollController::class, 'editEmployee'])->name('edit');
+                Route::put('/{employee}', [PayrollController::class, 'updateEmployee'])->name('update');
+                Route::delete('/{employee}', [PayrollController::class, 'destroyEmployee'])->name('destroy');
+                Route::get('/{employee}/profile', [PayrollController::class, 'employeeProfile'])->name('profile');
+                Route::get('/{employee}/salary-history', [PayrollController::class, 'salaryHistory'])->name('salary-history');
+                Route::post('/{employee}/update-salary', [PayrollController::class, 'updateSalary'])->name('update-salary');
+                Route::get('/{employee}/export', [PayrollController::class, 'exportEmployee'])->name('export');
+                Route::post('/bulk-action', [PayrollController::class, 'bulkEmployeeAction'])->name('bulk-action');
+                Route::get('/{employee}/payslip', [PayrollController::class, 'generatePayslip'])->name('payslip');
+            });
+
+            // Departments
+            Route::prefix('departments')->name('departments.')->group(function () {
+                Route::get('/', [PayrollController::class, 'departments'])->name('index');
+                Route::get('/create', [PayrollController::class, 'createDepartment'])->name('create');
+                Route::post('/', [PayrollController::class, 'storeDepartment'])->name('store');
+                Route::get('/{department}', [PayrollController::class, 'showDepartment'])->name('show');
+                Route::get('/{department}/edit', [PayrollController::class, 'editDepartment'])->name('edit');
+                Route::put('/{department}', [PayrollController::class, 'updateDepartment'])->name('update');
+                Route::delete('/{department}', [PayrollController::class, 'destroyDepartment'])->name('destroy');
+            });
+
+            // Salary Components
+            Route::prefix('components')->name('components.')->group(function () {
+                Route::get('/', [PayrollController::class, 'components'])->name('index');
+                Route::get('/create', [PayrollController::class, 'createComponent'])->name('create');
+                Route::post('/', [PayrollController::class, 'storeComponent'])->name('store');
+                Route::get('/{component}', [PayrollController::class, 'showComponent'])->name('show');
+                Route::get('/{component}/edit', [PayrollController::class, 'editComponent'])->name('edit');
+                Route::put('/{component}', [PayrollController::class, 'updateComponent'])->name('update');
+                Route::delete('/{component}', [PayrollController::class, 'destroyComponent'])->name('destroy');
+            });
+
+            // Payroll Processing
+            Route::prefix('processing')->name('processing.')->group(function () {
+                Route::get('/', [PayrollController::class, 'processing'])->name('index');
+                Route::get('/create', [PayrollController::class, 'createPayroll'])->name('create');
+                Route::post('/', [PayrollController::class, 'processPayroll'])->name('process');
+                Route::get('/{period}', [PayrollController::class, 'showPayrollPeriod'])->name('show');
+                Route::get('/{period}/edit', [PayrollController::class, 'editPayrollPeriod'])->name('edit');
+                Route::put('/{period}', [PayrollController::class, 'updatePayrollPeriod'])->name('update');
+                Route::post('/{period}/finalize', [PayrollController::class, 'finalizePayroll'])->name('finalize');
+                Route::get('/{period}/export-tax-file', [PayrollController::class, 'exportTaxFile'])->name('export-tax-file');
+            });
+
+            // Loans Management
+            Route::prefix('loans')->name('loans.')->group(function () {
+                Route::get('/', [PayrollController::class, 'loans'])->name('index');
+                Route::get('/create', [PayrollController::class, 'createLoan'])->name('create');
+                Route::post('/', [PayrollController::class, 'storeLoan'])->name('store');
+                Route::get('/{loan}', [PayrollController::class, 'showLoan'])->name('show');
+                Route::get('/{loan}/edit', [PayrollController::class, 'editLoan'])->name('edit');
+                Route::put('/{loan}', [PayrollController::class, 'updateLoan'])->name('update');
+                Route::delete('/{loan}', [PayrollController::class, 'destroyLoan'])->name('destroy');
+                Route::post('/{loan}/approve', [PayrollController::class, 'approveLoan'])->name('approve');
+            });
+
+            // Payroll Reports
+            Route::prefix('reports')->name('reports.')->group(function () {
+                Route::get('/summary', [PayrollController::class, 'payrollSummary'])->name('summary');
+                Route::get('/tax-summary', [PayrollController::class, 'taxSummary'])->name('tax-summary');
+                Route::get('/employee-summary', [PayrollController::class, 'employeeSummary'])->name('employee-summary');
+                Route::get('/bank-schedule', [PayrollController::class, 'bankSchedule'])->name('bank-schedule');
+            });
+        });
+
+        // Admin Management Module
+        Route::prefix('admin')->name('tenant.admin.')->group(function () {
+            Route::get('/', [AdminController::class, 'index'])->name('index');
+
+            // Users & Admins Management
+            Route::prefix('users')->name('users.')->group(function () {
+                Route::get('/', [AdminController::class, 'users'])->name('index');
+                Route::get('/create', [AdminController::class, 'createUser'])->name('create');
+                Route::post('/', [AdminController::class, 'storeUser'])->name('store');
+                Route::get('/{user}', [AdminController::class, 'showUser'])->name('show');
+                Route::get('/{user}/edit', [AdminController::class, 'editUser'])->name('edit');
+                Route::put('/{user}', [AdminController::class, 'updateUser'])->name('update');
+                Route::delete('/{user}', [AdminController::class, 'destroyUser'])->name('destroy');
+                Route::post('/{user}/activate', [AdminController::class, 'activateUser'])->name('activate');
+                Route::post('/{user}/deactivate', [AdminController::class, 'deactivateUser'])->name('deactivate');
+                Route::post('/{user}/reset-password', [AdminController::class, 'resetUserPassword'])->name('reset-password');
+                Route::get('/{user}/login-as', [AdminController::class, 'loginAsUser'])->name('login-as');
+                Route::get('/export', [AdminController::class, 'exportUsers'])->name('export');
+                Route::post('/import', [AdminController::class, 'importUsers'])->name('import');
+                Route::post('/bulk-action', [AdminController::class, 'bulkUserAction'])->name('bulk-action');
+            });
+
+            // Roles & Permissions
+            Route::prefix('roles')->name('roles.')->group(function () {
+                Route::get('/', [AdminController::class, 'roles'])->name('index');
+                Route::get('/create', [AdminController::class, 'createRole'])->name('create');
+                Route::post('/', [AdminController::class, 'storeRole'])->name('store');
+                Route::get('/{role}', [AdminController::class, 'showRole'])->name('show');
+                Route::get('/{role}/edit', [AdminController::class, 'editRole'])->name('edit');
+                Route::put('/{role}', [AdminController::class, 'updateRole'])->name('update');
+                Route::delete('/{role}', [AdminController::class, 'destroyRole'])->name('destroy');
+                Route::post('/{role}/assign-permission', [AdminController::class, 'assignPermission'])->name('assign-permission');
+                Route::delete('/{role}/revoke-permission', [AdminController::class, 'revokePermission'])->name('revoke-permission');
+                Route::get('/matrix', [AdminController::class, 'permissionMatrix'])->name('matrix');
+            });
+
+            // Permissions Management
+            Route::prefix('permissions')->name('permissions.')->group(function () {
+                Route::get('/', [AdminController::class, 'permissions'])->name('index');
+                Route::get('/create', [AdminController::class, 'createPermission'])->name('create');
+                Route::post('/', [AdminController::class, 'storePermission'])->name('store');
+                Route::get('/{permission}', [AdminController::class, 'showPermission'])->name('show');
+                Route::get('/{permission}/edit', [AdminController::class, 'editPermission'])->name('edit');
+                Route::put('/{permission}', [AdminController::class, 'updatePermission'])->name('update');
+                Route::delete('/{permission}', [AdminController::class, 'destroyPermission'])->name('destroy');
+                Route::post('/sync', [AdminController::class, 'syncPermissions'])->name('sync');
+                Route::get('/by-module', [AdminController::class, 'permissionsByModule'])->name('by-module');
+            });
+
+            // Security & Access Management
+            Route::prefix('security')->name('security.')->group(function () {
+                Route::get('/', [AdminController::class, 'security'])->name('index');
+                Route::get('/login-attempts', [AdminController::class, 'loginAttempts'])->name('login-attempts');
+                Route::get('/active-sessions', [AdminController::class, 'activeSessions'])->name('active-sessions');
+                Route::post('/terminate-session', [AdminController::class, 'terminateSession'])->name('terminate-session');
+                Route::get('/security-logs', [AdminController::class, 'securityLogs'])->name('logs');
+                Route::get('/security-settings', [AdminController::class, 'securitySettings'])->name('settings');
+                Route::put('/security-settings', [AdminController::class, 'updateSecuritySettings'])->name('settings.update');
+            });
+
+            // Team Management
+            Route::prefix('teams')->name('teams.')->group(function () {
+                Route::get('/', [AdminController::class, 'teams'])->name('index');
+                Route::get('/create', [AdminController::class, 'createTeam'])->name('create');
+                Route::post('/', [AdminController::class, 'storeTeam'])->name('store');
+                Route::get('/{team}', [AdminController::class, 'showTeam'])->name('show');
+                Route::get('/{team}/edit', [AdminController::class, 'editTeam'])->name('edit');
+                Route::put('/{team}', [AdminController::class, 'updateTeam'])->name('update');
+                Route::delete('/{team}', [AdminController::class, 'destroyTeam'])->name('destroy');
+                Route::post('/{team}/add-member', [AdminController::class, 'addTeamMember'])->name('add-member');
+                Route::delete('/{team}/remove-member/{user}', [AdminController::class, 'removeTeamMember'])->name('remove-member');
+            });
+
+            // Activity & Audit Logs
+            Route::prefix('activity')->name('activity.')->group(function () {
+                Route::get('/', [AdminController::class, 'activityLogs'])->name('index');
+                Route::get('/{log}', [AdminController::class, 'showActivityLog'])->name('show');
+                Route::delete('/{log}', [AdminController::class, 'destroyActivityLog'])->name('destroy');
+                Route::post('/clear-old', [AdminController::class, 'clearOldLogs'])->name('clear-old');
+                Route::get('/export', [AdminController::class, 'exportActivity'])->name('export');
+            });
+
+            // System Information
+            Route::prefix('system')->name('system.')->group(function () {
+                Route::get('/info', [AdminController::class, 'systemInfo'])->name('info');
+                Route::get('/health', [AdminController::class, 'systemHealth'])->name('health');
+                Route::get('/logs', [AdminController::class, 'systemLogs'])->name('logs');
+                Route::post('/optimize', [AdminController::class, 'optimizeSystem'])->name('optimize');
+            });
+
+            // Reports & Analytics
+            Route::prefix('reports')->name('reports.')->group(function () {
+                Route::get('/', [AdminController::class, 'adminReports'])->name('index');
+                Route::get('/user-activity', [AdminController::class, 'userActivity'])->name('user-activity');
+                Route::get('/system-usage', [AdminController::class, 'systemUsage'])->name('system-usage');
+                Route::get('/login-analytics', [AdminController::class, 'loginAnalytics'])->name('login-analytics');
+            });
+        });
+
+        // Reports & Analytics Module
+        Route::prefix('reports')->name('tenant.reports.')->group(function () {
+            Route::get('/', [ReportsController::class, 'index'])->name('index');
+
+            // Financial Reports
+            Route::get('/financial', [ReportsController::class, 'financial'])->name('financial');
+            Route::get('/profit-loss', [ReportsController::class, 'profitLoss'])->name('profit-loss');
+            Route::get('/balance-sheet', [ReportsController::class, 'balanceSheet'])->name('balance-sheet');
+            Route::get('/trial-balance', [ReportsController::class, 'trialBalance'])->name('trial-balance');
+            Route::get('/cash-flow', [ReportsController::class, 'cashFlow'])->name('cash-flow');
+
+            // Inventory Reports
+            Route::get('/inventory', [ReportsController::class, 'inventory'])->name('inventory');
+            Route::get('/stock-movement', [ReportsController::class, 'stockMovement'])->name('stock-movement');
+            Route::get('/low-stock', [ReportsController::class, 'lowStock'])->name('low-stock');
+            Route::get('/inventory-valuation', [ReportsController::class, 'inventoryValuation'])->name('inventory-valuation');
+
+            // Sales Reports
+            Route::get('/sales', [ReportsController::class, 'sales'])->name('sales');
+            Route::get('/sales-summary', [ReportsController::class, 'salesSummary'])->name('sales-summary');
+            Route::get('/customer-analysis', [ReportsController::class, 'customerAnalysis'])->name('customer-analysis');
+            Route::get('/product-performance', [ReportsController::class, 'productPerformance'])->name('product-performance');
+        });
+
+        // Settings & Configuration Module
+        Route::prefix('settings')->name('tenant.settings.')->group(function () {
+            Route::get('/', [SettingsController::class, 'index'])->name('index');
+
+            // General Settings
+            Route::get('/general', [SettingsController::class, 'general'])->name('general');
+            Route::put('/general', [SettingsController::class, 'updateGeneral'])->name('general.update');
+
+            // Company Settings
+            Route::get('/company', [SettingsController::class, 'company'])->name('company');
+            Route::put('/company', [SettingsController::class, 'updateCompany'])->name('company.update');
+
+            // Financial Settings
+            Route::get('/financial', [SettingsController::class, 'financial'])->name('financial');
+            Route::put('/financial', [SettingsController::class, 'updateFinancial'])->name('financial.update');
+
+            // Tax Settings
+            Route::get('/tax', [SettingsController::class, 'tax'])->name('tax');
+            Route::put('/tax', [SettingsController::class, 'updateTax'])->name('tax.update');
+
+            // Email Settings
+            Route::get('/email', [SettingsController::class, 'email'])->name('email');
+            Route::put('/email', [SettingsController::class, 'updateEmail'])->name('email.update');
+            Route::post('/email/test', [SettingsController::class, 'testEmail'])->name('email.test');
+
+            // Notification Settings
+            Route::get('/notifications', [SettingsController::class, 'notifications'])->name('notifications');
+            Route::put('/notifications', [SettingsController::class, 'updateNotifications'])->name('notifications.update');
+
+            // Integration Settings
+            Route::get('/integrations', [SettingsController::class, 'integrations'])->name('integrations');
+            Route::put('/integrations', [SettingsController::class, 'updateIntegrations'])->name('integrations.update');
+
+            // Backup Settings
+            Route::get('/backup', [SettingsController::class, 'backup'])->name('backup');
+            Route::post('/backup/create', [SettingsController::class, 'createBackup'])->name('backup.create');
+            Route::get('/backup/download/{backup}', [SettingsController::class, 'downloadBackup'])->name('backup.download');
+            Route::delete('/backup/{backup}', [SettingsController::class, 'deleteBackup'])->name('backup.delete');
+        });
+
+    }); // Close subscription.check middleware group
+
+    // Subscription & Plan Management (accessible even with expired subscription)
+    Route::middleware(['onboarding.completed'])->group(function () {
         Route::prefix('subscription')->name('tenant.subscription.')->group(function () {
             Route::get('/', [SubscriptionController::class, 'index'])->name('index');
             Route::get('/plans', [SubscriptionController::class, 'plans'])->name('plans');
@@ -326,615 +644,8 @@ Route::prefix('ledger-accounts')->name('ledger-accounts.')->group(function () {
             Route::get('/payment/callback/{payment}', [SubscriptionController::class, 'paymentCallback'])->name('payment.callback');
             Route::post('/webhook', [SubscriptionController::class, 'webhook'])->name('webhook');
         });
-
-        // Inventory Module
-        Route::prefix('inventory')->name('tenant.inventory.')->group(function () {
-            Route::get('/', [InventoryController::class, 'index'])->name('index');
-  Route::get('/stock-movement', [ReportsController::class, 'stockMovement'])->name('stock-movement');
-            // Products
-            Route::prefix('products')->name('products.')->group(function () {
-                  Route::get('/import', [ProductController::class, 'import'])->name('import');
-
-                    Route::post('/import', [ProductController::class, 'importProcess'])->name('import.process');
-                Route::get('/', [ProductController::class, 'index'])->name('index');
-                Route::get('/create', [ProductController::class, 'create'])->name('create');
-                Route::post('/', [ProductController::class, 'store'])->name('store');
-                Route::get('/{product}', [ProductController::class, 'show'])->name('show');
-                Route::get('/{product}/edit', [ProductController::class, 'edit'])->name('edit');
-                Route::put('/{product}', [ProductController::class, 'update'])->name('update');
-                Route::delete('/{product}', [ProductController::class, 'destroy'])->name('destroy');
-
-
-
-
-
-                Route::patch('/{product}/toggle-status', [ProductController::class, 'toggleStatus'])->name('toggle-status');
-                Route::post('/bulk-action', [ProductController::class, 'bulkAction'])->name('bulk-action');
-                Route::get('/export', [ProductController::class, 'export'])->name('export');
-
-            });
-
-            // Product Categories
-            Route::prefix('categories')->name('categories.')->group(function () {
-                Route::get('/', [ProductCategoryController::class, 'index'])->name('index');
-                Route::get('/create', [ProductCategoryController::class, 'create'])->name('create');
-                Route::post('/', [ProductCategoryController::class, 'store'])->name('store');
-                Route::get('/{category}', [ProductCategoryController::class, 'show'])->name('show');
-                Route::get('/{category}/edit', [ProductCategoryController::class, 'edit'])->name('edit');
-                Route::put('/{category}', [ProductCategoryController::class, 'update'])->name('update');
-                Route::delete('/{category}', [ProductCategoryController::class, 'destroy'])->name('destroy');
-                Route::patch('/{category}/toggle-status', [ProductCategoryController::class, 'toggleStatus'])->name('toggle-status');
-            });
-
-            // Units
-            Route::prefix('units')->name('units.')->group(function () {
-                Route::get('/', [UnitController::class, 'index'])->name('index');
-                Route::get('/create', [UnitController::class, 'create'])->name('create');
-                Route::post('/', [UnitController::class, 'store'])->name('store');
-                Route::get('/{unit}', [UnitController::class, 'show'])->name('show');
-                Route::get('/{unit}/edit', [UnitController::class, 'edit'])->name('edit');
-                Route::put('/{unit}', [UnitController::class, 'update'])->name('update');
-                Route::delete('/{unit}', [UnitController::class, 'destroy'])->name('destroy');
-                Route::patch('/{unit}/toggle-status', [UnitController::class, 'toggleStatus'])->name('toggle-status');
-            });
-
-            // Stock Adjustments
-            /*
-            Route::prefix('stock-adjustments')->name('stock-adjustments.')->group(function () {
-                Route::get('/', [StockAdjustmentController::class, 'index'])->name('index');
-                Route::get('/create', [StockAdjustmentController::class, 'create'])->name('create');
-                Route::post('/', [StockAdjustmentController::class, 'store'])->name('store');
-                Route::get('/{adjustment}', [StockAdjustmentController::class, 'show'])->name('show');
-                Route::get('/{adjustment}/edit', [StockAdjustmentController::class, 'edit'])->name('edit');
-                Route::put('/{adjustment}', [StockAdjustmentController::class, 'update'])->name('update');
-                Route::delete('/{adjustment}', [StockAdjustmentController::class, 'destroy'])->name('destroy');
-            });
-            */
-
-            // Stock Reports
-            Route::prefix('reports')->name('reports.')->group(function () {
-                Route::get('/stock-summary', [InventoryController::class, 'stockSummary'])->name('stock-summary');
-                Route::get('/low-stock', [InventoryController::class, 'lowStock'])->name('low-stock');
-                Route::get('/stock-movement', [InventoryController::class, 'stockMovement'])->name('stock-movement');
-                Route::get('/valuation', [InventoryController::class, 'valuation'])->name('valuation');
-            });
-        });
-
-        // CRM Module
-        Route::prefix('crm')->name('tenant.crm.')->group(function () {
-            Route::get('/', [CrmController::class, 'index'])->name('index');
-
-            // Customers
-            Route::prefix('customers')->name('customers.')->group(function () {
-                Route::get('/', [CustomerController::class, 'index'])->name('index');
-                Route::get('/statements', [CustomerController::class, 'statements'])->name('statements');
-                Route::get('/create', [CustomerController::class, 'create'])->name('create');
-                Route::post('/', [CustomerController::class, 'store'])->name('store');
-                Route::get('/{customer}', [CustomerController::class, 'show'])->name('show');
-                Route::get('/{customer}/edit', [CustomerController::class, 'edit'])->name('edit');
-                Route::put('/{customer}', [CustomerController::class, 'update'])->name('update');
-                Route::delete('/{customer}', [CustomerController::class, 'destroy'])->name('destroy');
-                Route::patch('/{customer}/toggle-status', [CustomerController::class, 'toggleStatus'])->name('toggle-status');
-                Route::post('/bulk-action', [CustomerController::class, 'bulkAction'])->name('bulk-action');
-                Route::get('/export', [CustomerController::class, 'export'])->name('export');
-            });
-
-            // Vendors/Suppliers
-            Route::prefix('vendors')->name('vendors.')->group(function () {
-                Route::get('/', [VendorController::class, 'index'])->name('index');
-                Route::get('/create', [VendorController::class, 'create'])->name('create');
-                Route::post('/', [VendorController::class, 'store'])->name('store');
-                Route::get('/{vendor}', [VendorController::class, 'show'])->name('show');
-                Route::get('/{vendor}/edit', [VendorController::class, 'edit'])->name('edit');
-                Route::put('/{vendor}', [VendorController::class, 'update'])->name('update');
-                Route::delete('/{vendor}', [VendorController::class, 'destroy'])->name('destroy');
-                Route::patch('/{vendor}/toggle-status', [VendorController::class, 'toggleStatus'])->name('toggle-status');
-                Route::post('/bulk-action', [VendorController::class, 'bulkAction'])->name('bulk-action');
-                Route::get('/export', [VendorController::class, 'export'])->name('export');
-            });
-
-            // Leads
-            // Route::prefix('leads')->name('leads.')->group(function () {
-            //     Route::get('/', [LeadController::class, 'index'])->name('index');
-            //     Route::get('/create', [LeadController::class, 'create'])->name('create');
-            //     Route::post('/', [LeadController::class, 'store'])->name('store');
-            //     Route::get('/{lead}', [LeadController::class, 'show'])->name('show');
-            //     Route::get('/{lead}/edit', [LeadController::class, 'edit'])->name('edit');
-            //     Route::put('/{lead}', [LeadController::class, 'update'])->name('update');
-            //     Route::delete('/{lead}', [LeadController::class, 'destroy'])->name('destroy');
-            //     Route::post('/{lead}/convert', [LeadController::class, 'convert'])->name('convert');
-            // });
-
-            // Opportunities
-            // Route::prefix('opportunities')->name('opportunities.')->group(function () {
-            //     Route::get('/', [OpportunityController::class, 'index'])->name('index');
-            //     Route::get('/create', [OpportunityController::class, 'create'])->name('create');
-            //     Route::post('/', [OpportunityController::class, 'store'])->name('store');
-            //     Route::get('/{opportunity}', [OpportunityController::class, 'show'])->name('show');
-            //     Route::get('/{opportunity}/edit', [OpportunityController::class, 'edit'])->name('edit');
-            //     Route::put('/{opportunity}', [OpportunityController::class, 'update'])->name('update');
-            //     Route::delete('/{opportunity}', [OpportunityController::class, 'destroy'])->name('destroy');
-            // });
-        });
-
-        // POS Module
-        Route::prefix('pos')->name('tenant.pos.')->group(function () {
-            Route::get('/', [PosController::class, 'index'])->name('index');
-            Route::post('/', [PosController::class, 'store'])->name('store');
-            Route::get('/register-session', [PosController::class, 'registerSession'])->name('register-session');
-            Route::post('/open-session', [PosController::class, 'openSession'])->name('open-session');
-            Route::get('/close-session', [PosController::class, 'closeSession'])->name('close-session');
-            Route::post('/close-session', [PosController::class, 'storeCloseSession'])->name('store-close-session');
-            Route::get('/sales/{sale}', [PosController::class, 'show'])->name('show');
-            Route::get('/sales/{sale}/receipt', [PosController::class, 'receipt'])->name('receipt');
-            Route::post('/sales/{sale}/refund', [PosController::class, 'refund'])->name('refund');
-            Route::get('/reports', [PosController::class, 'reports'])->name('reports');
-        });
-
-        // Reports Module
-        Route::prefix('reports')->name('tenant.reports.')->group(function () {
-            Route::get('/', [ReportsController::class, 'index'])->name('index');
-
-            // Financial Reports
-            Route::prefix('financial')->name('financial.')->group(function () {
-                Route::get('/profit-loss', [ReportsController::class, 'profitLoss'])->name('profit-loss');
-                Route::get('/balance-sheet', [ReportsController::class, 'balanceSheet'])->name('balance-sheet');
-                Route::get('/cash-flow', [ReportsController::class, 'cashFlow'])->name('cash-flow');
-                Route::get('/trial-balance', [ReportsController::class, 'trialBalance'])->name('trial-balance');
-                Route::get('/ledger', [ReportsController::class, 'ledger'])->name('ledger');
-            });
-
-            // Sales Reports
-            Route::prefix('sales')->name('sales.')->group(function () {
-                Route::get('/summary', [ReportsController::class, 'salesSummary'])->name('summary');
-                Route::get('/detailed', [ReportsController::class, 'salesDetailed'])->name('detailed');
-                Route::get('/by-customer', [ReportsController::class, 'salesByCustomer'])->name('by-customer');
-                Route::get('/by-product', [ReportsController::class, 'salesByProduct'])->name('by-product');
-            });
-
-            // Purchase Reports
-            Route::prefix('purchases')->name('purchases.')->group(function () {
-                Route::get('/summary', [ReportsController::class, 'purchaseSummary'])->name('summary');
-                Route::get('/detailed', [ReportsController::class, 'purchaseDetailed'])->name('detailed');
-                Route::get('/by-vendor', [ReportsController::class, 'purchaseByVendor'])->name('by-vendor');
-            });
-
-            // Inventory Reports
-            Route::prefix('inventory')->name('inventory.')->group(function () {
-                Route::get('/stock-summary', [ReportsController::class, 'stockSummary'])->name('stock-summary');
-                Route::get('/low-stock', [ReportsController::class, 'lowStock'])->name('low-stock');
-                Route::get('/stock-movement', [ReportsController::class, 'stockMovement'])->name('stock-movement');
-                Route::get('/valuation', [ReportsController::class, 'stockValuation'])->name('valuation');
-            });
-
-            // Tax Reports
-            Route::prefix('tax')->name('tax.')->group(function () {
-                Route::get('/vat-return', [ReportsController::class, 'vatReturn'])->name('vat-return');
-                Route::get('/tax-summary', [ReportsController::class, 'taxSummary'])->name('tax-summary');
-            });
-        });
-
-        // Documents Module
-    // Route::prefix('documents')->name('tenant.documents.')->group(function () {
-    //     Route::get('/', [DocumentsController::class, 'index'])->name('index');
-    //     Route::get('/create', [DocumentsController::class, 'create'])->name('create');
-    //     Route::post('/', [DocumentsController::class, 'store'])->name('store');
-    //     Route::get('/{document}', [DocumentsController::class, 'show'])->name('show');
-    //     Route::get('/{document}/edit', [DocumentsController::class, 'edit'])->name('edit');
-    //     Route::put('/{document}', [DocumentsController::class, 'update'])->name('update');
-    //     Route::delete('/{document}', [DocumentsController::class, 'destroy'])->name('destroy');
-    //     Route::get('/{document}/download', [DocumentsController::class, 'download'])->name('download');
-    //     Route::post('/bulk-delete', [DocumentsController::class, 'bulkDelete'])->name('bulk-delete');
-    //     Route::post('/bulk-move', [DocumentsController::class, 'bulkMove'])->name('bulk-move');
-    // });
-
-        // Activity Log
-        Route::prefix('activity')->name('tenant.activity.')->group(function () {
-            Route::get('/', [ActivityController::class, 'index'])->name('index');
-            Route::get('/{activity}', [ActivityController::class, 'show'])->name('show');
-            Route::delete('/{activity}', [ActivityController::class, 'destroy'])->name('destroy');
-            Route::post('/bulk-delete', [ActivityController::class, 'bulkDelete'])->name('bulk-delete');
-            Route::post('/clear-old', [ActivityController::class, 'clearOld'])->name('clear-old');
-        });
-
-        // Settings
-        Route::prefix('settings')->name('tenant.settings.')->group(function () {
-            Route::get('/', [SettingsController::class, 'index'])->name('index');
-
-            // General Settings
-            Route::prefix('general')->name('general.')->group(function () {
-                Route::get('/', [SettingsController::class, 'general'])->name('index');
-                Route::put('/', [SettingsController::class, 'updateGeneral'])->name('update');
-            });
-
-            // Company Settings
-            Route::prefix('company')->name('company.')->group(function () {
-                Route::get('/', [SettingsController::class, 'company'])->name('index');
-                Route::put('/', [SettingsController::class, 'updateCompany'])->name('update');
-            });
-
-            // Financial Settings
-            Route::prefix('financial')->name('financial.')->group(function () {
-                Route::get('/', [SettingsController::class, 'financial'])->name('index');
-                Route::put('/', [SettingsController::class, 'updateFinancial'])->name('update');
-            });
-
-            // Tax Settings
-            Route::prefix('tax')->name('tax.')->group(function () {
-                Route::get('/', [SettingsController::class, 'tax'])->name('index');
-                Route::put('/', [SettingsController::class, 'updateTax'])->name('update');
-            });
-
-            // Email Settings
-            Route::prefix('email')->name('email.')->group(function () {
-                Route::get('/', [SettingsController::class, 'email'])->name('index');
-                Route::put('/', [SettingsController::class, 'updateEmail'])->name('update');
-                Route::post('/test', [SettingsController::class, 'testEmail'])->name('test');
-            });
-
-            // Notification Settings
-            Route::prefix('notifications')->name('notifications.')->group(function () {
-                Route::get('/', [SettingsController::class, 'notifications'])->name('index');
-                Route::put('/', [SettingsController::class, 'updateNotifications'])->name('update');
-            });
-
-            // User Management
-            Route::prefix('users')->name('users.')->group(function () {
-                Route::get('/', [SettingsController::class, 'users'])->name('index');
-                Route::get('/create', [SettingsController::class, 'createUser'])->name('create');
-                Route::post('/', [SettingsController::class, 'storeUser'])->name('store');
-                Route::get('/{user}', [SettingsController::class, 'showUser'])->name('show');
-                Route::get('/{user}/edit', [SettingsController::class, 'editUser'])->name('edit');
-                Route::put('/{user}', [SettingsController::class, 'updateUser'])->name('update');
-                Route::delete('/{user}', [SettingsController::class, 'destroyUser'])->name('destroy');
-                Route::post('/{user}/toggle-status', [SettingsController::class, 'toggleUserStatus'])->name('toggle-status');
-            });
-
-            // Roles & Permissions
-            Route::prefix('roles')->name('roles.')->group(function () {
-                Route::get('/', [SettingsController::class, 'roles'])->name('index');
-                Route::get('/create', [SettingsController::class, 'createRole'])->name('create');
-                Route::post('/', [SettingsController::class, 'storeRole'])->name('store');
-                Route::get('/{role}', [SettingsController::class, 'showRole'])->name('show');
-                Route::get('/{role}/edit', [SettingsController::class, 'editRole'])->name('edit');
-                Route::put('/{role}', [SettingsController::class, 'updateRole'])->name('update');
-                Route::delete('/{role}', [SettingsController::class, 'destroyRole'])->name('destroy');
-            });
-
-            // Backup & Restore
-            Route::prefix('backup')->name('backup.')->group(function () {
-                Route::get('/', [SettingsController::class, 'backup'])->name('index');
-                Route::post('/create', [SettingsController::class, 'createBackup'])->name('create');
-                Route::get('/{backup}/download', [SettingsController::class, 'downloadBackup'])->name('download');
-                Route::delete('/{backup}', [SettingsController::class, 'deleteBackup'])->name('delete');
-                Route::post('/restore', [SettingsController::class, 'restore'])->name('restore');
-            });
-
-            // Import/Export
-            Route::prefix('import-export')->name('import-export.')->group(function () {
-                Route::get('/', [SettingsController::class, 'importExport'])->name('index');
-                Route::post('/import', [SettingsController::class, 'import'])->name('import');
-                Route::get('/export', [SettingsController::class, 'export'])->name('export');
-                Route::get('/templates/{type}', [SettingsController::class, 'downloadTemplate'])->name('template');
-            });
-        });
-
-        // Help & Support
-        Route::prefix('help')->name('tenant.help.')->group(function () {
-            Route::get('/', [HelpController::class, 'index'])->name('index');
-            Route::get('/getting-started', [HelpController::class, 'gettingStarted'])->name('getting-started');
-            Route::get('/tutorials', [HelpController::class, 'tutorials'])->name('tutorials');
-            Route::get('/tutorials/{tutorial}', [HelpController::class, 'showTutorial'])->name('tutorials.show');
-            Route::get('/faq', [HelpController::class, 'faq'])->name('faq');
-            Route::get('/documentation', [HelpController::class, 'documentation'])->name('documentation');
-            Route::get('/keyboard-shortcuts', [HelpController::class, 'keyboardShortcuts'])->name('keyboard-shortcuts');
-        });
-
-        // Support
-        Route::prefix('support')->name('tenant.support.')->group(function () {
-            Route::get('/', [SupportController::class, 'index'])->name('index');
-            Route::get('/tickets', [SupportController::class, 'tickets'])->name('tickets');
-            Route::get('/tickets/create', [SupportController::class, 'createTicket'])->name('tickets.create');
-            Route::post('/tickets', [SupportController::class, 'storeTicket'])->name('tickets.store');
-            Route::get('/tickets/{ticket}', [SupportController::class, 'showTicket'])->name('tickets.show');
-            Route::post('/tickets/{ticket}/reply', [SupportController::class, 'replyTicket'])->name('tickets.reply');
-            Route::post('/tickets/{ticket}/close', [SupportController::class, 'closeTicket'])->name('tickets.close');
-            Route::get('/contact', [SupportController::class, 'contact'])->name('contact');
-            Route::post('/contact', [SupportController::class, 'sendContact'])->name('contact.send');
-        });
-
-        // Community
-        Route::prefix('community')->name('tenant.community.')->group(function () {
-            Route::get('/', [CommunityController::class, 'index'])->name('index');
-            Route::get('/forums', [CommunityController::class, 'forums'])->name('forums');
-            Route::get('/forums/{forum}', [CommunityController::class, 'showForum'])->name('forums.show');
-            Route::get('/topics/{topic}', [CommunityController::class, 'showTopic'])->name('topics.show');
-            Route::post('/topics/{topic}/reply', [CommunityController::class, 'replyTopic'])->name('topics.reply');
-            Route::get('/announcements', [CommunityController::class, 'announcements'])->name('announcements');
-            Route::get('/announcements/{announcement}', [CommunityController::class, 'showAnnouncement'])->name('announcements.show');
-        });
-
-        // API Routes for AJAX calls
-        Route::prefix('api')->name('tenant.api.')->group(function () {
-            // Account Groups API
-            Route::prefix('account-groups')->name('account-groups.')->group(function () {
-                Route::get('/', [AccountGroupController::class, 'apiIndex'])->name('index');
-                Route::get('/{accountGroup}', [AccountGroupController::class, 'apiShow'])->name('show');
-                Route::get('/by-nature/{nature}', [AccountGroupController::class, 'apiByNature'])->name('by-nature');
-                Route::get('/hierarchy/tree', [AccountGroupController::class, 'apiHierarchy'])->name('hierarchy');
-            });
-
-            // Ledger Accounts API
-            Route::prefix('ledger-accounts')->name('ledger-accounts.')->group(function () {
-                Route::get('/', [LedgerAccountController::class, 'apiIndex'])->name('index');
-                Route::get('/{ledgerAccount}', [LedgerAccountController::class, 'apiShow'])->name('show');
-                Route::get('/by-group/{groupId}', [LedgerAccountController::class, 'apiByGroup'])->name('by-group');
-                Route::get('/search', [LedgerAccountController::class, 'apiSearch'])->name('search');
-                Route::post('/', [LedgerAccountController::class, 'apiStore'])->name('store');
-            });
-
-            // Voucher Types API
-            Route::prefix('voucher-types')->name('voucher-types.')->group(function () {
-                Route::get('/', [VoucherTypeController::class, 'apiIndex'])->name('index');
-                Route::get('/{voucherType}', [VoucherTypeController::class, 'apiShow'])->name('show');
-            });
-
-            // Products API
-            Route::prefix('products')->name('products.')->group(function () {
-                Route::get('/', [ProductController::class, 'apiIndex'])->name('index');
-                Route::get('/{product}', [ProductController::class, 'apiShow'])->name('show');
-                Route::get('/search', [ProductController::class, 'apiSearch'])->name('search');
-                Route::get('/by-category/{categoryId}', [ProductController::class, 'apiByCategory'])->name('by-category');
-            });
-
-            // Customers API
-            Route::prefix('customers')->name('customers.')->group(function () {
-                Route::get('/', [CustomerController::class, 'apiIndex'])->name('index');
-                Route::get('/{customer}', [CustomerController::class, 'apiShow'])->name('show');
-                Route::get('/search', [CustomerController::class, 'apiSearch'])->name('search');
-            });
-
-            // Vendors API
-            Route::prefix('vendors')->name('vendors.')->group(function () {
-                Route::get('/', [VendorController::class, 'apiIndex'])->name('index');
-                Route::get('/{vendor}', [VendorController::class, 'apiShow'])->name('show');
-                Route::get('/search', [VendorController::class, 'apiSearch'])->name('search');
-            });
-
-            // Dashboard API
-            Route::prefix('dashboard')->name('dashboard.')->group(function () {
-                Route::get('/stats', [DashboardController::class, 'apiStats'])->name('stats');
-                Route::get('/charts', [DashboardController::class, 'apiCharts'])->name('charts');
-                Route::get('/recent-activities', [DashboardController::class, 'apiRecentActivities'])->name('recent-activities');
-            });
-
-            // Reports API
-            Route::prefix('reports')->name('reports.')->group(function () {
-                Route::post('/generate', [ReportsController::class, 'apiGenerate'])->name('generate');
-                Route::get('/data/{reportType}', [ReportsController::class, 'apiReportData'])->name('data');
-            });
-        });
-
-        // Fallback route for the root tenant URL
-        Route::get('/', function () {
-            return redirect()->route('tenant.dashboard');
-        })->name('tenant.home');
     });
-});
-
-// Additional API routes that might be needed for specific functionalities
-Route::middleware(['auth', 'tenant'])->group(function () {
-    // Quick search across all modules
-    Route::get('/search', [SearchController::class, 'search'])->name('tenant.search');
-
-    // Global notifications
-    Route::prefix('notifications')->name('tenant.notifications.')->group(function () {
-        Route::get('/', [NotificationController::class, 'index'])->name('index');
-        Route::post('/{notification}/mark-read', [NotificationController::class, 'markAsRead'])->name('mark-read');
-        Route::post('/mark-all-read', [NotificationController::class, 'markAllAsRead'])->name('mark-all-read');
-        Route::delete('/{notification}', [NotificationController::class, 'destroy'])->name('destroy');
-    });
-
-    // File uploads
-    Route::prefix('uploads')->name('tenant.uploads.')->group(function () {
-        Route::post('/image', [UploadController::class, 'image'])->name('image');
-        Route::post('/document', [UploadController::class, 'document'])->name('document');
-        Route::delete('/{file}', [UploadController::class, 'destroy'])->name('destroy');
-    });
-
-    // Export routes
-    Route::prefix('exports')->name('tenant.exports.')->group(function () {
-        Route::get('/download/{export}', [ExportController::class, 'download'])->name('download');
-        Route::get('/status/{export}', [ExportController::class, 'status'])->name('status');
-    });
-     // Profit & Loss
-            Route::get('/profit-loss', [ReportsController::class, 'profitLoss'])->name('tenant.reports.profit-loss');
-
-             Route::get('/balance-sheet', [ReportsController::class, 'balanceSheet'])->name('tenant.reports.balance-sheet');
-
- Route::get('/cash-flow', [ReportsController::class, 'cashFlow'])->name('tenant.reports.cash-flow');
-
-               Route::get('/trial-balance', [ReportsController::class, 'trialBalance'])->name('tenant.reports.trial-balance');
-
-});
-
-// Payroll Management Routes
-Route::prefix('payroll')->name('tenant.payroll.')->middleware(['auth', 'onboarding.completed'])->group(function () {
-    Route::get('/', [PayrollController::class, 'index'])->name('index');
-
-    // Employees Management
-    Route::prefix('employees')->name('employees.')->group(function () {
-        Route::get('/', [PayrollController::class, 'employees'])->name('index');
-        Route::get('/create', [PayrollController::class, 'createEmployee'])->name('create');
-        Route::post('/', [PayrollController::class, 'storeEmployee'])->name('store');
-        Route::get('/{employee}', [PayrollController::class, 'showEmployee'])->name('show');
-        Route::get('/{employee}/edit', [PayrollController::class, 'editEmployee'])->name('edit');
-        Route::put('/{employee}', [PayrollController::class, 'updateEmployee'])->name('update');
-        Route::delete('/{employee}', [PayrollController::class, 'destroyEmployee'])->name('destroy');
-
-        // Employee actions
-        Route::patch('/{employee}/toggle-status', [PayrollController::class, 'toggleEmployeeStatus'])->name('toggle-status');
-        Route::post('/{employee}/reset-portal-link', [PayrollController::class, 'resetPortalLink'])->name('reset-portal-link');
-
-        // Export employees
-        Route::get('/export', [PayrollController::class, 'exportEmployees'])->name('export');
-
-        // Payslip generation
-        Route::get('/{employee}/payslip', [PayrollController::class, 'generatePayslip'])->name('payslip');
-    });    // Departments
-    Route::prefix('departments')->name('departments.')->group(function () {
-        Route::get('/', [PayrollController::class, 'departments'])->name('index');
-        Route::post('/', [PayrollController::class, 'storeDepartment'])->name('store');
-        Route::put('/{department}', [PayrollController::class, 'updateDepartment'])->name('update');
-        Route::delete('/{department}', [PayrollController::class, 'destroyDepartment'])->name('destroy');
-    });
-
-    // Salary Components
-    Route::prefix('components')->name('components.')->group(function () {
-        Route::get('/', [PayrollController::class, 'components'])->name('index');
-        Route::post('/', [PayrollController::class, 'storeComponent'])->name('store');
-        Route::put('/{component}', [PayrollController::class, 'updateComponent'])->name('update');
-        Route::delete('/{component}', [PayrollController::class, 'destroyComponent'])->name('destroy');
-    });
-
-    // Payroll Processing
-    Route::prefix('processing')->name('processing.')->group(function () {
-        Route::get('/', [PayrollController::class, 'processing'])->name('index');
-        Route::get('/create', [PayrollController::class, 'createPayroll'])->name('create');
-        Route::post('/', [PayrollController::class, 'storePayroll'])->name('store');
-        Route::get('/{period}', [PayrollController::class, 'showPayroll'])->name('show');
-        Route::post('/{period}/generate', [PayrollController::class, 'generatePayroll'])->name('generate');
-        Route::post('/{period}/approve', [PayrollController::class, 'approvePayroll'])->name('approve');
-        Route::get('/{period}/export-bank-file', [PayrollController::class, 'exportBankFile'])->name('export-bank-file');
-        Route::get('/{period}/export-tax-file', [PayrollController::class, 'exportTaxFile'])->name('export-tax-file');
-    });
-
-    // Loans Management
-    Route::prefix('loans')->name('loans.')->group(function () {
-        Route::get('/', [PayrollController::class, 'loans'])->name('index');
-        Route::get('/create', [PayrollController::class, 'createLoan'])->name('create');
-        Route::post('/', [PayrollController::class, 'storeLoan'])->name('store');
-        Route::get('/{loan}', [PayrollController::class, 'showLoan'])->name('show');
-        Route::put('/{loan}', [PayrollController::class, 'updateLoan'])->name('update');
-        Route::post('/{loan}/approve', [PayrollController::class, 'approveLoan'])->name('approve');
-    });
-
-    // Payroll Reports
-    Route::prefix('reports')->name('reports.')->group(function () {
-        Route::get('/summary', [PayrollController::class, 'payrollSummary'])->name('summary');
-        Route::get('/detailed', [PayrollController::class, 'detailedReport'])->name('detailed');
-        Route::get('/tax-report', [PayrollController::class, 'taxReport'])->name('tax-report');
-        Route::get('/bank-schedule', [PayrollController::class, 'bankSchedule'])->name('bank-schedule');
-    });
-});
-
-// Admin Management Module
-Route::prefix('admin')->name('tenant.admin.')->middleware(['auth', 'onboarding.completed'])->group(function () {
-    Route::get('/', [AdminController::class, 'index'])->name('index');
-
-    // Users & Admins Management
-    Route::prefix('users')->name('users.')->group(function () {
-        Route::get('/', [AdminController::class, 'users'])->name('index');
-        Route::get('/create', [AdminController::class, 'createUser'])->name('create');
-        Route::post('/', [AdminController::class, 'storeUser'])->name('store');
-        Route::get('/{user}', [AdminController::class, 'showUser'])->name('show');
-        Route::get('/{user}/edit', [AdminController::class, 'editUser'])->name('edit');
-        Route::put('/{user}', [AdminController::class, 'updateUser'])->name('update');
-        Route::delete('/{user}', [AdminController::class, 'destroyUser'])->name('destroy');
-
-        // User actions
-        Route::patch('/{user}/toggle-status', [AdminController::class, 'toggleUserStatus'])->name('toggle-status');
-        Route::post('/{user}/reset-password', [AdminController::class, 'resetUserPassword'])->name('reset-password');
-        Route::post('/{user}/send-invitation', [AdminController::class, 'sendInvitation'])->name('send-invitation');
-        Route::get('/export', [AdminController::class, 'exportUsers'])->name('export');
-        Route::post('/bulk-action', [AdminController::class, 'bulkUserAction'])->name('bulk-action');
-    });
-
-    // Roles & Permissions
-    Route::prefix('roles')->name('roles.')->group(function () {
-        Route::get('/', [AdminController::class, 'roles'])->name('index');
-        Route::get('/create', [AdminController::class, 'createRole'])->name('create');
-        Route::post('/', [AdminController::class, 'storeRole'])->name('store');
-        Route::get('/{role}', [AdminController::class, 'showRole'])->name('show');
-        Route::get('/{role}/edit', [AdminController::class, 'editRole'])->name('edit');
-        Route::put('/{role}', [AdminController::class, 'updateRole'])->name('update');
-        Route::delete('/{role}', [AdminController::class, 'destroyRole'])->name('destroy');
-
-        // Role actions
-        Route::post('/{role}/clone', [AdminController::class, 'cloneRole'])->name('clone');
-        Route::get('/matrix', [AdminController::class, 'permissionMatrix'])->name('matrix');
-    });
-
-    // Permissions Management
-    Route::prefix('permissions')->name('permissions.')->group(function () {
-        Route::get('/', [AdminController::class, 'permissions'])->name('index');
-        Route::get('/create', [AdminController::class, 'createPermission'])->name('create');
-        Route::post('/', [AdminController::class, 'storePermission'])->name('store');
-        Route::get('/{permission}', [AdminController::class, 'showPermission'])->name('show');
-        Route::get('/{permission}/edit', [AdminController::class, 'editPermission'])->name('edit');
-        Route::put('/{permission}', [AdminController::class, 'updatePermission'])->name('update');
-        Route::delete('/{permission}', [AdminController::class, 'destroyPermission'])->name('destroy');
-
-        // Permission actions
-        Route::post('/sync-permissions', [AdminController::class, 'syncPermissions'])->name('sync');
-        Route::get('/by-module', [AdminController::class, 'permissionsByModule'])->name('by-module');
-    });
-
-    // Security & Access Management
-    Route::prefix('security')->name('security.')->group(function () {
-        Route::get('/', [AdminController::class, 'security'])->name('index');
-        Route::get('/sessions', [AdminController::class, 'activeSessions'])->name('sessions');
-        Route::post('/sessions/{session}/terminate', [AdminController::class, 'terminateSession'])->name('sessions.terminate');
-        Route::get('/login-logs', [AdminController::class, 'loginLogs'])->name('login-logs');
-        Route::get('/failed-logins', [AdminController::class, 'failedLogins'])->name('failed-logins');
-        Route::post('/unlock-user/{user}', [AdminController::class, 'unlockUser'])->name('unlock-user');
-        Route::get('/security-settings', [AdminController::class, 'securitySettings'])->name('settings');
-        Route::put('/security-settings', [AdminController::class, 'updateSecuritySettings'])->name('settings.update');
-    });
-
-    // Team Management
-    Route::prefix('teams')->name('teams.')->group(function () {
-        Route::get('/', [AdminController::class, 'teams'])->name('index');
-        Route::get('/create', [AdminController::class, 'createTeam'])->name('create');
-        Route::post('/', [AdminController::class, 'storeTeam'])->name('store');
-        Route::get('/{team}', [AdminController::class, 'showTeam'])->name('show');
-        Route::get('/{team}/edit', [AdminController::class, 'editTeam'])->name('edit');
-        Route::put('/{team}', [AdminController::class, 'updateTeam'])->name('update');
-        Route::delete('/{team}', [AdminController::class, 'destroyTeam'])->name('destroy');
-
-        // Team actions
-        Route::post('/{team}/add-member', [AdminController::class, 'addTeamMember'])->name('add-member');
-        Route::delete('/{team}/remove-member/{user}', [AdminController::class, 'removeTeamMember'])->name('remove-member');
-    });
-
-    // Activity & Audit Logs
-    Route::prefix('activity')->name('activity.')->group(function () {
-        Route::get('/', [AdminController::class, 'activityLogs'])->name('index');
-        Route::get('/{activity}', [AdminController::class, 'showActivity'])->name('show');
-        Route::get('/user/{user}', [AdminController::class, 'userActivity'])->name('user');
-        Route::delete('/bulk-delete', [AdminController::class, 'bulkDeleteActivity'])->name('bulk-delete');
-        Route::post('/clear-old', [AdminController::class, 'clearOldActivity'])->name('clear-old');
-        Route::get('/export', [AdminController::class, 'exportActivity'])->name('export');
-    });
-
-    // System Information
-    Route::prefix('system')->name('system.')->group(function () {
-        Route::get('/info', [AdminController::class, 'systemInfo'])->name('info');
-        Route::get('/health-check', [AdminController::class, 'healthCheck'])->name('health-check');
-        Route::get('/performance', [AdminController::class, 'performance'])->name('performance');
-        Route::post('/clear-cache', [AdminController::class, 'clearCache'])->name('clear-cache');
-        Route::post('/optimize', [AdminController::class, 'optimizeSystem'])->name('optimize');
-    });
-
-    // Reports & Analytics
-    Route::prefix('reports')->name('reports.')->group(function () {
-        Route::get('/', [AdminController::class, 'adminReports'])->name('index');
-        Route::get('/user-activity', [AdminController::class, 'userActivityReport'])->name('user-activity');
-        Route::get('/permissions-audit', [AdminController::class, 'permissionsAudit'])->name('permissions-audit');
-        Route::get('/security-summary', [AdminController::class, 'securitySummary'])->name('security-summary');
-        Route::get('/login-analytics', [AdminController::class, 'loginAnalytics'])->name('login-analytics');
-    });
-});
+}); // Close main authenticated routes group
 
 // Employee Self-Service Portal (outside tenant middleware)
 Route::prefix('employee-portal')->name('payroll.portal.')->group(function () {
@@ -950,7 +661,3 @@ Route::prefix('employee-portal')->name('payroll.portal.')->group(function () {
     Route::get('/{token}/tax-certificate/{year}/download', [App\Http\Controllers\Payroll\EmployeePortalController::class, 'downloadTaxCertificate'])->name('tax-certificate.download');
     Route::post('/{token}/logout', [App\Http\Controllers\Payroll\EmployeePortalController::class, 'logout'])->name('logout');
 });
-
-
-
-     Route::get('/balance-sheet-table', [ReportsController::class, 'balanceSheetTable'])->name('balance-sheet-table');

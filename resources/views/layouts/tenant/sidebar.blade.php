@@ -21,6 +21,14 @@
                         <span class="text-xs bg-green-500 text-green-900 px-2 py-0.5 rounded-full font-medium">
                             Active
                         </span>
+                    @elseif($tenant->subscription_status === 'expired' || ($tenant->subscription_ends_at && $tenant->subscription_ends_at->isPast()))
+                        <span class="text-xs bg-red-500 text-red-100 px-2 py-0.5 rounded-full font-medium">
+                            Expired
+                        </span>
+                    @else
+                        <span class="text-xs bg-gray-500 text-gray-100 px-2 py-0.5 rounded-full font-medium">
+                            Inactive
+                        </span>
                     @endif
                 </div>
             </div>

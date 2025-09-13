@@ -424,6 +424,9 @@
                     </div>
                 @endif
 
+                <!-- Subscription Status Alert -->
+                @include('components.subscription-status-alert')
+
                 <!-- Main Content Area -->
                 @yield('content')
             </main>
