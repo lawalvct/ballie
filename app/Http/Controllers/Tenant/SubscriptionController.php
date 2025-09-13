@@ -11,6 +11,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
+use Barryvdh\DomPDF\Facade\Pdf;
 
 class SubscriptionController extends Controller
 {
@@ -312,6 +313,7 @@ class SubscriptionController extends Controller
         ]);
 
         $tenant = tenant();
+        $currentPlan = $tenant->plan;
 
         try {
             DB::beginTransaction();
@@ -410,12 +412,23 @@ class SubscriptionController extends Controller
         // Load the subscription and plan relationships
         $payment->load(['subscription.plan']);
 
-        // In real implementation, generate PDF
-        // For now, redirect to invoice view
-        return redirect()->route('tenant.subscription.invoice', [
-            'tenant' => tenant()->slug,
-            'payment' => $payment->id
+        // Generate PDF using dompdf
+        $pdf = Pdf::loadView('tenant.subscription.invoice-pdf', compact('tenant', 'payment'));
+
+        // Set PDF options for better formatting
+        $pdf->setPaper('A4', 'portrait');
+        $pdf->setOptions([
+            'isHtml5ParserEnabled' => true,
+            'isPhpEnabled' => true,
+            'isRemoteEnabled' => true,
+            'defaultFont' => 'Arial'
         ]);
+
+        // Generate filename
+        $filename = 'Invoice-' . $payment->payment_reference . '.pdf';
+
+        // Return PDF for download
+        return $pdf->download($filename);
     }
 
     /**

@@ -2,6 +2,11 @@
 
 @section('title', 'Invoice #' . $payment->payment_reference)
 
+@php
+use App\Helpers\NumberToWords;
+$amountInWords = NumberToWords::convert(floatval(str_replace(['$', ','], '', $payment->amount ?? 0)));
+@endphp
+
 @section('content')
 <div class="max-w-4xl mx-auto space-y-6">
     <!-- Header with Actions -->
@@ -43,281 +48,193 @@
     <div class="bg-white rounded-xl shadow-sm border border-gray-100 print:shadow-none print:border-none invoice-animation" id="invoice-content">
         <div class="p-8 print:p-0">
             <!-- Invoice Header -->
-            <div class="flex flex-col lg:flex-row justify-between items-start mb-8 print:mb-6 gap-6">
-                <div class="flex-1">
-                    <div class="flex items-center gap-4 mb-4">
-                        <h1 class="text-4xl font-bold text-gray-900 print:text-3xl">INVOICE</h1>
-                        <div class="px-3 py-1 rounded-full text-sm font-medium
+            <div class="flex justify-between items-start mb-4 print:mb-3">
+                <div>
+                    <div class="flex items-center gap-3 mb-2">
+                        <h1 class="text-2xl font-bold text-gray-900 print:text-xl">INVOICE</h1>
+                        <span class="px-2 py-1 rounded text-xs font-medium
                             @if($payment->status === 'successful') bg-green-100 text-green-800
                             @elseif($payment->status === 'pending') bg-yellow-100 text-yellow-800
                             @elseif($payment->status === 'failed') bg-red-100 text-red-800
                             @else bg-gray-100 text-gray-800 @endif">
                             {{ ucfirst($payment->status) }}
-                        </div>
+                        </span>
                     </div>
-                    
-                    <div class="space-y-2">
-                        <h2 class="text-xl font-semibold text-gray-900">{{ config('app.name') }}</h2>
-                        @if($businessInfo ?? false)
-                        <div class="text-gray-600 space-y-1">
-                            @if($businessInfo['address'] ?? false)
-                            <p>{{ $businessInfo['address'] }}</p>
-                            @endif
-                            <div class="flex flex-wrap gap-4 text-sm">
-                                @if($businessInfo['phone'] ?? false)
-                                <span>📞 {{ $businessInfo['phone'] }}</span>
-                                @endif
-                                @if($businessInfo['email'] ?? false)
-                                <span>✉️ {{ $businessInfo['email'] }}</span>
-                                @endif
-                            </div>
-                        </div>
+                    <h2 class="text-lg font-semibold text-gray-900">{{ config('app.name') }}</h2>
+                    @if($businessInfo ?? false)
+                    <div class="text-gray-600 text-sm mt-1">
+                        @if($businessInfo['address'] ?? false)
+                        <p>{{ $businessInfo['address'] }}</p>
+                        @endif
+                        @if($businessInfo['phone'] ?? false)
+                        <span>{{ $businessInfo['phone'] }}</span>
+                        @endif
+                        @if($businessInfo['email'] ?? false)
+                        <span class="ml-3">{{ $businessInfo['email'] }}</span>
                         @endif
                     </div>
+                    @endif
                 </div>
 
-                <div class="bg-gray-50 p-6 rounded-lg border-l-4 border-blue-500 min-w-[280px]">
-                    <div class="space-y-4">
+                <div class="text-right">
+                    <div class="space-y-1">
                         <div>
-                            <p class="text-sm font-medium text-gray-600">Invoice Number</p>
-                            <p class="text-lg font-bold text-gray-900">#{{ $payment->payment_reference }}</p>
+                            <p class="text-xs text-gray-600">Invoice #</p>
+                            <p class="font-bold text-gray-900">{{ $payment->payment_reference }}</p>
                         </div>
-                        
                         <div>
-                            <p class="text-sm font-medium text-gray-600">Invoice Date</p>
-                            <p class="font-semibold text-gray-900">{{ $payment->created_at->format('M j, Y') }}</p>
+                            <p class="text-xs text-gray-600">Date</p>
+                            <p class="text-sm text-gray-900">{{ $payment->created_at->format('M j, Y') }}</p>
                         </div>
-
                         @if($payment->paid_at)
                         <div>
-                            <p class="text-sm font-medium text-gray-600">Payment Date</p>
-                            <p class="font-semibold text-gray-900">{{ $payment->paid_at->format('M j, Y') }}</p>
+                            <p class="text-xs text-gray-600">Paid</p>
+                            <p class="text-sm text-gray-900">{{ $payment->paid_at->format('M j, Y') }}</p>
                         </div>
                         @endif
-
-                        <div>
-                            <p class="text-sm font-medium text-gray-600">Amount Due</p>
-                            <p class="text-xl font-bold text-blue-600">{{ $payment->formatted_amount }}</p>
-                        </div>
                     </div>
                 </div>
             </div>
 
             <!-- Billing Information -->
-            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8 print:mb-6">
-                <div class="bg-gray-50 p-6 rounded-lg">
-                    <h3 class="text-lg font-semibold text-gray-900 mb-4 flex items-center">
-                        <svg class="w-5 h-5 mr-2 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/>
-                        </svg>
-                        Bill To
-                    </h3>
-                    <div class="space-y-2">
-                        <p class="font-semibold text-gray-900 text-lg">{{ $tenant->company_name ?? $tenant->name }}</p>
+            <div class="grid grid-cols-2 gap-6 mb-4 print:mb-3">
+                <div>
+                    <h3 class="text-sm font-semibold text-gray-900 mb-2">Bill To:</h3>
+                    <div class="text-sm space-y-1">
+                        <p class="font-semibold text-gray-900">{{ $tenant->company_name ?? $tenant->name }}</p>
                         @if($tenant->email)
-                        <p class="text-gray-700 flex items-center">
-                            <svg class="w-4 h-4 mr-2 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 12a4 4 0 10-8 0 4 4 0 008 0zm0 0v1.5a2.5 2.5 0 005 0V12a9 9 0 10-9 9m4.5-1.206a8.959 8.959 0 01-4.5 1.207"/>
-                            </svg>
-                            {{ $tenant->email }}
-                        </p>
+                        <p class="text-gray-700">{{ $tenant->email }}</p>
                         @endif
                         @if($tenant->phone)
-                        <p class="text-gray-700 flex items-center">
-                            <svg class="w-4 h-4 mr-2 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/>
-                            </svg>
-                            {{ $tenant->phone }}
-                        </p>
+                        <p class="text-gray-700">{{ $tenant->phone }}</p>
                         @endif
                         @if($tenant->address)
-                        <p class="text-gray-700 flex items-start">
-                            <svg class="w-4 h-4 mr-2 mt-0.5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
-                            </svg>
-                            <span>{{ $tenant->address }}
-                            @if($tenant->city || $tenant->state)
-                            <br>{{ implode(', ', array_filter([$tenant->city, $tenant->state])) }}
-                            @endif
-                            </span>
+                        <p class="text-gray-700">{{ $tenant->address }}
+                        @if($tenant->city || $tenant->state)
+                        <br>{{ implode(', ', array_filter([$tenant->city, $tenant->state])) }}
+                        @endif
                         </p>
                         @endif
                     </div>
                 </div>
 
-                <div class="bg-blue-50 p-6 rounded-lg">
-                    <h3 class="text-lg font-semibold text-gray-900 mb-4 flex items-center">
-                        <svg class="w-5 h-5 mr-2 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                        </svg>
-                        Payment Information
-                    </h3>
-                    <div class="space-y-3">
-                        @if($payment->paid_at)
-                        <div class="flex items-center justify-between">
-                            <span class="text-gray-600">Paid on:</span>
-                            <span class="font-medium text-gray-900">{{ $payment->paid_at->format('M j, Y') }}</span>
-                        </div>
-                        @endif
-
+                <div>
+                    <h3 class="text-sm font-semibold text-gray-900 mb-2">Payment Info:</h3>
+                    <div class="text-sm space-y-1">
                         @if($payment->payment_method)
-                        <div class="flex items-center justify-between">
-                            <span class="text-gray-600">Method:</span>
-                            <span class="font-medium text-gray-900">{{ ucfirst($payment->payment_method) }}</span>
-                        </div>
+                        <p class="text-gray-700">Method: {{ ucfirst($payment->payment_method) }}</p>
                         @endif
-
                         @if($payment->gateway_reference)
-                        <div class="flex items-center justify-between">
-                            <span class="text-gray-600">Reference:</span>
-                            <span class="font-mono text-sm text-gray-900">{{ $payment->gateway_reference }}</span>
-                        </div>
+                        <p class="text-gray-700">Ref: {{ $payment->gateway_reference }}</p>
                         @endif
                     </div>
                 </div>
             </div>
 
             <!-- Invoice Items -->
-            <div class="mb-8 print:mb-6">
-                <div class="bg-white border border-gray-200 rounded-lg overflow-hidden">
-                    <div class="bg-gray-50 px-6 py-4 border-b border-gray-200">
-                        <h3 class="text-lg font-semibold text-gray-900">Invoice Details</h3>
-                    </div>
-                    
-                    <div class="overflow-x-auto">
-                        <table class="w-full">
-                            <thead>
-                                <tr class="bg-gray-100">
-                                    <th class="text-left py-4 px-6 font-semibold text-gray-700">Description</th>
-                                    <th class="text-center py-4 px-6 font-semibold text-gray-700">Period</th>
-                                    <th class="text-right py-4 px-6 font-semibold text-gray-700">Amount</th>
-                                </tr>
-                            </thead>
-                            <tbody class="divide-y divide-gray-200">
-                                @if($payment->subscription)
-                                    <tr class="hover:bg-gray-50">
-                                        <td class="py-6 px-6">
-                                            <div>
-                                                <p class="font-semibold text-gray-900 text-lg">
-                                                    @if($payment->subscription && $payment->subscription->plan && is_object($payment->subscription->plan))
-                                                        {{ $payment->subscription->plan->name }}
-                                                    @else
-                                                        Subscription Plan
-                                                    @endif
-                                                </p>
-                                                <p class="text-gray-600 mt-1">
-                                                    {{ ucfirst($payment->subscription->billing_cycle ?? 'monthly') }} subscription
-                                                    @if($payment->subscription && $payment->subscription->plan && is_object($payment->subscription->plan) && $payment->subscription->plan->description)
-                                                    • {{ $payment->subscription->plan->description }}
-                                                    @endif
-                                                </p>
-                                            </div>
-                                        </td>
-                                        <td class="py-6 px-6 text-center">
-                                            <div class="text-gray-700">
-                                                @if($payment->subscription->starts_at && $payment->subscription->ends_at)
-                                                    <div class="font-medium">{{ $payment->subscription->starts_at->format('M j') }}</div>
-                                                    <div class="text-sm text-gray-500">to</div>
-                                                    <div class="font-medium">{{ $payment->subscription->ends_at->format('M j, Y') }}</div>
-                                                @else
-                                                    <span class="text-gray-400">-</span>
-                                                @endif
-                                            </div>
-                                        </td>
-                                        <td class="py-6 px-6 text-right">
-                                            <div class="text-2xl font-bold text-gray-900">{{ $payment->formatted_amount }}</div>
-                                        </td>
-                                    </tr>
-                                @else
-                                    <tr class="hover:bg-gray-50">
-                                        <td class="py-6 px-6">
-                                            <div>
-                                                <p class="font-semibold text-gray-900 text-lg">Subscription Payment</p>
-                                                <p class="text-gray-600 mt-1">Payment for subscription service</p>
-                                            </div>
-                                        </td>
-                                        <td class="py-6 px-6 text-center text-gray-700">
-                                            <div class="font-medium">{{ $payment->created_at->format('M j, Y') }}</div>
-                                        </td>
-                                        <td class="py-6 px-6 text-right">
-                                            <div class="text-2xl font-bold text-gray-900">{{ $payment->formatted_amount }}</div>
-                                        </td>
-                                    </tr>
-                                @endif
-                            </tbody>
-                        </table>
-                    </div>
+            <div class="mb-4 print:mb-3">
+                <table class="w-full border border-gray-200">
+                    <thead>
+                        <tr class="bg-gray-100">
+                            <th class="text-left py-2 px-3 text-sm font-semibold text-gray-700">Description</th>
+                            <th class="text-center py-2 px-3 text-sm font-semibold text-gray-700">Period</th>
+                            <th class="text-right py-2 px-3 text-sm font-semibold text-gray-700">Amount</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if($payment->subscription)
+                            <tr>
+                                <td class="py-3 px-3">
+                                    <p class="font-medium text-gray-900">
+                                        @if($payment->subscription && $payment->subscription->plan && is_object($payment->subscription->plan))
+                                            {{ $payment->subscription->plan->name }}
+                                        @else
+                                            Subscription Plan
+                                        @endif
+                                    </p>
+                                    <p class="text-gray-600 text-sm">
+                                        {{ ucfirst($payment->subscription->billing_cycle ?? 'monthly') }} subscription
+                                    </p>
+                                </td>
+                                <td class="py-3 px-3 text-center text-sm">
+                                    @if($payment->subscription->starts_at && $payment->subscription->ends_at)
+                                        {{ $payment->subscription->starts_at->format('M j') }} - {{ $payment->subscription->ends_at->format('M j, Y') }}
+                                    @else
+                                        -
+                                    @endif
+                                </td>
+                                <td class="py-3 px-3 text-right font-bold text-lg">{{ $payment->formatted_amount }}</td>
+                            </tr>
+                        @else
+                            <tr>
+                                <td class="py-3 px-3">
+                                    <p class="font-medium text-gray-900">Subscription Payment</p>
+                                    <p class="text-gray-600 text-sm">Payment for subscription service</p>
+                                </td>
+                                <td class="py-3 px-3 text-center text-sm">{{ $payment->created_at->format('M j, Y') }}</td>
+                                <td class="py-3 px-3 text-right font-bold text-lg">{{ $payment->formatted_amount }}</td>
+                            </tr>
+                        @endif
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Amount in Words -->
+            <div class="mb-4 print:mb-3">
+                <div class="bg-gray-50 p-3 rounded border">
+                    <p class="text-sm text-gray-700">
+                        <span class="font-medium">Amount in words:</span> 
+                        <span class="capitalize">{{ $amountInWords }}</span>
+                    </p>
                 </div>
             </div>
 
             <!-- Payment Summary -->
-            <div class="flex justify-end mb-8 print:mb-6">
-                <div class="w-full max-w-md bg-gray-50 p-6 rounded-lg border">
-                    <h4 class="text-lg font-semibold text-gray-900 mb-4">Payment Summary</h4>
-                    <div class="space-y-3">
-                        <div class="flex justify-between py-2">
+            <div class="flex justify-end mb-4 print:mb-3">
+                <div class="w-64">
+                    <div class="space-y-2">
+                        <div class="flex justify-between text-sm">
                             <span class="text-gray-700">Subtotal:</span>
-                            <span class="font-medium text-gray-900">{{ $payment->formatted_amount }}</span>
+                            <span class="font-medium">{{ $payment->formatted_amount }}</span>
                         </div>
-                        
-                        <div class="flex justify-between py-2">
+                        <div class="flex justify-between text-sm">
                             <span class="text-gray-700">Tax:</span>
-                            <span class="font-medium text-gray-900">$0.00</span>
+                            <span class="font-medium">$0.00</span>
                         </div>
-
-                        <div class="border-t border-gray-300 pt-3">
-                            <div class="flex justify-between py-2">
-                                <span class="text-xl font-bold text-gray-900">Total:</span>
-                                <span class="text-xl font-bold text-blue-600">{{ $payment->formatted_amount }}</span>
+                        <div class="border-t pt-2">
+                            <div class="flex justify-between">
+                                <span class="font-bold text-gray-900">Total:</span>
+                                <span class="font-bold text-lg text-blue-600">{{ $payment->formatted_amount }}</span>
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <!-- Payment Details -->
-            @if($payment->status === 'successful' && $payment->gateway_response)
-            <div class="border-t border-gray-200 pt-6 print:pt-4">
-                <h3 class="text-lg font-semibold text-gray-900 mb-3">Payment Details</h3>
-                <div class="bg-green-50 p-4 rounded-lg print:bg-green-25">
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
-                        @if($payment->gateway_reference)
-                        <div>
-                            <p class="text-gray-600">Gateway Reference:</p>
-                            <p class="font-medium text-gray-900">{{ $payment->gateway_reference }}</p>
-                        </div>
-                        @endif
-
-                        @if($payment->payment_reference)
-                        <div>
-                            <p class="text-gray-600">Payment Reference:</p>
-                            <p class="font-medium text-gray-900">{{ $payment->payment_reference }}</p>
-                        </div>
-                        @endif
-
-                        @if($payment->paid_at)
-                        <div>
-                            <p class="text-gray-600">Payment Date:</p>
-                            <p class="font-medium text-gray-900">{{ $payment->paid_at->format('M j, Y g:i A') }}</p>
-                        </div>
-                        @endif
+            @if($payment->status === 'successful' && ($payment->gateway_reference || $payment->paid_at))
+            <div class="border-t pt-3 mb-3 print:pt-2 print:mb-2">
+                <div class="grid grid-cols-3 gap-4 text-xs">
+                    @if($payment->gateway_reference)
+                    <div>
+                        <p class="text-gray-600">Gateway Ref:</p>
+                        <p class="font-medium">{{ $payment->gateway_reference }}</p>
                     </div>
+                    @endif
+                    @if($payment->paid_at)
+                    <div>
+                        <p class="text-gray-600">Paid:</p>
+                        <p class="font-medium">{{ $payment->paid_at->format('M j, Y') }}</p>
+                    </div>
+                    @endif
                 </div>
             </div>
             @endif
 
             <!-- Footer -->
-            <div class="border-t border-gray-200 pt-6 mt-8 print:pt-4 print:mt-6">
-                <div class="text-center text-gray-600 text-sm space-y-2">
+            <div class="border-t pt-3 mt-4 print:pt-2 print:mt-3">
+                <div class="text-center text-gray-600 text-xs">
                     <p>Thank you for your business!</p>
-
-                    <div class="mt-4 pt-4 border-t border-gray-200">
-                        <p>&copy; {{ date('Y') }} {{ config('app.name') }}. All rights reserved.</p>
-                        @if($businessInfo['website'] ?? false)
-                        <p>{{ $businessInfo['website'] }}</p>
-                        @endif
-                    </div>
+                    <p class="mt-2">&copy; {{ date('Y') }} {{ config('app.name') }}. All rights reserved.</p>
                 </div>
             </div>
         </div>
@@ -381,10 +298,29 @@
     }
     
     body {
-        font-size: 12pt;
-        line-height: 1.4;
+        font-size: 10pt;
+        line-height: 1.2;
         margin: 0;
-        padding: 20px;
+        padding: 0;
+        visibility: hidden;
+    }
+
+    #invoice-content,
+    #invoice-content * {
+        visibility: visible;
+    }
+
+    #invoice-content {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 100%;
+        margin: 0 !important;
+        padding: 20px !important;
+        box-shadow: none !important;
+        border: none !important;
+        border-radius: 0 !important;
+        background: white !important;
     }
 
     .print\:hidden {
@@ -403,24 +339,24 @@
         padding: 0 !important;
     }
 
-    .print\:text-3xl {
-        font-size: 1.875rem !important;
+    .print\:text-xl {
+        font-size: 1.25rem !important;
     }
 
-    .print\:mb-6 {
-        margin-bottom: 1.5rem !important;
+    .print\:mb-3 {
+        margin-bottom: 0.75rem !important;
     }
 
-    .print\:mb-4 {
-        margin-bottom: 1rem !important;
+    .print\:mb-2 {
+        margin-bottom: 0.5rem !important;
     }
 
-    .print\:pt-4 {
-        padding-top: 1rem !important;
+    .print\:pt-2 {
+        padding-top: 0.5rem !important;
     }
 
-    .print\:mt-6 {
-        margin-top: 1.5rem !important;
+    .print\:mt-3 {
+        margin-top: 0.75rem !important;
     }
 
     .max-w-4xl {
