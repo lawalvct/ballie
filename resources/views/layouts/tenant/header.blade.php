@@ -44,75 +44,133 @@
 
             <!-- Calculator Popup -->
             <div x-show="isOpen"
-                 x-transition:enter="transition ease-out duration-200"
-                 x-transition:enter-start="opacity-0 scale-95 transform translate-y-2"
+                 x-transition:enter="transition ease-out duration-300"
+                 x-transition:enter-start="opacity-0 scale-90 transform translate-y-4"
                  x-transition:enter-end="opacity-100 scale-100 transform translate-y-0"
-                 x-transition:leave="transition ease-in duration-150"
+                 x-transition:leave="transition ease-in duration-200"
                  x-transition:leave-start="opacity-100 scale-100 transform translate-y-0"
-                 x-transition:leave-end="opacity-0 scale-95 transform translate-y-2"
+                 x-transition:leave-end="opacity-0 scale-90 transform translate-y-4"
                  @click.outside="closeCalculator()"
-                 class="absolute right-0 mt-2 w-72 bg-white shadow-2xl rounded-xl border border-gray-200 p-4 z-50">
+                 class="calculator-popup absolute right-0 mt-2 w-80 shadow-2xl rounded-2xl overflow-hidden z-50">
 
                 <!-- Calculator Header -->
-                <div class="flex items-center justify-between mb-3">
-                    <h3 class="font-semibold text-gray-800 text-sm">Calculator</h3>
-                    <div class="flex items-center space-x-2">
-                        <button @click="clearAll()" class="text-xs text-red-500 hover:text-red-700 transition-colors">Clear</button>
-                        <button @click="closeCalculator()" class="text-gray-400 hover:text-gray-600 transition-colors">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                <div class="bg-gradient-to-r from-blue-600 to-purple-600 px-4 py-3">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center space-x-2">
+                            <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"/>
                             </svg>
-                        </button>
+                            <h3 class="font-semibold text-white text-sm">Smart Calculator</h3>
+                        </div>
+                        <div class="flex items-center space-x-2">
+                            <button @click="clearAll()" class="text-xs text-white/80 hover:text-white bg-white/20 hover:bg-white/30 px-2 py-1 rounded transition-all duration-200">AC</button>
+                            <button @click="closeCalculator()" class="text-white/80 hover:text-white transition-colors duration-200">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                                </svg>
+                            </button>
+                        </div>
                     </div>
                 </div>
 
-                <!-- Display -->
-                <div class="mb-3">
-                    <input x-model="expression"
-                           @keyup.enter="calculate()"
-                           class="w-full border border-gray-300 rounded-lg px-3 py-2 text-right font-mono text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
-                           placeholder="Enter calculation..."/>
-                    <div class="text-right text-xl font-bold text-gray-800 mt-2 min-h-[28px]" x-text="result || '0'"></div>
-                </div>
+                <div class="p-4">
+                    <!-- Display -->
+                    <div class="mb-4">
+                        <div class="calculator-display rounded-xl p-4 mb-2">
+                            <input x-model="expression"
+                                   @keyup.enter="calculate()"
+                                   @keydown="handleKeyboard($event)"
+                                   class="w-full bg-transparent text-green-400 font-mono text-sm placeholder-gray-500 focus:outline-none border-b border-gray-600 pb-1"
+                                   placeholder="Enter calculation..."/>
+                            <div class="text-right text-3xl font-bold text-white mt-3 min-h-[40px] transition-all duration-200 border border-gray-600 rounded-lg px-3 py-2 bg-black/20"
+                                 :class="{'text-green-400 border-green-500': result && result !== 'Error', 'text-red-400 border-red-500': result === 'Error', 'border-gray-600': !result || result === '0'}"
+                                 x-text="result || '0'"></div>
+                        </div>
+                        <div class="text-xs text-gray-500 text-center" x-show="lastCalculation" x-text="'Last: ' + lastCalculation"></div>
+                    </div>
 
-                <!-- Calculator Buttons -->
-                <div class="grid grid-cols-4 gap-2">
-                    <!-- Row 1 -->
-                    <button @click="clearAll()" class="calc-btn bg-red-500 hover:bg-red-600 text-white text-xs">C</button>
-                    <button @click="deleteLast()" class="calc-btn bg-orange-500 hover:bg-orange-600 text-white text-xs">⌫</button>
-                    <button @click="addToExpression('%')" class="calc-btn bg-gray-500 hover:bg-gray-600 text-white text-xs">%</button>
-                    <button @click="addToExpression('/')" class="calc-btn bg-blue-500 hover:bg-blue-600 text-white text-xs">÷</button>
+                    <!-- Calculator Buttons -->
+                    <div class="grid grid-cols-4 gap-2 mb-4">
+                        <!-- Row 1 -->
+                        <button @click="clearAll()" class="calc-btn-special bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white shadow-lg">AC</button>
+                        <button @click="deleteLast()" class="calc-btn-special bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white shadow-lg">⌫</button>
+                        <button @click="addToExpression('%')" class="calc-btn-operator">%</button>
+                        <button @click="addToExpression('/')" class="calc-btn-operator">÷</button>
 
-                    <!-- Row 2 -->
-                    <button @click="addToExpression('7')" class="calc-btn">7</button>
-                    <button @click="addToExpression('8')" class="calc-btn">8</button>
-                    <button @click="addToExpression('9')" class="calc-btn">9</button>
-                    <button @click="addToExpression('*')" class="calc-btn bg-blue-500 hover:bg-blue-600 text-white text-xs">×</button>
+                        <!-- Row 2 -->
+                        <button @click="addToExpression('7')" class="calc-btn-number">7</button>
+                        <button @click="addToExpression('8')" class="calc-btn-number">8</button>
+                        <button @click="addToExpression('9')" class="calc-btn-number">9</button>
+                        <button @click="addToExpression('*')" class="calc-btn-operator">×</button>
 
-                    <!-- Row 3 -->
-                    <button @click="addToExpression('4')" class="calc-btn">4</button>
-                    <button @click="addToExpression('5')" class="calc-btn">5</button>
-                    <button @click="addToExpression('6')" class="calc-btn">6</button>
-                    <button @click="addToExpression('-')" class="calc-btn bg-blue-500 hover:bg-blue-600 text-white text-xs">−</button>
+                        <!-- Row 3 -->
+                        <button @click="addToExpression('4')" class="calc-btn-number">4</button>
+                        <button @click="addToExpression('5')" class="calc-btn-number">5</button>
+                        <button @click="addToExpression('6')" class="calc-btn-number">6</button>
+                        <button @click="addToExpression('-')" class="calc-btn-operator">−</button>
 
-                    <!-- Row 4 -->
-                    <button @click="addToExpression('1')" class="calc-btn">1</button>
-                    <button @click="addToExpression('2')" class="calc-btn">2</button>
-                    <button @click="addToExpression('3')" class="calc-btn">3</button>
-                    <button @click="addToExpression('+')" class="calc-btn bg-blue-500 hover:bg-blue-600 text-white text-xs row-span-2">+</button>
+                        <!-- Row 4 -->
+                        <button @click="addToExpression('1')" class="calc-btn-number">1</button>
+                        <button @click="addToExpression('2')" class="calc-btn-number">2</button>
+                        <button @click="addToExpression('3')" class="calc-btn-number">3</button>
+                        <button @click="addToExpression('+')" class="calc-btn-operator row-span-2">+</button>
 
-                    <!-- Row 5 -->
-                    <button @click="addToExpression('0')" class="calc-btn col-span-2">0</button>
-                    <button @click="addToExpression('.')" class="calc-btn">.</button>
-                    <button @click="calculate()" class="calc-btn bg-green-500 hover:bg-green-600 text-white text-xs">=</button>
-                </div>
+                        <!-- Row 5 -->
+                        <button @click="addToExpression('0')" class="calc-btn-number col-span-2">0</button>
+                        <button @click="addToExpression('.')" class="calc-btn-number">.</button>
+                        <button @click="calculate()" class="calc-btn-equals">=</button>
+                    </div>
 
-                <!-- Quick Functions -->
-                <div class="mt-3 pt-3 border-t border-gray-200">
-                    <div class="flex flex-wrap gap-1">
-                        <button @click="addVat()" class="px-2 py-1 text-xs bg-emerald-100 text-emerald-700 rounded hover:bg-emerald-200 transition-colors">+VAT 7.5%</button>
-                        <button @click="removeVat()" class="px-2 py-1 text-xs bg-orange-100 text-orange-700 rounded hover:bg-orange-200 transition-colors">-VAT 7.5%</button>
-                        <button @click="copyResult()" class="px-2 py-1 text-xs bg-blue-100 text-blue-700 rounded hover:bg-blue-200 transition-colors">Copy</button>
+                    <!-- Quick Functions -->
+                    <div class="border-t border-gray-200 pt-4 mt-4" >
+                        <div class="text-xs font-medium text-gray-600 mb-3 text-center">Quick Actions</div>
+                        <div class="grid grid-cols-2 gap-2 mb-2  ">
+                            <button @click="addVat()" class="quick-btn quick-btn-vat-add " style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;">
+                                <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24 ">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
+                                </svg>
+                                +VAT 7.5%
+                            </button>
+                            <button @click="removeVat()" class="quick-btn quick-btn-vat-remove" style="background: linear-gradient(135deg, #f56565 0%, #c53030 100%); color: white;">
+                                <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 12H6"/>
+                                </svg>
+                                -VAT 7.5%
+                            </button>
+                        </div>
+                        <div class="grid grid-cols-3 gap-2">
+                            <button @click="copyResult()" class="quick-btn quick-btn-copy" style="background: linear-gradient(135deg, #48bb78 0%, #38a169 100%); color: white;">
+                                <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/>
+                                </svg>
+                                Copy
+                            </button>
+                            <button @click="storeMemory()" class="quick-btn quick-btn-memory" style="background: linear-gradient(135deg, #4299e1 0%, #3182ce 100%); color: white;">
+                                <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"/>
+                                </svg>
+                                M+
+                            </button>
+                            <button @click="recallMemory()" class="quick-btn quick-btn-memory" :disabled="!memoryValue" style="background: linear-gradient(135deg, #ed64a6 0%, #d53f8c 100%); color: white;">
+                                <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" >
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                </svg>
+                                MR
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- History Panel -->
+                    <div x-show="showHistory" x-transition class="mt-3 pt-3 border-t border-gray-200">
+                        <div class="max-h-32 overflow-y-auto">
+                            <template x-for="(item, index) in history" :key="index">
+                                <div class="flex justify-between items-center py-1 px-2 hover:bg-gray-100 rounded cursor-pointer text-xs" @click="useFromHistory(item)">
+                                    <span x-text="item.expression"></span>
+                                    <span class="font-mono text-blue-600" x-text="item.result"></span>
+                                </div>
+                            </template>
+                            <div x-show="history.length === 0" class="text-center text-gray-500 text-xs py-2">No history yet</div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -256,11 +314,120 @@
 }
 
 /* Calculator Styles */
-.calc-btn {
-    @apply py-2 px-1 rounded-lg font-medium text-sm bg-gray-100 hover:bg-gray-200 transition-colors duration-150 active:scale-95;
+.calc-btn-number {
+    @apply py-3 px-2 rounded-xl font-bold text-lg bg-gradient-to-br from-white to-gray-50 hover:from-gray-50 hover:to-gray-100 border-2 border-gray-300 hover:border-blue-400 text-gray-800 transition-all duration-200 active:scale-95 shadow-lg hover:shadow-xl;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06), inset 0 1px 0 rgba(255, 255, 255, 0.1);
 }
 
-.calc-btn:active {
+.calc-btn-number:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 8px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05), inset 0 1px 0 rgba(255, 255, 255, 0.2);
+}
+
+.calc-btn-number:active {
+    transform: translateY(0) scale(0.95);
+    box-shadow: 0 2px 4px -1px rgba(0, 0, 0, 0.1), inset 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.calc-btn-operator {
+    @apply py-3 px-2 rounded-xl font-bold text-lg bg-gradient-to-br from-blue-500 via-blue-600 to-indigo-600 hover:from-blue-600 hover:via-blue-700 hover:to-indigo-700 text-white border-2 border-blue-400 hover:border-blue-300 transition-all duration-200 active:scale-95 shadow-lg;
+    box-shadow: 0 4px 6px -1px rgba(59, 130, 246, 0.3), 0 2px 4px -1px rgba(59, 130, 246, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.2);
+}
+
+.calc-btn-operator:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 8px 15px -3px rgba(59, 130, 246, 0.4), 0 4px 6px -2px rgba(59, 130, 246, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.3);
+}
+
+.calc-btn-operator:active {
+    transform: translateY(0) scale(0.95);
+    box-shadow: 0 2px 4px -1px rgba(59, 130, 246, 0.2), inset 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.calc-btn-special {
+    @apply py-3 px-2 rounded-xl font-bold text-sm border-2 transition-all duration-200 active:scale-95 shadow-lg;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+}
+
+.calc-btn-special:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 8px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05), inset 0 1px 0 rgba(255, 255, 255, 0.2);
+}
+
+.calc-btn-special:active {
+    transform: translateY(0) scale(0.95);
+    box-shadow: 0 2px 4px -1px rgba(0, 0, 0, 0.1), inset 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.calc-btn-equals {
+    @apply py-3 px-2 rounded-xl font-bold text-lg bg-gradient-to-br from-emerald-500 via-green-500 to-teal-500 hover:from-emerald-600 hover:via-green-600 hover:to-teal-600 text-white border-2 border-emerald-400 hover:border-emerald-300 transition-all duration-200 active:scale-95 shadow-lg;
+    box-shadow: 0 4px 6px -1px rgba(16, 185, 129, 0.3), 0 2px 4px -1px rgba(16, 185, 129, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.2);
+}
+
+.calc-btn-equals:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 8px 15px -3px rgba(16, 185, 129, 0.4), 0 4px 6px -2px rgba(16, 185, 129, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.3);
+}
+
+.calc-btn-equals:active {
+    transform: translateY(0) scale(0.95);
+    box-shadow: 0 2px 4px -1px rgba(16, 185, 129, 0.2), inset 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* Calculator Display Enhancement */
+.calculator-display {
+    background: linear-gradient(135deg, #1f2937 0%, #111827 100%);
+    border: 3px solid #374151;
+    box-shadow:
+        inset 0 2px 4px rgba(0, 0, 0, 0.3),
+        inset 0 -2px 4px rgba(255, 255, 255, 0.05),
+        0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* Quick Function Buttons */
+.quick-btn {
+    @apply px-3 py-2 text-xs font-semibold rounded-lg border-2 transition-all duration-200 active:scale-95 shadow-lg hover:shadow-xl flex items-center justify-center bg-gray-100 text-gray-700 border-gray-300;
+}
+
+.quick-btn-vat-add {
+    @apply bg-gradient-to-r from-emerald-400 to-green-400 text-white border-emerald-500 hover:from-emerald-500 hover:to-green-500 hover:border-emerald-600 shadow-emerald-200 !important;
+}
+
+.quick-btn-vat-remove {
+    @apply bg-gradient-to-r from-orange-400 to-red-400 text-white border-orange-500 hover:from-orange-500 hover:to-red-500 hover:border-orange-600 shadow-orange-200 !important;
+}
+
+.quick-btn-copy {
+    @apply bg-gradient-to-r from-blue-400 to-indigo-400 text-white border-blue-500 hover:from-blue-500 hover:to-indigo-500 hover:border-blue-600 shadow-blue-200 !important;
+}
+
+.quick-btn-memory {
+    @apply bg-gradient-to-r from-purple-400 to-violet-400 text-white border-purple-500 hover:from-purple-500 hover:to-violet-500 hover:border-purple-600 shadow-purple-200 !important;
+}
+
+.quick-btn:disabled {
+    @apply opacity-50 cursor-not-allowed;
+}
+
+.quick-btn:disabled:hover {
+    @apply opacity-50;
+}
+
+/* Calculator popup enhancement */
+.calculator-popup {
+    background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+    border: 2px solid #e2e8f0;
+    box-shadow:
+        0 25px 50px -12px rgba(0, 0, 0, 0.25),
+        0 10px 20px -5px rgba(0, 0, 0, 0.1),
+        inset 0 1px 0 rgba(255, 255, 255, 0.6);
+}
+
+.calc-btn-number:active,
+.calc-btn-operator:active,
+.calc-btn-special:active,
+.calc-btn-equals:active,
+.quick-btn:active {
     transform: scale(0.95);
 }
 </style>
@@ -273,6 +440,10 @@ function calculatorWidget() {
         expression: '',
         result: '',
         lastResult: '',
+        lastCalculation: '',
+        memoryValue: null,
+        history: [],
+        showHistory: false,
 
         toggleCalculator() {
             this.isOpen = !this.isOpen;
@@ -324,7 +495,7 @@ function calculatorWidget() {
 
                 // Handle percentage calculations
                 expr = expr.replace(/(\d+(?:\.\d+)?)%/g, '($1/100)');
-                
+
                 // Security: only allow numbers, operators, parentheses, and decimal points
                 if (!/^[0-9+\-*\/().%\s]+$/.test(expr)) {
                     throw new Error('Invalid characters in expression');
@@ -332,17 +503,52 @@ function calculatorWidget() {
 
                 // Use Function constructor for safe evaluation (better than eval)
                 const result = new Function('return ' + expr)();
-                
+
                 if (!isFinite(result)) {
                     throw new Error('Invalid calculation');
                 }
 
                 this.result = this.formatNumber(result);
                 this.lastResult = result;
+                this.lastCalculation = `${this.expression} = ${this.result}`;
             } catch (error) {
                 this.result = 'Error';
                 console.error('Calculation error:', error);
             }
+        },
+
+        handleKeyboard(event) {
+            const key = event.key;
+            if (/[0-9+\-*/.()%]/.test(key)) {
+                event.preventDefault();
+                this.addToExpression(key === '*' ? '×' : key === '/' ? '÷' : key === '-' ? '−' : key);
+            } else if (key === 'Backspace') {
+                event.preventDefault();
+                this.deleteLast();
+            } else if (key === 'Escape') {
+                event.preventDefault();
+                this.clearAll();
+            }
+        },
+
+        addToHistory() {
+            if (this.result && this.result !== 'Error' && this.expression) {
+                this.history.unshift({
+                    expression: this.expression,
+                    result: this.result,
+                    timestamp: new Date().toLocaleTimeString()
+                });
+                if (this.history.length > 10) this.history.pop();
+            }
+        },
+
+        toggleHistory() {
+            this.showHistory = !this.showHistory;
+        },
+
+        useFromHistory(item) {
+            this.expression = item.expression;
+            this.result = item.result;
         },
 
         formatNumber(num) {
@@ -391,6 +597,39 @@ function calculatorWidget() {
                 } catch (err) {
                     console.error('Failed to copy:', err);
                 }
+            }
+        },
+
+        storeMemory() {
+            if (this.result && this.result !== 'Error') {
+                this.memoryValue = parseFloat(this.result);
+                // Show brief feedback
+                const originalText = this.result;
+                this.result = 'Stored!';
+                setTimeout(() => {
+                    this.result = originalText;
+                }, 800);
+            }
+        },
+
+        recallMemory() {
+            if (this.memoryValue !== null) {
+                this.expression = this.memoryValue.toString();
+                this.result = this.memoryValue.toString();
+            }
+        },
+
+        clearMemory() {
+            this.memoryValue = null;
+        },
+
+        handleKeyboard(event) {
+            // Handle keyboard shortcuts
+            if (event.key === 'Escape') {
+                this.closeCalculator();
+            } else if (event.key === 'c' && event.ctrlKey) {
+                event.preventDefault();
+                this.copyResult();
             }
         }
     }
@@ -595,9 +834,6 @@ document.addEventListener('DOMContentLoaded', function() {
             });
         });
     }
-
-    function setActiveHeaderItem(items, index) {/* Lines 470-475 omitted */}
-});
 
     function setActiveHeaderItem(items, index) {
         items.forEach(item => item.classList.remove('active'));
