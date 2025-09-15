@@ -58,6 +58,12 @@ Route::prefix('{tenant}')->middleware(['tenant'])->group(function () {
 });
 
 
+// Tenant Invitation Routes (public)
+Route::get('/accept-invitation/{token}', [App\Http\Controllers\InvitationController::class, 'show'])
+    ->name('invitation.show');
+Route::post('/accept-invitation/{token}', [App\Http\Controllers\InvitationController::class, 'accept'])
+    ->name('invitation.accept');
+
 // AI Accounting Assistant API Routes (using web middleware for CSRF protection)
 Route::prefix('api')->middleware(['web', 'auth'])->group(function () {
 

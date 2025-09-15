@@ -6,6 +6,65 @@
 @section('content')
 <div class="max-w-4xl mx-auto space-y-8">
 
+    <!-- Success/Error Messages -->
+    @if(session('success'))
+    <div class="bg-green-50 border-l-4 border-green-400 p-4 rounded-lg">
+        <div class="flex">
+            <div class="flex-shrink-0">
+                <svg class="h-5 w-5 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                </svg>
+            </div>
+            <div class="ml-3">
+                <p class="text-sm font-medium text-green-800">{{ session('success') }}</p>
+            </div>
+        </div>
+    </div>
+    @endif
+
+    @if(session('error'))
+    <div class="bg-red-50 border-l-4 border-red-400 p-4 rounded-lg">
+        <div class="flex">
+            <div class="flex-shrink-0">
+                <svg class="h-5 w-5 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+                </svg>
+            </div>
+            <div class="ml-3">
+                <p class="text-sm font-medium text-red-800">{{ session('error') }}</p>
+            </div>
+        </div>
+    </div>
+    @endif
+
+    @if($errors->any() && $errors->has('general'))
+    <div class="bg-red-50 border-l-4 border-red-400 p-4 rounded-lg">
+        <div class="flex">
+            <div class="flex-shrink-0">
+                <svg class="h-5 w-5 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+                </svg>
+            </div>
+            <div class="ml-3">
+                <h3 class="text-sm font-medium text-red-800">There were some problems with your submission:</h3>
+                <div class="mt-2 text-sm text-red-700">
+                    <ul class="list-disc list-inside space-y-1">
+                        @if($errors->has('general'))
+                            @foreach($errors->get('general') as $error)
+                                <li>{{ $error }}</li>
+                            @endforeach
+                        @else
+                            @foreach($errors->all() as $error)
+                                <li>{{ $error }}</li>
+                            @endforeach
+                        @endif
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+    @endif
+
     <!-- Header -->
     <div class="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
         <div class="px-6 py-4 border-b border-gray-200 bg-gradient-to-r from-amber-50 to-orange-50">
@@ -321,11 +380,12 @@
                 Cancel
             </a>
             <button type="submit"
-                    class="px-6 py-3 bg-amber-600 border border-transparent rounded-lg text-sm font-medium text-white hover:bg-amber-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-amber-500 transition-colors">
+                    id="submit-btn"
+                    class="px-6 py-3 bg-amber-600 border border-transparent rounded-lg text-sm font-medium text-white hover:bg-amber-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-amber-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
                 <svg class="w-4 h-4 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path>
                 </svg>
-                Send Invitation
+                <span id="submit-text">Send Invitation</span>
             </button>
         </div>
     </form>
@@ -365,15 +425,24 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
-    // Form submission confirmation
+    // Form submission confirmation and loading state
     const form = document.querySelector('form');
+    const submitBtn = document.getElementById('submit-btn');
+    const submitText = document.getElementById('submit-text');
+    
     form.addEventListener('submit', function(e) {
         const companyName = document.getElementById('company_name').value;
         const ownerEmail = document.getElementById('owner_email').value;
 
         if (!confirm(`Are you sure you want to send an invitation to "${ownerEmail}" for company "${companyName}"?`)) {
             e.preventDefault();
+            return;
         }
+        
+        // Show loading state
+        submitBtn.disabled = true;
+        submitText.textContent = 'Sending Invitation...';
+        submitBtn.classList.add('opacity-75');
     });
 });
 </script>

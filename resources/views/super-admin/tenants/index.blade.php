@@ -149,7 +149,7 @@
 
                     <!-- Actions -->
                     <div class="flex space-x-2">
-                        <button class="inline-flex items-center px-3 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 transition-colors">
+                        <button onclick="exportSelected()" class="inline-flex items-center px-3 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 transition-colors">
                             <svg class="w-4 h-4 sm:mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
                             </svg>
@@ -173,10 +173,65 @@
         </div>
     </div>    <!-- Enhanced Companies Table -->
     <div class="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
+        <!-- Bulk Actions Bar -->
+        <div id="bulk-actions-bar" class="hidden bg-indigo-50 border-b border-indigo-200 px-4 py-3">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center space-x-3">
+                    <span class="text-sm font-medium text-indigo-700">
+                        <span id="selected-count">0</span> companies selected
+                    </span>
+                    <div class="hidden md:flex items-center space-x-4 text-xs text-indigo-600">
+                        <span>Press Ctrl+A to select all visible</span>
+                        <span>•</span>
+                        <span>Click on rows to select</span>
+                    </div>
+                </div>
+                <div class="flex items-center space-x-2">
+                    <button type="button"
+                            class="px-3 py-1.5 bg-green-600 text-white text-sm rounded-lg hover:bg-green-700 transition-colors"
+                            onclick="bulkAction('activate')"
+                            title="Activate selected companies">
+                        <i class="fas fa-check mr-1"></i>
+                        Activate
+                    </button>
+                    <button type="button"
+                            class="px-3 py-1.5 bg-yellow-600 text-white text-sm rounded-lg hover:bg-yellow-700 transition-colors"
+                            onclick="bulkAction('suspend')"
+                            title="Suspend selected companies">
+                        <i class="fas fa-pause mr-1"></i>
+                        Suspend
+                    </button>
+                    <button type="button"
+                            class="px-3 py-1.5 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 transition-colors"
+                            onclick="exportSelected()"
+                            title="Export selected companies to CSV">
+                        <i class="fas fa-download mr-1"></i>
+                        Export
+                    </button>
+                    <button type="button"
+                            class="px-3 py-1.5 bg-red-600 text-white text-sm rounded-lg hover:bg-red-700 transition-colors"
+                            onclick="bulkAction('delete')"
+                            title="Delete selected companies (cannot be undone)">
+                        <i class="fas fa-trash mr-1"></i>
+                        Delete
+                    </button>
+                    <button type="button"
+                            class="px-3 py-1.5 border border-gray-300 text-gray-700 text-sm rounded-lg hover:bg-gray-50 transition-colors"
+                            onclick="clearSelection()"
+                            title="Clear selection">
+                        Clear
+                    </button>
+                </div>
+            </div>
+        </div>
+
         <div class="overflow-x-auto max-w-full">
             <table class="w-full divide-y divide-gray-200" style="table-layout: fixed;">
                 <thead class="bg-gradient-to-r from-gray-50 to-gray-100">
                     <tr>
+                        <th scope="col" class="px-3 py-3 text-left w-8">
+                            <input type="checkbox" id="select-all" class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500" title="Select all companies">
+                        </th>
                         <th scope="col" class="px-3 sm:px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider w-1/4">
                             Company
                         </th>
@@ -205,7 +260,10 @@
                 </thead>
                 <tbody class="bg-white divide-y divide-gray-100">
                     @forelse($tenants as $tenant)
-                    <tr class="hover:bg-gray-50 transition-colors duration-150" data-tenant-status="{{ strtolower($tenant->subscription_status) }}" data-tenant-plan="{{ $tenant->plan ? strtolower($tenant->plan->slug) : 'none' }}">
+                    <tr class="group hover:bg-gray-50 transition-colors duration-150 relative" data-tenant-status="{{ strtolower($tenant->subscription_status) }}" data-tenant-plan="{{ $tenant->plan ? strtolower($tenant->plan->slug) : 'none' }}">
+                        <td class="px-3 py-3">
+                            <input type="checkbox" name="selected_tenants[]" value="{{ $tenant->id }}" class="tenant-checkbox rounded border-gray-300 text-indigo-600 focus:ring-indigo-500">
+                        </td>
                         <td class="px-3 sm:px-4 py-3 overflow-hidden">
                             <div class="flex items-center min-w-0">
                                 <div class="flex-shrink-0 h-8 w-8 sm:h-10 sm:w-10">
@@ -313,12 +371,12 @@
                             <div class="text-xs text-gray-500 truncate">{{ $tenant->updated_at->format('M j, g:i A') }}</div>
                         </td>
                         <td class="px-2 py-3 text-right">
-                            <div class="flex items-center justify-end space-x-1">
+                            <div class="flex items-center justify-end space-x-1 opacity-60 group-hover:opacity-100 transition-opacity duration-200">
                                 <!-- View Button -->
                                 <a href="{{ route('super-admin.tenants.show', $tenant) }}"
-                                   class="inline-flex items-center justify-center w-7 h-7 rounded-md text-gray-500 hover:text-indigo-600 hover:bg-indigo-50 transition-all duration-200"
+                                   class="inline-flex items-center justify-center w-8 h-8 rounded-lg text-gray-500 hover:text-indigo-600 hover:bg-indigo-50 transition-all duration-200 hover:scale-105"
                                    title="View Details">
-                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
                                     </svg>
@@ -326,9 +384,9 @@
 
                                 <!-- Edit Button -->
                                 <a href="{{ route('super-admin.tenants.edit', $tenant) }}"
-                                   class="inline-flex items-center justify-center w-7 h-7 rounded-md text-gray-500 hover:text-blue-600 hover:bg-blue-50 transition-all duration-200"
+                                   class="inline-flex items-center justify-center w-8 h-8 rounded-lg text-gray-500 hover:text-blue-600 hover:bg-blue-50 transition-all duration-200 hover:scale-105"
                                    title="Edit Company">
-                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
                                     </svg>
                                 </a>
@@ -338,10 +396,10 @@
                                     <form action="{{ route('super-admin.tenants.suspend', $tenant) }}" method="POST" class="inline">
                                         @csrf
                                         <button type="submit"
-                                                class="inline-flex items-center justify-center w-7 h-7 rounded-md text-gray-500 hover:text-red-600 hover:bg-red-50 transition-all duration-200"
+                                                class="inline-flex items-center justify-center w-8 h-8 rounded-lg text-gray-500 hover:text-red-600 hover:bg-red-50 transition-all duration-200 hover:scale-105"
                                                 onclick="return confirm('Are you sure you want to suspend this company?')"
                                                 title="Suspend Company">
-                                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
                                             </svg>
                                         </button>
@@ -350,10 +408,10 @@
                                     <form action="{{ route('super-admin.tenants.activate', $tenant) }}" method="POST" class="inline">
                                         @csrf
                                         <button type="submit"
-                                                class="inline-flex items-center justify-center w-7 h-7 rounded-md text-gray-500 hover:text-green-600 hover:bg-green-50 transition-all duration-200"
+                                                class="inline-flex items-center justify-center w-8 h-8 rounded-lg text-gray-500 hover:text-green-600 hover:bg-green-50 transition-all duration-200 hover:scale-105"
                                                 onclick="return confirm('Are you sure you want to activate this company?')"
                                                 title="Activate Company">
-                                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                                             </svg>
                                         </button>
@@ -363,9 +421,9 @@
                                 <!-- More Actions Dropdown (Hidden on Mobile) -->
                                 <div class="relative hidden sm:block" x-data="{ open: false }">
                                     <button @click="open = !open"
-                                            class="inline-flex items-center justify-center w-7 h-7 rounded-md text-gray-500 hover:text-gray-700 hover:bg-gray-100 transition-all duration-200"
+                                            class="inline-flex items-center justify-center w-8 h-8 rounded-lg text-gray-500 hover:text-gray-700 hover:bg-gray-100 transition-all duration-200 hover:scale-105 relative z-10"
                                             title="More Actions">
-                                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z"></path>
                                         </svg>
                                     </button>
@@ -377,23 +435,23 @@
                                          x-transition:leave="transition ease-in duration-75"
                                          x-transition:leave-start="transform opacity-100 scale-100"
                                          x-transition:leave-end="transform opacity-0 scale-95"
-                                         class="absolute right-0 mt-1 w-44 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-10">
+                                         class="absolute right-0 mt-1 w-44 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-50">
                                         @if($tenant->users->where('role', 'owner')->first())
-                                            <a href="#" class="block px-3 py-1.5 text-xs text-gray-700 hover:bg-gray-50">
-                                                <svg class="w-3 h-3 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <a href="#" class="flex items-center px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors">
+                                                <svg class="w-4 h-4 mr-2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
                                                 </svg>
                                                 Impersonate User
                                             </a>
                                         @endif
-                                        <a href="#" class="block px-3 py-1.5 text-xs text-gray-700 hover:bg-gray-50">
-                                            <svg class="w-3 h-3 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <a href="#" class="flex items-center px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors">
+                                            <svg class="w-4 h-4 mr-2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
                                             </svg>
                                             View Analytics
                                         </a>
-                                        <a href="#" class="block px-3 py-1.5 text-xs text-gray-700 hover:bg-gray-50">
-                                            <svg class="w-3 h-3 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <a href="#" class="flex items-center px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors">
+                                            <svg class="w-4 h-4 mr-2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
                                             </svg>
                                             Export Data
@@ -577,10 +635,198 @@ document.addEventListener('DOMContentLoaded', function() {
             clearFilters();
             searchInput.blur();
         }
+
+        // Ctrl/Cmd + A to select all visible (when not focused on input)
+        if ((e.ctrlKey || e.metaKey) && e.key === 'a' && !searchInput.matches(':focus')) {
+            e.preventDefault();
+            if (selectAllCheckbox) {
+                selectAllCheckbox.checked = true;
+                selectAllCheckbox.dispatchEvent(new Event('change'));
+            }
+        }
+
+        // Delete key to trigger bulk delete (when companies are selected)
+        if (e.key === 'Delete' && !searchInput.matches(':focus')) {
+            const selectedCount = document.querySelectorAll('.tenant-checkbox:checked').length;
+            if (selectedCount > 0) {
+                e.preventDefault();
+                bulkAction('delete');
+            }
+        }
     });
 
     // Add keyboard shortcut hint
     searchInput.setAttribute('title', 'Press Ctrl+K to quickly search');
+
+    // Bulk selection functionality
+    const selectAllCheckbox = document.getElementById('select-all');
+    const tenantCheckboxes = document.querySelectorAll('.tenant-checkbox');
+    const bulkActionsBar = document.getElementById('bulk-actions-bar');
+    const selectedCountSpan = document.getElementById('selected-count');
+
+    function updateBulkActionsBar() {
+        const checkedBoxes = document.querySelectorAll('.tenant-checkbox:checked');
+        const count = checkedBoxes.length;
+
+        selectedCountSpan.textContent = count;
+
+        if (count > 0) {
+            bulkActionsBar.classList.remove('hidden');
+            bulkActionsBar.style.animation = 'fadeInUp 0.3s ease both';
+        } else {
+            bulkActionsBar.classList.add('hidden');
+        }
+
+        // Update select all checkbox state
+        if (count === 0) {
+            selectAllCheckbox.indeterminate = false;
+            selectAllCheckbox.checked = false;
+        } else if (count === tenantCheckboxes.length) {
+            selectAllCheckbox.indeterminate = false;
+            selectAllCheckbox.checked = true;
+        } else {
+            selectAllCheckbox.indeterminate = true;
+        }
+    }
+
+    // Bulk selection event listeners
+    if (selectAllCheckbox) {
+        selectAllCheckbox.addEventListener('change', function() {
+            const isChecked = this.checked;
+            tenantCheckboxes.forEach(checkbox => {
+                if (checkbox.closest('tr').style.display !== 'none') {
+                    checkbox.checked = isChecked;
+                }
+            });
+            updateBulkActionsBar();
+        });
+    }
+
+    tenantCheckboxes.forEach(checkbox => {
+        checkbox.addEventListener('change', updateBulkActionsBar);
+
+        // Add visual feedback for selection
+        checkbox.addEventListener('change', function() {
+            const row = this.closest('tr');
+            if (this.checked) {
+                row.classList.add('bg-indigo-50', 'border-indigo-200');
+            } else {
+                row.classList.remove('bg-indigo-50', 'border-indigo-200');
+            }
+        });
+    });
+
+    // Enhanced row interactions - click anywhere on row to select
+    tableRows.forEach(row => {
+        const checkbox = row.querySelector('.tenant-checkbox');
+
+        if (checkbox) {
+            row.addEventListener('click', function(e) {
+                if (!e.target.closest('button') && !e.target.closest('a') && !e.target.closest('input')) {
+                    checkbox.checked = !checkbox.checked;
+                    checkbox.dispatchEvent(new Event('change'));
+                }
+            });
+        }
+    });
+
+    // Global functions for bulk actions
+    window.bulkAction = function(action) {
+        const checkedBoxes = document.querySelectorAll('.tenant-checkbox:checked');
+        const tenantIds = Array.from(checkedBoxes).map(cb => cb.value);
+
+        if (tenantIds.length === 0) {
+            alert('Please select at least one company.');
+            return;
+        }
+
+        let confirmMessage = '';
+        let actionUrl = '';
+
+        switch(action) {
+            case 'activate':
+                confirmMessage = `Are you sure you want to activate ${tenantIds.length} selected companies?`;
+                actionUrl = '/super-admin/tenants/bulk-activate';
+                break;
+            case 'suspend':
+                confirmMessage = `Are you sure you want to suspend ${tenantIds.length} selected companies?`;
+                actionUrl = '/super-admin/tenants/bulk-suspend';
+                break;
+            case 'delete':
+                confirmMessage = `Are you sure you want to delete ${tenantIds.length} selected companies? This action cannot be undone.`;
+                actionUrl = '/super-admin/tenants/bulk-delete';
+                break;
+        }
+
+        if (confirm(confirmMessage)) {
+            // Create and submit form
+            const form = document.createElement('form');
+            form.method = 'POST';
+            form.action = actionUrl;
+
+            // Add CSRF token
+            const csrfInput = document.createElement('input');
+            csrfInput.type = 'hidden';
+            csrfInput.name = '_token';
+            csrfInput.value = '{{ csrf_token() }}';
+            form.appendChild(csrfInput);
+
+            // Add tenant IDs
+            tenantIds.forEach(id => {
+                const input = document.createElement('input');
+                input.type = 'hidden';
+                input.name = 'tenant_ids[]';
+                input.value = id;
+                form.appendChild(input);
+            });
+
+            document.body.appendChild(form);
+            form.submit();
+        }
+    };
+
+    window.exportSelected = function() {
+        const checkedBoxes = document.querySelectorAll('.tenant-checkbox:checked');
+        const tenantIds = Array.from(checkedBoxes).map(cb => cb.value);
+
+        if (tenantIds.length === 0) {
+            // Export all visible companies if none selected
+            const visibleRows = Array.from(tableRows).filter(row => row.style.display !== 'none');
+            const allVisibleIds = visibleRows.map(row => row.querySelector('.tenant-checkbox')?.value).filter(id => id);
+
+            if (allVisibleIds.length === 0) {
+                alert('No companies to export.');
+                return;
+            }
+
+            tenantIds.push(...allVisibleIds);
+        }
+
+        // Create download form
+        const form = document.createElement('form');
+        form.method = 'GET';
+        form.action = '/super-admin/tenants/export';
+
+        tenantIds.forEach(id => {
+            const input = document.createElement('input');
+            input.type = 'hidden';
+            input.name = 'tenant_ids[]';
+            input.value = id;
+            form.appendChild(input);
+        });
+
+        document.body.appendChild(form);
+        form.submit();
+        form.remove();
+    };
+
+    window.clearSelection = function() {
+        tenantCheckboxes.forEach(checkbox => {
+            checkbox.checked = false;
+            checkbox.dispatchEvent(new Event('change'));
+        });
+        updateBulkActionsBar();
+    };
 });
 
 // Animation keyframes
@@ -608,6 +854,68 @@ style.textContent = `
     .hover-lift:hover {
         transform: translateY(-2px);
         box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+    }
+
+    tbody tr {
+        cursor: pointer;
+        transition: all 0.2s ease-in-out;
+    }
+
+    tbody tr:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+
+    .tenant-checkbox {
+        transform: scale(1.1);
+        transition: all 0.2s ease;
+    }
+
+    .tenant-checkbox:hover {
+        transform: scale(1.2);
+    }
+
+    #bulk-actions-bar {
+        border-left: 4px solid #4f46e5;
+        backdrop-filter: blur(10px);
+    }
+
+    tr.bg-indigo-50 {
+        border-left: 3px solid #4f46e5;
+    }
+
+    /* Improved action buttons */
+    .action-btn {
+        transition: all 0.2s ease;
+    }
+
+    .action-btn:hover {
+        transform: scale(1.05);
+    }
+
+    /* Enhanced dropdown menus */
+    .dropdown-menu {
+        backdrop-filter: blur(10px);
+        background-color: rgba(255, 255, 255, 0.95);
+    }
+
+    /* Smooth scrolling for search results */
+    .table-container {
+        scroll-behavior: smooth;
+    }
+
+    /* Loading states */
+    @keyframes spin {
+        to { transform: rotate(360deg); }
+    }
+
+    .animate-spin {
+        animation: spin 1s linear infinite;
+    }
+
+    /* Custom checkbox styling */
+    input[type="checkbox"]:indeterminate {
+        background-image: url("data:image/svg+xml,%3csvg viewBox='0 0 16 16' fill='white' xmlns='http://www.w3.org/2000/svg'%3e%3cpath d='M5 8h6'/%3e%3c/svg%3e");
     }
 `;
 document.head.appendChild(style);

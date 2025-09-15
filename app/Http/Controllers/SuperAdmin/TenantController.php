@@ -10,6 +10,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class TenantController extends Controller
 {
@@ -239,8 +240,8 @@ class TenantController extends Controller
             // Get the selected plan
             $selectedPlan = \App\Models\Plan::findOrFail($validated['plan_id']);
 
-            // Create pending tenant invitation record (you may need to create this table)
-            $invitation = DB::table('tenant_invitations')->insert([
+            // Create pending tenant invitation record
+            DB::table('tenant_invitations')->insert([
                 'token' => $token,
                 'company_name' => $validated['company_name'],
                 'company_email' => $validated['company_email'],
@@ -258,19 +259,27 @@ class TenantController extends Controller
                 'updated_at' => now(),
             ]);
 
-            // Send invitation email (you'll need to create this)
-            // Mail::to($validated['owner_email'])->send(new TenantInvitation($token, $validated, $selectedPlan));
+            // Send invitation email
+            \Illuminate\Support\Facades\Mail::to($validated['owner_email'])
+                ->send(new \App\Mail\TenantInvitation($token, $validated, $selectedPlan));
 
             DB::commit();
 
             return redirect()
-                ->route('super-admin.tenants.index')
+                ->route('super-admin.tenants.invite')
                 ->with('success', 'Invitation sent successfully to ' . $validated['owner_email'] . '! They have 7 days to accept.');
 
         } catch (\Exception $e) {
             DB::rollBack();
 
-            return back()
+            Log::error('Failed to send tenant invitation', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+                'request_data' => $validated ?? $request->all()
+            ]);
+
+            return redirect()
+                ->route('super-admin.tenants.invite')
                 ->withInput()
                 ->withErrors(['error' => 'Failed to send invitation: ' . $e->getMessage()]);
         }
