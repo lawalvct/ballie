@@ -259,20 +259,41 @@ class TenantController extends Controller
                 'updated_at' => now(),
             ]);
 
-            // Send invitation email
-            \Illuminate\Support\Facades\Mail::to($validated['owner_email'])
-                ->send(new \App\Mail\TenantInvitation($token, $validated, $selectedPlan));
+            // Try to send invitation email
+            try {
+                \Illuminate\Support\Facades\Mail::to($validated['owner_email'])
+                    ->send(new \App\Mail\TenantInvitation($token, $validated, $selectedPlan));
+                
+                $emailSent = true;
+                $message = 'Invitation sent successfully to ' . $validated['owner_email'] . '! They have 7 days to accept.';
+            } catch (\Exception $mailException) {
+                // Log mail error but don't fail the entire process
+                \Illuminate\Support\Facades\Log::error('Failed to send invitation email', [
+                    'error' => $mailException->getMessage(),
+                    'email' => $validated['owner_email'],
+                    'token' => $token
+                ]);
+                
+                $emailSent = false;
+                $message = 'Invitation created but email failed to send due to mail server issues. Please share the invitation link manually.';
+            }
 
             DB::commit();
 
+            if (!$emailSent) {
+                return redirect()
+                    ->route('super-admin.tenants.invite')
+                    ->with('error', 'Mail server connection failed. Please check your MAIL configuration in .env file.');
+            }
+
             return redirect()
                 ->route('super-admin.tenants.invite')
-                ->with('success', 'Invitation sent successfully to ' . $validated['owner_email'] . '! They have 7 days to accept.');
+                ->with('success', $message);
 
         } catch (\Exception $e) {
             DB::rollBack();
 
-            Log::error('Failed to send tenant invitation', [
+            \Illuminate\Support\Facades\Log::error('Failed to create tenant invitation', [
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString(),
                 'request_data' => $validated ?? $request->all()
@@ -281,7 +302,7 @@ class TenantController extends Controller
             return redirect()
                 ->route('super-admin.tenants.invite')
                 ->withInput()
-                ->withErrors(['error' => 'Failed to send invitation: ' . $e->getMessage()]);
+                ->with('error', 'Failed to create invitation. Please try again.');
         }
     }
 }

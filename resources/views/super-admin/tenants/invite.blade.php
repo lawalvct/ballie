@@ -37,6 +37,35 @@
     </div>
     @endif
 
+    @if(session('warning'))
+    <div class="bg-yellow-50 border-l-4 border-yellow-400 p-4 rounded-lg">
+        <div class="flex">
+            <div class="flex-shrink-0">
+                <svg class="h-5 w-5 text-yellow-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+                </svg>
+            </div>
+            <div class="ml-3">
+                <p class="text-sm font-medium text-yellow-800">{{ session('warning') }}</p>
+                @if(session('invitation_link'))
+                <div class="mt-3 p-3 bg-yellow-100 rounded border">
+                    <p class="text-xs font-medium text-yellow-800 mb-2">Manual Invitation Link:</p>
+                    <div class="flex items-center space-x-2">
+                        <input type="text" value="{{ session('invitation_link') }}" readonly 
+                               class="flex-1 text-xs p-2 border rounded bg-white" id="invitation-link">
+                        <button onclick="copyInvitationLink()" 
+                                class="px-3 py-2 bg-yellow-600 text-white text-xs rounded hover:bg-yellow-700">
+                            Copy
+                        </button>
+                    </div>
+                    <p class="text-xs text-yellow-700 mt-2">Send this link to: {{ session('recipient_email') }}</p>
+                </div>
+                @endif
+            </div>
+        </div>
+    </div>
+    @endif
+
     @if($errors->any() && $errors->has('general'))
     <div class="bg-red-50 border-l-4 border-red-400 p-4 rounded-lg">
         <div class="flex">
@@ -444,6 +473,24 @@ document.addEventListener('DOMContentLoaded', function() {
         submitText.textContent = 'Sending Invitation...';
         submitBtn.classList.add('opacity-75');
     });
+});
+
+function copyInvitationLink() {
+    const linkInput = document.getElementById('invitation-link');
+    linkInput.select();
+    document.execCommand('copy');
+    
+    const button = event.target;
+    const originalText = button.textContent;
+    button.textContent = 'Copied!';
+    button.classList.add('bg-green-600');
+    button.classList.remove('bg-yellow-600');
+    
+    setTimeout(() => {
+        button.textContent = originalText;
+        button.classList.remove('bg-green-600');
+        button.classList.add('bg-yellow-600');
+    }, 2000);
 });
 </script>
 @endsection
