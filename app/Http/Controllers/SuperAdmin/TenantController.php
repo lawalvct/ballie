@@ -14,7 +14,7 @@ class TenantController extends Controller
 {
     public function index(Request $request)
     {
-        $query = Tenant::with(['superAdmin', 'users']);
+        $query = Tenant::with(['superAdmin', 'users', 'plan']);
 
         // Search functionality
         if ($request->filled('search')) {
@@ -33,12 +33,17 @@ class TenantController extends Controller
 
         // Filter by plan
         if ($request->filled('plan')) {
-            $query->where('subscription_plan', $request->plan);
+            $query->whereHas('plan', function ($q) use ($request) {
+                $q->where('slug', $request->plan);
+            });
         }
 
         $tenants = $query->latest()->paginate(20);
 
-        return view('super-admin.tenants.index', compact('tenants'));
+        // Get available plans for filtering
+        $availablePlans = \App\Models\Plan::where('is_active', true)->orderBy('sort_order')->get();
+
+        return view('super-admin.tenants.index', compact('tenants', 'availablePlans'));
     }
 
     public function create()

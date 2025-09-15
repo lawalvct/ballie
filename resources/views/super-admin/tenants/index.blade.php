@@ -136,9 +136,9 @@
                         <!-- Plan Filter -->
                         <select id="plan-filter" class="px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-200 shadow-sm bg-white min-w-0">
                             <option value="">All Plans</option>
-                            <option value="starter">Starter</option>
-                            <option value="professional">Professional</option>
-                            <option value="enterprise">Enterprise</option>
+                            @foreach($availablePlans as $plan)
+                                <option value="{{ $plan->slug }}">{{ $plan->name }}</option>
+                            @endforeach
                         </select>
 
                         <!-- Results Count -->
@@ -199,7 +199,7 @@
                 </thead>
                 <tbody class="bg-white divide-y divide-gray-100">
                     @forelse($tenants as $tenant)
-                    <tr class="hover:bg-gray-50 transition-colors duration-150" data-tenant-status="{{ strtolower($tenant->subscription_status) }}" data-tenant-plan="{{ strtolower($tenant->subscription_plan) }}">
+                    <tr class="hover:bg-gray-50 transition-colors duration-150" data-tenant-status="{{ strtolower($tenant->subscription_status) }}" data-tenant-plan="{{ $tenant->plan ? strtolower($tenant->plan->slug) : 'none' }}">
                         <td class="px-3 sm:px-4 py-3 overflow-hidden">
                             <div class="flex items-center min-w-0">
                                 <div class="flex-shrink-0 h-8 w-8 sm:h-10 sm:w-10">
@@ -222,7 +222,7 @@
                                     <!-- Mobile-only: Show plan info -->
                                     <div class="sm:hidden mt-0.5">
                                         <span class="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800">
-                                            {{ ucfirst($tenant->subscription_plan) }}
+                                            {{ $tenant->plan ? ucfirst($tenant->plan->name) : 'No Plan' }}
                                         </span>
                                     </div>
                                 </div>
@@ -255,20 +255,31 @@
                             @endif
                         </td>
                         <td class="hidden sm:table-cell px-2 py-3">
-                            @php
-                                $planConfig = [
-                                    'starter' => ['class' => 'bg-blue-100 text-blue-800', 'price' => '₦7,500'],
-                                    'professional' => ['class' => 'bg-purple-100 text-purple-800', 'price' => '₦10,000'],
-                                    'enterprise' => ['class' => 'bg-indigo-100 text-indigo-800', 'price' => '₦15,000'],
-                                ];
-                                $plan = $planConfig[$tenant->subscription_plan] ?? ['class' => 'bg-gray-100 text-gray-800', 'price' => '₦0'];
-                            @endphp
-                            <div class="min-w-0">
-                                <span class="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium {{ $plan['class'] }} truncate">
-                                    {{ ucfirst($tenant->subscription_plan) }}
-                                </span>
-                                <div class="text-xs text-gray-500 mt-0.5 truncate">{{ $plan['price'] }}/mo</div>
-                            </div>
+                            @if($tenant->plan)
+                                @php
+                                    $planConfig = [
+                                        'starter' => ['class' => 'bg-blue-100 text-blue-800'],
+                                        'professional' => ['class' => 'bg-purple-100 text-purple-800'],
+                                        'enterprise' => ['class' => 'bg-indigo-100 text-indigo-800'],
+                                    ];
+                                    $config = $planConfig[$tenant->plan->slug] ?? ['class' => 'bg-gray-100 text-gray-800'];
+                                @endphp
+                                <div class="min-w-0">
+                                    <span class="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium {{ $config['class'] }} truncate">
+                                        {{ $tenant->plan->name }}
+                                    </span>
+                                    <div class="text-xs text-gray-500 mt-0.5 truncate">
+                                        {{ $tenant->billing_cycle === 'yearly' ? '₦' . number_format($tenant->plan->yearly_price / 100) . '/yr' : '₦' . number_format($tenant->plan->monthly_price / 100) . '/mo' }}
+                                    </div>
+                                </div>
+                            @else
+                                <div class="min-w-0">
+                                    <span class="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-800 truncate">
+                                        No Plan
+                                    </span>
+                                    <div class="text-xs text-gray-500 mt-0.5 truncate">₦0/mo</div>
+                                </div>
+                            @endif
                         </td>
                         <td class="hidden md:table-cell px-2 py-3">
                             <div class="flex items-center min-w-0">
@@ -279,8 +290,13 @@
                             </div>
                         </td>
                         <td class="hidden lg:table-cell px-2 py-3">
-                            <div class="text-xs font-semibold text-gray-900 truncate">₦{{ number_format($tenant->getPlanPrice()) }}</div>
-                            <div class="text-xs text-gray-500 truncate">{{ $tenant->billing_cycle === 'yearly' ? 'per year' : 'per month' }}</div>
+                            @if($tenant->plan)
+                                <div class="text-xs font-semibold text-gray-900 truncate">₦{{ number_format($tenant->getPlanPrice() / 100) }}</div>
+                                <div class="text-xs text-gray-500 truncate">{{ $tenant->billing_cycle === 'yearly' ? 'per year' : 'per month' }}</div>
+                            @else
+                                <div class="text-xs font-semibold text-gray-900 truncate">₦0</div>
+                                <div class="text-xs text-gray-500 truncate">No plan</div>
+                            @endif
                         </td>
                         <td class="hidden lg:table-cell px-2 py-3">
                             <div class="text-xs text-gray-900 truncate">{{ $tenant->created_at->format('M j, Y') }}</div>
