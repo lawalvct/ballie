@@ -212,16 +212,7 @@
 
             <!-- User Profile Section -->
             <div class="px-6 py-6 border-t border-white border-opacity-20 bg-black bg-opacity-20">
-                <div class="flex items-center mb-4">
-                    <img class="w-12 h-12 rounded-full border-2 shadow-lg"
-                         style="border-color: var(--color-gold);"
-                         src="{{ auth('super_admin')->user()->avatar_url ?? 'https://ui-avatars.com/api/?name='.urlencode(auth('super_admin')->user()->name).'&color=ffffff&background=d1b05e' }}"
-                         alt="Profile">
-                    <div class="ml-3 flex-1">
-                        <p class="text-sm font-semibold text-white truncate">{{ auth('super_admin')->user()->name }}</p>
-                        <p class="text-xs text-gray-300 opacity-75">Super Admin</p>
-                    </div>
-                </div>
+                
                 <form method="POST" action="{{ route('super-admin.logout') }}">
                     @csrf
                     <button type="submit" class="flex items-center justify-center w-full px-4 py-2 text-sm font-medium text-gray-300 rounded-lg nav-item-hover hover:text-white transition-all duration-300 border border-white border-opacity-20">
