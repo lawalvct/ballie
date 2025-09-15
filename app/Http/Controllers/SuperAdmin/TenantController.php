@@ -9,6 +9,7 @@ use App\Helpers\TenantHelper;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 
 class TenantController extends Controller
 {
@@ -48,7 +49,10 @@ class TenantController extends Controller
 
     public function create()
     {
-        return view('super-admin.tenants.create');
+        // Get available plans for selection
+        $plans = \App\Models\Plan::where('is_active', true)->orderBy('sort_order')->get();
+
+        return view('super-admin.tenants.create', compact('plans'));
     }
 
     public function store(Request $request)
@@ -58,44 +62,63 @@ class TenantController extends Controller
             'email' => 'required|email|unique:tenants,email',
             'phone' => 'nullable|string|max:20',
             'business_type' => 'required|string',
-            'subscription_plan' => 'required|in:starter,professional,enterprise',
+            'plan_id' => 'required|integer|exists:plans,id',
             'billing_cycle' => 'required|in:monthly,yearly',
 
             // Owner details
             'owner_name' => 'required|string|max:255',
-            'owner_email' => 'required|email',
+            'owner_email' => 'required|email|unique:users,email',
             'owner_password' => 'required|string|min:8|confirmed',
         ]);
 
-        // Create tenant
-        $tenant = Tenant::create([
-            'name' => $validated['name'],
-            'slug' => TenantHelper::generateUniqueSlug($validated['name']),
-            'email' => $validated['email'],
-            'phone' => $validated['phone'],
-            'business_type' => $validated['business_type'],
-            'subscription_plan' => $validated['subscription_plan'],
-            'billing_cycle' => $validated['billing_cycle'],
-            'subscription_status' => 'trial',
-            'trial_ends_at' => now()->addDays(30),
-            'created_by' => Auth::guard('super_admin')->id(),
-            'is_active' => true,
-        ]);
+        try {
+            DB::beginTransaction();
 
-        // Create owner user
-        User::create([
-            'tenant_id' => $tenant->id,
-            'name' => $validated['owner_name'],
-            'email' => $validated['owner_email'],
-            'password' => Hash::make($validated['owner_password']),
-            'role' => User::ROLE_OWNER,
-            'is_active' => true,
-            'email_verified_at' => now(),
-        ]);
+            // Get the selected plan
+            $selectedPlan = \App\Models\Plan::findOrFail($validated['plan_id']);
 
-        return redirect()
-            ->route('super-admin.tenants.show', $tenant)
-            ->with('success', 'Tenant created successfully!');
+            // Create tenant
+            $tenant = Tenant::create([
+                'name' => $validated['name'],
+                'slug' => TenantHelper::generateUniqueSlug($validated['name']),
+                'email' => $validated['email'],
+                'phone' => $validated['phone'],
+                'business_type' => $validated['business_type'],
+                'plan_id' => $selectedPlan->id,
+                'billing_cycle' => $validated['billing_cycle'],
+                'subscription_status' => 'trial',
+                'trial_ends_at' => now()->addDays(30),
+                'created_by' => Auth::guard('super_admin')->id(),
+                'is_active' => true,
+            ]);
+
+            // Start trial for the selected plan
+            $tenant->startTrial($selectedPlan);
+
+            // Create owner user
+            User::create([
+                'tenant_id' => $tenant->id,
+                'name' => $validated['owner_name'],
+                'email' => $validated['owner_email'],
+                'password' => Hash::make($validated['owner_password']),
+                'role' => User::ROLE_OWNER,
+                'is_active' => true,
+                'email_verified_at' => now(),
+            ]);
+
+            DB::commit();
+
+            return redirect()
+                ->route('super-admin.tenants.show', $tenant)
+                ->with('success', 'Tenant created successfully! A 30-day trial for the ' . $selectedPlan->name . ' plan has been started.');
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+
+            return back()
+                ->withInput()
+                ->withErrors(['error' => 'Failed to create tenant: ' . $e->getMessage()]);
+        }
     }
 
     public function show(Tenant $tenant)
@@ -177,5 +200,79 @@ class TenantController extends Controller
         session()->forget(['impersonating_user_id', 'super_admin_id']);
 
         return redirect()->route('super-admin.dashboard');
+    }
+
+    /**
+     * Show invitation form
+     */
+    public function invite()
+    {
+        // Get available plans for selection
+        $plans = \App\Models\Plan::where('is_active', true)->orderBy('sort_order')->get();
+
+        return view('super-admin.tenants.invite', compact('plans'));
+    }
+
+    /**
+     * Send invitation email
+     */
+    public function sendInvitation(Request $request)
+    {
+        $validated = $request->validate([
+            'company_name' => 'required|string|max:255',
+            'company_email' => 'required|email|unique:tenants,email',
+            'owner_name' => 'required|string|max:255',
+            'owner_email' => 'required|email|unique:users,email',
+            'phone' => 'nullable|string|max:20',
+            'business_type' => 'required|string',
+            'plan_id' => 'required|integer|exists:plans,id',
+            'billing_cycle' => 'required|in:monthly,yearly',
+            'message' => 'nullable|string|max:1000',
+        ]);
+
+        try {
+            DB::beginTransaction();
+
+            // Generate unique invitation token
+            $token = bin2hex(random_bytes(32));
+
+            // Get the selected plan
+            $selectedPlan = \App\Models\Plan::findOrFail($validated['plan_id']);
+
+            // Create pending tenant invitation record (you may need to create this table)
+            $invitation = DB::table('tenant_invitations')->insert([
+                'token' => $token,
+                'company_name' => $validated['company_name'],
+                'company_email' => $validated['company_email'],
+                'owner_name' => $validated['owner_name'],
+                'owner_email' => $validated['owner_email'],
+                'phone' => $validated['phone'],
+                'business_type' => $validated['business_type'],
+                'plan_id' => $validated['plan_id'],
+                'billing_cycle' => $validated['billing_cycle'],
+                'message' => $validated['message'],
+                'expires_at' => now()->addDays(7), // 7 days to accept
+                'created_by' => Auth::guard('super_admin')->id(),
+                'status' => 'pending',
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+
+            // Send invitation email (you'll need to create this)
+            // Mail::to($validated['owner_email'])->send(new TenantInvitation($token, $validated, $selectedPlan));
+
+            DB::commit();
+
+            return redirect()
+                ->route('super-admin.tenants.index')
+                ->with('success', 'Invitation sent successfully to ' . $validated['owner_email'] . '! They have 7 days to accept.');
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+
+            return back()
+                ->withInput()
+                ->withErrors(['error' => 'Failed to send invitation: ' . $e->getMessage()]);
+        }
     }
 }

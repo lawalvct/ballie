@@ -41,6 +41,10 @@ Route::prefix('super-admin')->name('super-admin.')->group(function () {
         Route::post('/tenants/{tenant}/suspend', [TenantController::class, 'suspend'])->name('tenants.suspend');
         Route::post('/tenants/{tenant}/activate', [TenantController::class, 'activate'])->name('tenants.activate');
 
+        // Tenant Invitations
+        Route::get('/tenants/invite/create', [TenantController::class, 'invite'])->name('tenants.invite');
+        Route::post('/tenants/invite/send', [TenantController::class, 'sendInvitation'])->name('tenants.send-invitation');
+
         // Tenant Impersonation
         Route::post('/impersonate/{tenant}/{user}', [TenantController::class, 'impersonate'])->name('impersonate');
         Route::post('/stop-impersonation', [TenantController::class, 'stopImpersonation'])->name('stop-impersonation');
