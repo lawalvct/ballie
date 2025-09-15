@@ -37,6 +37,7 @@ Route::prefix('super-admin')->name('super-admin.')->group(function () {
         Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 
         // Tenant Management
+        Route::get('/tenants/export', [TenantController::class, 'export'])->name('tenants.export');
         Route::resource('tenants', TenantController::class);
         Route::post('/tenants/{tenant}/suspend', [TenantController::class, 'suspend'])->name('tenants.suspend');
         Route::post('/tenants/{tenant}/activate', [TenantController::class, 'activate'])->name('tenants.activate');

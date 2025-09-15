@@ -8,124 +8,122 @@
 
 
     <!-- Enhanced Stats Cards -->
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <div class="bg-white rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden border border-gray-100">
-            <div class="p-6">
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div class="bg-white rounded-xl shadow-md hover:shadow-lg transition-all duration-300 overflow-hidden border border-gray-100">
+            <div class="p-4">
                 <div class="flex items-center justify-between">
                     <div>
-                        <p class="text-sm font-semibold text-gray-600 uppercase tracking-wide">Active Companies</p>
-                        <p class="text-3xl font-bold text-gray-900 mt-2">{{ $tenants->where('subscription_status', 'active')->count() }}</p>
-                        <p class="text-sm text-green-600 mt-1 flex items-center">
-                            <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <p class="text-xs font-semibold text-gray-600 uppercase tracking-wide">Active Companies</p>
+                        <p class="text-2xl font-bold text-gray-900 mt-1">{{ $tenants->where('subscription_status', 'active')->count() }}</p>
+                        <p class="text-xs text-green-600 mt-1 flex items-center">
+                            <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path>
                             </svg>
                             {{ number_format(($tenants->where('subscription_status', 'active')->count() / max($tenants->count(), 1)) * 100, 1) }}% of total
                         </p>
                     </div>
-                    <div class="p-3 bg-gradient-to-br from-green-500 to-green-600 rounded-xl">
-                        <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <div class="p-2 bg-gradient-to-br from-green-500 to-green-600 rounded-lg">
+                        <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                         </svg>
                     </div>
                 </div>
             </div>
-            <div class="bg-gradient-to-r from-green-500 to-green-600 h-2"></div>
+            <div class="bg-gradient-to-r from-green-500 to-green-600 h-1"></div>
         </div>
 
-        <div class="bg-white rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden border border-gray-100">
-            <div class="p-6">
+        <div class="bg-white rounded-xl shadow-md hover:shadow-lg transition-all duration-300 overflow-hidden border border-gray-100">
+            <div class="p-4">
                 <div class="flex items-center justify-between">
                     <div>
-                        <p class="text-sm font-semibold text-gray-600 uppercase tracking-wide">Trial Companies</p>
-                        <p class="text-3xl font-bold text-gray-900 mt-2">{{ $tenants->where('subscription_status', 'trial')->count() }}</p>
-                        <p class="text-sm text-yellow-600 mt-1 flex items-center">
-                            <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <p class="text-xs font-semibold text-gray-600 uppercase tracking-wide">Trial Companies</p>
+                        <p class="text-2xl font-bold text-gray-900 mt-1">{{ $tenants->where('subscription_status', 'trial')->count() }}</p>
+                        <p class="text-xs text-yellow-600 mt-1 flex items-center">
+                            <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                             </svg>
                             Conversion pending
                         </p>
                     </div>
-                    <div class="p-3 bg-gradient-to-br from-yellow-500 to-yellow-600 rounded-xl">
-                        <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <div class="p-2 bg-gradient-to-br from-yellow-500 to-yellow-600 rounded-lg">
+                        <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                         </svg>
                     </div>
                 </div>
             </div>
-            <div class="bg-gradient-to-r from-yellow-500 to-yellow-600 h-2"></div>
+            <div class="bg-gradient-to-r from-yellow-500 to-yellow-600 h-1"></div>
         </div>
 
-        <div class="bg-white rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden border border-gray-100">
-            <div class="p-6">
+        <div class="bg-white rounded-xl shadow-md hover:shadow-lg transition-all duration-300 overflow-hidden border border-gray-100">
+            <div class="p-4">
                 <div class="flex items-center justify-between">
                     <div>
-                        <p class="text-sm font-semibold text-gray-600 uppercase tracking-wide">Suspended</p>
-                        <p class="text-3xl font-bold text-gray-900 mt-2">{{ $tenants->where('subscription_status', 'suspended')->count() }}</p>
-                        <p class="text-sm text-red-600 mt-1 flex items-center">
-                            <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <p class="text-xs font-semibold text-gray-600 uppercase tracking-wide">Suspended</p>
+                        <p class="text-2xl font-bold text-gray-900 mt-1">{{ $tenants->where('subscription_status', 'suspended')->count() }}</p>
+                        <p class="text-xs text-red-600 mt-1 flex items-center">
+                            <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 17h5l-5-5V9a6 6 0 10-12 0v3l-5 5h5a3 3 0 006 0z"></path>
                             </svg>
                             Requires attention
                         </p>
                     </div>
-                    <div class="p-3 bg-gradient-to-br from-red-500 to-red-600 rounded-xl">
-                        <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <div class="p-2 bg-gradient-to-br from-red-500 to-red-600 rounded-lg">
+                        <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
                         </svg>
                     </div>
                 </div>
             </div>
-            <div class="bg-gradient-to-r from-red-500 to-red-600 h-2"></div>
+            <div class="bg-gradient-to-r from-red-500 to-red-600 h-1"></div>
         </div>
 
-        <div class="bg-white rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden border border-gray-100">
-            <div class="p-6">
+        <div class="bg-white rounded-xl shadow-md hover:shadow-lg transition-all duration-300 overflow-hidden border border-gray-100">
+            <div class="p-4">
                 <div class="flex items-center justify-between">
                     <div>
-                        <p class="text-sm font-semibold text-gray-600 uppercase tracking-wide">Total Companies</p>
-                        <p class="text-3xl font-bold text-gray-900 mt-2">{{ $tenants->count() }}</p>
-                        <p class="text-sm text-indigo-600 mt-1 flex items-center">
-                            <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <p class="text-xs font-semibold text-gray-600 uppercase tracking-wide">Total Companies</p>
+                        <p class="text-2xl font-bold text-gray-900 mt-1">{{ $tenants->count() }}</p>
+                        <p class="text-xs text-indigo-600 mt-1 flex items-center">
+                            <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path>
                             </svg>
                             All registered
                         </p>
                     </div>
-                    <div class="p-3 bg-gradient-to-br from-indigo-500 to-indigo-600 rounded-xl">
-                        <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <div class="p-2 bg-gradient-to-br from-indigo-500 to-indigo-600 rounded-lg">
+                        <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path>
                         </svg>
                     </div>
                 </div>
             </div>
-            <div class="bg-gradient-to-r from-indigo-500 to-indigo-600 h-2"></div>
+            <div class="bg-gradient-to-r from-indigo-500 to-indigo-600 h-1"></div>
         </div>
     </div>
 
     <!-- Enhanced Filters and Search -->
-    <div class="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
-        <div class="px-4 sm:px-6 lg:px-8 py-6 border-b border-gray-200 bg-gray-50">
-            <div class="flex flex-col space-y-4">
-                <!-- Search Row -->
-                <div class="w-full">
-                    <div class="relative max-w-md">
+    <div class="bg-white rounded-xl shadow-md border border-gray-100 overflow-hidden">
+        <div class="px-4 sm:px-6 py-4 bg-gray-50/50">
+            <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between space-y-3 lg:space-y-0 lg:space-x-4">
+                <!-- Left side: Search and Filters -->
+                <div class="flex flex-col sm:flex-row sm:items-center space-y-3 sm:space-y-0 sm:space-x-3 flex-1">
+                    <!-- Search -->
+                    <div class="relative flex-1 max-w-sm">
                         <input type="text"
                                id="search"
                                placeholder="Search companies..."
-                               class="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-xl leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-200 shadow-sm">
+                               class="w-full pl-9 pr-4 py-2 text-sm border border-gray-300 rounded-lg bg-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-200">
                         <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                            <svg class="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <svg class="h-4 w-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
                             </svg>
                         </div>
                     </div>
-                </div>
 
-                <!-- Filters and Actions Row -->
-                <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-3 sm:space-y-0">
-                    <div class="flex flex-col sm:flex-row sm:items-center space-y-2 sm:space-y-0 sm:space-x-3">
-                        <!-- Status Filter -->
-                        <select id="status-filter" class="px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-200 shadow-sm bg-white min-w-0">
+                    <!-- Filters -->
+                    <div class="flex items-center space-x-2">
+                        <select id="status-filter" class="px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white min-w-0">
                             <option value="">All Status</option>
                             <option value="active">Active</option>
                             <option value="trial">Trial</option>
@@ -133,41 +131,40 @@
                             <option value="cancelled">Cancelled</option>
                         </select>
 
-                        <!-- Plan Filter -->
-                        <select id="plan-filter" class="px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-200 shadow-sm bg-white min-w-0">
+                        <select id="plan-filter" class="px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white min-w-0">
                             <option value="">All Plans</option>
                             @foreach($availablePlans as $plan)
                                 <option value="{{ $plan->slug }}">{{ $plan->name }}</option>
                             @endforeach
                         </select>
-
-                        <!-- Results Count -->
-                        <span class="text-sm text-gray-700 font-medium whitespace-nowrap">
-                            <span id="visible-count">{{ $tenants->count() }}</span> of {{ $tenants->count() }} companies
-                        </span>
                     </div>
 
-                    <!-- Actions -->
-                    <div class="flex space-x-2">
-                        <button onclick="exportSelected()" class="inline-flex items-center px-3 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 transition-colors">
-                            <svg class="w-4 h-4 sm:mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-                            </svg>
-                            <span class="hidden sm:inline">Export</span>
-                        </button>
-                        <a href="{{ route('super-admin.tenants.invite') }}" class="inline-flex items-center px-3 py-2 bg-amber-600 border border-transparent rounded-lg text-sm font-medium text-white hover:bg-amber-700 transition-colors">
-                            <svg class="w-4 h-4 sm:mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 4.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
-                            </svg>
-                            <span class="hidden sm:inline">Send Invite</span>
-                        </a>
-                        <a href="{{ route('super-admin.tenants.create') }}" class="inline-flex items-center px-3 py-2 bg-indigo-600 border border-transparent rounded-lg text-sm font-medium text-white hover:bg-indigo-700 transition-colors">
-                            <svg class="w-4 h-4 sm:mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
-                            </svg>
-                            <span class="hidden sm:inline">Add New</span>
-                        </a>
-                    </div>
+                    <!-- Results Count -->
+                    <span class="text-xs text-gray-600 font-medium whitespace-nowrap">
+                        <span id="visible-count">{{ $tenants->count() }}</span> of {{ $tenants->count() }} companies
+                    </span>
+                </div>
+
+                <!-- Right side: Actions -->
+                <div class="flex items-center space-x-2">
+                    <button onclick="exportSelected()" class="inline-flex items-center px-3 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 transition-colors">
+                        <svg class="w-4 h-4 sm:mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                        </svg>
+                        <span class="hidden sm:inline">Export</span>
+                    </button>
+                    <a href="{{ route('super-admin.tenants.invite') }}" class="inline-flex items-center px-3 py-2 bg-amber-600 border border-transparent rounded-lg text-sm font-medium text-white hover:bg-amber-700 transition-colors">
+                        <svg class="w-4 h-4 sm:mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 4.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
+                        </svg>
+                        <span class="hidden sm:inline">Send Invite</span>
+                    </a>
+                    <a href="{{ route('super-admin.tenants.create') }}" class="inline-flex items-center px-3 py-2 bg-indigo-600 border border-transparent rounded-lg text-sm font-medium text-white hover:bg-indigo-700 transition-colors">
+                        <svg class="w-4 h-4 sm:mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                        </svg>
+                        <span class="hidden sm:inline">Add New</span>
+                    </a>
                 </div>
             </div>
         </div>
@@ -789,35 +786,30 @@ document.addEventListener('DOMContentLoaded', function() {
         const checkedBoxes = document.querySelectorAll('.tenant-checkbox:checked');
         const tenantIds = Array.from(checkedBoxes).map(cb => cb.value);
 
-        if (tenantIds.length === 0) {
-            // Export all visible companies if none selected
-            const visibleRows = Array.from(tableRows).filter(row => row.style.display !== 'none');
-            const allVisibleIds = visibleRows.map(row => row.querySelector('.tenant-checkbox')?.value).filter(id => id);
+        // Build export URL with current filters
+        const urlParams = new URLSearchParams();
 
-            if (allVisibleIds.length === 0) {
-                alert('No companies to export.');
-                return;
-            }
-
-            tenantIds.push(...allVisibleIds);
+        // Add current filters
+        if (searchInput && searchInput.value) {
+            urlParams.append('search', searchInput.value);
+        }
+        if (statusFilter && statusFilter.value) {
+            urlParams.append('status', statusFilter.value);
+        }
+        if (planFilter && planFilter.value) {
+            urlParams.append('plan', planFilter.value);
         }
 
-        // Create download form
-        const form = document.createElement('form');
-        form.method = 'GET';
-        form.action = '/super-admin/tenants/export';
+        // Add selected IDs if any
+        if (tenantIds.length > 0) {
+            urlParams.append('ids', tenantIds.join(','));
+        }
 
-        tenantIds.forEach(id => {
-            const input = document.createElement('input');
-            input.type = 'hidden';
-            input.name = 'tenant_ids[]';
-            input.value = id;
-            form.appendChild(input);
-        });
+        // Create export URL
+        const exportUrl = '{{ route("super-admin.tenants.export") }}?' + urlParams.toString();
 
-        document.body.appendChild(form);
-        form.submit();
-        form.remove();
+        // Open in new window to trigger download
+        window.open(exportUrl, '_blank');
     };
 
     window.clearSelection = function() {

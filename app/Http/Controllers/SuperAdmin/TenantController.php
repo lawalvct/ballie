@@ -305,4 +305,83 @@ class TenantController extends Controller
                 ->with('error', 'Failed to create invitation. Please try again.');
         }
     }
+
+    /**
+     * Export tenants to CSV
+     */
+    public function export(Request $request)
+    {
+        $query = Tenant::with(['users', 'plan', 'superAdmin']);
+
+        // Apply same filters as index
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function ($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                  ->orWhere('email', 'like', "%{$search}%")
+                  ->orWhere('slug', 'like', "%{$search}%");
+            });
+        }
+
+        if ($request->filled('status')) {
+            $query->where('subscription_status', $request->status);
+        }
+
+        if ($request->filled('plan')) {
+            $query->whereHas('plan', function ($q) use ($request) {
+                $q->where('slug', $request->plan);
+            });
+        }
+
+        // Export selected IDs if provided
+        if ($request->filled('ids')) {
+            $ids = explode(',', $request->ids);
+            $query->whereIn('id', $ids);
+        }
+
+        $tenants = $query->latest()->get();
+
+        $filename = 'companies-' . now()->format('Y-m-d-H-i-s') . '.csv';
+        
+        $headers = [
+            'Content-Type' => 'text/csv',
+            'Content-Disposition' => 'attachment; filename="' . $filename . '"',
+        ];
+
+        $callback = function() use ($tenants) {
+            $file = fopen('php://output', 'w');
+            
+            // CSV Headers
+            fputcsv($file, [
+                'ID', 'Company Name', 'Email', 'Slug', 'Phone', 'Business Type',
+                'Status', 'Plan', 'Billing Cycle', 'Users Count', 'Active Users',
+                'Trial Ends', 'Created By', 'Created At', 'Updated At', 'Is Active'
+            ]);
+
+            foreach ($tenants as $tenant) {
+                fputcsv($file, [
+                    $tenant->id,
+                    $tenant->name,
+                    $tenant->email,
+                    $tenant->slug,
+                    $tenant->phone ?? 'N/A',
+                    $tenant->business_type ?? 'N/A',
+                    ucfirst($tenant->subscription_status),
+                    $tenant->plan->name ?? 'N/A',
+                    ucfirst($tenant->billing_cycle ?? 'N/A'),
+                    $tenant->users->count(),
+                    $tenant->users->where('is_active', true)->count(),
+                    $tenant->trial_ends_at ? $tenant->trial_ends_at->format('Y-m-d H:i:s') : 'N/A',
+                    $tenant->superAdmin->name ?? 'System',
+                    $tenant->created_at->format('Y-m-d H:i:s'),
+                    $tenant->updated_at->format('Y-m-d H:i:s'),
+                    $tenant->is_active ? 'Yes' : 'No'
+                ]);
+            }
+            
+            fclose($file);
+        };
+
+        return response()->stream($callback, 200, $headers);
+    }
 }
