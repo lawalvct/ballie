@@ -162,9 +162,18 @@
                 </div>
 
                 <div class="form-group">
-                    <label for="category_id" class="block text-sm font-medium text-gray-700 mb-1">
-                        Category
-                    </label>
+                    <div class="flex items-center justify-between mb-1">
+                        <label for="category_id" class="block text-sm font-medium text-gray-700">
+                            Category
+                        </label>
+                        <button type="button" onclick="openQuickCategoryModal()"
+                                class="inline-flex items-center px-2 py-1 text-xs font-medium text-green-600 hover:text-green-700 hover:bg-green-50 rounded-md transition-colors duration-200">
+                            <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                            </svg>
+                            Quick Create
+                        </button>
+                    </div>
                     <select name="category_id" id="category_id"
                         class="mt-1 focus:ring-green-500 focus:border-green-500 block w-full shadow-sm sm:text-sm rounded-md {{ $errors->has('category_id') ? 'border-red-300' : 'border-gray-300' }}">
                         <option value="">Select Category</option>
@@ -624,6 +633,82 @@
     </form>
 </div>
 
+<!-- Quick Create Category Modal -->
+<div id="quickCategoryModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50 hidden">
+    <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+        <div class="mt-3">
+            <!-- Modal Header -->
+            <div class="flex items-center justify-between pb-3 border-b">
+                <h3 class="text-lg font-semibold text-gray-900">Quick Create Category</h3>
+                <button type="button" onclick="closeQuickCategoryModal()" class="text-gray-400 hover:text-gray-600">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                </button>
+            </div>
+
+            <!-- Modal Body -->
+            <form id="quickCategoryForm" class="mt-4 space-y-4">
+                @csrf
+                <div>
+                    <label for="quick_category_name" class="block text-sm font-medium text-gray-700 mb-1">
+                        Category Name <span class="text-red-500">*</span>
+                    </label>
+                    <input type="text" name="name" id="quick_category_name" required
+                           class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-green-500 focus:border-green-500"
+                           placeholder="Enter category name">
+                </div>
+
+                <div>
+                    <label for="quick_category_description" class="block text-sm font-medium text-gray-700 mb-1">
+                        Description
+                    </label>
+                    <textarea name="description" id="quick_category_description" rows="3"
+                              class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-green-500 focus:border-green-500"
+                              placeholder="Enter category description"></textarea>
+                </div>
+
+                <div>
+                    <label for="quick_parent_category" class="block text-sm font-medium text-gray-700 mb-1">
+                        Parent Category
+                    </label>
+                    <select name="parent_id" id="quick_parent_category"
+                            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-green-500 focus:border-green-500">
+                        <option value="">None (Root Category)</option>
+                        @foreach($categories as $category)
+                            <option value="{{ $category->id }}">{{ $category->name }}</option>
+                        @endforeach
+                    </select>
+                </div>
+
+                <div class="flex items-center">
+                    <input type="checkbox" name="is_active" id="quick_category_active" value="1" checked
+                           class="rounded border-gray-300 text-green-600 shadow-sm focus:border-green-300 focus:ring focus:ring-green-200">
+                    <label for="quick_category_active" class="ml-2 block text-sm text-gray-900">
+                        Active
+                    </label>
+                </div>
+            </form>
+
+            <!-- Modal Footer -->
+            <div class="flex items-center justify-end pt-4 border-t mt-4 space-x-3">
+                <button type="button" onclick="closeQuickCategoryModal()"
+                        class="px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-300">
+                    Cancel
+                </button>
+                <button type="button" onclick="submitQuickCategory()"
+                        class="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500">
+                    <span id="quick-submit-text">Create Category</span>
+                    <svg id="quick-submit-loading" class="hidden animate-spin -ml-1 mr-3 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     // Initialize form sections
@@ -801,6 +886,112 @@ function toggleSection(sectionId, forceHide = false) {
             document.getElementById(sectionId + '-content').scrollIntoView({ behavior: 'smooth', block: 'start' });
         }, 100);
     }
+}
+
+// Quick Category Modal Functions
+function openQuickCategoryModal() {
+    document.getElementById('quickCategoryModal').classList.remove('hidden');
+    document.getElementById('quick_category_name').focus();
+}
+
+function closeQuickCategoryModal() {
+    document.getElementById('quickCategoryModal').classList.add('hidden');
+    // Reset form
+    document.getElementById('quickCategoryForm').reset();
+    // Reset button state
+    document.getElementById('quick-submit-text').textContent = 'Create Category';
+    document.getElementById('quick-submit-loading').classList.add('hidden');
+}
+
+function submitQuickCategory() {
+    const form = document.getElementById('quickCategoryForm');
+    const formData = new FormData(form);
+    const submitButton = document.querySelector('#quickCategoryModal button[onclick="submitQuickCategory()"]');
+    const submitText = document.getElementById('quick-submit-text');
+    const submitLoading = document.getElementById('quick-submit-loading');
+
+    // Validate required fields
+    const name = document.getElementById('quick_category_name').value.trim();
+    if (!name) {
+        alert('Please enter a category name');
+        document.getElementById('quick_category_name').focus();
+        return;
+    }
+
+    // Show loading state
+    submitButton.disabled = true;
+    submitText.textContent = 'Creating...';
+    submitLoading.classList.remove('hidden');
+
+    // Make AJAX request
+    fetch(`{{ route('tenant.inventory.categories.quick-store', ['tenant' => $tenant->slug]) }}`, {
+        method: 'POST',
+        headers: {
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+            'Accept': 'application/json',
+        },
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Add new category to select dropdown
+            const categorySelect = document.getElementById('category_id');
+            const newOption = document.createElement('option');
+            newOption.value = data.category.id;
+            newOption.textContent = data.category.name;
+            newOption.selected = true;
+            categorySelect.appendChild(newOption);
+
+            // Close modal and show success message
+            closeQuickCategoryModal();
+
+            // Show success notification
+            showSuccessNotification('Category created successfully!');
+        } else {
+            // Show error message
+            alert(data.message || 'Error creating category');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Error creating category. Please try again.');
+    })
+    .finally(() => {
+        // Reset button state
+        submitButton.disabled = false;
+        submitText.textContent = 'Create Category';
+        submitLoading.classList.add('hidden');
+    });
+}
+
+function showSuccessNotification(message) {
+    // Create notification element
+    const notification = document.createElement('div');
+    notification.className = 'fixed top-4 right-4 bg-green-500 text-white px-6 py-3 rounded-md shadow-lg z-50 transform transition-transform duration-300 translate-x-full';
+    notification.innerHTML = `
+        <div class="flex items-center">
+            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+            </svg>
+            ${message}
+        </div>
+    `;
+
+    document.body.appendChild(notification);
+
+    // Show notification
+    setTimeout(() => {
+        notification.classList.remove('translate-x-full');
+    }, 100);
+
+    // Hide notification after 3 seconds
+    setTimeout(() => {
+        notification.classList.add('translate-x-full');
+        setTimeout(() => {
+            document.body.removeChild(notification);
+        }, 300);
+    }, 3000);
 }
 
 // Function to generate SKU

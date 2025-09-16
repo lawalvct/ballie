@@ -271,6 +271,54 @@ class ProductCategoryController extends Controller
     }
 
     /**
+     * Quick store a category via AJAX
+     */
+    public function quickStore(Request $request, Tenant $tenant)
+    {
+        $request->validate([
+            'name' => 'required|string|max:255',
+            'description' => 'nullable|string',
+            'parent_id' => 'nullable|exists:product_categories,id',
+            'is_active' => 'boolean',
+        ]);
+
+        $data = $request->only(['name', 'description', 'parent_id']);
+        $data['tenant_id'] = $tenant->id;
+        $data['is_active'] = $request->boolean('is_active', true);
+
+        // Generate slug
+        $data['slug'] = Str::slug($data['name']);
+
+        // Ensure slug is unique for this tenant
+        $originalSlug = $data['slug'];
+        $counter = 1;
+        while (ProductCategory::where('tenant_id', $tenant->id)
+                              ->where('slug', $data['slug'])
+                              ->exists()) {
+            $data['slug'] = $originalSlug . '-' . $counter;
+            $counter++;
+        }
+
+        // Set sort order
+        $maxSortOrder = ProductCategory::where('tenant_id', $tenant->id)
+            ->where('parent_id', $data['parent_id'] ?? null)
+            ->max('sort_order') ?? 0;
+        $data['sort_order'] = $maxSortOrder + 1;
+
+        $category = ProductCategory::create($data);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Category created successfully.',
+            'category' => [
+                'id' => $category->id,
+                'name' => $category->name,
+                'slug' => $category->slug,
+            ]
+        ]);
+    }
+
+    /**
      * Reorder categories
      */
     public function reorder(Request $request, Tenant $tenant)
