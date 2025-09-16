@@ -34,7 +34,7 @@ return new class extends Migration
             $table->timestamps();
 
             // Indexes
-            $table->index(['stock_journal_entry_id', 'product_id']);
+            $table->index(['stock_journal_entry_id', 'product_id'], 'sj_items_entry_product_idx');
             $table->index('movement_type');
             $table->index('batch_number');
             $table->index('expiry_date');
