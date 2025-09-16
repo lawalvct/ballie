@@ -140,6 +140,11 @@ class DefaultProductCategoriesSeeder extends Seeder
                 'description' => 'Accounting, auditing, etc.',
                 'sort_order' => 23,
             ],
+             [
+                'name' => 'None',
+                'description' => 'None',
+                'sort_order' => 24,
+            ],
         ];
 
         foreach ($categories as $categoryData) {
