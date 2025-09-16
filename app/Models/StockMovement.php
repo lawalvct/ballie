@@ -21,16 +21,29 @@ class StockMovement extends Model
         'reference',
         'remarks',
         'created_by',
+        'transaction_type',
+        'transaction_date',
+        'transaction_reference',
+        'source_transaction_type',
+        'source_transaction_id',
+        'batch_number',
+        'expiry_date',
+        'additional_data',
     ];
 
     protected $casts = [
-        'quantity' => 'decimal:2',
-        'old_stock' => 'decimal:2',
-        'new_stock' => 'decimal:2',
+        'quantity' => 'decimal:4',
+        'old_stock' => 'decimal:4',
+        'new_stock' => 'decimal:4',
         'rate' => 'decimal:2',
+        'transaction_date' => 'date',
+        'expiry_date' => 'date',
+        'additional_data' => 'json',
     ];
 
     protected $dates = [
+        'transaction_date',
+        'expiry_date',
         'created_at',
         'updated_at',
     ];
@@ -60,20 +73,111 @@ class StockMovement extends Model
     }
 
     /**
+     * Get the source transaction (polymorphic relationship).
+     */
+    public function sourceTransaction()
+    {
+        return $this->morphTo();
+    }
+
+    /**
+     * Create stock movement from invoice item.
+     */
+    public static function createFromInvoice($invoice, $item, $movementType = 'out')
+    {
+        $invoiceNumber = $invoice->invoice_number ?? $invoice->id;
+
+        return self::create([
+            'tenant_id' => $invoice->tenant_id,
+            'product_id' => $item->product_id,
+            'type' => $movementType,
+            'quantity' => $movementType === 'out' ? -abs($item->quantity) : abs($item->quantity),
+            'rate' => $item->rate ?? 0,
+            'transaction_type' => 'sales',
+            'transaction_date' => $invoice->invoice_date ?? now()->toDateString(),
+            'transaction_reference' => $invoiceNumber,
+            'reference' => "Sales Invoice #{$invoiceNumber}",
+            'source_transaction_type' => get_class($invoice),
+            'source_transaction_id' => $invoice->id,
+            'created_by' => auth()->id(),
+            'old_stock' => 0, // Will be calculated
+            'new_stock' => 0, // Will be calculated
+        ]);
+    }
+
+    /**
+     * Create stock movement from stock journal item.
+     */
+    public static function createFromStockJournal($stockJournal, $item)
+    {
+        $movementType = $item->movement_type === 'in' ? 'in' : 'out';
+        $quantity = $movementType === 'out' ? -abs($item->quantity) : abs($item->quantity);
+        $journalNumber = $stockJournal->journal_number ?? $stockJournal->id;
+
+        return self::create([
+            'tenant_id' => $stockJournal->tenant_id,
+            'product_id' => $item->product_id,
+            'type' => $movementType,
+            'quantity' => $quantity,
+            'rate' => $item->rate ?? 0,
+            'transaction_type' => 'stock_journal',
+            'transaction_date' => $stockJournal->journal_date ?? now()->toDateString(),
+            'transaction_reference' => $journalNumber,
+            'reference' => $item->remarks ?? "Stock Journal #{$journalNumber}",
+            'source_transaction_type' => get_class($stockJournal),
+            'source_transaction_id' => $stockJournal->id,
+            'batch_number' => $item->batch_number,
+            'expiry_date' => $item->expiry_date,
+            'created_by' => $stockJournal->created_by ?? auth()->id(),
+            'old_stock' => $item->stock_before ?? 0,
+            'new_stock' => $item->stock_after ?? 0,
+            'remarks' => $item->remarks,
+        ]);
+    }
+
+    /**
+     * Create stock movement from purchase.
+     */
+    public static function createFromPurchase($purchase, $item)
+    {
+        $purchaseNumber = $purchase->purchase_number ?? $purchase->id;
+
+        return self::create([
+            'tenant_id' => $purchase->tenant_id,
+            'product_id' => $item->product_id,
+            'type' => 'in',
+            'quantity' => abs($item->quantity),
+            'rate' => $item->rate ?? 0,
+            'transaction_type' => 'purchase',
+            'transaction_date' => $purchase->purchase_date ?? now()->toDateString(),
+            'transaction_reference' => $purchaseNumber,
+            'reference' => "Purchase #{$purchaseNumber}",
+            'source_transaction_type' => get_class($purchase),
+            'source_transaction_id' => $purchase->id,
+            'created_by' => $purchase->created_by ?? auth()->id(),
+            'old_stock' => 0, // Will be calculated
+            'new_stock' => 0, // Will be calculated
+        ]);
+    }
+
+    /**
      * Get the movement type display name.
      */
     public function getTypeDisplayAttribute(): string
     {
-        return match($this->type) {
+        return match($this->transaction_type ?? $this->type) {
             'opening_stock' => 'Opening Stock',
             'purchase' => 'Purchase',
-            'sale' => 'Sale',
-            'adjustment' => 'Stock Adjustment',
-            'return' => 'Return',
+            'sales', 'sale' => 'Sales',
+            'stock_journal' => 'Stock Journal',
+            'physical_adjustment', 'adjustment' => 'Stock Adjustment',
+            'purchase_return', 'return' => 'Return',
             'transfer_in' => 'Transfer In',
             'transfer_out' => 'Transfer Out',
             'damage' => 'Damage/Loss',
-            default => ucfirst(str_replace('_', ' ', $this->type))
+            'manufacturing' => 'Manufacturing',
+            'invoice' => 'Invoice',
+            default => ucfirst(str_replace('_', ' ', $this->transaction_type ?? $this->type))
         };
     }
 
@@ -82,7 +186,7 @@ class StockMovement extends Model
      */
     public function getIsIncreaseAttribute(): bool
     {
-        return in_array($this->type, ['opening_stock', 'purchase', 'return', 'transfer_in', 'adjustment']) && $this->quantity > 0;
+        return $this->quantity > 0;
     }
 
     /**
@@ -90,6 +194,67 @@ class StockMovement extends Model
      */
     public function getIsDecreaseAttribute(): bool
     {
-        return in_array($this->type, ['sale', 'transfer_out', 'damage', 'adjustment']) && $this->quantity < 0;
+        return $this->quantity < 0;
+    }
+
+    /**
+     * Get the absolute quantity.
+     */
+    public function getAbsoluteQuantityAttribute(): float
+    {
+        return abs($this->quantity);
+    }
+
+    /**
+     * Get the movement direction (in/out).
+     */
+    public function getDirectionAttribute(): string
+    {
+        return $this->quantity > 0 ? 'in' : 'out';
+    }
+
+    /**
+     * Scope for date range filtering.
+     */
+    public function scopeDateRange($query, $fromDate, $toDate)
+    {
+        return $query->whereBetween('transaction_date', [$fromDate, $toDate]);
+    }
+
+    /**
+     * Scope for transaction type filtering.
+     */
+    public function scopeTransactionType($query, $type)
+    {
+        return $query->where('transaction_type', $type);
+    }
+
+    /**
+     * Scope for movement direction filtering.
+     */
+    public function scopeDirection($query, $direction)
+    {
+        if ($direction === 'in') {
+            return $query->where('quantity', '>', 0);
+        } elseif ($direction === 'out') {
+            return $query->where('quantity', '<', 0);
+        }
+        return $query;
+    }
+
+    /**
+     * Scope for specific product.
+     */
+    public function scopeForProduct($query, $productId)
+    {
+        return $query->where('product_id', $productId);
+    }
+
+    /**
+     * Scope for movements up to a specific date.
+     */
+    public function scopeUpToDate($query, $date)
+    {
+        return $query->where('transaction_date', '<=', $date);
     }
 }

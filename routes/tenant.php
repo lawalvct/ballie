@@ -311,6 +311,7 @@ Route::prefix('ledger-accounts')->name('ledger-accounts.')->group(function () {
         Route::prefix('inventory')->name('tenant.inventory.')->group(function () {
             // Products
             Route::resource('products', ProductController::class);
+            Route::get('products/{product}/stock-movements', [ProductController::class, 'stockMovements'])->name('products.stock-movements');
             Route::patch('products/{product}/toggle-status', [ProductController::class, 'toggleStatus'])->name('products.toggle-status');
             Route::get('products/export/all', [ProductController::class, 'export'])->name('products.export');
             Route::get('products/export/template', [ProductController::class, 'exportTemplate'])->name('products.export.template');

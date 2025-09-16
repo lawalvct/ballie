@@ -6,6 +6,8 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
 
 class Product extends Model
 {
@@ -117,6 +119,176 @@ class Product extends Model
         return $this->belongsTo(User::class, 'updated_by');
     }
 
+    public function stockMovements()
+    {
+        return $this->hasMany(StockMovement::class)->orderBy('transaction_date', 'desc')->orderBy('created_at', 'desc');
+    }
+
+    // Date-based Stock Calculation Methods
+
+    /**
+     * Calculate stock quantity as of a specific date
+     */
+    public function getStockAsOfDate($date = null, $includeTime = false)
+    {
+        $date = $date ?? now();
+
+        if (!$includeTime) {
+            $date = is_string($date) ? $date : $date->toDateString();
+            $query = $this->stockMovements()
+                ->where('transaction_date', '<=', $date);
+        } else {
+            $query = $this->stockMovements()
+                ->where('created_at', '<=', $date);
+        }
+
+        return $query->sum('quantity') ?? 0;
+    }
+
+    /**
+     * Calculate stock value as of a specific date with different valuation methods
+     */
+    public function getStockValueAsOfDate($date = null, $valuationMethod = 'weighted_average')
+    {
+        $date = $date ?? now()->toDateString();
+
+        $movements = $this->stockMovements()
+            ->where('transaction_date', '<=', $date)
+            ->orderBy('transaction_date', 'asc')
+            ->orderBy('created_at', 'asc')
+            ->get();
+
+        return $this->calculateStockValue($movements, $valuationMethod);
+    }
+
+    /**
+     * Calculate stock value using different valuation methods
+     */
+    private function calculateStockValue($movements, $method = 'weighted_average')
+    {
+        $totalQuantity = 0;
+        $totalValue = 0;
+        $averageRate = 0;
+        $transactions = [];
+
+        foreach ($movements as $movement) {
+            if ($movement->quantity > 0) {
+                // Stock In - Add to inventory
+                $totalValue += ($movement->quantity * $movement->rate);
+                $totalQuantity += $movement->quantity;
+
+                if ($totalQuantity > 0) {
+                    $averageRate = $totalValue / $totalQuantity;
+                }
+
+                // Store for FIFO calculation
+                if ($method === 'fifo') {
+                    $transactions[] = [
+                        'type' => 'in',
+                        'quantity' => $movement->quantity,
+                        'rate' => $movement->rate,
+                        'remaining' => $movement->quantity
+                    ];
+                }
+
+            } else {
+                // Stock Out - Reduce from inventory
+                $outQuantity = abs($movement->quantity);
+                $totalQuantity -= $outQuantity;
+
+                if ($method === 'weighted_average') {
+                    $totalValue -= ($outQuantity * $averageRate);
+                } elseif ($method === 'fifo') {
+                    // FIFO Logic
+                    $costOfGoodsSold = 0;
+                    foreach ($transactions as &$transaction) {
+                        if ($transaction['type'] === 'in' && $transaction['remaining'] > 0 && $outQuantity > 0) {
+                            $usedQty = min($transaction['remaining'], $outQuantity);
+                            $costOfGoodsSold += ($usedQty * $transaction['rate']);
+                            $transaction['remaining'] -= $usedQty;
+                            $outQuantity -= $usedQty;
+                        }
+                    }
+                    $totalValue -= $costOfGoodsSold;
+                }
+            }
+        }
+
+        return [
+            'quantity' => max(0, $totalQuantity),
+            'value' => max(0, $totalValue),
+            'average_rate' => $totalQuantity > 0 ? $totalValue / $totalQuantity : 0,
+            'valuation_method' => $method
+        ];
+    }
+
+    /**
+     * Get stock movement history for a date range
+     */
+    public function getStockMovementHistory($fromDate = null, $toDate = null)
+    {
+        $fromDate = $fromDate ?? now()->subMonth()->toDateString();
+        $toDate = $toDate ?? now()->toDateString();
+
+        return $this->stockMovements()
+            ->whereBetween('transaction_date', [$fromDate, $toDate])
+            ->with(['tenant', 'creator'])
+            ->orderBy('transaction_date', 'desc')
+            ->orderBy('created_at', 'desc')
+            ->get()
+            ->map(function ($movement) {
+                return [
+                    'id' => $movement->id,
+                    'date' => $movement->transaction_date,
+                    'type' => $movement->direction,
+                    'transaction_type' => $movement->transaction_type,
+                    'quantity' => $movement->absolute_quantity,
+                    'rate' => $movement->rate,
+                    'reference' => $movement->reference,
+                    'transaction_reference' => $movement->transaction_reference,
+                    'created_at' => $movement->created_at,
+                    'created_by' => $movement->creator->name ?? 'System',
+                ];
+            });
+    }
+
+    /**
+     * Get stock aging analysis
+     */
+    public function getStockAging($asOfDate = null)
+    {
+        $asOfDate = $asOfDate ?? now()->toDateString();
+
+        $movements = $this->stockMovements()
+            ->where('quantity', '>', 0) // Only incoming stock
+            ->where('transaction_date', '<=', $asOfDate)
+            ->orderBy('transaction_date', 'asc')
+            ->get();
+
+        $aging = [
+            '0-30' => 0,
+            '31-60' => 0,
+            '61-90' => 0,
+            '90+' => 0
+        ];
+
+        foreach ($movements as $movement) {
+            $daysOld = now()->diffInDays($movement->transaction_date);
+
+            if ($daysOld <= 30) {
+                $aging['0-30'] += $movement->quantity;
+            } elseif ($daysOld <= 60) {
+                $aging['31-60'] += $movement->quantity;
+            } elseif ($daysOld <= 90) {
+                $aging['61-90'] += $movement->quantity;
+            } else {
+                $aging['90+'] += $movement->quantity;
+            }
+        }
+
+        return $aging;
+    }
+
     // Accessors
     public function getImageUrlAttribute()
     {
@@ -146,6 +318,25 @@ class Product extends Model
     public function getStockValueAttribute()
     {
         return $this->current_stock_value;
+    }
+
+    /**
+     * Override current_stock to use date-based calculation when needed
+     */
+    public function getCurrentStockAttribute($value)
+    {
+        // If we're requesting historical data or want real-time calculation
+        if (request()->has('as_of_date') || config('inventory.use_realtime_stock', false)) {
+            $asOfDate = request('as_of_date', now()->toDateString());
+            $cacheKey = "product_stock_{$this->id}_{$asOfDate}";
+
+            return Cache::remember($cacheKey, 3600, function () use ($asOfDate) {
+                return $this->getStockAsOfDate($asOfDate);
+            });
+        }
+
+        // Return stored value for performance
+        return $value ?? 0;
     }
 
     // Compatibility accessors

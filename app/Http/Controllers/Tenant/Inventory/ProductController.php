@@ -12,11 +12,15 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class ProductController extends Controller
 {
     public function index(Request $request, Tenant $tenant)
     {
+        $asOfDate = $request->get('as_of_date', now()->toDateString());
+        $valuationMethod = $request->get('valuation_method', 'weighted_average');
+
         $query = Product::where('tenant_id', $tenant->id)
             ->with(['category', 'primaryUnit']);
 
@@ -33,6 +37,11 @@ class ProductController extends Controller
         // Filter by category
         if ($request->filled('category_id')) {
             $query->where('category_id', $request->category_id);
+        }
+
+        // Filter by type
+        if ($request->filled('type')) {
+            $query->where('type', $request->type);
         }
 
         // Filter by status
@@ -53,11 +62,40 @@ class ProductController extends Controller
         }
 
         $products = $query->latest()->paginate(15);
+
+        // Calculate date-based stock for each product
+        $products->getCollection()->transform(function ($product) use ($asOfDate, $valuationMethod) {
+            if ($product->type === 'item' && $product->maintain_stock) {
+                $stockData = $product->getStockValueAsOfDate($asOfDate, $valuationMethod);
+                $product->calculated_stock = $stockData['quantity'];
+                $product->calculated_stock_value = $stockData['value'];
+                $product->calculated_average_rate = $stockData['average_rate'];
+
+                // Determine stock status based on calculated stock
+                if ($stockData['quantity'] <= 0) {
+                    $product->calculated_stock_status = 'out_of_stock';
+                } elseif ($stockData['quantity'] <= ($product->reorder_level ?? 0)) {
+                    $product->calculated_stock_status = 'low_stock';
+                } else {
+                    $product->calculated_stock_status = 'in_stock';
+                }
+            } else {
+                $product->calculated_stock = null;
+                $product->calculated_stock_value = null;
+                $product->calculated_stock_status = 'not_applicable';
+            }
+
+            return $product;
+        });
+
         $categories = ProductCategory::where('tenant_id', $tenant->id)->active()->get();
 
-        // Calculate statistics
+        // Calculate statistics based on date
         $totalProducts = Product::where('tenant_id', $tenant->id)->count();
         $activeProducts = Product::where('tenant_id', $tenant->id)->where('is_active', true)->count();
+
+        // For low stock and out of stock, we'll use the current calculation for performance
+        // In a production system, you might want to cache these calculations
         $lowStockProducts = Product::where('tenant_id', $tenant->id)->lowStock()->count();
         $outOfStockProducts = Product::where('tenant_id', $tenant->id)->outOfStock()->count();
 
@@ -68,7 +106,9 @@ class ProductController extends Controller
             'totalProducts',
             'activeProducts',
             'lowStockProducts',
-            'outOfStockProducts'
+            'outOfStockProducts',
+            'asOfDate',
+            'valuationMethod'
         ));
     }
 
@@ -137,6 +177,62 @@ class ProductController extends Controller
     return view('tenant.inventory.products.show', compact('tenant', 'product'));
 }
 
+/**
+ * Show stock movements for a product
+ */
+public function stockMovements(Request $request, Tenant $tenant, Product $product)
+{
+    // Ensure the product belongs to the tenant
+    if ($product->tenant_id !== $tenant->id) {
+        abort(404);
+    }
+
+    $fromDate = $request->get('from_date', now()->subMonth()->toDateString());
+    $toDate = $request->get('to_date', now()->toDateString());
+    $transactionType = $request->get('transaction_type');
+
+    $query = $product->stockMovements()
+        ->whereBetween('transaction_date', [$fromDate, $toDate])
+        ->with(['creator']);
+
+    if ($transactionType) {
+        $query->where('transaction_type', $transactionType);
+    }
+
+    $movements = $query->orderBy('transaction_date', 'desc')
+        ->orderBy('created_at', 'desc')
+        ->paginate(50);
+
+    // Calculate running stock balance
+    $startingStock = $product->getStockAsOfDate($fromDate);
+    $runningStock = $startingStock;
+
+    // Apply running balance to movements
+    $movements->getCollection()->transform(function ($movement) use (&$runningStock) {
+        $runningStock += $movement->quantity;
+        $movement->running_stock = $runningStock;
+        return $movement;
+    });
+
+    // Get transaction types for filter
+    $transactionTypes = $product->stockMovements()
+        ->distinct()
+        ->pluck('transaction_type')
+        ->filter()
+        ->sort();
+
+    return view('tenant.inventory.products.stock-movements', compact(
+        'product',
+        'movements',
+        'fromDate',
+        'toDate',
+        'transactionType',
+        'transactionTypes',
+        'startingStock',
+        'tenant'
+    ));
+}
+
 public function toggleStatus(Request $request, Tenant $tenant, Product $product)
 {
     // Ensure the product belongs to the tenant
@@ -154,7 +250,7 @@ public function toggleStatus(Request $request, Tenant $tenant, Product $product)
         return redirect()->back()
             ->with('success', "Product {$status} successfully.");
     } catch (\Exception $e) {
-        \Log::error('Error toggling product status: ' . $e->getMessage());
+        Log::error('Error toggling product status: ' . $e->getMessage());
 
         return redirect()->back()
             ->with('error', 'An error occurred while updating the product status.');
@@ -263,7 +359,7 @@ public function update(Request $request, Tenant $tenant, Product $product)
             ->with('success', 'Product updated successfully.');
 
     } catch (\Exception $e) {
-        \Log::error('Error updating product: ' . $e->getMessage());
+        Log::error('Error updating product: ' . $e->getMessage());
 
         return redirect()->back()
             ->with('error', 'An error occurred while updating the product. Please try again.')
@@ -448,7 +544,7 @@ public function update(Request $request, Tenant $tenant, Product $product)
             ->with('success', 'Product deleted successfully.');
 
     } catch (\Exception $e) {
-        \Log::error('Error deleting product: ' . $e->getMessage());
+        Log::error('Error deleting product: ' . $e->getMessage());
 
         return redirect()->back()
             ->with('error', 'An error occurred while deleting the product. Please try again.');
@@ -465,7 +561,7 @@ return view('tenant.inventory.products.import', compact('tenant'));
 
 public function importProcess(Request $request, Tenant $tenant)
 {
- 
+
     $file = $request->file('import_file');
 
     if (!$file) {
@@ -476,7 +572,7 @@ public function importProcess(Request $request, Tenant $tenant)
     $skipped = 0;
     $errors = [];
 
-    \DB::beginTransaction();
+    DB::beginTransaction();
     try {
         $data = array_map('str_getcsv', file($file->getRealPath()));
         $header = array_map('trim', array_shift($data));
@@ -527,7 +623,7 @@ public function importProcess(Request $request, Tenant $tenant)
             $productData['current_stock_value'] = $productData['current_stock'] * $productData['purchase_rate'];
 
             // Validate required fields
-            $validator = \Validator::make($productData, [
+            $validator = Validator::make($productData, [
                 'type' => 'required|in:item,service',
                 'name' => 'required|string|max:255',
                 'sku' => 'nullable|string|max:100',
@@ -567,7 +663,7 @@ public function importProcess(Request $request, Tenant $tenant)
             }
         }
 
-        \DB::commit();
+        DB::commit();
 
         $message = "$imported products imported. $skipped skipped.";
         if (count($errors)) {
@@ -579,8 +675,8 @@ public function importProcess(Request $request, Tenant $tenant)
             ->with('import_errors', $errors);
 
     } catch (\Exception $e) {
-        \DB::rollBack();
-        \Log::error('Error importing products: ' . $e->getMessage());
+        DB::rollBack();
+        Log::error('Error importing products: ' . $e->getMessage());
 
         return redirect()->back()
             ->with('error', 'An error occurred while importing products. Please try again.');

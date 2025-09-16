@@ -170,7 +170,7 @@ class StockJournalController extends Controller
      */
     public function show(Tenant $tenant, StockJournalEntry $stockJournal)
     {
-        $stockJournal->load(['creator', 'poster', 'items.product.category', 'items.product.primaryUnit']);
+        $stockJournal->load(['creator', 'poster', 'items.product.category', 'items.product.primaryUnit', 'stockMovements.product.primaryUnit']);
 
         return view('tenant.inventory.stock-journal.show', compact('tenant', 'stockJournal'));
     }

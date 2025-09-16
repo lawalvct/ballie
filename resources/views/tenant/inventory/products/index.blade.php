@@ -96,6 +96,82 @@
         </div>
     </div>
 
+    <!-- Date and Valuation Method Filter -->
+    <div class="bg-white shadow-sm rounded-lg border border-gray-200 p-4">
+        <div class="flex items-center justify-between mb-4">
+            <h3 class="text-lg font-medium text-gray-900">Stock Date Filter</h3>
+            @if(request('as_of_date') !== now()->toDateString())
+                <span class="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-blue-100 text-blue-800">
+                    Viewing historical data
+                </span>
+            @endif
+        </div>
+
+        <form method="GET" class="flex flex-wrap items-end gap-4">
+            <!-- Preserve existing filters -->
+            @if(request('search'))
+                <input type="hidden" name="search" value="{{ request('search') }}">
+            @endif
+            @if(request('type'))
+                <input type="hidden" name="type" value="{{ request('type') }}">
+            @endif
+            @if(request('category_id'))
+                <input type="hidden" name="category_id" value="{{ request('category_id') }}">
+            @endif
+            @if(request('status'))
+                <input type="hidden" name="status" value="{{ request('status') }}">
+            @endif
+            @if(request('stock_status'))
+                <input type="hidden" name="stock_status" value="{{ request('stock_status') }}">
+            @endif
+
+            <div class="flex-1 min-w-0">
+                <label for="as_of_date" class="block text-sm font-medium text-gray-700 mb-1">
+                    Stock as of Date
+                </label>
+                <input type="date"
+                       id="as_of_date"
+                       name="as_of_date"
+                       value="{{ $asOfDate ?? now()->toDateString() }}"
+                       max="{{ now()->toDateString() }}"
+                       class="block w-full border-gray-300 rounded-lg shadow-sm focus:ring-green-500 focus:border-green-500">
+            </div>
+
+            <div class="flex-1 min-w-0">
+                <label for="valuation_method" class="block text-sm font-medium text-gray-700 mb-1">
+                    Valuation Method
+                </label>
+                <select id="valuation_method"
+                        name="valuation_method"
+                        class="block w-full border-gray-300 rounded-lg shadow-sm focus:ring-green-500 focus:border-green-500">
+                    <option value="weighted_average" {{ ($valuationMethod ?? 'weighted_average') === 'weighted_average' ? 'selected' : '' }}>
+                        Weighted Average
+                    </option>
+                    <option value="fifo" {{ ($valuationMethod ?? '') === 'fifo' ? 'selected' : '' }}>
+                        FIFO (First In, First Out)
+                    </option>
+                </select>
+            </div>
+
+            <div class="flex gap-2">
+                <button type="submit"
+                        class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition ease-in-out duration-150">
+                    <svg class="w-4 h-4 mr-2 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+                    </svg>
+                    Update View
+                </button>
+
+                @if(request()->hasAny(['as_of_date', 'valuation_method']) && (request('as_of_date') !== now()->toDateString() || request('valuation_method') !== 'weighted_average'))
+                    <a href="{{ route('tenant.inventory.products.index', ['tenant' => $tenant->slug]) }}"
+                       class="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 transition ease-in-out duration-150">
+                        Reset to Current
+                    </a>
+                @endif
+            </div>
+        </form>
+    </div>
+
     <!-- Filters and Search -->
     <div class="bg-white shadow-sm rounded-lg border border-gray-200" x-data="{ filtersExpanded: false }">
         <div class="p-6">
@@ -276,7 +352,7 @@
 
                     <div x-show="showBulkActions" x-transition class="flex items-center space-x-2">
                         <span class="text-sm text-gray-700" x-text="`${selectedItems.length} selected`"></span>
-                        
+
                         <button type="button"
                                 onclick="bulkAction('activate')"
                                 class="inline-flex items-center px-3 py-1 border border-transparent text-xs font-medium rounded text-green-700 bg-green-100 hover:bg-green-200">
@@ -379,21 +455,44 @@
                                 <td class="px-6 py-4 whitespace-nowrap">
                                     @if($product->type === 'item' && $product->maintain_stock)
                                         <div class="text-sm text-gray-900">
-                                            {{ number_format($product->current_stock, 2) }}
+                                            {{ number_format($product->calculated_stock ?? $product->current_stock, 2) }}
                                             {{ $product->primaryUnit->symbol ?? $product->primaryUnit->name ?? '' }}
                                         </div>
+
+                                        @if(isset($product->calculated_stock_value))
+                                            <div class="text-xs text-gray-500">
+                                                Value: ₦{{ number_format($product->calculated_stock_value, 2) }}
+                                                @if(isset($product->calculated_average_rate))
+                                                    <br>Avg Rate: ₦{{ number_format($product->calculated_average_rate, 2) }}
+                                                @endif
+                                            </div>
+                                        @endif
+
                                         @php
-                                            $stockStatus = $product->stock_status;
-                                            $stockColor = 'green';
-                                            if ($stockStatus === 'low_stock') {
-                                                $stockColor = 'orange';
-                                            } elseif ($stockStatus === 'out_of_stock') {
-                                                $stockColor = 'red';
-                                            }
+                                            $stockStatus = $product->calculated_stock_status ?? $product->stock_status;
+                                            $stockColor = match($stockStatus) {
+                                                'out_of_stock' => 'red',
+                                                'low_stock' => 'orange',
+                                                'in_stock' => 'green',
+                                                default => 'gray'
+                                            };
                                         @endphp
+
                                         <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-{{ $stockColor }}-100 text-{{ $stockColor }}-800">
                                             {{ ucwords(str_replace('_', ' ', $stockStatus)) }}
                                         </span>
+
+                                        @if(($asOfDate ?? now()->toDateString()) !== now()->toDateString())
+                                            <div class="text-xs text-blue-600 mt-1">
+                                                As of {{ \Carbon\Carbon::parse($asOfDate ?? now())->format('M d, Y') }}
+                                            </div>
+                                        @endif
+
+                                        @if(isset($product->calculated_stock))
+                                            <div class="text-xs text-purple-600 mt-1">
+                                                Method: {{ ucwords(str_replace('_', ' ', $valuationMethod ?? 'weighted_average')) }}
+                                            </div>
+                                        @endif
                                     @else
                                         <span class="text-gray-500 text-sm">N/A</span>
                                     @endif
@@ -421,6 +520,12 @@
                                            class="text-green-600 hover:text-green-900">
                                             View
                                         </a>
+                                        @if($product->type === 'item' && $product->maintain_stock)
+                                            <a href="{{ route('tenant.inventory.products.stock-movements', ['tenant' => $tenant->slug, 'product' => $product->id]) }}"
+                                               class="text-purple-600 hover:text-purple-900" title="Stock Movements">
+                                                Movements
+                                            </a>
+                                        @endif
                                         <a href="{{ route('tenant.inventory.products.edit', ['tenant' => $tenant->slug, 'product' => $product->id]) }}"
                                            class="text-indigo-600 hover:text-indigo-900">
                                             Edit
@@ -586,7 +691,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // Bulk actions
     window.bulkAction = function(action) {
         const selectedProducts = Array.from(document.querySelectorAll('input[name="products[]"]:checked')).map(cb => cb.value);
-        
+
         if (selectedProducts.length === 0) {
             alert('Please select at least one product.');
             return;

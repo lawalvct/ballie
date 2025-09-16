@@ -292,7 +292,7 @@
     </div>
 
     <!-- Stock Movements (if posted) -->
-    @if($stockJournal->status === 'posted' && $stockJournal->stockMovements->count() > 0)
+    @if($stockJournal->status === 'posted' && $stockJournal->stockMovements && $stockJournal->stockMovements->count() > 0)
     <div class="bg-white rounded-lg shadow overflow-hidden">
         <div class="px-6 py-4 border-b border-gray-200">
             <h3 class="text-lg font-semibold text-gray-900">Generated Stock Movements</h3>
@@ -318,12 +318,12 @@
                         </td>
                         <td class="px-6 py-4 text-center">
                             <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
-                                {{ $movement->movement_type === 'in' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800' }}">
-                                {{ ucfirst($movement->movement_type) }}
+                                {{ $movement->quantity > 0 ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800' }}">
+                                {{ $movement->quantity > 0 ? 'In' : 'Out' }}
                             </span>
                         </td>
                         <td class="px-6 py-4 text-right text-sm text-gray-900">
-                            {{ number_format($movement->quantity, 4) }} {{ $movement->product->primaryUnit->name ?? '' }}
+                            {{ number_format(abs($movement->quantity), 4) }} {{ $movement->product->primaryUnit->name ?? '' }}
                         </td>
                         <td class="px-6 py-4 text-right text-sm text-gray-900">
                             {{ $movement->reference }}
