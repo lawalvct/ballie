@@ -28,6 +28,7 @@ use App\Http\Controllers\Tenant\Settings\SettingsController;
 use App\Http\Controllers\Tenant\Admin\AdminController;
 use App\Http\Controllers\Tenant\Crm\VendorController;
 use App\Http\Controllers\Tenant\Inventory\UnitController;
+use App\Http\Controllers\Tenant\Inventory\StockJournalController;
 use App\Models\Tenant;
 use App\Models\Tenant\Role;
 use App\Models\Tenant\Permission;
@@ -334,6 +335,38 @@ Route::prefix('ledger-accounts')->name('ledger-accounts.')->group(function () {
             Route::post('units/import', [UnitController::class, 'import'])->name('units.import');
             Route::post('units/bulk', [UnitController::class, 'bulk'])->name('units.bulk');
             Route::post('units/bulk-action', [UnitController::class, 'bulkAction'])->name('units.bulk-action');
+
+            // Stock Journal Entries
+            Route::prefix('stock-journal')->name('stock-journal.')->group(function () {
+                Route::get('/', [StockJournalController::class, 'index'])->name('index');
+                Route::get('/create', [StockJournalController::class, 'create'])->name('create');
+                Route::get('/create/{type}', [StockJournalController::class, 'create'])->name('create.type');
+                Route::post('/', [StockJournalController::class, 'store'])->name('store');
+                Route::get('/{stockJournal}', [StockJournalController::class, 'show'])->name('show');
+                Route::get('/{stockJournal}/edit', [StockJournalController::class, 'edit'])->name('edit');
+                Route::put('/{stockJournal}', [StockJournalController::class, 'update'])->name('update');
+                Route::delete('/{stockJournal}', [StockJournalController::class, 'destroy'])->name('destroy');
+
+                // Stock Journal Actions
+                Route::post('/{stockJournal}/post', [StockJournalController::class, 'post'])->name('post');
+                Route::post('/{stockJournal}/cancel', [StockJournalController::class, 'cancel'])->name('cancel');
+                Route::get('/{stockJournal}/duplicate', [StockJournalController::class, 'duplicate'])->name('duplicate');
+                Route::get('/{stockJournal}/print', [StockJournalController::class, 'print'])->name('print');
+
+                // Bulk actions
+                Route::post('/bulk-post', [StockJournalController::class, 'bulkPost'])->name('bulk-post');
+                Route::post('/bulk-cancel', [StockJournalController::class, 'bulkCancel'])->name('bulk-cancel');
+                Route::delete('/bulk-delete', [StockJournalController::class, 'bulkDelete'])->name('bulk-delete');
+
+                // Export/Import
+                Route::get('/export/all', [StockJournalController::class, 'export'])->name('export');
+                Route::get('/export/template', [StockJournalController::class, 'exportTemplate'])->name('export.template');
+                Route::post('/import', [StockJournalController::class, 'import'])->name('import');
+
+                // AJAX routes for dynamic features
+                Route::get('/ajax/product-stock/{product}', [StockJournalController::class, 'getProductStock'])->name('ajax.product-stock');
+                Route::post('/ajax/calculate-stock', [StockJournalController::class, 'calculateStock'])->name('ajax.calculate-stock');
+            });
 
             // Main Inventory
             Route::get('/', [InventoryController::class, 'index'])->name('index');
