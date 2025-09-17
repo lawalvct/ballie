@@ -2,640 +2,486 @@
 
 @section('title', 'Physical Stock Vouchers')
 
-@push('styles')
-<style>
-    .stats-card {
-        transition: all 0.3s ease;
-        border-radius: 15px;
-        overflow: hidden;
-        position: relative;
-    }
-
-    .stats-card:hover {
-        transform: translateY(-5px);
-        box-shadow: 0 10px 25px rgba(0,0,0,0.1) !important;
-    }
-
-    .stats-card::before {
-        content: '';
-        position: absolute;
-        top: 0;
-        left: 0;
-        width: 4px;
-        height: 100%;
-        background: var(--bs-primary);
-    }
-
-    .stats-card.border-left-warning::before { background: var(--bs-warning); }
-    .stats-card.border-left-success::before { background: var(--bs-success); }
-    .stats-card.border-left-info::before { background: var(--bs-info); }
-    .stats-card.border-left-danger::before { background: var(--bs-danger); }
-
-    .page-header {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        border-radius: 20px;
-        color: white;
-        margin-bottom: 2rem;
-        padding: 2rem;
-        position: relative;
-        overflow: hidden;
-    }
-
-    .page-header::before {
-        content: '';
-        position: absolute;
-        top: -50%;
-        right: -20%;
-        width: 100px;
-        height: 100px;
-        background: rgba(255,255,255,0.1);
-        border-radius: 50%;
-        animation: float 6s ease-in-out infinite;
-    }
-
-    @keyframes float {
-        0%, 100% { transform: translateY(0px); }
-        50% { transform: translateY(-20px); }
-    }
-
-    .filters-card {
-        border-radius: 15px;
-        border: none;
-        box-shadow: 0 5px 15px rgba(0,0,0,0.08);
-    }
-
-    .table-card {
-        border-radius: 15px;
-        border: none;
-        box-shadow: 0 5px 15px rgba(0,0,0,0.08);
-        overflow: hidden;
-    }
-
-    .voucher-table th {
-        background: linear-gradient(45deg, #f8f9fa, #e9ecef);
-        border: none;
-        font-weight: 600;
-        color: #495057;
-        padding: 1rem;
-    }
-
-    .voucher-table td {
-        padding: 1rem;
-        vertical-align: middle;
-        border-color: #f1f3f4;
-    }
-
-    .voucher-table tbody tr {
-        transition: all 0.2s ease;
-    }
-
-    .voucher-table tbody tr:hover {
-        background-color: #f8f9fa;
-        transform: scale(1.01);
-        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-    }
-
-    .voucher-number {
-        font-weight: 600;
-        font-size: 1.1em;
-        background: linear-gradient(45deg, #667eea, #764ba2);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        background-clip: text;
-    }
-
-    .status-badge {
-        font-size: 0.85em;
-        padding: 0.5rem 1rem;
-        border-radius: 20px;
-        font-weight: 500;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-    }
-
-    .adjustment-badge {
-        font-size: 0.85em;
-        padding: 0.5rem 1rem;
-        border-radius: 20px;
-        font-weight: 500;
-    }
-
-    .action-dropdown .dropdown-toggle {
-        border-radius: 20px;
-        padding: 0.5rem 1rem;
-        border: 2px solid #e9ecef;
-        background: white;
-        transition: all 0.3s ease;
-    }
-
-    .action-dropdown .dropdown-toggle:hover {
-        border-color: #667eea;
-        background: #667eea;
-        color: white;
-    }
-
-    .empty-state {
-        padding: 4rem 2rem;
-        text-align: center;
-        background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
-        border-radius: 20px;
-        margin: 2rem 0;
-    }
-
-    .empty-state-icon {
-        font-size: 4rem;
-        color: #6c757d;
-        margin-bottom: 1rem;
-        opacity: 0.5;
-    }
-
-    .filter-toggle-btn {
-        border-radius: 20px;
-        border: 2px solid #e9ecef;
-        background: white;
-        transition: all 0.3s ease;
-    }
-
-    .filter-toggle-btn:hover {
-        border-color: #667eea;
-        background: #667eea;
-        color: white;
-    }
-
-    .create-btn {
-        background: linear-gradient(45deg, #667eea, #764ba2);
-        border: none;
-        border-radius: 25px;
-        padding: 0.75rem 2rem;
-        font-weight: 600;
-        box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
-        transition: all 0.3s ease;
-    }
-
-    .create-btn:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
-    }
-
-    .stats-icon {
-        width: 60px;
-        height: 60px;
-        border-radius: 15px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 1.5rem;
-        margin-bottom: 1rem;
-    }
-</style>
-@endpush
-
 @section('content')
-<div class="container-fluid py-4">
-    <!-- Enhanced Page Header -->
-    <div class="page-header">
-        <div class="row align-items-center">
-            <div class="col">
-                <div class="d-flex align-items-center mb-2">
-                    <div class="stats-icon bg-white text-primary me-3">
-                        <i class="fas fa-clipboard-check"></i>
+<div class="space-y-6">
+    <!-- Header -->
+    <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between">
+        <div>
+            <h1 class="text-3xl font-bold text-gray-900">Physical Stock Vouchers</h1>
+            <p class="mt-2 text-gray-600">Manage physical stock adjustments and reconciliation</p>
+        </div>
+        <div class="mt-4 lg:mt-0">
+            <a href="{{ route('tenant.inventory.physical-stock.create', ['tenant' => $tenant->slug]) }}"
+               class="inline-flex items-center px-4 py-2 bg-green-600 border border-transparent rounded-lg font-semibold text-xs text-white uppercase tracking-widest hover:bg-green-700 focus:bg-green-700 active:bg-green-900 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition ease-in-out duration-150">
+                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                </svg>
+                New Physical Stock Voucher
+            </a>
+        </div>
+    </div>
+
+    <!-- Statistics Cards -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+            <div class="flex items-center">
+                <div class="flex-shrink-0">
+                    <div class="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
+                        <svg class="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                        </svg>
                     </div>
+                </div>
+                <div class="ml-5 w-0 flex-1">
+                    <dl>
+                        <dt class="text-sm font-medium text-gray-500 truncate">Total Vouchers</dt>
+                        <dd class="text-lg font-medium text-gray-900">{{ number_format($stats['total_vouchers']) }}</dd>
+                    </dl>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+            <div class="flex items-center">
+                <div class="flex-shrink-0">
+                    <div class="w-8 h-8 bg-yellow-100 rounded-full flex items-center justify-center">
+                        <svg class="w-4 h-4 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                    </div>
+                </div>
+                <div class="ml-5 w-0 flex-1">
+                    <dl>
+                        <dt class="text-sm font-medium text-gray-500 truncate">Pending Approval</dt>
+                        <dd class="text-lg font-medium text-gray-900">{{ number_format($stats['pending_approval']) }}</dd>
+                    </dl>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+            <div class="flex items-center">
+                <div class="flex-shrink-0">
+                    <div class="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
+                        <svg class="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                    </div>
+                </div>
+                <div class="ml-5 w-0 flex-1">
+                    <dl>
+                        <dt class="text-sm font-medium text-gray-500 truncate">Approved This Month</dt>
+                        <dd class="text-lg font-medium text-gray-900">{{ number_format($stats['approved_this_month']) }}</dd>
+                    </dl>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+            <div class="flex items-center">
+                <div class="flex-shrink-0">
+                    <div class="w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center">
+                        <svg class="w-4 h-4 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"></path>
+                        </svg>
+                    </div>
+                </div>
+                <div class="ml-5 w-0 flex-1">
+                    <dl>
+                        <dt class="text-sm font-medium text-gray-500 truncate">Adjustments This Month</dt>
+                        <dd class="text-lg font-medium text-gray-900">₦{{ number_format($stats['total_adjustments_this_month'], 2) }}</dd>
+                    </dl>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filters and Search -->
+    <div class="bg-white shadow-sm rounded-lg border border-gray-200" x-data="{ filtersExpanded: false }">
+        <div class="p-6">
+            <!-- Header with Toggle Button -->
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="text-lg font-medium text-gray-900">Search & Filters</h3>
+                <button @click="filtersExpanded = !filtersExpanded"
+                        type="button"
+                        class="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
+                    <span x-text="filtersExpanded ? 'Hide Filters' : 'Show Filters'"></span>
+                    <svg class="ml-2 h-4 w-4 transition-transform duration-200"
+                         :class="{ 'rotate-180': filtersExpanded }"
+                         fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                    </svg>
+                </button>
+            </div>
+
+            <!-- Always Visible Search Bar -->
+            <form method="GET" class="space-y-4">
+                <div class="flex-1">
+                    <label for="search" class="sr-only">Search vouchers</label>
+                    <div class="relative">
+                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                            <svg class="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                            </svg>
+                        </div>
+                        <input type="text"
+                               name="search"
+                               id="search"
+                               value="{{ request('search') }}"
+                               class="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-green-500 focus:border-green-500"
+                               placeholder="Search by voucher number or reference...">
+                    </div>
+                </div>
+
+                <!-- Collapsible Filters Section -->
+                <div x-show="filtersExpanded"
+                     x-transition:enter="transition ease-out duration-300"
+                     x-transition:enter-start="opacity-0 transform -translate-y-2"
+                     x-transition:enter-end="opacity-100 transform translate-y-0"
+                     x-transition:leave="transition ease-in duration-200"
+                     x-transition:leave-start="opacity-100 transform translate-y-0"
+                     x-transition:leave-end="opacity-0 transform -translate-y-2"
+                     class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+
+                    <!-- Status Filter -->
                     <div>
-                        <h1 class="h2 mb-0 fw-bold">Physical Stock Vouchers</h1>
-                        <p class="mb-0 opacity-75">Manage physical stock adjustments and reconciliation with precision</p>
+                        <label for="status" class="block text-sm font-medium text-gray-700 mb-1">Status</label>
+                        <select name="status"
+                                id="status"
+                                class="block w-full pl-3 pr-10 py-2 text-base border border-gray-300 focus:outline-none focus:ring-green-500 focus:border-green-500 rounded-lg">
+                            <option value="">All Statuses</option>
+                            <option value="draft" {{ request('status') === 'draft' ? 'selected' : '' }}>Draft</option>
+                            <option value="pending" {{ request('status') === 'pending' ? 'selected' : '' }}>Pending</option>
+                            <option value="approved" {{ request('status') === 'approved' ? 'selected' : '' }}>Approved</option>
+                            <option value="cancelled" {{ request('status') === 'cancelled' ? 'selected' : '' }}>Cancelled</option>
+                        </select>
                     </div>
-                </div>
-            </div>
-            <div class="col-auto">
-                <a href="{{ route('tenant.inventory.physical-stock.create', ['tenant' => $tenant->slug]) }}"
-                   class="btn btn-light create-btn text-primary fw-bold">
-                    <i class="fas fa-plus me-2"></i>New Physical Stock Voucher
-                </a>
-            </div>
-        </div>
-    </div>
 
-    <!-- Enhanced Statistics Cards -->
-    <div class="row mb-4">
-        <div class="col-xl-3 col-md-6 mb-4">
-            <div class="card stats-card border-left-primary shadow h-100">
-                <div class="card-body p-4">
-                    <div class="row no-gutters align-items-center">
-                        <div class="col">
-                            <div class="stats-icon bg-primary text-white mb-3">
-                                <i class="fas fa-clipboard-list"></i>
-                            </div>
-                            <div class="text-xs font-weight-bold text-primary text-uppercase mb-2 tracking-wide">
-                                Total Vouchers
-                            </div>
-                            <div class="h3 mb-0 font-weight-bold text-gray-800">{{ number_format($stats['total_vouchers']) }}</div>
-                            <div class="text-xs text-muted mt-1">All time records</div>
-                        </div>
+                    <!-- Adjustment Type Filter -->
+                    <div>
+                        <label for="adjustment_type" class="block text-sm font-medium text-gray-700 mb-1">Adjustment Type</label>
+                        <select name="adjustment_type"
+                                id="adjustment_type"
+                                class="block w-full pl-3 pr-10 py-2 text-base border border-gray-300 focus:outline-none focus:ring-green-500 focus:border-green-500 rounded-lg">
+                            <option value="">All Types</option>
+                            <option value="shortage" {{ request('adjustment_type') === 'shortage' ? 'selected' : '' }}>Shortage</option>
+                            <option value="excess" {{ request('adjustment_type') === 'excess' ? 'selected' : '' }}>Excess</option>
+                            <option value="mixed" {{ request('adjustment_type') === 'mixed' ? 'selected' : '' }}>Mixed</option>
+                        </select>
                     </div>
-                </div>
-            </div>
-        </div>
 
-        <div class="col-xl-3 col-md-6 mb-4">
-            <div class="card stats-card border-left-warning shadow h-100">
-                <div class="card-body p-4">
-                    <div class="row no-gutters align-items-center">
-                        <div class="col">
-                            <div class="stats-icon bg-warning text-white mb-3">
-                                <i class="fas fa-clock"></i>
-                            </div>
-                            <div class="text-xs font-weight-bold text-warning text-uppercase mb-2 tracking-wide">
-                                Pending Approval
-                            </div>
-                            <div class="h3 mb-0 font-weight-bold text-gray-800">{{ number_format($stats['pending_approval']) }}</div>
-                            <div class="text-xs text-muted mt-1">Awaiting review</div>
-                        </div>
+                    <!-- From Date Filter -->
+                    <div>
+                        <label for="from_date" class="block text-sm font-medium text-gray-700 mb-1">From Date</label>
+                        <input type="date"
+                               name="from_date"
+                               id="from_date"
+                               value="{{ request('from_date') }}"
+                               class="block w-full pl-3 pr-10 py-2 text-base border border-gray-300 focus:outline-none focus:ring-green-500 focus:border-green-500 rounded-lg">
                     </div>
-                </div>
-            </div>
-        </div>
 
-        <div class="col-xl-3 col-md-6 mb-4">
-            <div class="card stats-card border-left-success shadow h-100">
-                <div class="card-body p-4">
-                    <div class="row no-gutters align-items-center">
-                        <div class="col">
-                            <div class="stats-icon bg-success text-white mb-3">
-                                <i class="fas fa-check-circle"></i>
-                            </div>
-                            <div class="text-xs font-weight-bold text-success text-uppercase mb-2 tracking-wide">
-                                Approved This Month
-                            </div>
-                            <div class="h3 mb-0 font-weight-bold text-gray-800">{{ number_format($stats['approved_this_month']) }}</div>
-                            <div class="text-xs text-muted mt-1">{{ now()->format('M Y') }}</div>
-                        </div>
+                    <!-- To Date Filter -->
+                    <div>
+                        <label for="to_date" class="block text-sm font-medium text-gray-700 mb-1">To Date</label>
+                        <input type="date"
+                               name="to_date"
+                               id="to_date"
+                               value="{{ request('to_date') }}"
+                               class="block w-full pl-3 pr-10 py-2 text-base border border-gray-300 focus:outline-none focus:ring-green-500 focus:border-green-500 rounded-lg">
                     </div>
                 </div>
-            </div>
-        </div>
 
-        <div class="col-xl-3 col-md-6 mb-4">
-            <div class="card stats-card border-left-info shadow h-100">
-                <div class="card-body p-4">
-                    <div class="row no-gutters align-items-center">
-                        <div class="col">
-                            <div class="stats-icon bg-info text-white mb-3">
-                                <i class="fas fa-calculator"></i>
-                            </div>
-                            <div class="text-xs font-weight-bold text-info text-uppercase mb-2 tracking-wide">
-                                Adjustments This Month
-                            </div>
-                            <div class="h3 mb-0 font-weight-bold text-gray-800">₦{{ number_format($stats['total_adjustments_this_month'], 2) }}</div>
-                            <div class="text-xs text-muted mt-1">Value adjusted</div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
+                <!-- Action Buttons -->
+                <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pt-4 border-t border-gray-200">
+                    <div class="flex items-center space-x-2">
+                        <button type="submit"
+                                class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg shadow-sm text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
+                            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                            </svg>
+                            Apply Filters
+                        </button>
 
-    <!-- Enhanced Filters -->
-    <div class="card filters-card shadow mb-4">
-        <div class="card-header bg-transparent py-4 d-flex justify-content-between align-items-center border-0">
-            <div class="d-flex align-items-center">
-                <div class="stats-icon bg-primary text-white me-3" style="width: 40px; height: 40px; font-size: 1rem;">
-                    <i class="fas fa-filter"></i>
-                </div>
-                <h6 class="m-0 font-weight-bold text-dark">Advanced Filters</h6>
-            </div>
-            <button class="btn filter-toggle-btn btn-sm" type="button" data-bs-toggle="collapse" data-bs-target="#filtersCollapse">
-                <i class="fas fa-sliders-h me-2"></i>Toggle Filters
-            </button>
-        </div>
-        <div class="collapse" id="filtersCollapse">
-            <div class="card-body pt-0">
-                <form method="GET" action="{{ route('tenant.inventory.physical-stock.index', ['tenant' => $tenant->slug]) }}">
-                    <div class="row g-3">
-                        <div class="col-md-3">
-                            <label class="form-label fw-semibold text-dark">Status</label>
-                            <select name="status" class="form-select rounded-3 border-2">
-                                <option value="">All Statuses</option>
-                                <option value="draft" {{ request('status') === 'draft' ? 'selected' : '' }}>📝 Draft</option>
-                                <option value="pending" {{ request('status') === 'pending' ? 'selected' : '' }}>⏳ Pending</option>
-                                <option value="approved" {{ request('status') === 'approved' ? 'selected' : '' }}>✅ Approved</option>
-                                <option value="cancelled" {{ request('status') === 'cancelled' ? 'selected' : '' }}>❌ Cancelled</option>
-                            </select>
-                        </div>
-                        <div class="col-md-3">
-                            <label class="form-label fw-semibold text-dark">Adjustment Type</label>
-                            <select name="adjustment_type" class="form-select rounded-3 border-2">
-                                <option value="">All Types</option>
-                                <option value="shortage" {{ request('adjustment_type') === 'shortage' ? 'selected' : '' }}>📉 Shortage</option>
-                                <option value="excess" {{ request('adjustment_type') === 'excess' ? 'selected' : '' }}>📈 Excess</option>
-                                <option value="mixed" {{ request('adjustment_type') === 'mixed' ? 'selected' : '' }}>🔄 Mixed</option>
-                            </select>
-                        </div>
-                        <div class="col-md-2">
-                            <label class="form-label fw-semibold text-dark">From Date</label>
-                            <input type="date" name="from_date" class="form-control rounded-3 border-2" value="{{ request('from_date') }}">
-                        </div>
-                        <div class="col-md-2">
-                            <label class="form-label fw-semibold text-dark">To Date</label>
-                            <input type="date" name="to_date" class="form-control rounded-3 border-2" value="{{ request('to_date') }}">
-                        </div>
-                        <div class="col-md-2">
-                            <label class="form-label fw-semibold text-dark">Search</label>
-                            <input type="text" name="search" class="form-control rounded-3 border-2" placeholder="Voucher number..." value="{{ request('search') }}">
-                        </div>
-                    </div>
-                    <div class="row mt-4">
-                        <div class="col">
-                            <button type="submit" class="btn btn-primary rounded-3 me-3 px-4">
-                                <i class="fas fa-search me-2"></i>Apply Filters
-                            </button>
-                            <a href="{{ route('tenant.inventory.physical-stock.index', ['tenant' => $tenant->slug]) }}" class="btn btn-outline-secondary rounded-3 px-4">
-                                <i class="fas fa-times me-2"></i>Clear All
+                        @if(request()->hasAny(['search', 'status', 'adjustment_type', 'from_date', 'to_date']))
+                            <a href="{{ route('tenant.inventory.physical-stock.index', ['tenant' => $tenant->slug]) }}"
+                               class="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-lg text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
+                                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                                </svg>
+                                Clear All
                             </a>
-                        </div>
+                        @endif
                     </div>
-                </form>
-            </div>
+
+                    <!-- Active Filters Display -->
+                    @if(request()->hasAny(['search', 'status', 'adjustment_type', 'from_date', 'to_date']))
+                        <div class="flex flex-wrap items-center gap-2">
+                            <span class="text-sm text-gray-500">Active filters:</span>
+
+                            @if(request('search'))
+                                <span class="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-blue-100 text-blue-800">
+                                    Search: "{{ request('search') }}"
+                                </span>
+                            @endif
+
+                            @if(request('status'))
+                                <span class="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-blue-100 text-blue-800">
+                                    Status: {{ ucfirst(request('status')) }}
+                                </span>
+                            @endif
+
+                            @if(request('adjustment_type'))
+                                <span class="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-blue-100 text-blue-800">
+                                    Type: {{ ucfirst(request('adjustment_type')) }}
+                                </span>
+                            @endif
+                        </div>
+                    @endif
+                </div>
+            </form>
         </div>
     </div>
 
-    <!-- Enhanced Vouchers Table -->
-    <div class="card table-card shadow">
-        <div class="card-header bg-transparent py-4 border-0">
-            <div class="d-flex align-items-center">
-                <div class="stats-icon bg-primary text-white me-3" style="width: 40px; height: 40px; font-size: 1rem;">
-                    <i class="fas fa-table"></i>
-                </div>
-                <h6 class="m-0 font-weight-bold text-dark">Physical Stock Vouchers</h6>
-            </div>
-        </div>
-        <div class="card-body p-0">
-            @if($vouchers->count() > 0)
-                <div class="table-responsive">
-                    <table class="table voucher-table table-hover mb-0">
-                        <thead>
-                            <tr>
-                                <th class="border-0">Voucher Details</th>
-                                <th class="border-0">Date & Reference</th>
-                                <th class="border-0">Items & Type</th>
-                                <th class="border-0">Adjustments</th>
-                                <th class="border-0">Status</th>
-                                <th class="border-0">Created By</th>
-                                <th class="border-0 text-center">Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @foreach($vouchers as $voucher)
-                                <tr>
-                                    <td>
-                                        <div class="d-flex align-items-center">
-                                            <div class="me-3">
-                                                <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
-                                                    <i class="fas fa-file-alt"></i>
-                                                </div>
+    <!-- Vouchers Table -->
+    <div class="bg-white shadow-sm rounded-lg border border-gray-200 overflow-hidden">
+        @if($vouchers->count() > 0)
+            <!-- Table -->
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Voucher Details
+                            </th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Date & Reference
+                            </th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Items & Type
+                            </th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Adjustments
+                            </th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Status
+                            </th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Created By
+                            </th>
+                            <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Actions
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white divide-y divide-gray-200">
+                        @foreach($vouchers as $voucher)
+                            <tr class="hover:bg-gray-50">
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <div class="flex items-center">
+                                        <div class="flex-shrink-0 h-10 w-10">
+                                            <div class="h-10 w-10 rounded-full bg-green-100 flex items-center justify-center">
+                                                <svg class="h-5 w-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                                                </svg>
                                             </div>
-                                            <div>
+                                        </div>
+                                        <div class="ml-4">
+                                            <div class="text-sm font-medium text-gray-900">
                                                 <a href="{{ route('tenant.inventory.physical-stock.show', ['tenant' => $tenant->slug, 'voucher' => $voucher->id]) }}"
-                                                   class="voucher-number text-decoration-none">
+                                                   class="text-green-600 hover:text-green-900 transition-colors duration-150">
                                                     {{ $voucher->voucher_number }}
                                                 </a>
-                                                <div class="text-muted small mt-1">
-                                                    ID: #{{ $voucher->id }}
-                                                </div>
+                                            </div>
+                                            <div class="text-sm text-gray-500">
+                                                ID: #{{ $voucher->id }}
                                             </div>
                                         </div>
-                                    </td>
-                                    <td>
-                                        <div class="fw-semibold">{{ $voucher->voucher_date->format('d M Y') }}</div>
-                                        <div class="text-muted small">
-                                            {{ $voucher->reference_number ?? 'No reference' }}
-                                        </div>
-                                    </td>
-                                    <td>
-                                        <div class="d-flex flex-column">
-                                            <span class="badge bg-info rounded-pill mb-2 align-self-start">
-                                                <i class="fas fa-boxes me-1"></i>{{ $voucher->total_items }} items
-                                            </span>
-                                            <span class="adjustment-badge bg-{{ $voucher->adjustment_type === 'shortage' ? 'danger' : ($voucher->adjustment_type === 'excess' ? 'success' : 'warning') }} text-white align-self-start">
-                                                @if($voucher->adjustment_type === 'shortage')
-                                                    <i class="fas fa-arrow-down me-1"></i>
-                                                @elseif($voucher->adjustment_type === 'excess')
-                                                    <i class="fas fa-arrow-up me-1"></i>
-                                                @else
-                                                    <i class="fas fa-exchange-alt me-1"></i>
-                                                @endif
-                                                {{ $voucher->adjustment_type_display }}
-                                            </span>
-                                        </div>
-                                    </td>
-                                    <td>
-                                        <div class="fw-bold text-info h5 mb-0">
-                                            ₦{{ number_format($voucher->total_adjustments, 2) }}
-                                        </div>
-                                        <div class="text-muted small">Total value</div>
-                                    </td>
-                                    <td>
-                                        <span class="status-badge bg-{{ $voucher->status_color }} text-white">
-                                            @if($voucher->status === 'draft')
-                                                <i class="fas fa-edit me-1"></i>
-                                            @elseif($voucher->status === 'pending')
-                                                <i class="fas fa-clock me-1"></i>
-                                            @elseif($voucher->status === 'approved')
-                                                <i class="fas fa-check me-1"></i>
-                                            @else
-                                                <i class="fas fa-times me-1"></i>
-                                            @endif
-                                            {{ $voucher->status_display }}
+                                    </div>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <div class="text-sm font-medium text-gray-900">{{ $voucher->voucher_date->format('d M Y') }}</div>
+                                    <div class="text-sm text-gray-500">
+                                        {{ $voucher->reference_number ?? 'No reference' }}
+                                    </div>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <div class="flex flex-col space-y-1">
+                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                                            <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path>
+                                            </svg>
+                                            {{ $voucher->total_items }} items
                                         </span>
-                                    </td>
-                                    <td>
-                                        <div class="d-flex align-items-center">
-                                            <div class="bg-secondary text-white rounded-circle d-flex align-items-center justify-content-center me-2" style="width: 30px; height: 30px; font-size: 0.8rem;">
-                                                <i class="fas fa-user"></i>
-                                            </div>
-                                            <div>
-                                                <div class="fw-semibold">{{ $voucher->creator->name ?? 'System' }}</div>
-                                                <div class="text-muted small">{{ $voucher->created_at->format('M d, Y') }}</div>
+                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {{ $voucher->adjustment_type === 'shortage' ? 'bg-red-100 text-red-800' : ($voucher->adjustment_type === 'excess' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800') }}">
+                                            @if($voucher->adjustment_type === 'shortage')
+                                                <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3"></path>
+                                                </svg>
+                                            @elseif($voucher->adjustment_type === 'excess')
+                                                <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 10l7-7m0 0l7 7m-7-7v18"></path>
+                                                </svg>
+                                            @else
+                                                <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"></path>
+                                                </svg>
+                                            @endif
+                                            {{ $voucher->adjustment_type_display }}
+                                        </span>
+                                    </div>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <div class="text-sm font-medium text-gray-900">
+                                        ₦{{ number_format($voucher->total_adjustments, 2) }}
+                                    </div>
+                                    <div class="text-sm text-gray-500">Total value</div>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {{ $voucher->status === 'draft' ? 'bg-gray-100 text-gray-800' : ($voucher->status === 'pending' ? 'bg-yellow-100 text-yellow-800' : ($voucher->status === 'approved' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800')) }}">
+                                        @if($voucher->status === 'draft')
+                                            <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path>
+                                            </svg>
+                                        @elseif($voucher->status === 'pending')
+                                            <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                            </svg>
+                                        @elseif($voucher->status === 'approved')
+                                            <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                            </svg>
+                                        @else
+                                            <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                            </svg>
+                                        @endif
+                                        {{ $voucher->status_display }}
+                                    </span>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <div class="flex items-center">
+                                        <div class="flex-shrink-0 h-8 w-8">
+                                            <div class="h-8 w-8 rounded-full bg-gray-100 flex items-center justify-center">
+                                                <svg class="h-4 w-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+                                                </svg>
                                             </div>
                                         </div>
-                                    </td>
-                                    <td class="text-center">
-                                        <div class="dropdown action-dropdown">
-                                            <button class="btn btn-sm dropdown-toggle"
-                                                    type="button" data-bs-toggle="dropdown">
-                                                <i class="fas fa-cog me-1"></i>Actions
-                                            </button>
-                                            <ul class="dropdown-menu dropdown-menu-end">
-                                                <li>
-                                                    <a class="dropdown-item"
-                                                       href="{{ route('tenant.inventory.physical-stock.show', ['tenant' => $tenant->slug, 'voucher' => $voucher->id]) }}">
-                                                        <i class="fas fa-eye me-2 text-info"></i>View Details
-                                                    </a>
-                                                </li>
+                                        <div class="ml-3">
+                                            <div class="text-sm font-medium text-gray-900">{{ $voucher->creator->name ?? 'System' }}</div>
+                                            <div class="text-sm text-gray-500">{{ $voucher->created_at->format('M d, Y') }}</div>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-center text-sm font-medium">
+                                    <div class="relative inline-block text-left" x-data="{ open: false }">
+                                        <button @click="open = !open" type="button" class="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
+                                            Actions
+                                            <svg class="ml-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                                            </svg>
+                                        </button>
+
+                                        <div x-show="open" @click.away="open = false" x-transition:enter="transition ease-out duration-100" x-transition:enter-start="transform opacity-0 scale-95" x-transition:enter-end="transform opacity-100 scale-100" x-transition:leave="transition ease-in duration-75" x-transition:leave-start="transform opacity-100 scale-100" x-transition:leave-end="transform opacity-0 scale-95" class="origin-top-right absolute right-0 mt-2 w-56 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 focus:outline-none z-10">
+                                            <div class="py-1">
+                                                <a href="{{ route('tenant.inventory.physical-stock.show', ['tenant' => $tenant->slug, 'voucher' => $voucher->id]) }}" class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                                    <svg class="w-4 h-4 mr-3 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
+                                                    </svg>
+                                                    View Details
+                                                </a>
                                                 @if($voucher->canEdit())
-                                                    <li>
-                                                        <a class="dropdown-item"
-                                                           href="{{ route('tenant.inventory.physical-stock.edit', ['tenant' => $tenant->slug, 'voucher' => $voucher->id]) }}">
-                                                            <i class="fas fa-edit me-2 text-warning"></i>Edit Voucher
-                                                        </a>
-                                                    </li>
+                                                    <a href="{{ route('tenant.inventory.physical-stock.edit', ['tenant' => $tenant->slug, 'voucher' => $voucher->id]) }}" class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                                        <svg class="w-4 h-4 mr-3 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path>
+                                                        </svg>
+                                                        Edit Voucher
+                                                    </a>
                                                 @endif
                                                 @if($voucher->status === 'draft')
-                                                    <li>
-                                                        <form method="POST"
-                                                              action="{{ route('tenant.inventory.physical-stock.submit', ['tenant' => $tenant->slug, 'voucher' => $voucher->id]) }}"
-                                                              class="d-inline">
-                                                            @csrf
-                                                            <button type="submit" class="dropdown-item">
-                                                                <i class="fas fa-paper-plane me-2 text-primary"></i>Submit for Approval
-                                                            </button>
-                                                        </form>
-                                                    </li>
+                                                    <form method="POST" action="{{ route('tenant.inventory.physical-stock.submit', ['tenant' => $tenant->slug, 'voucher' => $voucher->id]) }}" class="block">
+                                                        @csrf
+                                                        <button type="submit" class="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                                            <svg class="w-4 h-4 mr-3 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path>
+                                                            </svg>
+                                                            Submit for Approval
+                                                        </button>
+                                                    </form>
                                                 @endif
                                                 @if($voucher->canApprove())
-                                                    <li>
-                                                        <form method="POST"
-                                                              action="{{ route('tenant.inventory.physical-stock.approve', ['tenant' => $tenant->slug, 'voucher' => $voucher->id]) }}"
-                                                              class="d-inline">
-                                                            @csrf
-                                                            <button type="submit" class="dropdown-item">
-                                                                <i class="fas fa-check me-2 text-success"></i>Approve Voucher
-                                                            </button>
-                                                        </form>
-                                                    </li>
+                                                    <form method="POST" action="{{ route('tenant.inventory.physical-stock.approve', ['tenant' => $tenant->slug, 'voucher' => $voucher->id]) }}" class="block">
+                                                        @csrf
+                                                        <button type="submit" class="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                                            <svg class="w-4 h-4 mr-3 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                                            </svg>
+                                                            Approve Voucher
+                                                        </button>
+                                                    </form>
                                                 @endif
                                                 @if($voucher->status !== 'approved')
-                                                    <li><hr class="dropdown-divider"></li>
-                                                    <li>
-                                                        <form method="POST"
-                                                              action="{{ route('tenant.inventory.physical-stock.destroy', ['tenant' => $tenant->slug, 'voucher' => $voucher->id]) }}"
-                                                              class="d-inline"
-                                                              onsubmit="return confirm('Are you sure you want to delete this voucher?')">
-                                                            @csrf
-                                                            @method('DELETE')
-                                                            <button type="submit" class="dropdown-item text-danger">
-                                                                <i class="fas fa-trash me-2"></i>Delete Voucher
-                                                            </button>
-                                                        </form>
-                                                    </li>
+                                                    <div class="border-t border-gray-100"></div>
+                                                    <form method="POST" action="{{ route('tenant.inventory.physical-stock.destroy', ['tenant' => $tenant->slug, 'voucher' => $voucher->id]) }}" class="block" onsubmit="return confirm('Are you sure you want to delete this voucher?')">
+                                                        @csrf
+                                                        @method('DELETE')
+                                                        <button type="submit" class="flex items-center w-full px-4 py-2 text-sm text-red-700 hover:bg-red-50">
+                                                            <svg class="w-4 h-4 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                                                            </svg>
+                                                            Delete Voucher
+                                                        </button>
+                                                    </form>
                                                 @endif
-                                            </ul>
+                                            </div>
                                         </div>
-                                    </td>
-                                </tr>
-                            @endforeach
-                        </tbody>
-                    </table>
-                </div>
+                                    </div>
+                                </td>
+                            </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            </div>
 
-                <!-- Enhanced Pagination -->
-                <div class="d-flex justify-content-between align-items-center p-4 bg-light">
-                    <div class="text-muted">
-                        <i class="fas fa-info-circle me-1"></i>
-                        Showing {{ $vouchers->firstItem() }} to {{ $vouchers->lastItem() }} of {{ $vouchers->total() }} results
-                    </div>
-                    <div>
-                        {{ $vouchers->links() }}
-                    </div>
-                </div>
-            @else
-                <div class="empty-state">
-                    <div class="empty-state-icon">
-                        <i class="fas fa-clipboard-check"></i>
-                    </div>
-                    <h4 class="text-muted mb-3">No Physical Stock Vouchers Found</h4>
-                    <p class="text-muted mb-4">Start managing your inventory by creating your first physical stock voucher.</p>
-                    <a href="{{ route('tenant.inventory.physical-stock.create', ['tenant' => $tenant->slug]) }}" class="btn btn-primary btn-lg rounded-3">
-                        <i class="fas fa-plus me-2"></i>Create Your First Voucher
-                    </a>
+            <!-- Pagination -->
+            @if($vouchers->hasPages())
+                <div class="px-6 py-3 border-t border-gray-200">
+                    {{ $vouchers->links() }}
                 </div>
             @endif
-        </div>
+        @else
+            <!-- Empty State -->
+            <div class="text-center py-12">
+                <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                </svg>
+                <h3 class="mt-2 text-sm font-medium text-gray-900">No vouchers found</h3>
+                <p class="mt-1 text-sm text-gray-500">
+                    @if(request()->hasAny(['search', 'status', 'adjustment_type', 'from_date', 'to_date']))
+                        No vouchers match your current filters.
+                    @else
+                        Get started by creating your first physical stock voucher.
+                    @endif
+                </p>
+                <div class="mt-6">
+                    @if(request()->hasAny(['search', 'status', 'adjustment_type', 'from_date', 'to_date']))
+                        <a href="{{ route('tenant.inventory.physical-stock.index', ['tenant' => $tenant->slug]) }}"
+                           class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
+                            Clear Filters
+                        </a>
+                    @else
+                        <a href="{{ route('tenant.inventory.physical-stock.create', ['tenant' => $tenant->slug]) }}"
+                           class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
+                            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                            </svg>
+                            Create Your First Voucher
+                        </a>
+                    @endif
+                </div>
+            </div>
+        @endif
     </div>
 </div>
 @endsection
-
-@push('scripts')
-<script>
-    // Add some interactive functionality
-    document.addEventListener('DOMContentLoaded', function() {
-        // Animate stats cards on load
-        const statsCards = document.querySelectorAll('.stats-card');
-        statsCards.forEach((card, index) => {
-            setTimeout(() => {
-                card.style.opacity = '0';
-                card.style.transform = 'translateY(20px)';
-                card.style.transition = 'all 0.5s ease';
-
-                setTimeout(() => {
-                    card.style.opacity = '1';
-                    card.style.transform = 'translateY(0)';
-                }, 100);
-            }, index * 100);
-        });
-
-        // Add hover effects to table rows
-        const tableRows = document.querySelectorAll('.voucher-table tbody tr');
-        tableRows.forEach(row => {
-            row.addEventListener('mouseenter', function() {
-                this.style.backgroundColor = '#f8f9fa';
-            });
-
-            row.addEventListener('mouseleave', function() {
-                this.style.backgroundColor = '';
-            });
-        });
-
-        // Add loading state to form submissions
-        const forms = document.querySelectorAll('form');
-        forms.forEach(form => {
-            form.addEventListener('submit', function() {
-                const submitBtn = this.querySelector('button[type="submit"]');
-                if (submitBtn) {
-                    const originalText = submitBtn.innerHTML;
-                    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Processing...';
-                    submitBtn.disabled = true;
-
-                    // Re-enable after 3 seconds if still on page
-                    setTimeout(() => {
-                        if (document.contains(submitBtn)) {
-                            submitBtn.innerHTML = originalText;
-                            submitBtn.disabled = false;
-                        }
-                    }, 3000);
-                }
-            });
-        });
-
-        // Auto-hide alerts after 5 seconds
-        const alerts = document.querySelectorAll('.alert');
-        alerts.forEach(alert => {
-            setTimeout(() => {
-                if (alert.parentNode) {
-                    alert.style.transition = 'opacity 0.5s ease';
-                    alert.style.opacity = '0';
-                    setTimeout(() => {
-                        if (alert.parentNode) {
-                            alert.remove();
-                        }
-                    }, 500);
-                }
-            }, 5000);
-        });
-
-        // Add smooth scrolling to anchor links
-        const anchorLinks = document.querySelectorAll('a[href^="#"]');
-        anchorLinks.forEach(link => {
-            link.addEventListener('click', function(e) {
-                e.preventDefault();
-                const target = document.querySelector(this.getAttribute('href'));
-                if (target) {
-                    target.scrollIntoView({
-                        behavior: 'smooth',
-                        block: 'start'
-                    });
-                }
-            });
-        });
-    });
-</script>
-@endpush

@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -101,6 +102,12 @@ class PhysicalStockVoucher extends Model
     public static function generateVoucherNumber($tenantId, $date = null)
     {
         $date = $date ?? now();
+
+        // Ensure $date is a Carbon instance
+        if (is_string($date)) {
+            $date = Carbon::parse($date);
+        }
+
         $prefix = 'PSV';
         $year = $date->format('Y');
         $month = $date->format('m');

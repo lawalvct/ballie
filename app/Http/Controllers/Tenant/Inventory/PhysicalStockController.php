@@ -9,6 +9,7 @@ use App\Models\Product;
 use App\Models\Tenant;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
 
@@ -92,6 +93,14 @@ class PhysicalStockController extends Controller
      */
     public function store(Tenant $tenant, Request $request)
     {
+        // Debug: Log the incoming request data
+        Log::info('Physical Stock Store Request Data:', [
+            'request_all' => $request->all(),
+            'entries' => $request->input('entries'),
+            'voucher_date' => $request->input('voucher_date'),
+            'tenant_id' => $tenant->id
+        ]);
+
         $validator = Validator::make($request->all(), [
             'voucher_date' => 'required|date|before_or_equal:today',
             'reference_number' => 'nullable|string|max:255',
@@ -106,6 +115,10 @@ class PhysicalStockController extends Controller
         ]);
 
         if ($validator->fails()) {
+            Log::error('Physical Stock Validation Failed:', [
+                'errors' => $validator->errors()->toArray(),
+                'input' => $request->all()
+            ]);
             return redirect()->back()
                 ->withErrors($validator)
                 ->withInput();
@@ -113,6 +126,11 @@ class PhysicalStockController extends Controller
 
         try {
             DB::beginTransaction();
+
+            Log::info('Physical Stock: Starting voucher creation', [
+                'tenant_id' => $tenant->id,
+                'entries_count' => count($request->entries)
+            ]);
 
             // Create voucher
             $voucher = PhysicalStockVoucher::create([
@@ -125,9 +143,22 @@ class PhysicalStockController extends Controller
                 'created_by' => auth()->id(),
             ]);
 
+            Log::info('Physical Stock: Voucher created', [
+                'voucher_id' => $voucher->id,
+                'voucher_number' => $voucher->voucher_number
+            ]);
+
             // Create entries
-            foreach ($request->entries as $entryData) {
+            foreach ($request->entries as $index => $entryData) {
+                Log::info("Physical Stock: Processing entry {$index}", [
+                    'product_id' => $entryData['product_id'],
+                    'physical_quantity' => $entryData['physical_quantity']
+                ]);
+
                 $product = Product::find($entryData['product_id']);
+                if (!$product) {
+                    throw new \Exception("Product not found: " . $entryData['product_id']);
+                }
 
                 // Get book quantity as of voucher date
                 $bookQuantity = $product->getStockAsOfDate($request->voucher_date);
@@ -148,6 +179,12 @@ class PhysicalStockController extends Controller
                     'remarks' => $entryData['remarks'] ?? null,
                     'created_by' => auth()->id(),
                 ]);
+
+                Log::info("Physical Stock: Entry created", [
+                    'entry_id' => $entry->id,
+                    'book_quantity' => $bookQuantity,
+                    'current_rate' => $currentRate
+                ]);
             }
 
             // Update voucher totals and type
@@ -157,6 +194,10 @@ class PhysicalStockController extends Controller
 
             DB::commit();
 
+            Log::info('Physical Stock: Transaction committed successfully', [
+                'voucher_id' => $voucher->id
+            ]);
+
             return redirect()->route('tenant.inventory.physical-stock.show', [
                 'tenant' => $tenant->slug,
                 'voucher' => $voucher->id
@@ -164,6 +205,11 @@ class PhysicalStockController extends Controller
 
         } catch (\Exception $e) {
             DB::rollBack();
+            Log::error('Physical Stock: Creation failed', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+                'input' => $request->all()
+            ]);
             return redirect()->back()
                 ->with('error', 'Error creating voucher: ' . $e->getMessage())
                 ->withInput();
