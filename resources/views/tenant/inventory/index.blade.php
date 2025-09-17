@@ -319,32 +319,272 @@
         @endif
     </div>
 
-    <!-- Inventory Summary Chart -->
-    <div class="bg-white rounded-2xl p-6 shadow-lg">
+    <!-- Inventory Charts Section -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <!-- Category Distribution Chart -->
+        <div class="bg-white rounded-2xl p-6 shadow-lg chart-card">
+            <div class="flex items-center justify-between mb-6">
+                <h3 class="text-xl font-bold text-gray-900 chart-title">Products by Category</h3>
+                <div class="text-sm text-gray-500 chart-subtitle">{{ $totalProducts }} total products</div>
+            </div>
+            <div class="chart-container">
+                <canvas id="categoryChart"></canvas>
+            </div>
+        </div>
+
+        <!-- Stock Level Distribution Chart -->
+        <div class="bg-white rounded-2xl p-6 shadow-lg chart-card">
+            <div class="flex items-center justify-between mb-6">
+                <h3 class="text-xl font-bold text-gray-900 chart-title">Stock Level Status</h3>
+                <div class="text-sm text-gray-500 chart-subtitle">Current status</div>
+            </div>
+            <div class="chart-container">
+                <canvas id="stockLevelChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- Monthly Stock Movements Chart -->
+    <div class="bg-white rounded-2xl p-6 shadow-lg chart-card">
         <div class="flex items-center justify-between mb-6">
-            <h3 class="text-xl font-bold text-gray-900">Inventory Overview</h3>
+            <h3 class="text-xl font-bold text-gray-900 chart-title">Stock Movements Trend</h3>
             <div class="flex space-x-2">
                 <button class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors duration-200">6M</button>
                 <button class="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors duration-200">1Y</button>
             </div>
         </div>
-        <div class="h-64 flex items-center justify-center bg-gray-50 rounded-xl">
-            <div class="text-center">
-                <div class="w-16 h-16 bg-gray-200 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <svg class="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
-                    </svg>
-                </div>
-                <p class="text-gray-500 mb-2">Inventory Analytics Chart</p>
-                <p class="text-sm text-gray-400">Chart integration coming soon</p>
-            </div>
+        <div class="h-80 chart-container">
+            <canvas id="movementsChart"></canvas>
         </div>
     </div>
 </div>
 
 <script src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Chart.js configuration defaults
+    Chart.defaults.font.family = 'Inter, system-ui, sans-serif';
+    Chart.defaults.font.size = 12;
+    Chart.defaults.color = '#374151';
+
+    // Category Distribution Pie Chart
+    const categoryCtx = document.getElementById('categoryChart').getContext('2d');
+    const categoryData = @json($categoryDistribution);
+
+    new Chart(categoryCtx, {
+        type: 'pie',
+        data: {
+            labels: categoryData.map(item => item.name),
+            datasets: [{
+                data: categoryData.map(item => item.count),
+                backgroundColor: categoryData.map(item => item.color),
+                borderWidth: 2,
+                borderColor: '#ffffff'
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'bottom',
+                    labels: {
+                        usePointStyle: true,
+                        padding: 20,
+                        generateLabels: function(chart) {
+                            const data = chart.data;
+                            if (data.labels.length && data.datasets.length) {
+                                return data.labels.map((label, i) => {
+                                    const dataset = data.datasets[0];
+                                    const count = dataset.data[i];
+                                    return {
+                                        text: `${label} (${count})`,
+                                        fillStyle: dataset.backgroundColor[i],
+                                        pointStyle: 'circle',
+                                        hidden: false,
+                                        index: i
+                                    };
+                                });
+                            }
+                            return [];
+                        }
+                    }
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            const label = context.label || '';
+                            const value = context.parsed || 0;
+                            const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                            const percentage = ((value / total) * 100).toFixed(1);
+                            return `${label}: ${value} products (${percentage}%)`;
+                        }
+                    }
+                }
+            }
+        }
+    });
+
+    // Stock Level Distribution Doughnut Chart
+    const stockLevelCtx = document.getElementById('stockLevelChart').getContext('2d');
+    const stockLevelData = @json($stockLevelDistribution);
+
+    new Chart(stockLevelCtx, {
+        type: 'doughnut',
+        data: {
+            labels: stockLevelData.map(item => item.label),
+            datasets: [{
+                data: stockLevelData.map(item => item.count),
+                backgroundColor: stockLevelData.map(item => item.color),
+                borderWidth: 2,
+                borderColor: '#ffffff'
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            cutout: '60%',
+            plugins: {
+                legend: {
+                    position: 'bottom',
+                    labels: {
+                        usePointStyle: true,
+                        padding: 20,
+                        generateLabels: function(chart) {
+                            const data = chart.data;
+                            if (data.labels.length && data.datasets.length) {
+                                return data.labels.map((label, i) => {
+                                    const dataset = data.datasets[0];
+                                    const count = dataset.data[i];
+                                    const percentage = stockLevelData[i].percentage;
+                                    return {
+                                        text: `${label} (${count} - ${percentage}%)`,
+                                        fillStyle: dataset.backgroundColor[i],
+                                        pointStyle: 'circle',
+                                        hidden: false,
+                                        index: i
+                                    };
+                                });
+                            }
+                            return [];
+                        }
+                    }
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            const label = context.label || '';
+                            const value = context.parsed || 0;
+                            const percentage = stockLevelData[context.dataIndex].percentage;
+                            return `${label}: ${value} products (${percentage}%)`;
+                        }
+                    }
+                }
+            }
+        }
+    });
+
+    // Monthly Stock Movements Line Chart
+    const movementsCtx = document.getElementById('movementsChart').getContext('2d');
+    const movementsData = @json($monthlyStockMovements);
+
+    new Chart(movementsCtx, {
+        type: 'line',
+        data: {
+            labels: movementsData.months,
+            datasets: movementsData.datasets
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            interaction: {
+                mode: 'index',
+                intersect: false,
+            },
+            scales: {
+                x: {
+                    display: true,
+                    title: {
+                        display: true,
+                        text: 'Month'
+                    },
+                    grid: {
+                        display: false
+                    }
+                },
+                y: {
+                    display: true,
+                    title: {
+                        display: true,
+                        text: 'Quantity'
+                    },
+                    beginAtZero: true,
+                    grid: {
+                        color: '#F3F4F6'
+                    }
+                }
+            },
+            plugins: {
+                legend: {
+                    position: 'top',
+                    labels: {
+                        usePointStyle: true,
+                        padding: 20
+                    }
+                },
+                tooltip: {
+                    backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                    titleColor: '#ffffff',
+                    bodyColor: '#ffffff',
+                    borderColor: '#E5E7EB',
+                    borderWidth: 1,
+                    callbacks: {
+                        label: function(context) {
+                            return `${context.dataset.label}: ${context.parsed.y} units`;
+                        }
+                    }
+                }
+            },
+            elements: {
+                point: {
+                    radius: 4,
+                    hoverRadius: 6
+                }
+            }
+        }
+    });
+});
+</script>
 
 <style>
+/* Chart container styling */
+.chart-container {
+    position: relative;
+    height: 250px;
+    width: 100%;
+}
+
+/* Responsive chart adjustments */
+@media (max-width: 768px) {
+    .chart-container {
+        height: 200px;
+    }
+}
+
+/* Chart card enhancements */
+.chart-card {
+    background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+    border: 1px solid #e2e8f0;
+    transition: all 0.3s ease;
+}
+
+.chart-card:hover {
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+    transform: translateY(-2px);
+}
+
 .quick-action-btn {
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }

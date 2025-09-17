@@ -142,6 +142,11 @@ class InventoryController extends Controller
             ->take(8)
             ->values();
 
+        // Get chart data
+        $categoryDistribution = $this->getCategoryDistribution($tenant);
+        $stockLevelDistribution = $this->getStockLevelDistribution($tenant);
+        $monthlyStockMovements = $this->getMonthlyStockMovements($tenant);
+
         return view('tenant.inventory.index', compact(
             'tenant',
             'totalProducts',
@@ -152,7 +157,10 @@ class InventoryController extends Controller
             'totalUnits',
             'recentProducts',
             'lowStockProducts',
-            'recentActivities'
+            'recentActivities',
+            'categoryDistribution',
+            'stockLevelDistribution',
+            'monthlyStockMovements'
         ));
     }
 
@@ -235,5 +243,188 @@ class InventoryController extends Controller
             default:
                 return 5;
         }
+    }
+
+    /**
+     * Get category distribution for pie chart
+     */
+    private function getCategoryDistribution($tenant)
+    {
+        $distribution = ProductCategory::where('tenant_id', $tenant->id)
+            ->withCount('products')
+            ->having('products_count', '>', 0)  // Only categories with products
+            ->orderBy('products_count', 'desc')
+            ->limit(10)
+            ->get()
+            ->map(function ($category) {
+                return [
+                    'name' => $category->name,
+                    'count' => $category->products_count,
+                    'color' => $this->generateCategoryColor($category->id)
+                ];
+            });
+
+        // Add uncategorized products
+        $uncategorizedCount = Product::where('tenant_id', $tenant->id)
+            ->whereNull('category_id')
+            ->count();
+
+        if ($uncategorizedCount > 0) {
+            $distribution->push([
+                'name' => 'Uncategorized',
+                'count' => $uncategorizedCount,
+                'color' => '#6B7280'
+            ]);
+        }
+
+        // If no data, return a default empty state
+        if ($distribution->isEmpty()) {
+            $distribution->push([
+                'name' => 'No Products',
+                'count' => 1,
+                'color' => '#E5E7EB'
+            ]);
+        }
+
+        return $distribution;
+    }
+
+    /**
+     * Get stock level distribution for doughnut chart
+     */
+    private function getStockLevelDistribution($tenant)
+    {
+        $inStock = Product::where('tenant_id', $tenant->id)
+            ->where('maintain_stock', true)
+            ->whereColumn('current_stock', '>', 'reorder_level')
+            ->count();
+
+        $lowStock = Product::where('tenant_id', $tenant->id)
+            ->where('maintain_stock', true)
+            ->whereColumn('current_stock', '<=', 'reorder_level')
+            ->where('current_stock', '>', 0)
+            ->count();
+
+        $outOfStock = Product::where('tenant_id', $tenant->id)
+            ->where('maintain_stock', true)
+            ->where('current_stock', '<=', 0)
+            ->count();
+
+        $noStockTracking = Product::where('tenant_id', $tenant->id)
+            ->where('maintain_stock', false)
+            ->count();
+
+        $total = $inStock + $lowStock + $outOfStock + $noStockTracking;
+
+        // If no products, show empty state
+        if ($total === 0) {
+            return [
+                [
+                    'label' => 'No Products',
+                    'count' => 1,
+                    'color' => '#E5E7EB',
+                    'percentage' => 100
+                ]
+            ];
+        }
+
+        return [
+            [
+                'label' => 'In Stock',
+                'count' => $inStock,
+                'color' => '#10B981',
+                'percentage' => $this->calculatePercentage($inStock, $total)
+            ],
+            [
+                'label' => 'Low Stock',
+                'count' => $lowStock,
+                'color' => '#F59E0B',
+                'percentage' => $this->calculatePercentage($lowStock, $total)
+            ],
+            [
+                'label' => 'Out of Stock',
+                'count' => $outOfStock,
+                'color' => '#EF4444',
+                'percentage' => $this->calculatePercentage($outOfStock, $total)
+            ],
+            [
+                'label' => 'No Stock Tracking',
+                'count' => $noStockTracking,
+                'color' => '#6B7280',
+                'percentage' => $this->calculatePercentage($noStockTracking, $total)
+            ]
+        ];
+    }
+
+    /**
+     * Get monthly stock movements for line chart
+     */
+    private function getMonthlyStockMovements($tenant)
+    {
+        $movements = \App\Models\StockMovement::where('tenant_id', $tenant->id)
+            ->whereYear('created_at', now()->year)
+            ->selectRaw('MONTH(created_at) as month, transaction_type, SUM(ABS(quantity)) as total_quantity')
+            ->groupBy('month', 'transaction_type')
+            ->orderBy('month')
+            ->get();
+
+        $months = collect(range(1, 12))->map(function ($month) {
+            return now()->month($month)->format('M');
+        });
+
+        $purchaseData = $months->map(function ($monthName, $index) use ($movements) {
+            $month = $index + 1;
+            return $movements->where('month', $month)
+                ->where('transaction_type', 'purchase')
+                ->sum('total_quantity') ?? 0;
+        });
+
+        $salesData = $months->map(function ($monthName, $index) use ($movements) {
+            $month = $index + 1;
+            return $movements->where('month', $month)
+                ->whereIn('transaction_type', ['sales', 'sale'])
+                ->sum('total_quantity') ?? 0;
+        });
+
+        return [
+            'months' => $months->values(),
+            'datasets' => [
+                [
+                    'label' => 'Purchases',
+                    'data' => $purchaseData->values(),
+                    'borderColor' => '#3B82F6',
+                    'backgroundColor' => 'rgba(59, 130, 246, 0.1)',
+                    'tension' => 0.4
+                ],
+                [
+                    'label' => 'Sales',
+                    'data' => $salesData->values(),
+                    'borderColor' => '#10B981',
+                    'backgroundColor' => 'rgba(16, 185, 129, 0.1)',
+                    'tension' => 0.4
+                ]
+            ]
+        ];
+    }
+
+    /**
+     * Generate consistent color for category
+     */
+    private function generateCategoryColor($categoryId)
+    {
+        $colors = [
+            '#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6',
+            '#EC4899', '#06B6D4', '#84CC16', '#F97316', '#6366F1'
+        ];
+
+        return $colors[$categoryId % count($colors)];
+    }
+
+    /**
+     * Calculate percentage
+     */
+    private function calculatePercentage($value, $total)
+    {
+        return $total > 0 ? round(($value / $total) * 100, 1) : 0;
     }
 }
