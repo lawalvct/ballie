@@ -216,10 +216,11 @@ public function stockMovements(Request $request, Tenant $tenant, Product $produc
 
     // Get transaction types for filter
     $transactionTypes = $product->stockMovements()
+        ->select('transaction_type')
+        ->whereNotNull('transaction_type')
         ->distinct()
-        ->pluck('transaction_type')
-        ->filter()
-        ->sort();
+        ->orderBy('transaction_type')
+        ->pluck('transaction_type');
 
     return view('tenant.inventory.products.stock-movements', compact(
         'product',

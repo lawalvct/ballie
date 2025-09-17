@@ -29,6 +29,7 @@ use App\Http\Controllers\Tenant\Admin\AdminController;
 use App\Http\Controllers\Tenant\Crm\VendorController;
 use App\Http\Controllers\Tenant\Inventory\UnitController;
 use App\Http\Controllers\Tenant\Inventory\StockJournalController;
+use App\Http\Controllers\Tenant\Inventory\PhysicalStockController;
 use App\Models\Tenant;
 use App\Models\Tenant\Role;
 use App\Models\Tenant\Permission;
@@ -367,6 +368,26 @@ Route::prefix('ledger-accounts')->name('ledger-accounts.')->group(function () {
                 // AJAX routes for dynamic features
                 Route::get('/ajax/product-stock/{product}', [StockJournalController::class, 'getProductStock'])->name('ajax.product-stock');
                 Route::post('/ajax/calculate-stock', [StockJournalController::class, 'calculateStock'])->name('ajax.calculate-stock');
+            });
+
+            // Physical Stock Vouchers
+            Route::prefix('physical-stock')->name('physical-stock.')->group(function () {
+                Route::get('/', [PhysicalStockController::class, 'index'])->name('index');
+                Route::get('/create', [PhysicalStockController::class, 'create'])->name('create');
+                Route::post('/', [PhysicalStockController::class, 'store'])->name('store');
+                Route::get('/{voucher}', [PhysicalStockController::class, 'show'])->name('show');
+                Route::get('/{voucher}/edit', [PhysicalStockController::class, 'edit'])->name('edit');
+                Route::put('/{voucher}', [PhysicalStockController::class, 'update'])->name('update');
+                Route::delete('/{voucher}', [PhysicalStockController::class, 'destroy'])->name('destroy');
+
+                // Voucher Actions
+                Route::post('/{voucher}/submit', [PhysicalStockController::class, 'submit'])->name('submit');
+                Route::post('/{voucher}/approve', [PhysicalStockController::class, 'approve'])->name('approve');
+                Route::post('/{voucher}/cancel', [PhysicalStockController::class, 'cancel'])->name('cancel');
+
+                // AJAX routes
+                Route::get('/ajax/product-stock', [PhysicalStockController::class, 'getProductStock'])->name('product-stock');
+                Route::get('/ajax/products-search', [PhysicalStockController::class, 'getProductsWithStock'])->name('products-search');
             });
 
             // Main Inventory

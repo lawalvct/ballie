@@ -120,7 +120,7 @@
         </h4>
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             <!-- Stock Adjustment Card -->
-            <a href="#"
+            <a href="{{ route('tenant.inventory.physical-stock.index', ['tenant' => $tenant->slug]) }}"
                class="action-card bg-gradient-to-br from-orange-600 to-orange-800 hover:from-orange-500 hover:to-orange-700 border border-orange-500 rounded-xl p-4 transition-all duration-300 hover:shadow-lg hover:scale-105 group">
                 <div class="flex items-center mb-3">
                     <div class="w-10 h-10 bg-orange-500 bg-opacity-30 rounded-lg flex items-center justify-center mr-3 group-hover:scale-110 transition-transform duration-300">
@@ -130,10 +130,10 @@
                     </div>
                     <div>
                         <h5 class="font-semibold text-white group-hover:text-orange-200 transition-colors duration-300">Stock Adjustment</h5>
-                        <p class="text-xs text-orange-200">Adjust quantities</p>
+                        <p class="text-xs text-orange-200">Physical Stock</p>
                     </div>
                 </div>
-                <p class="text-xs text-orange-200">Adjust stock levels for inventory corrections.</p>
+                <p class="text-xs text-orange-200">Adjust quantities to match physical stock.</p>
             </a>
 
             <!-- Stock Movement Card -->

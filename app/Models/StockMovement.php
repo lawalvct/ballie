@@ -161,6 +161,41 @@ class StockMovement extends Model
     }
 
     /**
+     * Create stock movement from physical stock adjustment.
+     */
+    public static function createFromPhysicalAdjustment($physicalStockEntry)
+    {
+        $voucher = $physicalStockEntry->voucher;
+
+        return self::create([
+            'tenant_id' => $voucher->tenant_id,
+            'product_id' => $physicalStockEntry->product_id,
+            'type' => $physicalStockEntry->difference_quantity > 0 ? 'in' : 'out',
+            'quantity' => $physicalStockEntry->difference_quantity,
+            'rate' => $physicalStockEntry->current_rate,
+            'transaction_type' => 'physical_adjustment',
+            'transaction_date' => $voucher->voucher_date,
+            'transaction_reference' => $voucher->voucher_number,
+            'reference' => "Physical Stock Adjustment - {$voucher->voucher_number}",
+            'source_transaction_type' => 'App\Models\PhysicalStockVoucher',
+            'source_transaction_id' => $voucher->id,
+            'batch_number' => $physicalStockEntry->batch_number,
+            'expiry_date' => $physicalStockEntry->expiry_date,
+            'created_by' => $voucher->created_by,
+            'old_stock' => $physicalStockEntry->book_quantity,
+            'new_stock' => $physicalStockEntry->physical_quantity,
+            'remarks' => $physicalStockEntry->remarks ?? "Physical adjustment: {$physicalStockEntry->getDifferenceTypeDisplay()}",
+            'additional_data' => [
+                'voucher_id' => $voucher->id,
+                'entry_id' => $physicalStockEntry->id,
+                'difference_type' => $physicalStockEntry->getDifferenceType(),
+                'location' => $physicalStockEntry->location,
+                'adjustment_value' => $physicalStockEntry->difference_value,
+            ],
+        ]);
+    }
+
+    /**
      * Get the movement type display name.
      */
     public function getTypeDisplayAttribute(): string
