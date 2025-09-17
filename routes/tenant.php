@@ -332,6 +332,7 @@ Route::prefix('ledger-accounts')->name('ledger-accounts.')->group(function () {
 
             // Units
             Route::resource('units', UnitController::class);
+            Route::patch('units/{unit}/toggle-status', [UnitController::class, 'toggleStatus'])->name('units.toggle-status');
             Route::get('units/export/all', [UnitController::class, 'export'])->name('units.export');
             Route::get('units/export/template', [UnitController::class, 'exportTemplate'])->name('units.export.template');
             Route::post('units/import', [UnitController::class, 'import'])->name('units.import');

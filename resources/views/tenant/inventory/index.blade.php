@@ -61,7 +61,7 @@
             <div class="flex items-center justify-between">
                 <div>
                     <p class="text-sm font-medium text-gray-600">Total Products</p>
-                    <p class="text-2xl font-bold text-gray-900">{{ number_format($totalProducts) }}</p>
+                    <p class="text-xl font-bold text-gray-900">{{ number_format($totalProducts) }}</p>
                     <p class="text-sm text-green-600 mt-1">
                         <span class="inline-flex items-center">
                             <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -83,7 +83,7 @@
             <div class="flex items-center justify-between">
                 <div>
                     <p class="text-sm font-medium text-gray-600">Total Stock Value</p>
-                    <p class="text-2xl font-bold text-gray-900">₦{{ number_format($totalStockValue, 2) }}</p>
+                    <p class="text-xl font-bold text-gray-900">₦{{ number_format($totalStockValue, 2) }}</p>
                     <p class="text-sm text-green-600 mt-1">
                         <span class="inline-flex items-center">
                             <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -105,7 +105,7 @@
             <div class="flex items-center justify-between">
                 <div>
                     <p class="text-sm font-medium text-gray-600">Low Stock Items</p>
-                    <p class="text-2xl font-bold text-gray-900">{{ number_format($lowStockItems) }}</p>
+                    <p class="text-xl font-bold text-gray-900">{{ number_format($lowStockItems) }}</p>
                     <p class="text-sm text-orange-600 mt-1">
                         <span class="inline-flex items-center">
                             <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -127,7 +127,7 @@
             <div class="flex items-center justify-between">
                 <div>
                     <p class="text-sm font-medium text-gray-600">Out of Stock</p>
-                    <p class="text-2xl font-bold text-gray-900">{{ number_format($outOfStockItems) }}</p>
+                    <p class="text-xl font-bold text-gray-900">{{ number_format($outOfStockItems) }}</p>
                     <p class="text-sm text-red-600 mt-1">
                         <span class="inline-flex items-center">
                             <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -194,12 +194,18 @@
         <div class="bg-white rounded-2xl p-6 shadow-lg">
             <div class="flex items-center justify-between mb-6">
                 <h3 class="text-xl font-bold text-gray-900">Recent Activities</h3>
-                <a href="#" class="text-blue-600 hover:text-blue-800 text-sm font-medium">View All</a>
+                <a href="{{ route('tenant.inventory.stock-journal.index', ['tenant' => $tenant->slug]) }}" class="text-blue-600 hover:text-blue-800 text-sm font-medium">View All</a>
             </div>
             <div class="space-y-4">
                 @forelse($recentActivities as $activity)
                     <div class="flex items-start space-x-3">
-                        <div class="w-8 h-8 bg-{{ $activity->type === 'product_added' ? 'blue' : ($activity->type === 'stock_updated' ? 'green' : ($activity->type === 'low_stock_alert' ? 'orange' : ($activity->type === 'category_added' ? 'purple' : 'red'))) }}-100 rounded-full flex items-center justify-center flex-shrink-0">
+                        <div class="w-8 h-8 bg-{{
+                            $activity->type === 'product_added' ? 'blue' :
+                            ($activity->type === 'stock_increased' ? 'green' :
+                            ($activity->type === 'stock_decreased' ? 'red' :
+                            ($activity->type === 'low_stock_alert' ? 'orange' :
+                            ($activity->type === 'category_added' ? 'purple' : 'gray'))))
+                        }}-100 rounded-full flex items-center justify-center flex-shrink-0">
                             @if($activity->icon === 'cube')
                                 <svg class="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path>
@@ -207,6 +213,30 @@
                             @elseif($activity->icon === 'arrow-trending-up')
                                 <svg class="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path>
+                                </svg>
+                            @elseif($activity->icon === 'arrow-trending-down')
+                                <svg class="w-4 h-4 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 17h8m0 0V9m0 8l-8-8-4 4-6-6"></path>
+                                </svg>
+                            @elseif($activity->icon === 'shopping-cart')
+                                <svg class="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.25 3h1.386c.51 0 .955.343 1.087.835l.383 1.437M7.5 14.25a3 3 0 00-3 3h15.75m-12.75-3h11.218c1.121-2.3 2.1-4.684 2.924-7.138a60.114 60.114 0 00-16.536-1.84M7.5 14.25L5.106 5.272M6 20.25a.75.75 0 11-1.5 0 .75.75 0 011.5 0zm12.75 0a.75.75 0 11-1.5 0 .75.75 0 011.5 0z"></path>
+                                </svg>
+                            @elseif($activity->icon === 'currency-dollar')
+                                <svg class="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v12m-3-2.818l.879.659c1.171.879 3.07.879 4.242 0 1.172-.879 1.172-2.303 0-3.182C13.536 12.219 12.768 12 12 12c-.725 0-1.45-.22-2.003-.659-1.106-.879-1.106-2.303 0-3.182s2.9-.879 4.006 0l.415.33M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                </svg>
+                            @elseif($activity->icon === 'clipboard-document-list')
+                                <svg class="w-4 h-4 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                                </svg>
+                            @elseif($activity->icon === 'adjustments')
+                                <svg class="w-4 h-4 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.5 6h9.75M10.5 6a1.5 1.5 0 11-3 0m3 0a1.5 1.5 0 10-3 0M3.75 6H7.5m0 0v12m0 0h3.75m-3.75 0V6m7.5 6h9.75m-9.75 0a1.5 1.5 0 11-3 0m3 0a1.5 1.5 0 10-3 0m7.5 0H15"></path>
+                                </svg>
+                            @elseif($activity->icon === 'archive-box')
+                                <svg class="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.25 7.5l-.625 10.632a2.25 2.25 0 01-2.247 2.118H6.622a2.25 2.25 0 01-2.247-2.118L3.75 7.5M10 11.25h4M3.375 7.5h17.25c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125z"></path>
                                 </svg>
                             @elseif($activity->icon === 'exclamation-triangle')
                                 <svg class="w-4 h-4 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -217,8 +247,8 @@
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
                                 </svg>
                             @else
-                                <svg class="w-4 h-4 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                                <svg class="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                                 </svg>
                             @endif
                         </div>
