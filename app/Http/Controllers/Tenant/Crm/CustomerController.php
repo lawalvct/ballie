@@ -132,6 +132,20 @@ class CustomerController extends Controller
             $customer->status = 'active';
             $customer->save();
 
+            // Check if this is an AJAX request (from quick add modal)
+            if ($request->ajax() || $request->expectsJson()) {
+                // Format display name like in InvoiceController
+                $displayName = 'Customer - ' . ($customer->company_name ?: trim($customer->first_name . ' ' . $customer->last_name));
+
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Customer created successfully',
+                    'customer_id' => $customer->id,
+                    'ledger_account_id' => $customer->ledgerAccount->id,
+                    'display_name' => $displayName
+                ]);
+            }
+
             // Determine redirect based on save_and_new parameter
             if ($request->has('save_and_new') && $request->save_and_new) {
                 return redirect()->route('tenant.crm.customers.create', ['tenant' => $tenant->slug])
@@ -142,6 +156,13 @@ class CustomerController extends Controller
                 ->with('success', 'Customer created successfully.');
         } catch (\Exception $e) {
             \Log::error('Error creating customer: ' . $e->getMessage());
+
+            if ($request->ajax() || $request->expectsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Failed to create customer: ' . $e->getMessage()
+                ], 500);
+            }
 
             return redirect()->back()
                 ->with('error', 'An error occurred while creating the customer. Please try again.')

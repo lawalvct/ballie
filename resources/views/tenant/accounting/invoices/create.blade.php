@@ -110,25 +110,67 @@
                     </div>
                 </div>
 
-                <!-- Customer Information (if you have customers) -->
+                <!-- Customer/Vendor Information -->
                 <div class="mt-6 grid grid-cols-1 md:grid-cols-2 gap-6">
                     <!-- Customer -->
                     <div>
                         <label for="customer_id" class="block text-sm font-medium text-gray-700 mb-2">
                             Customer
                         </label>
-                        <select required name="customer_id"
-                                id="customer_id"
-                                class="block w-full pl-3 pr-10 py-2 text-base border border-gray-300 focus:outline-none focus:ring-primary-500 focus:border-primary-500 rounded-lg">
-                            <option value="">Select Customer</option>
-                            @foreach($customers as $customer)
-                                <option value="{{ $customer->ledgerAccount->id }}" {{ old('ledger_account_id') == $customer->id ? 'selected' : '' }}>
-                                    {{ $customer->display_name }}
-                                </option>
-                            @endforeach
-                        </select>
+                        <div class="flex gap-2">
+                            <select required name="customer_id"
+                                    id="customer_id"
+                                    class="flex-1 pl-3 pr-10 py-2 text-base border border-gray-300 focus:outline-none focus:ring-primary-500 focus:border-primary-500 rounded-lg">
+                                <option value="">Select Customer</option>
+                                @foreach($customers as $customer)
+                                    <option value="{{ $customer->ledgerAccount->id }}" {{ old('ledger_account_id') == $customer->id ? 'selected' : '' }}>
+                                        {{ $customer->display_name }}
+                                    </option>
+                                @endforeach
+                            </select>
+                            <button type="button"
+                                    onclick="openQuickAddModal('customer')"
+                                    class="px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors"
+                                    title="Quick Add Customer">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                                </svg>
+                            </button>
+                        </div>
                     </div>
 
+                    <!-- Vendor (Optional - for expense tracking) -->
+                    <div>
+                        <label for="vendor_id" class="block text-sm font-medium text-gray-700 mb-2">
+                            Vendor <span class="text-xs text-gray-500">(Optional)</span>
+                        </label>
+                        <div class="flex gap-2">
+                            <select name="vendor_id"
+                                    id="vendor_id"
+                                    class="flex-1 pl-3 pr-10 py-2 text-base border border-gray-300 focus:outline-none focus:ring-primary-500 focus:border-primary-500 rounded-lg">
+                                <option value="">Select Vendor</option>
+                                @if(isset($vendors))
+                                    @foreach($vendors as $vendor)
+                                        <option value="{{ $vendor->ledgerAccount->id }}">
+                                            {{ $vendor->display_name }}
+                                        </option>
+                                    @endforeach
+                                @endif
+                            </select>
+                            <button type="button"
+                                    onclick="openQuickAddModal('vendor')"
+                                    class="px-3 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition-colors"
+                                    title="Quick Add Vendor">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Additional Information -->
+                <div class="mt-6 grid grid-cols-1 gap-6">
                     <!-- Narration -->
                     <div>
                         <label for="narration" class="block text-sm font-medium text-gray-700 mb-2">
@@ -189,8 +231,285 @@
     </form>
 </div>
 
+<!-- Quick Add Customer/Vendor Modal -->
+<div id="quickAddModal" class="fixed inset-0 z-50 hidden overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+    <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+        <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" aria-hidden="true"></div>
+        <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+
+        <div class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
+            <form id="quickAddForm" method="POST">
+                @csrf
+                <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+                    <div class="sm:flex sm:items-start">
+                        <div class="mt-3 text-center sm:mt-0 sm:text-left w-full">
+                            <h3 class="text-lg leading-6 font-medium text-gray-900 mb-4" id="modal-title">
+                                Quick Add
+                            </h3>
+
+                            <!-- CRM Type Selection (Customer or Vendor) -->
+                            <div class="mb-4">
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Create</label>
+                                <div class="flex space-x-4">
+                                    <label class="flex items-center">
+                                        <input type="radio" name="crm_type" value="customer" checked class="mr-2" onchange="updateCrmType()">
+                                        <span class="text-sm">Customer</span>
+                                    </label>
+                                    <label class="flex items-center">
+                                        <input type="radio" name="crm_type" value="vendor" class="mr-2" onchange="updateCrmType()">
+                                        <span class="text-sm">Vendor</span>
+                                    </label>
+                                </div>
+                            </div>
+
+                            <!-- Entity Type Selection (Individual or Business) -->
+                            <div class="mb-4">
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Type</label>
+                                <div class="flex space-x-4">
+                                    <label class="flex items-center">
+                                        <input type="radio" name="entity_type" value="individual" checked class="mr-2">
+                                        <span class="text-sm">Individual</span>
+                                    </label>
+                                    <label class="flex items-center">
+                                        <input type="radio" name="entity_type" value="business" class="mr-2">
+                                        <span class="text-sm">Business</span>
+                                    </label>
+                                </div>
+                            </div>
+
+                            <!-- Individual Fields -->
+                            <div id="individualFields" class="space-y-4">
+                                <div class="grid grid-cols-2 gap-4">
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-1">First Name *</label>
+                                        <input type="text" name="first_name" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-1">Last Name *</label>
+                                        <input type="text" name="last_name" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Business Fields -->
+                            <div id="businessFields" class="space-y-4 hidden">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Company Name *</label>
+                                    <input type="text" name="company_name" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                </div>
+                            </div>
+
+                            <!-- Common Fields -->
+                            <div class="space-y-4 mt-4">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Email *</label>
+                                    <input type="email" name="email" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Phone</label>
+                                    <input type="tel" name="phone" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Address</label>
+                                    <input type="text" name="address_line1" placeholder="Street address" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                </div>
+                                <div class="grid grid-cols-2 gap-4">
+                                    <div>
+                                        <input type="text" name="city" placeholder="City" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                    </div>
+                                    <div>
+                                        <input type="text" name="state" placeholder="State" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
+                    <button type="submit" id="submitBtn" class="w-full inline-flex justify-center rounded-lg border border-transparent shadow-sm px-4 py-2 bg-blue-600 text-base font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:ml-3 sm:w-auto sm:text-sm">
+                        Create & Select Customer
+                    </button>
+                    <button type="button" onclick="closeQuickAddModal()" class="mt-3 w-full inline-flex justify-center rounded-lg border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm">
+                        Cancel
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
 @push('scripts')
 <script>
+let currentModalType = 'customer';
+
+// Quick Add Modal Functions
+function openQuickAddModal(type = 'customer') {
+    currentModalType = type;
+    const modal = document.getElementById('quickAddModal');
+    const form = document.getElementById('quickAddForm');
+
+    // Set the CRM type radio button
+    const crmTypeRadio = document.querySelector(`input[name="crm_type"][value="${type}"]`);
+    if (crmTypeRadio) {
+        crmTypeRadio.checked = true;
+    }
+
+    // Reset and setup form
+    form.reset();
+    // Re-set the CRM type after reset
+    document.querySelector(`input[name="crm_type"][value="${type}"]`).checked = true;
+
+    updateCrmType();
+    toggleTypeFields();
+
+    modal.classList.remove('hidden');
+    document.body.style.overflow = 'hidden';
+}
+
+function updateCrmType() {
+    const selectedCrmType = document.querySelector('input[name="crm_type"]:checked').value;
+    currentModalType = selectedCrmType;
+
+    const modalTitle = document.getElementById('modal-title');
+    const form = document.getElementById('quickAddForm');
+    const submitBtn = document.getElementById('submitBtn');
+
+    const crmTypeCap = selectedCrmType.charAt(0).toUpperCase() + selectedCrmType.slice(1);
+
+    modalTitle.textContent = `Quick Add ${crmTypeCap}`;
+    submitBtn.textContent = `Create & Select ${crmTypeCap}`;
+
+    form.action = selectedCrmType === 'customer'
+        ? '{{ route("tenant.crm.customers.store", ["tenant" => $tenant->slug]) }}'
+        : '{{ route("tenant.crm.vendors.store", ["tenant" => $tenant->slug]) }}';
+}
+
+function closeQuickAddModal() {
+    const modal = document.getElementById('quickAddModal');
+    modal.classList.add('hidden');
+    document.body.style.overflow = 'auto';
+
+    // Reset form
+    document.getElementById('quickAddForm').reset();
+    toggleTypeFields();
+}
+
+function toggleTypeFields() {
+    const entityTypeRadios = document.querySelectorAll('input[name="entity_type"]');
+    const individualFields = document.getElementById('individualFields');
+    const businessFields = document.getElementById('businessFields');
+
+    const selectedType = document.querySelector('input[name="entity_type"]:checked').value;
+    const selectedCrmType = document.querySelector('input[name="crm_type"]:checked').value;
+
+    // Update form field names based on modal type (customer_type or vendor_type)
+    const typeFieldName = selectedCrmType + '_type';
+    entityTypeRadios.forEach(radio => {
+        radio.name = typeFieldName;
+    });
+
+    if (selectedType === 'individual') {
+        individualFields.classList.remove('hidden');
+        businessFields.classList.add('hidden');
+        // Make individual fields required
+        document.querySelector('input[name="first_name"]').required = true;
+        document.querySelector('input[name="last_name"]').required = true;
+        document.querySelector('input[name="company_name"]').required = false;
+    } else {
+        individualFields.classList.add('hidden');
+        businessFields.classList.remove('hidden');
+        // Make business fields required
+        document.querySelector('input[name="first_name"]').required = false;
+        document.querySelector('input[name="last_name"]').required = false;
+        document.querySelector('input[name="company_name"]').required = true;
+    }
+}
+
+// Handle form submission
+document.getElementById('quickAddForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+
+    const formData = new FormData(this);
+    const submitButton = this.querySelector('button[type="submit"]');
+    const originalText = submitButton.textContent;
+
+    submitButton.disabled = true;
+    submitButton.textContent = 'Creating...';
+
+    fetch(this.action, {
+        method: 'POST',
+        body: formData,
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest',
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Determine which select element to update based on CRM type
+            const selectId = currentModalType === 'customer' ? 'customer_id' : 'vendor_id';
+            const select = document.getElementById(selectId);
+
+            if (select) {
+                const option = new Option(data.display_name, data.ledger_account_id, true, true);
+                select.add(option);
+            }
+
+            // Show success message
+            showNotification('success', `${currentModalType.charAt(0).toUpperCase() + currentModalType.slice(1)} created successfully!`);
+
+            closeQuickAddModal();
+        } else {
+            throw new Error(data.message || 'An error occurred');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showNotification('error', error.message || 'Failed to create ' + currentModalType);
+    })
+    .finally(() => {
+        submitButton.disabled = false;
+        submitButton.textContent = originalText;
+    });
+});
+
+// Add event listeners for type toggle
+document.addEventListener('DOMContentLoaded', function() {
+    // Close modal when clicking outside
+    document.getElementById('quickAddModal').addEventListener('click', function(e) {
+        if (e.target === this) {
+            closeQuickAddModal();
+        }
+    });
+
+    // Add event listeners for type radio buttons
+    document.addEventListener('change', function(e) {
+        if (e.target.name === 'entity_type') {
+            toggleTypeFields();
+        }
+        if (e.target.name === 'crm_type') {
+            updateCrmType();
+        }
+    });
+});
+
+// Notification function
+function showNotification(type, message) {
+    const notification = document.createElement('div');
+    notification.className = `fixed top-4 right-4 z-50 p-4 rounded-lg shadow-lg ${
+        type === 'success' ? 'bg-green-500 text-white' : 'bg-red-500 text-white'
+    }`;
+    notification.textContent = message;
+
+    document.body.appendChild(notification);
+
+    setTimeout(() => {
+        notification.remove();
+    }, 3000);
+}
+
 // Invoice Items Component
 window.invoiceItems = function() {
     return {

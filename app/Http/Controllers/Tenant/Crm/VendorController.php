@@ -74,6 +74,20 @@ class VendorController extends Controller
         $vendor->status = 'active';
         $vendor->save();
 
+        // Check if this is an AJAX request (from quick add modal)
+        if ($request->ajax() || $request->expectsJson()) {
+            // Format display name like in InvoiceController
+            $displayName = 'Vendor - ' . ($vendor->company_name ?: trim($vendor->first_name . ' ' . $vendor->last_name));
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Vendor created successfully',
+                'vendor_id' => $vendor->id,
+                'ledger_account_id' => $vendor->ledgerAccount->id,
+                'display_name' => $displayName
+            ]);
+        }
+
         return redirect()->route('tenant.crm.vendors.index', ['tenant' => tenant()->slug])
             ->with('success', 'Vendor created successfully with ledger account.');
     }

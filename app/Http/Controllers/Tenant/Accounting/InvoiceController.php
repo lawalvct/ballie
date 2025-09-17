@@ -93,17 +93,19 @@ class InvoiceController extends Controller
         };
 
         $buyers->each(function($item) use ($getName) {
-            $item->display_name = 'Customer - ' . $getName($item, 'customer');
+            $item->display_name = $getName($item, 'customer');
             $item->type = 'customer';
         });
 
         $vendors->each(function($item) use ($getName) {
-            $item->display_name = 'Vendor - ' . $getName($item, 'vendor');
+            $item->display_name = $getName($item, 'vendor');
             $item->type = 'vendor';
         });
 
-        // Merge both collections
-        $customers = $buyers->concat($vendors);
+        // Keep customers and vendors separate for the form
+        $customers = $buyers;
+        // Also merge for backward compatibility if needed
+        $allPartners = $buyers->concat($vendors);
 
         // Get default sales voucher type
         $selectedType = $voucherTypes->where('code', 'SALES')->first() ?? $voucherTypes->first();
@@ -113,6 +115,7 @@ class InvoiceController extends Controller
             'voucherTypes',
             'products',
             'customers',
+            'vendors',
             'selectedType'
         ));
     }
@@ -595,7 +598,7 @@ class InvoiceController extends Controller
         if ($customerLedgerEntry && $customerLedgerEntry->ledgerAccount) {
             // Check if this ledger account belongs to a customer
             $customer = Customer::where('ledger_account_id', $customerLedgerEntry->ledgerAccount->id)->first();
-            
+
             // If no customer model found, use ledger account info directly
             if (!$customer) {
                 $customer = (object) [

@@ -18,7 +18,22 @@
 <!-- Celebration Animation -->
 <div class="relative h-64 mb-12">
     <div class="absolute inset-0 flex items-center justify-center">
-        <div id="celebration-animation" class="w-full h-full"></div>
+        <!-- Immediate CSS Animation as fallback -->
+        <div id="css-celebration" class="celebration-fallback">
+            <div class="confetti-piece confetti-1"></div>
+            <div class="confetti-piece confetti-2"></div>
+            <div class="confetti-piece confetti-3"></div>
+            <div class="confetti-piece confetti-4"></div>
+            <div class="confetti-piece confetti-5"></div>
+            <div class="confetti-piece confetti-6"></div>
+            <div class="celebration-star">
+                <svg class="w-12 h-12 text-yellow-400 animate-pulse" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+                </svg>
+            </div>
+        </div>
+        <!-- Lottie Animation Container -->
+        <div id="celebration-animation" class="w-full h-full" style="display: none;"></div>
     </div>
 </div>
 
@@ -164,15 +179,44 @@
 <script src="https://cdn.jsdelivr.net/npm/lottie-web@5.7.8/build/player/lottie.min.js"></script>
 <script>
     document.addEventListener('DOMContentLoaded', function() {
-        // Load celebration animation
         const animationContainer = document.getElementById('celebration-animation');
-        const anim = lottie.loadAnimation({
-            container: animationContainer,
-            renderer: 'svg',
-            loop: true,
-            autoplay: true,
-            path: 'https://assets10.lottiefiles.com/packages/lf20_touohxv0.json' // Celebration animation
-        });
+        const cssBackup = document.getElementById('css-celebration');
+
+        // Show CSS animation immediately
+        cssBackup.style.display = 'block';
+
+        // Preload and replace with Lottie animation
+        try {
+            const anim = lottie.loadAnimation({
+                container: animationContainer,
+                renderer: 'svg',
+                loop: true,
+                autoplay: true,
+                path: 'https://assets10.lottiefiles.com/packages/lf20_touohxv0.json',
+                rendererSettings: {
+                    preserveAspectRatio: 'xMidYMid slice'
+                }
+            });
+
+            // When Lottie animation is ready, hide CSS backup and show Lottie
+            anim.addEventListener('DOMLoaded', function() {
+                setTimeout(() => {
+                    cssBackup.style.display = 'none';
+                    animationContainer.style.display = 'block';
+                }, 100);
+            });
+
+            // Fallback: if Lottie fails to load after 3 seconds, keep CSS animation
+            setTimeout(() => {
+                if (animationContainer.style.display === 'none') {
+                    console.log('Lottie animation timeout, using CSS fallback');
+                }
+            }, 3000);
+
+        } catch (error) {
+            console.log('Lottie animation failed, using CSS fallback');
+            // Keep CSS animation visible
+        }
 
         // Track completion in analytics
         if (typeof gtag !== 'undefined') {
@@ -183,4 +227,116 @@
         }
     });
 </script>
+
+<style>
+/* Immediate CSS Celebration Animation */
+.celebration-fallback {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    display: none;
+    overflow: hidden;
+}
+
+.celebration-star {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 10;
+}
+
+.confetti-piece {
+    position: absolute;
+    width: 10px;
+    height: 10px;
+    background: linear-gradient(45deg, #ff6b6b, #4ecdc4, #45b7d1, #96ceb4, #feca57);
+    border-radius: 50%;
+    animation: confetti-fall 3s infinite linear;
+}
+
+.confetti-1 {
+    left: 10%;
+    animation-delay: 0s;
+    background: #ff6b6b;
+}
+
+.confetti-2 {
+    left: 20%;
+    animation-delay: 0.5s;
+    background: #4ecdc4;
+}
+
+.confetti-3 {
+    left: 40%;
+    animation-delay: 1s;
+    background: #45b7d1;
+}
+
+.confetti-4 {
+    left: 60%;
+    animation-delay: 1.5s;
+    background: #96ceb4;
+}
+
+.confetti-5 {
+    left: 80%;
+    animation-delay: 2s;
+    background: #feca57;
+}
+
+.confetti-6 {
+    left: 90%;
+    animation-delay: 2.5s;
+    background: #ff9ff3;
+}
+
+@keyframes confetti-fall {
+    0% {
+        top: -10%;
+        transform: rotate(0deg);
+        opacity: 1;
+    }
+    100% {
+        top: 110%;
+        transform: rotate(720deg);
+        opacity: 0;
+    }
+}
+
+/* Enhance existing animations */
+@keyframes pulse {
+    0%, 100% {
+        transform: scale(1);
+        opacity: 1;
+    }
+    50% {
+        transform: scale(1.1);
+        opacity: 0.8;
+    }
+}
+
+.animate-pulse {
+    animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+/* Celebration bounce animation for the star */
+@keyframes celebration-bounce {
+    0%, 20%, 53%, 80%, 100% {
+        transform: translate(-50%, -50%) scale(1);
+    }
+    40%, 43% {
+        transform: translate(-50%, -50%) scale(1.2);
+    }
+}
+
+.celebration-star svg {
+    animation: celebration-bounce 2s infinite;
+}
+
+/* Rainbow glow effect */
+.celebration-star svg {
+    filter: drop-shadow(0 0 20px rgba(255, 215, 0, 0.6));
+}
+</style>
 @endpush
