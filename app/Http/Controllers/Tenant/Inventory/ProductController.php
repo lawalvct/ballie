@@ -8,6 +8,7 @@ use App\Models\ProductCategory;
 use App\Models\Unit;
 use App\Models\LedgerAccount;
 use App\Models\Tenant;
+use App\Models\StockMovement;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
@@ -215,12 +216,12 @@ public function stockMovements(Request $request, Tenant $tenant, Product $produc
     });
 
     // Get transaction types for filter
-    $transactionTypes = $product->stockMovements()
+    $transactionTypes = StockMovement::where('product_id', $product->id)
         ->select('transaction_type')
         ->whereNotNull('transaction_type')
         ->distinct()
-        ->orderBy('transaction_type')
-        ->pluck('transaction_type');
+        ->pluck('transaction_type')
+        ->sort();
 
     return view('tenant.inventory.products.stock-movements', compact(
         'product',
