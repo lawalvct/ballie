@@ -112,10 +112,10 @@
 
                 <!-- Customer/Vendor Information -->
                 <div class="mt-6 grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <!-- Customer -->
-                    <div>
+                    <!-- Customer (for Sales transactions) -->
+                    <div id="customerSection">
                         <label for="customer_id" class="block text-sm font-medium text-gray-700 mb-2">
-                            Customer
+                            Customer <span class="text-red-500">*</span>
                         </label>
                         <div class="flex gap-2">
                             <select required name="customer_id"
@@ -123,7 +123,7 @@
                                     class="flex-1 pl-3 pr-10 py-2 text-base border border-gray-300 focus:outline-none focus:ring-primary-500 focus:border-primary-500 rounded-lg">
                                 <option value="">Select Customer</option>
                                 @foreach($customers as $customer)
-                                    <option value="{{ $customer->ledgerAccount->id }}" {{ old('ledger_account_id') == $customer->id ? 'selected' : '' }}>
+                                    <option value="{{ $customer->ledgerAccount->id }}" {{ old('customer_id') == $customer->ledgerAccount->id ? 'selected' : '' }}>
                                         {{ $customer->display_name }}
                                     </option>
                                 @endforeach
@@ -139,19 +139,19 @@
                         </div>
                     </div>
 
-                    <!-- Vendor (Optional - for expense tracking) -->
-                    <div>
-                        <label for="vendor_id" class="block text-sm font-medium text-gray-700 mb-2">
-                            Vendor <span class="text-xs text-gray-500">(Optional)</span>
+                    <!-- Vendor (for Purchase transactions) -->
+                    <div id="vendorSection" class="hidden">
+                        <label for="vendor_select" class="block text-sm font-medium text-gray-700 mb-2">
+                            Vendor <span class="text-red-500">*</span>
                         </label>
                         <div class="flex gap-2">
-                            <select name="vendor_id"
-                                    id="vendor_id"
+                            <select name="customer_id"
+                                    id="vendor_select"
                                     class="flex-1 pl-3 pr-10 py-2 text-base border border-gray-300 focus:outline-none focus:ring-primary-500 focus:border-primary-500 rounded-lg">
                                 <option value="">Select Vendor</option>
                                 @if(isset($vendors))
                                     @foreach($vendors as $vendor)
-                                        <option value="{{ $vendor->ledgerAccount->id }}">
+                                        <option value="{{ $vendor->ledgerAccount->id }}" {{ old('customer_id') == $vendor->ledgerAccount->id ? 'selected' : '' }}>
                                             {{ $vendor->display_name }}
                                         </option>
                                     @endforeach
@@ -480,13 +480,22 @@ document.getElementById('quickAddForm').addEventListener('submit', function(e) {
     .then(response => response.json())
     .then(data => {
         if (data.success) {
-            // Determine which select element to update based on CRM type
-            const selectId = currentModalType === 'customer' ? 'customer_id' : 'vendor_id';
-            const select = document.getElementById(selectId);
+            // Determine which select element to update based on current visibility
+            const customerSection = document.getElementById('customerSection');
+            const vendorSection = document.getElementById('vendorSection');
 
-            if (select) {
+            let targetSelect;
+            if (!customerSection.classList.contains('hidden')) {
+                // Customer section is visible
+                targetSelect = document.getElementById('customer_id');
+            } else if (!vendorSection.classList.contains('hidden')) {
+                // Vendor section is visible
+                targetSelect = document.getElementById('vendor_select');
+            }
+
+            if (targetSelect) {
                 const option = new Option(data.display_name, data.ledger_account_id, true, true);
-                select.add(option);
+                targetSelect.add(option);
             }
 
             // Show success message
@@ -687,12 +696,47 @@ function invoiceForm() {
                 this.invoiceNumberPreview = voucherType.prefix + 'XXXX';
                 this.vchType = 'Create '+voucherType.name+ ' Invoice';
 
+                // Switch between customer and vendor fields based on voucher type
+                this.toggleCustomerVendorFields(voucherType);
+
                 // Notify inventory component about voucher type change
                 document.dispatchEvent(new CustomEvent('voucher-type-changed', {
                     detail: { voucherType: voucherType, vchType: this.vchType }
                 }));
             } else {
                 this.invoiceNumberPreview = 'Auto-generated';
+            }
+        },
+
+        toggleCustomerVendorFields(voucherType) {
+            const customerSection = document.getElementById('customerSection');
+            const vendorSection = document.getElementById('vendorSection');
+            const customerSelect = document.getElementById('customer_id');
+            const vendorSelect = document.getElementById('vendor_select');
+
+            // Check if this is a purchase voucher type
+            const isPurchase = voucherType.code.includes('PUR') ||
+                             voucherType.code.includes('PURCHASE') ||
+                             voucherType.name.toLowerCase().includes('purchase');
+
+            if (isPurchase) {
+                // Show vendor field, hide customer field
+                customerSection.classList.add('hidden');
+                vendorSection.classList.remove('hidden');
+
+                // Enable vendor select and disable customer select
+                vendorSelect.required = true;
+                customerSelect.required = false;
+                customerSelect.value = ''; // Clear customer selection
+            } else {
+                // Show customer field, hide vendor field (default for sales)
+                customerSection.classList.remove('hidden');
+                vendorSection.classList.add('hidden');
+
+                // Enable customer select and disable vendor select
+                customerSelect.required = true;
+                vendorSelect.required = false;
+                vendorSelect.value = ''; // Clear vendor selection
             }
         },
 
