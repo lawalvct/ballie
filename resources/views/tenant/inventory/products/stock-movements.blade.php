@@ -143,8 +143,11 @@
                             <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                 Type
                             </th>
-                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                Quantity
+                            <th scope="col" class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                In
+                            </th>
+                            <th scope="col" class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Out
                             </th>
                             <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                 Rate
@@ -195,11 +198,25 @@
                                         </span>
                                     @endif
                                 </td>
-                                <td class="px-6 py-4 whitespace-nowrap">
-                                    <div class="text-sm font-medium {{ $movement->quantity > 0 ? 'text-green-600' : 'text-red-600' }}">
-                                        {{ $movement->quantity > 0 ? '+' : '' }}{{ number_format($movement->quantity, 2) }}
-                                        {{ $product->primaryUnit->symbol ?? $product->primaryUnit->name ?? '' }}
-                                    </div>
+                                <td class="px-6 py-4 whitespace-nowrap text-center">
+                                    @if($movement->quantity > 0)
+                                        <div class="text-sm font-medium text-green-600">
+                                            {{ number_format($movement->quantity, 2) }}
+                                            {{ $product->primaryUnit->symbol ?? $product->primaryUnit->name ?? '' }}
+                                        </div>
+                                    @else
+                                        <div class="text-sm text-gray-400">-</div>
+                                    @endif
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-center">
+                                    @if($movement->quantity < 0)
+                                        <div class="text-sm font-medium text-red-600">
+                                            {{ number_format(abs($movement->quantity), 2) }}
+                                            {{ $product->primaryUnit->symbol ?? $product->primaryUnit->name ?? '' }}
+                                        </div>
+                                    @else
+                                        <div class="text-sm text-gray-400">-</div>
+                                    @endif
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap">
                                     <div class="text-sm text-gray-900">
