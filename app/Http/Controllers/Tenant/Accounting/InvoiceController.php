@@ -12,6 +12,7 @@ use App\Models\Product;
 use App\Models\LedgerAccount;
 use App\Models\Tenant;
 use App\Models\AccountGroup;
+use App\Models\StockMovement;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
@@ -217,7 +218,7 @@ class InvoiceController extends Controller
             if ($request->action === 'save_and_post') {
                 $effect = $voucherType->inventory_effect ?? 'decrease';
                 if ($effect === 'increase' || $effect === 'decrease') {
-                    $this->updateProductStock($inventoryItems, $effect);
+                    $this->updateProductStock($inventoryItems, $effect, $voucher);
                 }
                 // If 'none', do not update stock
             }
@@ -417,7 +418,7 @@ class InvoiceController extends Controller
 
             // Update product stock if posted
             if ($request->action === 'save_and_post') {
-                $this->updateProductStock($inventoryItems, 'decrease');
+                $this->updateProductStock($inventoryItems, 'decrease', $invoice);
             }
 
             DB::commit();
@@ -504,7 +505,7 @@ class InvoiceController extends Controller
                 if (isset($metaData['inventory_items'])) {
                     $effect = $invoice->voucherType->inventory_effect ?? 'decrease';
                     if ($effect === 'increase' || $effect === 'decrease') {
-                        $this->updateProductStock($metaData['inventory_items'], $effect);
+                        $this->updateProductStock($metaData['inventory_items'], $effect, $invoice);
                     }
                     // If 'none', do not update stock
                 }
@@ -554,7 +555,7 @@ class InvoiceController extends Controller
                     // Reverse the effect: if original was 'decrease', now 'increase', and vice versa
                     $reverseEffect = $effect === 'increase' ? 'decrease' : ($effect === 'decrease' ? 'increase' : null);
                     if ($reverseEffect) {
-                        $this->updateProductStock($metaData['inventory_items'], $reverseEffect);
+                        $this->updateProductStock($metaData['inventory_items'], $reverseEffect, $invoice);
                     }
                     // If 'none', do not update stock
                 }
@@ -738,22 +739,30 @@ private function createAccountingEntries(Voucher $voucher, array $inventoryItems
     // This would require tracking purchase costs of products
 }
 
-    private function updateProductStock(array $inventoryItems, string $operation)
+    private function updateProductStock(array $inventoryItems, string $operation, $voucher = null)
     {
+        if (!$voucher) {
+            throw new \Exception('Voucher is required for stock movement tracking');
+        }
+
         foreach ($inventoryItems as $item) {
             $product = Product::find($item['product_id']);
             if ($product && $product->maintain_stock) {
-                $quantity = $item['quantity'];
+                // Determine movement type based on operation
+                $movementType = ($operation === 'decrease') ? 'out' : 'in';
 
-                if ($operation === 'decrease') {
-                    $product->decrement('current_stock', $quantity);
-                } else {
-                    $product->increment('current_stock', $quantity);
+                // Create stock movement record using the StockMovement model method
+                try {
+                    StockMovement::createFromVoucher($voucher, $item, $movementType);
+                } catch (\Exception $e) {
+                    Log::error('Error creating stock movement: ' . $e->getMessage(), [
+                        'voucher_id' => $voucher->id,
+                        'product_id' => $item['product_id'],
+                        'operation' => $operation,
+                        'item' => $item
+                    ]);
+                    throw $e;
                 }
-
-                // Update stock value
-                $product->current_stock_value = $product->current_stock * $product->purchase_rate;
-                $product->save();
             }
         }
     }

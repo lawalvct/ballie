@@ -106,6 +106,49 @@ class StockMovement extends Model
     }
 
     /**
+     * Create stock movement from voucher item.
+     */
+    public static function createFromVoucher($voucher, $item, $movementType = 'out')
+    {
+        $voucherNumber = $voucher->voucher_number ?? $voucher->id;
+        $voucherType = $voucher->voucherType;
+
+        // Determine transaction type based on voucher type
+        $transactionType = 'sales'; // default
+        if ($voucherType) {
+            if (stripos($voucherType->name, 'purchase') !== false || stripos($voucherType->code, 'PUR') !== false) {
+                $transactionType = 'purchase';
+            } elseif (stripos($voucherType->name, 'sales') !== false || stripos($voucherType->code, 'SALES') !== false) {
+                $transactionType = 'sales';
+            }
+        }
+
+        // Calculate old stock before this movement
+        $product = \App\Models\Product::find($item['product_id']);
+        $oldStock = $product ? $product->getStockAsOfDate(now(), true) : 0;
+
+        $quantity = $movementType === 'out' ? -abs($item['quantity']) : abs($item['quantity']);
+        $newStock = $oldStock + $quantity;
+
+        return self::create([
+            'tenant_id' => $voucher->tenant_id,
+            'product_id' => $item['product_id'],
+            'type' => $movementType,
+            'quantity' => $quantity,
+            'rate' => $item['rate'] ?? 0,
+            'transaction_type' => $transactionType,
+            'transaction_date' => $voucher->voucher_date ?? now()->toDateString(),
+            'transaction_reference' => $voucherNumber,
+            'reference' => "{$voucherType->name} #{$voucherNumber}",
+            'source_transaction_type' => get_class($voucher),
+            'source_transaction_id' => $voucher->id,
+            'created_by' => auth()->id(),
+            'old_stock' => $oldStock,
+            'new_stock' => $newStock,
+        ]);
+    }
+
+    /**
      * Create stock movement from stock journal item.
      */
     public static function createFromStockJournal($stockJournal, $item)
