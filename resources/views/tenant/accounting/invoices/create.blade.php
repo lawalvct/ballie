@@ -267,11 +267,11 @@
                                 <label class="block text-sm font-medium text-gray-700 mb-2">Type</label>
                                 <div class="flex space-x-4">
                                     <label class="flex items-center">
-                                        <input type="radio" name="entity_type" value="individual" checked class="mr-2">
+                                        <input type="radio" name="entity_type" value="individual" checked class="mr-2" onchange="toggleTypeFields()">
                                         <span class="text-sm">Individual</span>
                                     </label>
                                     <label class="flex items-center">
-                                        <input type="radio" name="entity_type" value="business" class="mr-2">
+                                        <input type="radio" name="entity_type" value="business" class="mr-2" onchange="toggleTypeFields()">
                                         <span class="text-sm">Business</span>
                                     </label>
                                 </div>
@@ -349,25 +349,28 @@ function openQuickAddModal(type = 'customer') {
     const modal = document.getElementById('quickAddModal');
     const form = document.getElementById('quickAddForm');
 
+    // Reset form first
+    form.reset();
+
     // Set the CRM type radio button
     const crmTypeRadio = document.querySelector(`input[name="crm_type"][value="${type}"]`);
     if (crmTypeRadio) {
         crmTypeRadio.checked = true;
     }
 
-    // Reset and setup form
-    form.reset();
-    // Re-set the CRM type after reset
-    document.querySelector(`input[name="crm_type"][value="${type}"]`).checked = true;
+    // Ensure individual is selected by default
+    const individualRadio = document.querySelector('input[value="individual"]');
+    if (individualRadio) {
+        individualRadio.checked = true;
+    }
 
+    // Update modal state
     updateCrmType();
     toggleTypeFields();
 
     modal.classList.remove('hidden');
     document.body.style.overflow = 'hidden';
-}
-
-function updateCrmType() {
+}function updateCrmType() {
     const selectedCrmType = document.querySelector('input[name="crm_type"]:checked').value;
     currentModalType = selectedCrmType;
 
@@ -390,40 +393,69 @@ function closeQuickAddModal() {
     modal.classList.add('hidden');
     document.body.style.overflow = 'auto';
 
-    // Reset form
-    document.getElementById('quickAddForm').reset();
+    // Reset form and restore default state
+    const form = document.getElementById('quickAddForm');
+    form.reset();
+
+    // Reset to default customer and individual
+    document.querySelector('input[name="crm_type"][value="customer"]').checked = true;
+    document.querySelector('input[value="individual"]').checked = true;
+
+    // Reset field visibility
     toggleTypeFields();
 }
 
 function toggleTypeFields() {
-    const entityTypeRadios = document.querySelectorAll('input[name="entity_type"]');
     const individualFields = document.getElementById('individualFields');
     const businessFields = document.getElementById('businessFields');
 
-    const selectedType = document.querySelector('input[name="entity_type"]:checked').value;
-    const selectedCrmType = document.querySelector('input[name="crm_type"]:checked').value;
+    // Get the selected type by checking all radio buttons with value 'individual' or 'business'
+    let selectedType = 'individual'; // default
+    const allRadios = document.querySelectorAll('input[type="radio"]');
 
-    // Update form field names based on modal type (customer_type or vendor_type)
-    const typeFieldName = selectedCrmType + '_type';
-    entityTypeRadios.forEach(radio => {
-        radio.name = typeFieldName;
-    });
+    for (let radio of allRadios) {
+        if (radio.checked && (radio.value === 'individual' || radio.value === 'business')) {
+            selectedType = radio.value;
+            break;
+        }
+    }
+
+    console.log('Selected type:', selectedType); // Debug log
 
     if (selectedType === 'individual') {
         individualFields.classList.remove('hidden');
         businessFields.classList.add('hidden');
         // Make individual fields required
-        document.querySelector('input[name="first_name"]').required = true;
-        document.querySelector('input[name="last_name"]').required = true;
-        document.querySelector('input[name="company_name"]').required = false;
+        const firstNameField = document.querySelector('input[name="first_name"]');
+        const lastNameField = document.querySelector('input[name="last_name"]');
+        const companyNameField = document.querySelector('input[name="company_name"]');
+
+        if (firstNameField) firstNameField.required = true;
+        if (lastNameField) lastNameField.required = true;
+        if (companyNameField) companyNameField.required = false;
     } else {
         individualFields.classList.add('hidden');
         businessFields.classList.remove('hidden');
         // Make business fields required
-        document.querySelector('input[name="first_name"]').required = false;
-        document.querySelector('input[name="last_name"]').required = false;
-        document.querySelector('input[name="company_name"]').required = true;
+        const firstNameField = document.querySelector('input[name="first_name"]');
+        const lastNameField = document.querySelector('input[name="last_name"]');
+        const companyNameField = document.querySelector('input[name="company_name"]');
+
+        if (firstNameField) firstNameField.required = false;
+        if (lastNameField) lastNameField.required = false;
+        if (companyNameField) companyNameField.required = true;
     }
+
+    // Update the radio button names after toggling (for backend processing)
+    const selectedCrmType = document.querySelector('input[name="crm_type"]:checked')?.value || 'customer';
+    const typeFieldName = selectedCrmType + '_type';
+    const entityTypeRadios = document.querySelectorAll('input[value="individual"], input[value="business"]');
+
+    entityTypeRadios.forEach(radio => {
+        if (radio.value === 'individual' || radio.value === 'business') {
+            radio.name = typeFieldName;
+        }
+    });
 }
 
 // Handle form submission
@@ -486,9 +518,11 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Add event listeners for type radio buttons
     document.addEventListener('change', function(e) {
-        if (e.target.name === 'entity_type') {
+        // Handle entity type changes (individual/business)
+        if (e.target.type === 'radio' && (e.target.value === 'individual' || e.target.value === 'business')) {
             toggleTypeFields();
         }
+        // Handle CRM type changes (customer/vendor)
         if (e.target.name === 'crm_type') {
             updateCrmType();
         }

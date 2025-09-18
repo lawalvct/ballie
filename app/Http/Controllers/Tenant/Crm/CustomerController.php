@@ -134,8 +134,17 @@ class CustomerController extends Controller
 
             // Check if this is an AJAX request (from quick add modal)
             if ($request->ajax() || $request->expectsJson()) {
+                // Ensure ledger account is created and refresh the customer
+                $customer->refresh();
+
+                // If ledger account is not created by boot method, create it manually
+                if (!$customer->ledgerAccount) {
+                    $customer->createLedgerAccount();
+                    $customer->refresh();
+                }
+
                 // Format display name like in InvoiceController
-                $displayName = 'Customer - ' . ($customer->company_name ?: trim($customer->first_name . ' ' . $customer->last_name));
+                $displayName = $customer->company_name ?: trim($customer->first_name . ' ' . $customer->last_name);
 
                 return response()->json([
                     'success' => true,

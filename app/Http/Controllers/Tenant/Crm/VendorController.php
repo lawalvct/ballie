@@ -76,8 +76,17 @@ class VendorController extends Controller
 
         // Check if this is an AJAX request (from quick add modal)
         if ($request->ajax() || $request->expectsJson()) {
+            // Ensure ledger account is created and refresh the vendor
+            $vendor->refresh();
+
+            // If ledger account is not created by boot method, create it manually
+            if (!$vendor->ledgerAccount) {
+                $vendor->createLedgerAccount();
+                $vendor->refresh();
+            }
+
             // Format display name like in InvoiceController
-            $displayName = 'Vendor - ' . ($vendor->company_name ?: trim($vendor->first_name . ' ' . $vendor->last_name));
+            $displayName = $vendor->company_name ?: trim($vendor->first_name . ' ' . $vendor->last_name);
 
             return response()->json([
                 'success' => true,
