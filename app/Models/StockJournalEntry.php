@@ -244,24 +244,8 @@ class StockJournalEntry extends Model
     private function updateStockMovements(): void
     {
         foreach ($this->items as $item) {
-            // Create stock movement record
-            StockMovement::create([
-                'tenant_id' => $this->tenant_id,
-                'product_id' => $item->product_id,
-                'type' => $this->entry_type,
-                'quantity' => $item->movement_type === 'in' ? $item->quantity : -$item->quantity,
-                'old_stock' => $item->stock_before,
-                'new_stock' => $item->stock_after,
-                'rate' => $item->rate,
-                'reference' => $this->journal_number,
-                'remarks' => $this->narration,
-                'created_by' => $this->created_by,
-            ]);
-
-            // Update product stock
-            $item->product()->update([
-                'stock_quantity' => $item->stock_after,
-            ]);
+            // Create stock movement record using the StockMovement helper method
+            StockMovement::createFromStockJournal($this, $item);
         }
     }
 
@@ -270,26 +254,10 @@ class StockJournalEntry extends Model
      */
     private function reverseStockMovements(): void
     {
-        foreach ($this->items as $item) {
-            // Create reverse stock movement record
-            StockMovement::create([
-                'tenant_id' => $this->tenant_id,
-                'product_id' => $item->product_id,
-                'type' => 'adjustment', // Mark as adjustment for reversal
-                'quantity' => $item->movement_type === 'in' ? -$item->quantity : $item->quantity,
-                'old_stock' => $item->stock_after,
-                'new_stock' => $item->stock_before,
-                'rate' => $item->rate,
-                'reference' => $this->journal_number . ' (Reversed)',
-                'remarks' => "Reversal of {$this->journal_number}: {$this->narration}",
-                'created_by' => auth()->id(),
-            ]);
-
-            // Revert product stock
-            $item->product()->update([
-                'stock_quantity' => $item->stock_before,
-            ]);
-        }
+        // Delete existing stock movements for this journal
+        StockMovement::where('source_transaction_type', get_class($this))
+            ->where('source_transaction_id', $this->id)
+            ->delete();
     }
 
     /**

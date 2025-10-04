@@ -7,7 +7,12 @@ use Illuminate\Http\Request;
 use App\Models\Tenant;
 use App\Models\Customer;
 use App\Models\Product;
+use App\Models\Sale;
+use App\Models\Voucher;
+use App\Models\VoucherEntry;
+use App\Models\StockMovement;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\DB;
 
 class DashboardController extends Controller
 {
@@ -18,154 +23,353 @@ class DashboardController extends Controller
     {
         // Get current tenant from route parameter
         $currentTenant = $tenant;
-      // Load dashboard data
-
-      $totalProducts = Product::where('tenant_id', $tenant->id)->count();
 
         // Get authenticated user
         $user = auth()->user();
 
-        // Sample data for dashboard - replace with actual data queries
+        // Date range for calculations
+        $currentMonth = Carbon::now()->startOfMonth();
+        $lastMonth = Carbon::now()->subMonth()->startOfMonth();
+        $currentYear = Carbon::now()->startOfYear();
+
+        // Get real data from database
+        // Total Products
+        $totalProducts = Product::where('tenant_id', $tenant->id)->count();
+
+        // Total Customers
+        $totalCustomers = Customer::where('tenant_id', $tenant->id)->count();
+
+        // Total Revenue (from Sales + Posted Sales Vouchers)
+        $salesRevenue = Sale::where('tenant_id', $tenant->id)
+            ->where('status', 'completed')
+            ->sum('total_amount');
+
+        $voucherRevenue = Voucher::where('tenant_id', $tenant->id)
+            ->where('status', 'posted')
+            ->whereHas('voucherType', function($q) {
+                $q->where('inventory_effect', 'decrease')
+                  ->where('affects_inventory', true);
+            })
+            ->sum('total_amount');
+
+        $totalRevenue = $salesRevenue + $voucherRevenue;
+
+        // Monthly Revenue
+        $monthlyRevenue = Sale::where('tenant_id', $tenant->id)
+            ->where('status', 'completed')
+            ->whereMonth('sale_date', Carbon::now()->month)
+            ->whereYear('sale_date', Carbon::now()->year)
+            ->sum('total_amount');
+
+        // Last Month Revenue
+        $lastMonthRevenue = Sale::where('tenant_id', $tenant->id)
+            ->where('status', 'completed')
+            ->whereMonth('sale_date', Carbon::now()->subMonth()->month)
+            ->whereYear('sale_date', Carbon::now()->subMonth()->year)
+            ->sum('total_amount');
+
+        // Calculate growth percentage
+        $revenueGrowth = $lastMonthRevenue > 0
+            ? (($monthlyRevenue - $lastMonthRevenue) / $lastMonthRevenue) * 100
+            : 0;
+
+        // Chart Data - Monthly Revenue for current year
         $chartData = [
             'labels' => ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
-            'revenue' => [120000, 190000, 300000, 500000, 200000, 300000, 450000, 600000, 750000, 850000, 900000, 1000000],
-            'expenses' => [80000, 120000, 180000, 250000, 150000, 200000, 280000, 350000, 400000, 450000, 500000, 550000]
+            'revenue' => [],
+            'expenses' => []
         ];
 
-        // Sample alerts data
-        $alerts = [
-            [
-                'type' => 'overdue',
-                'color' => 'red',
-                'title' => 'Overdue Invoices',
-                'message' => '5 invoices are overdue totaling ₦234,500'
-            ],
-            [
+        // Get monthly revenue data
+        for ($month = 1; $month <= 12; $month++) {
+            $revenue = Sale::where('tenant_id', $tenant->id)
+                ->where('status', 'completed')
+                ->whereMonth('sale_date', $month)
+                ->whereYear('sale_date', Carbon::now()->year)
+                ->sum('total_amount');
+
+            $expenses = VoucherEntry::whereHas('voucher', function($q) use ($tenant, $month) {
+                $q->where('tenant_id', $tenant->id)
+                  ->where('status', 'posted')
+                  ->whereMonth('voucher_date', $month)
+                  ->whereYear('voucher_date', Carbon::now()->year);
+            })
+            ->where('debit_amount', '>', 0)
+            ->whereHas('ledgerAccount', function($q) {
+                $q->whereHas('accountGroup', function($q2) {
+                    $q2->where('nature', 'expense');
+                });
+            })
+            ->sum('debit_amount');
+
+            $chartData['revenue'][] = (float) $revenue;
+            $chartData['expenses'][] = (float) $expenses;
+        }
+
+        // Alerts data
+        $alerts = [];
+
+        // Check for low stock products
+        $lowStockCount = Product::where('tenant_id', $tenant->id)
+            ->where('maintain_stock', true)
+            ->lowStock()
+            ->count();
+
+        if ($lowStockCount > 0) {
+            $alerts[] = [
                 'type' => 'low_stock',
                 'color' => 'yellow',
                 'title' => 'Low Stock Alert',
-                'message' => '3 products are running low on inventory'
-            ],
-            [
-                'type' => 'tax_reminder',
-                'color' => 'blue',
-                'title' => 'Tax Reminder',
-                'message' => 'VAT filing due in 7 days'
-            ]
-        ];
+                'message' => "{$lowStockCount} product(s) are running low on inventory"
+            ];
+        }
 
-        // Sample quick stats
-        $quickStats = [
-            'monthly_sales' => 847230,
-            'monthly_sales_percentage' => 68,
-            'customer_growth' => 24,
-            'expense_ratio' => 43
-        ];
+        // Check for out of stock products
+        $outOfStockCount = Product::where('tenant_id', $tenant->id)
+            ->where('maintain_stock', true)
+            ->outOfStock()
+            ->count();
 
-        // Sample recent transactions
-        $recentTransactions = [
-            [
-                'type' => 'income',
-                'icon_color' => 'green',
-                'description' => 'Payment from Adebayo Ltd',
-                'reference' => 'Invoice #INV-2024-001',
-                'amount' => 125000,
-                'date' => Carbon::now()->subHours(2)
-            ],
-            [
-                'type' => 'expense',
-                'icon_color' => 'red',
-                'description' => 'Office Rent Payment',
-                'reference' => 'Monthly expense',
-                'amount' => -85000,
-                'date' => Carbon::now()->subHours(5)
-            ],
-            [
-                'type' => 'invoice',
-                'icon_color' => 'blue',
-                'description' => 'New Invoice Created',
-                'reference' => 'Kemi Enterprises',
-                'amount' => 67500,
-                'date' => Carbon::now()->subDay()
-            ],
-            [
-                'type' => 'purchase',
-                'icon_color' => 'purple',
-                'description' => 'Inventory Purchase',
-                'reference' => 'Office supplies',
-                'amount' => -23450,
-                'date' => Carbon::now()->subDays(2)
-            ]
-        ];
-
-        // Sample recent activities
-        $recentActivities = [
-            [
-                'type' => 'customer_added',
-                'icon_color' => 'blue',
-                'description' => 'New customer added',
-                'details' => 'Tunde Bakare was added to your customer list',
-                'date' => Carbon::now()->subMinutes(30)
-            ],
-            [
-                'type' => 'payment_received',
-                'icon_color' => 'green',
-                'description' => 'Invoice payment received',
-                'details' => '₦125,000 payment for Invoice #INV-2024-001',
-                'date' => Carbon::now()->subHours(2)
-            ],
-            [
-                'type' => 'low_stock',
-                'icon_color' => 'yellow',
-                'description' => 'Low stock alert',
-                'details' => 'Office Paper is running low (5 units remaining)',
-                'date' => Carbon::now()->subHours(4)
-            ],
-            [
-                'type' => 'report_generated',
-                'icon_color' => 'purple',
-                'description' => 'Monthly report generated',
-                'details' => 'Financial report for November 2024 is ready',
-                'date' => Carbon::now()->subDay()
-            ]
-        ];
-
-        // Sample upcoming due dates
-        $upcomingDueDates = [
-            [
-                'type' => 'overdue',
+        if ($outOfStockCount > 0) {
+            $alerts[] = [
+                'type' => 'out_of_stock',
                 'color' => 'red',
-                'status' => 'Overdue',
-                'title' => 'Invoice #INV-2024-045',
-                'client' => 'Emeka Trading Company',
-                'amount' => 89500,
-                'due_date' => Carbon::now()->subDays(5)
-            ],
-            [
-                'type' => 'due_soon',
-                'color' => 'yellow',
-                'status' => 'Due Soon',
-                'title' => 'VAT Filing',
-                'client' => 'Federal Inland Revenue Service',
-                'amount' => null,
-                'due_date' => Carbon::now()->addDays(3)
-            ],
-            [
-                'type' => 'upcoming',
-                'color' => 'blue',
-                'status' => 'Upcoming',
-                'title' => 'Rent Payment',
-                'client' => 'Office Space Rental',
-                'amount' => 150000,
-                'due_date' => Carbon::now()->addDays(7)
-            ]
+                'title' => 'Out of Stock Alert',
+                'message' => "{$outOfStockCount} product(s) are out of stock"
+            ];
+        }
+
+        // Quick stats
+        $totalSalesCount = Sale::where('tenant_id', $tenant->id)
+            ->where('status', 'completed')
+            ->count();
+
+        $avgSalesValue = $totalSalesCount > 0 ? $totalRevenue / $totalSalesCount : 0;
+
+        $quickStats = [
+            'monthly_sales' => $monthlyRevenue,
+            'monthly_sales_percentage' => $revenueGrowth,
+            'customer_growth' => $totalCustomers,
+            'expense_ratio' => $monthlyRevenue > 0
+                ? (($chartData['expenses'][Carbon::now()->month - 1] ?? 0) / $monthlyRevenue) * 100
+                : 0
         ];
 
-        // Get actual customer count
-        $totalCustomers = Customer::where('tenant_id', $currentTenant->id)->count();
-        $totalRevenue = Customer::where('tenant_id', $currentTenant->id)->sum('total_spent');
-        $openInvoices = 0; // This would come from your Invoice model when implemented
-        $avgPaymentDays = 0; // This would be calculated from your payment data when implemented
+        // Recent transactions - Get latest sales and vouchers
+        $recentTransactions = collect();
+
+        // Get recent sales
+        $recentSales = Sale::where('tenant_id', $tenant->id)
+            ->where('status', 'completed')
+            ->with('customer')
+            ->latest()
+            ->take(5)
+            ->get()
+            ->map(function($sale) {
+                return [
+                    'type' => 'sale',
+                    'icon_color' => 'green',
+                    'description' => $sale->customer ? "Sale to {$sale->customer->company_name}" : 'Sale',
+                    'reference' => "Sale #{$sale->sale_number}",
+                    'amount' => (float) $sale->total_amount,
+                    'date' => $sale->sale_date
+                ];
+            });
+
+        // Get recent vouchers
+        $recentVouchers = Voucher::where('tenant_id', $tenant->id)
+            ->where('status', 'posted')
+            ->with('voucherType')
+            ->latest('posted_at')
+            ->take(5)
+            ->get()
+            ->map(function($voucher) {
+                $isIncome = $voucher->voucherType && in_array($voucher->voucherType->inventory_effect, ['decrease']);
+
+                return [
+                    'type' => $isIncome ? 'income' : 'expense',
+                    'icon_color' => $isIncome ? 'blue' : 'red',
+                    'description' => $voucher->voucherType ? $voucher->voucherType->name : 'Voucher',
+                    'reference' => "#{$voucher->voucher_number}",
+                    'amount' => (float) ($isIncome ? $voucher->total_amount : -$voucher->total_amount),
+                    'date' => $voucher->voucher_date
+                ];
+            });
+
+        $recentTransactions = $recentSales->merge($recentVouchers)
+            ->sortByDesc('date')
+            ->take(4)
+            ->values()
+            ->toArray();
+
+        // Recent activities - combine multiple sources
+        $recentActivities = collect();
+
+        // Recent customers
+        $newCustomers = Customer::where('tenant_id', $tenant->id)
+            ->latest()
+            ->take(3)
+            ->get()
+            ->map(function($customer) {
+                $name = $customer->company_name ?: ($customer->first_name . ' ' . $customer->last_name);
+                return [
+                    'type' => 'customer_added',
+                    'icon_color' => 'blue',
+                    'description' => 'New customer added',
+                    'details' => "{$name} was added to your customer list",
+                    'date' => $customer->created_at
+                ];
+            });
+
+        // Recent sales
+        $newSales = Sale::where('tenant_id', $tenant->id)
+            ->where('status', 'completed')
+            ->with('customer')
+            ->latest()
+            ->take(3)
+            ->get()
+            ->map(function($sale) {
+                $customerName = $sale->customer ? $sale->customer->company_name : 'Customer';
+                return [
+                    'type' => 'payment_received',
+                    'icon_color' => 'green',
+                    'description' => 'Sale completed',
+                    'details' => '₦' . number_format($sale->total_amount, 2) . " from {$customerName}",
+                    'date' => $sale->sale_date
+                ];
+            });
+
+        // Recent stock movements
+        $stockAlerts = StockMovement::where('tenant_id', $tenant->id)
+            ->with('product')
+            ->latest()
+            ->take(2)
+            ->get()
+            ->map(function($movement) {
+                return [
+                    'type' => 'stock_movement',
+                    'icon_color' => $movement->quantity > 0 ? 'green' : 'red',
+                    'description' => $movement->quantity > 0 ? 'Stock added' : 'Stock reduced',
+                    'details' => "{$movement->product->name}: " . abs($movement->quantity) . " units",
+                    'date' => $movement->created_at
+                ];
+            });
+
+        $recentActivities = $newCustomers->merge($newSales)->merge($stockAlerts)
+            ->sortByDesc('date')
+            ->take(4)
+            ->values()
+            ->toArray();
+
+        // Upcoming due dates - for now just show pending vouchers
+        $upcomingDueDates = Voucher::where('tenant_id', $tenant->id)
+            ->where('status', 'draft')
+            ->with('voucherType')
+            ->orderBy('voucher_date')
+            ->take(3)
+            ->get()
+            ->map(function($voucher) {
+                $daysUntilDue = Carbon::parse($voucher->voucher_date)->diffInDays(Carbon::now(), false);
+
+                if ($daysUntilDue < 0) {
+                    $type = 'overdue';
+                    $color = 'red';
+                    $status = 'Overdue';
+                } elseif ($daysUntilDue <= 3) {
+                    $type = 'due_soon';
+                    $color = 'yellow';
+                    $status = 'Due Soon';
+                } else {
+                    $type = 'upcoming';
+                    $color = 'blue';
+                    $status = 'Upcoming';
+                }
+
+                return [
+                    'type' => $type,
+                    'color' => $color,
+                    'status' => $status,
+                    'title' => "Voucher #{$voucher->voucher_number}",
+                    'client' => $voucher->voucherType ? $voucher->voucherType->name : 'N/A',
+                    'amount' => (float) $voucher->total_amount,
+                    'due_date' => Carbon::parse($voucher->voucher_date)
+                ];
+            })
+            ->toArray();
+
+        // Open invoices/sales count
+        $openInvoices = Sale::where('tenant_id', $currentTenant->id)
+            ->where('status', '!=', 'completed')
+            ->count();
+
+        // Average payment days (calculated from completed sales)
+        $completedSales = Sale::where('tenant_id', $currentTenant->id)
+            ->where('status', 'completed')
+            ->whereNotNull('updated_at')
+            ->get();
+
+        $avgPaymentDays = $completedSales->count() > 0
+            ? $completedSales->avg(function($sale) {
+                return Carbon::parse($sale->created_at)->diffInDays(Carbon::parse($sale->updated_at));
+            })
+            : 0;
+
+        // Top selling products (based on sales items and stock movements)
+        $topProducts = DB::table('sale_items')
+            ->join('sales', 'sale_items.sale_id', '=', 'sales.id')
+            ->join('products', 'sale_items.product_id', '=', 'products.id')
+            ->where('sales.tenant_id', $tenant->id)
+            ->where('sales.status', 'completed')
+            ->whereMonth('sales.sale_date', Carbon::now()->month)
+            ->whereYear('sales.sale_date', Carbon::now()->year)
+            ->select(
+                'products.name',
+                DB::raw('COUNT(sale_items.id) as sales_count'),
+                DB::raw('SUM(sale_items.line_total) as total_revenue'),
+                DB::raw('SUM(sale_items.quantity) as total_quantity')
+            )
+            ->groupBy('products.id', 'products.name')
+            ->orderByDesc('total_revenue')
+            ->limit(5)
+            ->get()
+            ->map(function($item) {
+                return [
+                    'name' => $item->name,
+                    'sales' => (int) $item->sales_count,
+                    'revenue' => (float) $item->total_revenue,
+                    'growth' => 0 // Can be calculated by comparing with last month
+                ];
+            })
+            ->toArray();
+
+        // Top customers (based on sales)
+        $topCustomers = DB::table('sales')
+            ->join('customers', 'sales.customer_id', '=', 'customers.id')
+            ->where('sales.tenant_id', $tenant->id)
+            ->where('sales.status', 'completed')
+            ->whereMonth('sales.sale_date', Carbon::now()->month)
+            ->whereYear('sales.sale_date', Carbon::now()->year)
+            ->select(
+                'customers.company_name',
+                'customers.first_name',
+                'customers.last_name',
+                DB::raw('COUNT(sales.id) as order_count'),
+                DB::raw('SUM(sales.total_amount) as total_spent')
+            )
+            ->groupBy('customers.id', 'customers.company_name', 'customers.first_name', 'customers.last_name')
+            ->orderByDesc('total_spent')
+            ->limit(5)
+            ->get()
+            ->map(function($item) {
+                $name = $item->company_name ?: trim($item->first_name . ' ' . $item->last_name);
+                return [
+                    'name' => $name ?: 'Unknown Customer',
+                    'orders' => (int) $item->order_count,
+                    'spent' => (float) $item->total_spent,
+                    'growth' => 0 // Can be calculated by comparing with last month
+                ];
+            })
+            ->toArray();
 
         return view('tenant.dashboard.index', [
             'currentTenant' => $currentTenant,
@@ -182,6 +386,10 @@ class DashboardController extends Controller
             'openInvoices' => $openInvoices,
             'avgPaymentDays' => $avgPaymentDays,
             'totalProducts' => $totalProducts,
+            'topProducts' => $topProducts,
+            'topCustomers' => $topCustomers,
+            'totalSalesCount' => $totalSalesCount,
+            'avgSalesValue' => $avgSalesValue,
         ]);
     }
 }

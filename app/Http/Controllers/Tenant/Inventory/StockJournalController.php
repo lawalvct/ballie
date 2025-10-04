@@ -137,8 +137,8 @@ class StockJournalController extends Controller
             foreach ($request->items as $itemData) {
                 $product = Product::findOrFail($itemData['product_id']);
 
-                // Get current stock
-                $stockBefore = $product->current_stock ?? 0;
+                // Get current stock using date-based calculation
+                $stockBefore = $product->getStockAsOfDate(now());
 
                 StockJournalEntryItem::create([
                     'stock_journal_entry_id' => $journalEntry->id,
@@ -249,8 +249,8 @@ class StockJournalController extends Controller
             foreach ($request->items as $itemData) {
                 $product = Product::findOrFail($itemData['product_id']);
 
-                // Get current stock
-                $stockBefore = $product->current_stock ?? 0;
+                // Get current stock using date-based calculation
+                $stockBefore = $product->getStockAsOfDate(now());
 
                 StockJournalEntryItem::create([
                     'stock_journal_entry_id' => $stockJournal->id,
@@ -357,7 +357,7 @@ class StockJournalController extends Controller
     public function getProductStock(Tenant $tenant, Product $product)
     {
         return response()->json([
-            'current_stock' => $product->current_stock ?? 0,
+            'current_stock' => $product->getStockAsOfDate(now()),
             'unit' => $product->primaryUnit->name ?? '',
             'rate' => $product->purchase_rate ?? 0,
         ]);
@@ -375,7 +375,7 @@ class StockJournalController extends Controller
         ]);
 
         $product = Product::findOrFail($request->product_id);
-        $currentStock = $product->current_stock ?? 0;
+        $currentStock = $product->getStockAsOfDate(now());
 
         if ($request->movement_type === 'in') {
             $newStock = $currentStock + $request->quantity;

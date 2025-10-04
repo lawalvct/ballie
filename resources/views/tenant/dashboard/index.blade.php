@@ -75,12 +75,12 @@
             <div class="flex items-center justify-between">
                 <div>
                     <p class="text-sm font-medium text-gray-600">Total Revenue</p>
-                    <p class="text-2xl font-bold text-gray-900">₦45.2M</p>
-                    <p class="text-sm text-green-600 flex items-center mt-1">
+                    <p class="text-2xl font-bold text-gray-900">₦{{ number_format($totalRevenue, 2) }}</p>
+                    <p class="text-sm {{ $quickStats['monthly_sales_percentage'] >= 0 ? 'text-green-600' : 'text-red-600' }} flex items-center mt-1">
                         <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="{{ $quickStats['monthly_sales_percentage'] >= 0 ? 'M13 7h8m0 0v8m0-8l-8 8-4-4-6 6' : 'M13 17h8m0 0V9m0 8l-8-8-4 4-6-6' }}"></path>
                         </svg>
-                        +12.5% from last month
+                        {{ $quickStats['monthly_sales_percentage'] >= 0 ? '+' : '' }}{{ number_format($quickStats['monthly_sales_percentage'], 1) }}% from last month
                     </p>
                 </div>
                 <div class="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
@@ -95,12 +95,9 @@
             <div class="flex items-center justify-between">
                 <div>
                     <p class="text-sm font-medium text-gray-600">Total Sales</p>
-                    <p class="text-2xl font-bold text-gray-900">2,847</p>
-                    <p class="text-sm text-green-600 flex items-center mt-1">
-                        <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path>
-                        </svg>
-                        +8.2% from last month
+                    <p class="text-2xl font-bold text-gray-900">{{ number_format($totalSalesCount) }}</p>
+                    <p class="text-sm text-gray-500 mt-1">
+                        This month
                     </p>
                 </div>
                 <div class="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
@@ -115,12 +112,9 @@
             <div class="flex items-center justify-between">
                 <div>
                     <p class="text-sm font-medium text-gray-600">Avg Sales Value</p>
-                    <p class="text-2xl font-bold text-gray-900">₦15,890</p>
-                    <p class="text-sm text-red-600 flex items-center mt-1">
-                        <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 17h8m0 0V9m0 8l-8-8-4 4-6-6"></path>
-                        </svg>
-                        -2.1% from last month
+                    <p class="text-2xl font-bold text-gray-900">₦{{ number_format($avgSalesValue, 2) }}</p>
+                    <p class="text-sm text-gray-500 mt-1">
+                        Per transaction
                     </p>
                 </div>
                 <div class="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
@@ -134,13 +128,10 @@
         <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
             <div class="flex items-center justify-between">
                 <div>
-                    <p class="text-sm font-medium text-gray-600">Active Customers</p>
-                    <p class="text-2xl font-bold text-gray-900">1,234</p>
-                    <p class="text-sm text-green-600 flex items-center mt-1">
-                        <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path>
-                        </svg>
-                        +15.3% from last month
+                    <p class="text-sm font-medium text-gray-600">Total Customers</p>
+                    <p class="text-2xl font-bold text-gray-900">{{ number_format($totalCustomers) }}</p>
+                    <p class="text-sm text-gray-500 mt-1">
+                        Registered
                     </p>
                 </div>
                 <div class="w-12 h-12 bg-orange-100 rounded-lg flex items-center justify-center">
@@ -334,17 +325,7 @@
                 </select>
             </div>
             <div class="space-y-4">
-                @php
-                $topProducts = [
-                    ['name' => 'iPhone 15 Pro', 'sales' => 145, 'revenue' => 72500000, 'growth' => 12.5],
-                    ['name' => 'Samsung Galaxy S24', 'sales' => 128, 'revenue' => 51200000, 'growth' => 8.3],
-                    ['name' => 'MacBook Air M3', 'sales' => 89, 'revenue' => 89000000, 'growth' => -2.1],
-                    ['name' => 'iPad Pro', 'sales' => 76, 'revenue' => 45600000, 'growth' => 15.7],
-                    ['name' => 'AirPods Pro', 'sales' => 234, 'revenue' => 23400000, 'growth' => 22.4],
-                ];
-                @endphp
-
-                @foreach($topProducts as $index => $product)
+                @forelse($topProducts as $index => $product)
                 <div class="flex items-center justify-between">
                     <div class="flex items-center">
                         <div class="w-8 h-8 bg-gray-100 rounded-lg flex items-center justify-center mr-3">
@@ -362,7 +343,12 @@
                         </p>
                     </div>
                 </div>
-                @endforeach
+                @empty
+                <div class="text-center py-8">
+                    <p class="text-gray-500 text-sm">No product sales data yet</p>
+                    <p class="text-gray-400 text-xs mt-1">Start making sales to see top products</p>
+                </div>
+                @endforelse
             </div>
         </div>
 
@@ -377,17 +363,7 @@
                 </select>
             </div>
             <div class="space-y-4">
-                @php
-                $topCustomers = [
-                    ['name' => 'LawalVictor', 'orders' => 23, 'spent' => 2450000, 'growth' => 18.5],
-                    ['name' => 'Sarah Ade', 'orders' => 19, 'spent' => 1890000, 'growth' => 12.3],
-                    ['name' => 'Mike Johnson', 'orders' => 15, 'spent' => 1650000, 'growth' => -5.2],
-                    ['name' => 'Janet Olu', 'orders' => 12, 'spent' => 1420000, 'growth' => 25.7],
-                    ['name' => 'Taiwo Adeyemi', 'orders' => 11, 'spent' => 1180000, 'growth' => 8.9],
-                ];
-                @endphp
-
-                @foreach($topCustomers as $index => $customer)
+                @forelse($topCustomers as $index => $customer)
                 <div class="flex items-center justify-between">
                     <div class="flex items-center">
                         <div class="w-8 h-8 bg-gray-300 rounded-full flex items-center justify-center mr-3">
@@ -405,7 +381,12 @@
                         </p>
                     </div>
                 </div>
-                @endforeach
+                @empty
+                <div class="text-center py-8">
+                    <p class="text-gray-500 text-sm">No customer data yet</p>
+                    <p class="text-gray-400 text-xs mt-1">Start making sales to see top customers</p>
+                </div>
+                @endforelse
             </div>
         </div>
     </div>
@@ -415,15 +396,15 @@
 @push('scripts')
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    // Revenue Chart
+    // Revenue Chart with real data from backend
     const revenueCtx = document.getElementById('revenueChart').getContext('2d');
     new Chart(revenueCtx, {
         type: 'line',
         data: {
-            labels: ['Jan 1', 'Jan 8', 'Jan 15', 'Jan 22', 'Jan 29', 'Feb 5', 'Feb 12'],
+            labels: {!! json_encode($chartData['labels']) !!},
             datasets: [{
                 label: 'Revenue',
-                data: [1200000, 1450000, 1380000, 1620000, 1890000, 2100000, 2350000],
+                data: {!! json_encode($chartData['revenue']) !!},
                 borderColor: 'rgb(59, 130, 246)',
                 backgroundColor: 'rgba(59, 130, 246, 0.1)',
                 tension: 0.4,

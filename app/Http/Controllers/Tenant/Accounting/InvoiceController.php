@@ -741,6 +741,7 @@ private function createAccountingEntries(Voucher $voucher, array $inventoryItems
 
     private function updateProductStock(array $inventoryItems, string $operation, $voucher = null)
     {
+    
         if (!$voucher) {
             throw new \Exception('Voucher is required for stock movement tracking');
         }

@@ -52,7 +52,7 @@
             <div>
                 <h3 class="text-sm font-medium text-gray-500">Current Stock</h3>
                 <p class="mt-1 text-2xl font-semibold text-gray-900">
-                    {{ number_format($product->current_stock, 2) }}
+                    {{ number_format($product->getStockAsOfDate(now()), 2) }}
                     {{ $product->primaryUnit->symbol ?? $product->primaryUnit->name ?? '' }}
                 </p>
             </div>
@@ -97,7 +97,7 @@
                        id="to_date"
                        name="to_date"
                        value="{{ $toDate }}"
-                       max="{{ now()->toDateString() }}"
+                       {{-- max="{{ now()->toDateString() }}" --}}
                        class="block w-full border-gray-300 rounded-lg shadow-sm focus:ring-green-500 focus:border-green-500">
             </div>
 

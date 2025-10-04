@@ -200,15 +200,15 @@ public function stockMovements(Request $request, Tenant $tenant, Product $produc
         $query->where('transaction_type', $transactionType);
     }
 
-    $movements = $query->orderBy('transaction_date', 'asc')
-        ->orderBy('created_at', 'asc')
+    $movements = $query->orderBy('transaction_date', 'desc')
+        ->orderBy('id', 'desc')
         ->paginate(50);
 
     // Calculate running stock balance
     $startingStock = $product->getStockAsOfDate($fromDate);
     $runningStock = $startingStock;
 
-    // Apply running balance to movements
+    // Apply running balance to movements (works correctly with ascending order)
     $movements->getCollection()->transform(function ($movement) use (&$runningStock) {
         $runningStock += $movement->quantity;
         $movement->running_stock = $runningStock;

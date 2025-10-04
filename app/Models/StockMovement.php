@@ -157,6 +157,11 @@ class StockMovement extends Model
         $quantity = $movementType === 'out' ? -abs($item->quantity) : abs($item->quantity);
         $journalNumber = $stockJournal->journal_number ?? $stockJournal->id;
 
+        // Calculate old stock before this movement using date-based calculation
+        $product = \App\Models\Product::find($item->product_id);
+        $oldStock = $product ? $product->getStockAsOfDate($stockJournal->journal_date ?? now(), true) : 0;
+        $newStock = $oldStock + $quantity;
+
         return self::create([
             'tenant_id' => $stockJournal->tenant_id,
             'product_id' => $item->product_id,
@@ -172,8 +177,8 @@ class StockMovement extends Model
             'batch_number' => $item->batch_number,
             'expiry_date' => $item->expiry_date,
             'created_by' => $stockJournal->created_by ?? auth()->id(),
-            'old_stock' => $item->stock_before ?? 0,
-            'new_stock' => $item->stock_after ?? 0,
+            'old_stock' => $oldStock,
+            'new_stock' => $newStock,
             'remarks' => $item->remarks,
         ]);
     }
