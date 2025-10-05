@@ -172,9 +172,10 @@ class DashboardController extends Controller
                     'description' => $sale->customer ? "Sale to {$sale->customer->company_name}" : 'Sale',
                     'reference' => "Sale #{$sale->sale_number}",
                     'amount' => (float) $sale->total_amount,
-                    'date' => $sale->sale_date
+                    'date' => $sale->sale_date instanceof \Carbon\Carbon ? $sale->sale_date->toDateString() : $sale->sale_date
                 ];
-            });
+            })
+            ->values();
 
         // Get recent vouchers
         $recentVouchers = Voucher::where('tenant_id', $tenant->id)
@@ -192,15 +193,22 @@ class DashboardController extends Controller
                     'description' => $voucher->voucherType ? $voucher->voucherType->name : 'Voucher',
                     'reference' => "#{$voucher->voucher_number}",
                     'amount' => (float) ($isIncome ? $voucher->total_amount : -$voucher->total_amount),
-                    'date' => $voucher->voucher_date
+                    'date' => $voucher->voucher_date instanceof \Carbon\Carbon ? $voucher->voucher_date->toDateString() : $voucher->voucher_date
                 ];
-            });
+            })
+            ->values();
 
-        $recentTransactions = $recentSales->merge($recentVouchers)
-            ->sortByDesc('date')
-            ->take(4)
-            ->values()
-            ->toArray();
+        // Merge and convert to plain array before sorting
+        $allTransactions = $recentSales->merge($recentVouchers)->toArray();
+        
+        // Sort using usort
+        usort($allTransactions, function($a, $b) {
+            $dateA = strtotime($a['date']);
+            $dateB = strtotime($b['date']);
+            return $dateB - $dateA; // Descending order
+        });
+        
+        $recentTransactions = array_slice($allTransactions, 0, 4);
 
         // Recent activities - combine multiple sources
         $recentActivities = collect();
@@ -217,9 +225,10 @@ class DashboardController extends Controller
                     'icon_color' => 'blue',
                     'description' => 'New customer added',
                     'details' => "{$name} was added to your customer list",
-                    'date' => $customer->created_at
+                    'date' => $customer->created_at->toDateTimeString()
                 ];
-            });
+            })
+            ->values();
 
         // Recent sales
         $newSales = Sale::where('tenant_id', $tenant->id)
@@ -235,9 +244,10 @@ class DashboardController extends Controller
                     'icon_color' => 'green',
                     'description' => 'Sale completed',
                     'details' => '₦' . number_format($sale->total_amount, 2) . " from {$customerName}",
-                    'date' => $sale->sale_date
+                    'date' => $sale->sale_date instanceof \Carbon\Carbon ? $sale->sale_date->toDateString() : $sale->sale_date
                 ];
-            });
+            })
+            ->values();
 
         // Recent stock movements
         $stockAlerts = StockMovement::where('tenant_id', $tenant->id)
@@ -251,15 +261,22 @@ class DashboardController extends Controller
                     'icon_color' => $movement->quantity > 0 ? 'green' : 'red',
                     'description' => $movement->quantity > 0 ? 'Stock added' : 'Stock reduced',
                     'details' => "{$movement->product->name}: " . abs($movement->quantity) . " units",
-                    'date' => $movement->created_at
+                    'date' => $movement->created_at->toDateTimeString()
                 ];
-            });
+            })
+            ->values();
 
-        $recentActivities = $newCustomers->merge($newSales)->merge($stockAlerts)
-            ->sortByDesc('date')
-            ->take(4)
-            ->values()
-            ->toArray();
+        // Merge and convert to plain array before sorting
+        $allActivities = $newCustomers->merge($newSales)->merge($stockAlerts)->toArray();
+        
+        // Sort using usort
+        usort($allActivities, function($a, $b) {
+            $dateA = strtotime($a['date']);
+            $dateB = strtotime($b['date']);
+            return $dateB - $dateA; // Descending order
+        });
+        
+        $recentActivities = array_slice($allActivities, 0, 4);
 
         // Upcoming due dates - for now just show pending vouchers
         $upcomingDueDates = Voucher::where('tenant_id', $tenant->id)
@@ -269,7 +286,8 @@ class DashboardController extends Controller
             ->take(3)
             ->get()
             ->map(function($voucher) {
-                $daysUntilDue = Carbon::parse($voucher->voucher_date)->diffInDays(Carbon::now(), false);
+                $dueDate = Carbon::parse($voucher->voucher_date);
+                $daysUntilDue = $dueDate->diffInDays(Carbon::now(), false);
 
                 if ($daysUntilDue < 0) {
                     $type = 'overdue';
@@ -292,9 +310,10 @@ class DashboardController extends Controller
                     'title' => "Voucher #{$voucher->voucher_number}",
                     'client' => $voucher->voucherType ? $voucher->voucherType->name : 'N/A',
                     'amount' => (float) $voucher->total_amount,
-                    'due_date' => Carbon::parse($voucher->voucher_date)
+                    'due_date' => $dueDate->format('Y-m-d')
                 ];
             })
+            ->values()
             ->toArray();
 
         // Open invoices/sales count
@@ -340,6 +359,7 @@ class DashboardController extends Controller
                     'growth' => 0 // Can be calculated by comparing with last month
                 ];
             })
+            ->values()
             ->toArray();
 
         // Top customers (based on sales)
@@ -369,6 +389,7 @@ class DashboardController extends Controller
                     'growth' => 0 // Can be calculated by comparing with last month
                 ];
             })
+            ->values()
             ->toArray();
 
         return view('tenant.dashboard.index', [
