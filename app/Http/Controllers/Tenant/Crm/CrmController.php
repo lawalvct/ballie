@@ -6,8 +6,11 @@ use App\Http\Controllers\Controller;
 use App\Models\Customer;
 use App\Models\Vendor;
 use App\Models\Tenant;
+use App\Models\Voucher;
+use App\Models\InvoiceItem;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Carbon\Carbon;
 
 class CrmController extends Controller
 {
@@ -18,7 +21,7 @@ class CrmController extends Controller
     {
         // Get recent customers for the dashboard
         $recentCustomers = Customer::where('tenant_id', $tenant->id)
-         
+
             ->orderBy('created_at', 'desc')
             ->limit(5)
             ->get();
@@ -42,39 +45,106 @@ class CrmController extends Controller
         $totalPayables = 0; // Calculate from vendor invoices
         $avgPaymentDays = 0; // Calculate average payment time
 
-        // Recent activities (mock data - replace with actual activity log)
-        $recentActivities = collect([
-            (object)[
-                'type' => 'customer_added',
-                'description' => 'New customer John Doe was added',
-                'date' => now()->subHours(2),
-                'icon' => 'user-plus'
-            ],
-            (object)[
-                'type' => 'quote_sent',
-                'description' => 'Quote #QT-001 sent to Alice Smith',
-                'date' => now()->subHours(4),
-                'icon' => 'document-text'
-            ],
-            (object)[
-                'type' => 'payment_received',
-                'description' => 'Payment received from Mike Brown - ₦15,000',
-                'date' => now()->subHours(6),
-                'icon' => 'cash'
-            ],
-            (object)[
-                'type' => 'vendor_added',
-                'description' => 'New vendor Tech Solutions Inc. was added',
-                'date' => now()->subDay(),
-                'icon' => 'building-office'
-            ],
-            (object)[
-                'type' => 'invoice_created',
-                'description' => 'Invoice #INV-001 created for Sarah Johnson',
-                'date' => now()->subDays(2),
-                'icon' => 'document'
-            ]
-        ]);
+        // Recent activities from database
+        $activities = collect();
+
+        // Get recent customers
+        $recentCustomersActivity = Customer::where('tenant_id', $tenant->id)
+            ->orderBy('created_at', 'desc')
+            ->limit(3)
+            ->get()
+            ->map(function($customer) {
+                return (object)[
+                    'type' => 'customer_added',
+                    'description' => 'New customer ' . $customer->company_name . ' was added',
+                    'date' => $customer->created_at,
+                    'icon' => 'user-plus',
+                    'timestamp' => $customer->created_at->timestamp
+                ];
+            });
+
+        // Get recent vendors
+        $recentVendorsActivity = Vendor::where('tenant_id', $tenant->id)
+            ->orderBy('created_at', 'desc')
+            ->limit(3)
+            ->get()
+            ->map(function($vendor) {
+                return (object)[
+                    'type' => 'vendor_added',
+                    'description' => 'New vendor ' . $vendor->company_name . ' was added',
+                    'date' => $vendor->created_at,
+                    'icon' => 'building-office',
+                    'timestamp' => $vendor->created_at->timestamp
+                ];
+            });
+
+        // Get recent invoices (vouchers with invoice items)
+        $recentInvoicesActivity = Voucher::where('tenant_id', $tenant->id)
+            ->where('status', Voucher::STATUS_POSTED)
+            ->whereHas('items') // Only vouchers with invoice items
+            ->with(['voucherType', 'items'])
+            ->orderBy('created_at', 'desc')
+            ->limit(5)
+            ->get()
+            ->map(function($voucher) {
+                $totalAmount = $voucher->items->sum('total');
+                return (object)[
+                    'type' => 'invoice_created',
+                    'description' => $voucher->voucherType->name . ' #' . $voucher->voucher_number . ' - ₦' . number_format($totalAmount, 2),
+                    'date' => $voucher->created_at,
+                    'icon' => 'document',
+                    'timestamp' => $voucher->created_at->timestamp
+                ];
+            });
+
+        // Get recent payment vouchers (receipts)
+        $recentPaymentsActivity = Voucher::where('tenant_id', $tenant->id)
+            ->where('status', Voucher::STATUS_POSTED)
+            ->whereHas('voucherType', function($query) {
+                $query->where('code', 'RCV') // Receipt vouchers
+                      ->orWhere('affects_cashbank', true);
+            })
+            ->with('voucherType')
+            ->orderBy('posted_at', 'desc')
+            ->limit(5)
+            ->get()
+            ->map(function($voucher) {
+                return (object)[
+                    'type' => 'payment_received',
+                    'description' => 'Payment received - ' . $voucher->voucherType->name . ' #' . $voucher->voucher_number . ' - ₦' . number_format($voucher->total_amount, 2),
+                    'date' => $voucher->posted_at,
+                    'icon' => 'cash',
+                    'timestamp' => $voucher->posted_at->timestamp
+                ];
+            });
+
+        // Get recent vouchers
+        $recentVouchersActivity = Voucher::where('tenant_id', $tenant->id)
+            ->where('status', Voucher::STATUS_POSTED)
+            ->with('voucherType')
+            ->orderBy('posted_at', 'desc')
+            ->limit(5)
+            ->get()
+            ->map(function($voucher) {
+                return (object)[
+                    'type' => 'voucher_posted',
+                    'description' => $voucher->voucherType->name . ' #' . $voucher->voucher_number . ' was posted',
+                    'date' => $voucher->posted_at,
+                    'icon' => 'document-text',
+                    'timestamp' => $voucher->posted_at->timestamp
+                ];
+            });
+
+        // Merge all activities and sort by date
+        $recentActivities = $activities
+            ->merge($recentCustomersActivity)
+            ->merge($recentVendorsActivity)
+            ->merge($recentInvoicesActivity)
+            ->merge($recentPaymentsActivity)
+            ->merge($recentVouchersActivity)
+            ->sortByDesc('timestamp')
+            ->take(10)
+            ->values();
 
         return view('tenant.crm.index', compact(
             'tenant',
