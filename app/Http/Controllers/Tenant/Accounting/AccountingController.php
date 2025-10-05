@@ -88,13 +88,42 @@ class AccountingController extends Controller
 
     private function getOutstandingInvoices(Tenant $tenant)
     {
-        // Assuming you have an Invoice model
-        return 1520 ?? 0;
+        // Get outstanding amount from Sales (where paid_amount < total_amount)
+        $outstandingSales = DB::table('sales')
+            ->where('tenant_id', $tenant->id)
+            ->where('status', 'completed')
+            ->whereRaw('paid_amount < total_amount')
+            ->sum(DB::raw('total_amount - paid_amount'));
+
+        // Get outstanding from posted vouchers with invoice items (assuming these are sales invoices)
+        $outstandingVouchers = DB::table('vouchers')
+            ->where('tenant_id', $tenant->id)
+            ->where('status', Voucher::STATUS_POSTED)
+            ->whereExists(function($query) {
+                $query->select(DB::raw(1))
+                    ->from('invoice_items')
+                    ->whereColumn('invoice_items.voucher_id', 'vouchers.id');
+            })
+            ->sum('total_amount');
+
+        return (float) ($outstandingSales + $outstandingVouchers);
     }
 
     private function getPendingInvoicesCount(Tenant $tenant)
     {
-        return 5622?? 0;
+        // Count draft vouchers with invoice items
+        $pendingVouchers = Voucher::where('tenant_id', $tenant->id)
+            ->where('status', Voucher::STATUS_DRAFT)
+            ->whereHas('items')
+            ->count();
+
+        // Count pending sales
+        $pendingSales = DB::table('sales')
+            ->where('tenant_id', $tenant->id)
+            ->where('status', 'pending')
+            ->count();
+
+        return $pendingVouchers + $pendingSales;
     }
 
     private function getRecentTransactions(Tenant $tenant)
@@ -132,8 +161,44 @@ class AccountingController extends Controller
 
     private function getVoucherSummary(Tenant $tenant)
     {
-        return 56;
+        // Get voucher summary grouped by voucher type for current month
+        return VoucherType::where('tenant_id', $tenant->id)
+            ->where('is_active', true)
+            ->with(['vouchers' => function($query) {
+                $query->where('status', Voucher::STATUS_POSTED)
+                    ->whereMonth('voucher_date', Carbon::now()->month)
+                    ->whereYear('voucher_date', Carbon::now()->year);
+            }])
+            ->get()
+            ->map(function($voucherType) {
+                $vouchers = $voucherType->vouchers;
+                return [
+                    'type' => $voucherType->name,
+                    'code' => $voucherType->code,
+                    'count' => $vouchers->count(),
+                    'total' => $vouchers->sum('total_amount'),
+                    'color' => $this->getVoucherTypeColor($voucherType->code),
+                ];
+            })
+            ->filter(function($summary) {
+                return $summary['count'] > 0; // Only show types with vouchers
+            })
+            ->values();
+    }
 
+    private function getVoucherTypeColor($code)
+    {
+        // Assign colors based on voucher type code
+        $colors = [
+            'PAY' => 'red',
+            'RCV' => 'green',
+            'JV' => 'blue',
+            'SAL' => 'purple',
+            'PUR' => 'orange',
+            'CN' => 'yellow',
+            'DN' => 'pink',
+        ];
 
+        return $colors[$code] ?? 'gray';
     }
 }

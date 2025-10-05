@@ -21,10 +21,12 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        // Share tenant helper with all views
+        // Share tenant with all views
         View::composer('*', function ($view) {
-            if (app()->bound('tenant')) {
+            $tenant = tenant(); // Use the tenant() helper function
+            if ($tenant) {
                 $view->with('tenantHelper', new TenantHelper());
+                $view->with('tenant', $tenant);
             }
         });
     }

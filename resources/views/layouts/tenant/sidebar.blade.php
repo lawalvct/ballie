@@ -9,6 +9,7 @@
                 <span class="text-xl font-bold bg-gradient-to-r from-white to-gray-200 bg-clip-text text-transparent">
                     {{ $tenant->name ?? 'Ballie' }}
                 </span>
+                @if(isset($tenant))
                 <div class="flex items-center space-x-2 mt-1">
                     <div class="text-xs text-gray-300">
                         {{ $tenant->plan ? $tenant->plan->name : 'Free' }}
@@ -31,6 +32,7 @@
                         </span>
                     @endif
                 </div>
+                @endif
             </div>
         </div>
         <button id="sidebarCollapseBtn" class="p-2 rounded-lg hover:bg-white hover:bg-opacity-10 hidden lg:block transition-all duration-200 -mr-2 sidebar-collapse-btn">
