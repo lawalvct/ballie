@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Tenant\AuthController;
 use App\Http\Controllers\Tenant\DashboardController;
 use App\Http\Controllers\Tenant\OnboardingController;
+use App\Http\Controllers\Tenant\TourController;
 use App\Http\Controllers\Tenant\Inventory\ProductController;
 use App\Http\Controllers\Tenant\Crm\CustomerController;
 use App\Http\Controllers\Tenant\Accounting\InvoiceController;
@@ -126,6 +127,21 @@ Route::middleware(['auth'])->group(function () {
     Route::middleware(['onboarding.completed', 'subscription.check'])->group(function () {
         // Dashboard
         Route::get('/dashboard', [DashboardController::class, 'index'])->name('tenant.dashboard');
+
+        // Tour Routes - Guide for new users
+        Route::prefix('tour')->name('tenant.tour.')->group(function () {
+            Route::get('/start', [TourController::class, 'start'])->name('start');
+            Route::get('/dashboard', [TourController::class, 'dashboard'])->name('dashboard');
+            Route::get('/customers', [TourController::class, 'customers'])->name('customers');
+            Route::get('/products', [TourController::class, 'products'])->name('products');
+            Route::get('/sales', [TourController::class, 'sales'])->name('sales');
+            Route::get('/inventory', [TourController::class, 'inventory'])->name('inventory');
+            Route::get('/accounting', [TourController::class, 'accounting'])->name('accounting');
+            Route::get('/reports', [TourController::class, 'reports'])->name('reports');
+            Route::get('/settings', [TourController::class, 'settings'])->name('settings');
+            Route::post('/complete', [TourController::class, 'complete'])->name('complete');
+            Route::post('/skip', [TourController::class, 'skip'])->name('skip');
+        });
 
         // Accounting Module
         Route::prefix('accounting')->name('tenant.accounting.')->group(function () {

@@ -431,6 +431,7 @@ class DashboardController extends Controller
             'topCustomers' => $topCustomers,
             'totalSalesCount' => $totalSalesCount,
             'avgSalesValue' => $avgSalesValue,
+            'showTour' => !$user->tour_completed,
         ]);
     }
 }

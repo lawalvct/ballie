@@ -10,6 +10,48 @@
 
 @section('content')
 <div class="space-y-6">
+    <!-- Tour Banner for New Users -->
+    @if(isset($showTour) && $showTour)
+    <div class="bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 rounded-2xl shadow-2xl overflow-hidden transform hover:scale-[1.01] transition-all duration-300">
+        <div class="p-6 md:p-8">
+            <div class="flex flex-col md:flex-row items-center justify-between">
+                <div class="flex items-start space-x-4 mb-4 md:mb-0">
+                    <div class="flex-shrink-0">
+                        <div class="w-16 h-16 bg-white rounded-2xl flex items-center justify-center shadow-lg">
+                            <svg class="w-10 h-10 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                            </svg>
+                        </div>
+                    </div>
+                    <div class="text-white">
+                        <h3 class="text-2xl md:text-3xl font-bold mb-2">Welcome to Ballie! 🎉</h3>
+                        <p class="text-blue-100 text-base md:text-lg mb-1">New to the platform? Let us show you around!</p>
+                        <p class="text-blue-200 text-sm">Take a quick 2-minute tour to learn all the features and get started quickly.</p>
+                    </div>
+                </div>
+                <div class="flex flex-col sm:flex-row gap-3">
+                    <form action="{{ route('tenant.tour.skip', ['tenant' => $tenant->slug]) }}" method="POST" class="inline">
+                        @csrf
+                        <button type="submit" class="w-full sm:w-auto px-6 py-3 bg-white/20 hover:bg-white/30 text-white font-semibold rounded-xl transition-all duration-200 backdrop-blur-sm border border-white/30">
+                            Maybe Later
+                        </button>
+                    </form>
+                    <a href="{{ route('tenant.tour.start', ['tenant' => $tenant->slug]) }}"
+                       class="w-full sm:w-auto inline-flex items-center justify-center px-8 py-3 bg-white text-indigo-600 font-bold rounded-xl hover:bg-blue-50 transform hover:scale-105 transition-all duration-200 shadow-lg hover:shadow-xl">
+                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"></path>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                        Start Tour Now
+                    </a>
+                </div>
+            </div>
+        </div>
+        <!-- Progress indicator for visual appeal -->
+        <div class="h-1 bg-gradient-to-r from-yellow-300 via-green-300 to-blue-300"></div>
+    </div>
+    @endif
+
     <!-- Report Categories -->
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <a href="#" class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow">

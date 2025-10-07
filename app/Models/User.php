@@ -36,6 +36,7 @@ class User extends Authenticatable
         'business_type',
         'onboarding_completed',
         'onboarding_step',
+        'tour_completed',
     ];
 
     /**
