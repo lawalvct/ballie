@@ -155,128 +155,148 @@ class DashboardController extends Controller
                 : 0
         ];
 
-        // Recent transactions - Get latest sales and vouchers
-        $recentTransactions = collect();
+        // Recent transactions - Using direct DB queries to avoid Eloquent issues
+        $recentTransactions = [];
 
-        // Get recent sales
-        $recentSales = Sale::where('tenant_id', $tenant->id)
-            ->where('status', 'completed')
-            ->with('customer')
-            ->latest()
-            ->take(5)
-            ->get()
-            ->map(function($sale) {
-                return [
-                    'type' => 'sale',
-                    'icon_color' => 'green',
-                    'description' => $sale->customer ? "Sale to {$sale->customer->company_name}" : 'Sale',
-                    'reference' => "Sale #{$sale->sale_number}",
-                    'amount' => (float) $sale->total_amount,
-                    'date' => $sale->sale_date instanceof \Carbon\Carbon ? $sale->sale_date->toDateString() : $sale->sale_date
-                ];
-            })
-            ->values();
+        // Get recent sales using DB query
+        $salesData = DB::table('sales')
+            ->leftJoin('customers', 'sales.customer_id', '=', 'customers.id')
+            ->where('sales.tenant_id', $tenant->id)
+            ->where('sales.status', 'completed')
+            ->select(
+                'sales.sale_number',
+                'sales.total_amount',
+                'sales.sale_date',
+                'customers.company_name'
+            )
+            ->orderBy('sales.created_at', 'desc')
+            ->limit(5)
+            ->get();
 
-        // Get recent vouchers
-        $recentVouchers = Voucher::where('tenant_id', $tenant->id)
-            ->where('status', 'posted')
-            ->with('voucherType')
-            ->latest('posted_at')
-            ->take(5)
-            ->get()
-            ->map(function($voucher) {
-                $isIncome = $voucher->voucherType && in_array($voucher->voucherType->inventory_effect, ['decrease']);
+        foreach ($salesData as $sale) {
+            $recentTransactions[] = [
+                'type' => 'sale',
+                'icon_color' => 'green',
+                'description' => $sale->company_name ? "Sale to {$sale->company_name}" : 'Sale',
+                'reference' => "Sale #{$sale->sale_number}",
+                'amount' => (float) $sale->total_amount,
+                'date' => $sale->sale_date
+            ];
+        }
 
-                return [
-                    'type' => $isIncome ? 'income' : 'expense',
-                    'icon_color' => $isIncome ? 'blue' : 'red',
-                    'description' => $voucher->voucherType ? $voucher->voucherType->name : 'Voucher',
-                    'reference' => "#{$voucher->voucher_number}",
-                    'amount' => (float) ($isIncome ? $voucher->total_amount : -$voucher->total_amount),
-                    'date' => $voucher->voucher_date instanceof \Carbon\Carbon ? $voucher->voucher_date->toDateString() : $voucher->voucher_date
-                ];
-            })
-            ->values();
+        // Get recent vouchers using DB query
+        $vouchersData = DB::table('vouchers')
+            ->leftJoin('voucher_types', 'vouchers.voucher_type_id', '=', 'voucher_types.id')
+            ->where('vouchers.tenant_id', $tenant->id)
+            ->where('vouchers.status', 'posted')
+            ->select(
+                'vouchers.voucher_number',
+                'vouchers.total_amount',
+                'vouchers.voucher_date',
+                'vouchers.posted_at',
+                'voucher_types.name as type_name',
+                'voucher_types.inventory_effect'
+            )
+            ->orderBy('vouchers.posted_at', 'desc')
+            ->limit(5)
+            ->get();
 
-        // Merge and convert to plain array before sorting
-        $allTransactions = $recentSales->merge($recentVouchers)->toArray();
-        
-        // Sort using usort
-        usort($allTransactions, function($a, $b) {
-            $dateA = strtotime($a['date']);
-            $dateB = strtotime($b['date']);
-            return $dateB - $dateA; // Descending order
+        foreach ($vouchersData as $voucher) {
+            $isIncome = $voucher->inventory_effect === 'decrease';
+            $recentTransactions[] = [
+                'type' => $isIncome ? 'income' : 'expense',
+                'icon_color' => $isIncome ? 'blue' : 'red',
+                'description' => $voucher->type_name ?: 'Voucher',
+                'reference' => "#{$voucher->voucher_number}",
+                'amount' => (float) ($isIncome ? $voucher->total_amount : -$voucher->total_amount),
+                'date' => $voucher->voucher_date
+            ];
+        }
+
+        // Sort by date descending
+        usort($recentTransactions, function($a, $b) {
+            return strtotime($b['date']) - strtotime($a['date']);
         });
-        
-        $recentTransactions = array_slice($allTransactions, 0, 4);
 
-        // Recent activities - combine multiple sources
-        $recentActivities = collect();
+        $recentTransactions = array_slice($recentTransactions, 0, 4);
 
-        // Recent customers
-        $newCustomers = Customer::where('tenant_id', $tenant->id)
-            ->latest()
-            ->take(3)
-            ->get()
-            ->map(function($customer) {
-                $name = $customer->company_name ?: ($customer->first_name . ' ' . $customer->last_name);
-                return [
-                    'type' => 'customer_added',
-                    'icon_color' => 'blue',
-                    'description' => 'New customer added',
-                    'details' => "{$name} was added to your customer list",
-                    'date' => $customer->created_at->toDateTimeString()
-                ];
-            })
-            ->values();
+        // Recent activities - Using direct DB queries to avoid Eloquent issues
+        $recentActivities = [];
 
-        // Recent sales
-        $newSales = Sale::where('tenant_id', $tenant->id)
-            ->where('status', 'completed')
-            ->with('customer')
-            ->latest()
-            ->take(3)
-            ->get()
-            ->map(function($sale) {
-                $customerName = $sale->customer ? $sale->customer->company_name : 'Customer';
-                return [
-                    'type' => 'payment_received',
-                    'icon_color' => 'green',
-                    'description' => 'Sale completed',
-                    'details' => '₦' . number_format($sale->total_amount, 2) . " from {$customerName}",
-                    'date' => $sale->sale_date instanceof \Carbon\Carbon ? $sale->sale_date->toDateString() : $sale->sale_date
-                ];
-            })
-            ->values();
+        // Recent customers using DB query
+        $customersData = DB::table('customers')
+            ->where('tenant_id', $tenant->id)
+            ->select('company_name', 'first_name', 'last_name', 'created_at')
+            ->orderBy('created_at', 'desc')
+            ->limit(3)
+            ->get();
 
-        // Recent stock movements
-        $stockAlerts = StockMovement::where('tenant_id', $tenant->id)
-            ->with('product')
-            ->latest()
-            ->take(2)
-            ->get()
-            ->map(function($movement) {
-                return [
-                    'type' => 'stock_movement',
-                    'icon_color' => $movement->quantity > 0 ? 'green' : 'red',
-                    'description' => $movement->quantity > 0 ? 'Stock added' : 'Stock reduced',
-                    'details' => "{$movement->product->name}: " . abs($movement->quantity) . " units",
-                    'date' => $movement->created_at->toDateTimeString()
-                ];
-            })
-            ->values();
+        foreach ($customersData as $customer) {
+            $name = $customer->company_name ?: trim($customer->first_name . ' ' . $customer->last_name);
+            $recentActivities[] = [
+                'type' => 'customer_added',
+                'icon_color' => 'blue',
+                'description' => 'New customer added',
+                'details' => "{$name} was added to your customer list",
+                'date' => $customer->created_at
+            ];
+        }
 
-        // Merge and convert to plain array before sorting
-        $allActivities = $newCustomers->merge($newSales)->merge($stockAlerts)->toArray();
-        
-        // Sort using usort
-        usort($allActivities, function($a, $b) {
-            $dateA = strtotime($a['date']);
-            $dateB = strtotime($b['date']);
-            return $dateB - $dateA; // Descending order
+        // Recent sales using DB query
+        $recentSalesData = DB::table('sales')
+            ->leftJoin('customers', 'sales.customer_id', '=', 'customers.id')
+            ->where('sales.tenant_id', $tenant->id)
+            ->where('sales.status', 'completed')
+            ->select(
+                'sales.total_amount',
+                'sales.sale_date',
+                'sales.created_at',
+                'customers.company_name'
+            )
+            ->orderBy('sales.created_at', 'desc')
+            ->limit(3)
+            ->get();
+
+        foreach ($recentSalesData as $sale) {
+            $customerName = $sale->company_name ?: 'Customer';
+            $recentActivities[] = [
+                'type' => 'payment_received',
+                'icon_color' => 'green',
+                'description' => 'Sale completed',
+                'details' => '₦' . number_format($sale->total_amount, 2) . " from {$customerName}",
+                'date' => $sale->created_at
+            ];
+        }
+
+        // Recent stock movements using DB query
+        $stockMovementsData = DB::table('stock_movements')
+            ->join('products', 'stock_movements.product_id', '=', 'products.id')
+            ->where('stock_movements.tenant_id', $tenant->id)
+            ->select(
+                'stock_movements.quantity',
+                'stock_movements.created_at',
+                'products.name as product_name'
+            )
+            ->orderBy('stock_movements.created_at', 'desc')
+            ->limit(2)
+            ->get();
+
+        foreach ($stockMovementsData as $movement) {
+            $recentActivities[] = [
+                'type' => 'stock_movement',
+                'icon_color' => $movement->quantity > 0 ? 'green' : 'red',
+                'description' => $movement->quantity > 0 ? 'Stock added' : 'Stock reduced',
+                'details' => "{$movement->product_name}: " . abs($movement->quantity) . " units",
+                'date' => $movement->created_at
+            ];
+        }
+
+        // Sort by date descending
+        usort($recentActivities, function($a, $b) {
+            return strtotime($b['date']) - strtotime($a['date']);
         });
-        
-        $recentActivities = array_slice($allActivities, 0, 4);
+
+        $recentActivities = array_slice($recentActivities, 0, 4);
 
         // Upcoming due dates - for now just show pending vouchers
         $upcomingDueDates = Voucher::where('tenant_id', $tenant->id)
