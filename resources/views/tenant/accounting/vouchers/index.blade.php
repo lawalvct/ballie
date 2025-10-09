@@ -97,7 +97,7 @@
                 <div class="ml-5 w-0 flex-1">
                     <dl>
                         <dt class="text-sm font-medium text-gray-500 truncate">Total Vouchers</dt>
-                        <dd class="text-lg font-medium text-gray-900">5</dd>
+                        <dd class="text-lg font-medium text-gray-900">{{ number_format($stats['total_vouchers']) }}</dd>
                     </dl>
                 </div>
             </div>
@@ -115,7 +115,7 @@
                 <div class="ml-5 w-0 flex-1">
                     <dl>
                         <dt class="text-sm font-medium text-gray-500 truncate">Draft Vouchers</dt>
-                        <dd class="text-lg font-medium text-gray-900">3</dd>
+                        <dd class="text-lg font-medium text-gray-900">{{ number_format($stats['draft_vouchers']) }}</dd>
                     </dl>
                 </div>
             </div>
@@ -133,7 +133,7 @@
                 <div class="ml-5 w-0 flex-1">
                     <dl>
                         <dt class="text-sm font-medium text-gray-500 truncate">Posted Vouchers</dt>
-                        <dd class="text-lg font-medium text-gray-900">2</dd>
+                        <dd class="text-lg font-medium text-gray-900">{{ number_format($stats['posted_vouchers']) }}</dd>
                     </dl>
                 </div>
             </div>
@@ -151,7 +151,7 @@
                 <div class="ml-5 w-0 flex-1">
                     <dl>
                         <dt class="text-sm font-medium text-gray-500 truncate">Total Amount</dt>
-                        <dd class="text-lg font-medium text-gray-900">₦50,000</dd>
+                        <dd class="text-lg font-medium text-gray-900">₦{{ number_format($stats['total_amount'], 2) }}</dd>
                     </dl>
                 </div>
             </div>
