@@ -251,6 +251,9 @@ Route::prefix('ledger-accounts')->name('ledger-accounts.')->group(function () {
     // Search API - MUST be before parameterized routes
     Route::get('/search', [LedgerAccountController::class, 'search'])->name('search');
 
+    // Opening balance reclassification
+    Route::post('/reclassify-opening-balance', [LedgerAccountController::class, 'reclassifyOpeningBalance'])->name('reclassify-opening-balance');
+
     Route::post('/', [LedgerAccountController::class, 'store'])->name('store');
     Route::get('/{ledgerAccount}', [LedgerAccountController::class, 'show'])->name('show');
     Route::get('/{ledgerAccount}/edit', [LedgerAccountController::class, 'edit'])->name('edit');
@@ -320,8 +323,9 @@ Route::prefix('ledger-accounts')->name('ledger-accounts.')->group(function () {
             // Balance Sheet
             Route::get('/balance-sheet', [ReportsController::class, 'balanceSheet'])->name('balance-sheet');
             // Standard Table Balance Sheet
+            Route::get('/balance-sheet-table', [ReportsController::class, 'balanceSheetTable'])->name('balance-sheet-table');
 
-
+            // Profit & Loss
             Route::get('/profit-loss', [ReportsController::class, 'profitLoss'])->name('profit-loss');
 
             // Cash Flow

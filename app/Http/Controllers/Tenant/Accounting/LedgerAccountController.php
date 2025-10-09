@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\LedgerAccount;
 use App\Models\AccountGroup;
 use App\Models\Tenant;
+use App\Services\OpeningBalanceService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -165,6 +166,8 @@ class LedgerAccountController extends Controller
             $ledgerAccount = null;
 
             DB::transaction(function () use ($request, $tenant, &$ledgerAccount) {
+                $openingBalance = $request->opening_balance ?? 0;
+
                 $ledgerAccount = LedgerAccount::create([
                     'tenant_id' => $tenant->id,
                     'account_group_id' => $request->account_group_id,
@@ -172,12 +175,18 @@ class LedgerAccountController extends Controller
                     'code' => strtoupper($request->code),
                     'account_type' => $request->account_type,
                     'description' => $request->description,
-                    'opening_balance' => $request->opening_balance ?? 0,
-                    'current_balance' => $request->opening_balance ?? 0,
+                    'opening_balance' => $openingBalance,
+                    'current_balance' => $openingBalance,
                     'parent_id' => $request->parent_id,
                     'is_active' => $request->boolean('is_active', true),
                     'is_system_account' => false,
                 ]);
+
+                // If opening balance is provided and not zero, create opening balance entry
+                if ($openingBalance && $openingBalance > 0) {
+                    $openingBalanceService = new OpeningBalanceService();
+                    $openingBalanceService->createOpeningBalanceEntry($ledgerAccount, $openingBalance);
+                }
 
                 // Log activity
                 // activity()
@@ -986,6 +995,40 @@ public function show(Request $request, Tenant $tenant, LedgerAccount $ledgerAcco
         } catch (\Exception $e) {
             Log::error('Ledger account search error: ' . $e->getMessage());
             return response()->json(['error' => 'Search failed'], 500);
+        }
+    }
+
+    /**
+     * Reclassify opening balance equity to proper equity accounts
+     */
+    public function reclassifyOpeningBalance(Request $request, Tenant $tenant)
+    {
+        $request->validate([
+            'target_account_id' => 'required|exists:ledger_accounts,id',
+            'amount' => 'required|numeric|min:0.01',
+            'description' => 'nullable|string|max:500',
+        ]);
+
+        try {
+            $openingBalanceService = new OpeningBalanceService();
+
+            $voucher = $openingBalanceService->reclassifyOpeningBalance(
+                $tenant->id,
+                $request->target_account_id,
+                $request->amount,
+                $request->description
+            );
+
+            return redirect()
+                ->back()
+                ->with('success', 'Opening balance equity reclassified successfully!');
+
+        } catch (\Exception $e) {
+            Log::error('Error reclassifying opening balance: ' . $e->getMessage());
+
+            return redirect()
+                ->back()
+                ->withErrors(['error' => $e->getMessage()]);
         }
     }
 

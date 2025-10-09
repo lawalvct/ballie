@@ -17,6 +17,7 @@ class LedgerAccount extends Model
         'account_type',
         'parent_id',
         'opening_balance',
+        'opening_balance_voucher_id',
         'current_balance',
         'last_transaction_date',
         'balance_type',
@@ -26,6 +27,7 @@ class LedgerAccount extends Model
         'description',
         'is_active',
         'is_system_account',
+        'is_opening_balance_account',
         'tags',
     ];
 
@@ -35,6 +37,7 @@ class LedgerAccount extends Model
         'last_transaction_date' => 'date',
         'is_active' => 'boolean',
         'is_system_account' => 'boolean',
+        'is_opening_balance_account' => 'boolean',
     ];
 
     // Relationships
@@ -51,6 +54,11 @@ class LedgerAccount extends Model
     public function voucherEntries()
     {
         return $this->hasMany(VoucherEntry::class);
+    }
+
+    public function openingBalanceVoucher()
+    {
+        return $this->belongsTo(Voucher::class, 'opening_balance_voucher_id');
     }
 
     // Scopes

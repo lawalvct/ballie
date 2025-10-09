@@ -54,7 +54,7 @@
                         </svg>
                         Back
                     </a>
-                    <a href="{{ route('balance-sheet-table', ['tenant' => $tenant->slug, 'as_of_date' => $asOfDate ?? now()->toDateString()]) }}"
+                    <a href="{{ route('tenant.accounting.balance-sheet-table', ['tenant' => $tenant->slug, 'as_of_date' => $asOfDate ?? now()->toDateString()]) }}"
                        class="inline-flex items-center px-4 py-2 border border-blue-300 rounded-lg shadow-sm text-sm font-medium text-blue-700 bg-white hover:bg-blue-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
                         <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16"></path>
