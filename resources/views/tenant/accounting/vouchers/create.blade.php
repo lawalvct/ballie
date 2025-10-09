@@ -63,8 +63,11 @@
                                 required>
                             <option value="">Select Voucher Type</option>
                             @foreach($voucherTypes as $type)
+                                @php
+                                    $defaultTypeId = $selectedType?->id ?? (isset($voucher) ? $voucher->voucher_type_id : $voucherTypes->firstWhere('code', 'JV')?->id);
+                                @endphp
                                 <option value="{{ $type->id }}"
-                                        {{ (old('voucher_type_id', $selectedType?->id ?? (isset($voucher) ? $voucher->voucher_type_id : '')) == $type->id) ? 'selected' : '' }}>
+                                        {{ (old('voucher_type_id', $defaultTypeId) == $type->id) ? 'selected' : '' }}>
                                     {{ $type->name }} ({{ $type->code }})
                                 </option>
                             @endforeach
@@ -263,9 +266,9 @@
 <script>
 function voucherForm() {
     return {
-        voucherTypeId: '{{ old('voucher_type_id', $selectedType?->id ?? '') }}',
+        voucherTypeId: '{{ old('voucher_type_id', $selectedType?->id ?? (isset($voucher) ? $voucher->voucher_type_id : $voucherTypes->firstWhere('code', 'JV')?->id ?? '')) }}',
         voucherNumberPreview: 'Auto-generated',
-        selectedVoucherTypeName: '{{ $selectedType?->name ?? '' }}',
+        selectedVoucherTypeName: '{{ $selectedType?->name ?? (isset($voucher) ? '' : $voucherTypes->firstWhere('code', 'JV')?->name ?? '') }}',
         voucherTypes: @json($voucherTypes->keyBy('id')),
 
         init() {

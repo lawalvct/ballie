@@ -121,6 +121,10 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/{step}', [OnboardingController::class, 'showStep'])->name('step');
         Route::post('/{step}', [OnboardingController::class, 'saveStep'])->name('save-step');
         Route::get('/show-step', [OnboardingController::class, 'showStep'])->name('show-step');
+
+        // Utility routes for debugging/reseeding
+        Route::post('/reseed-ledgers', [OnboardingController::class, 'reseedLedgerAccounts'])->name('reseed-ledgers');
+        Route::get('/check-status', [OnboardingController::class, 'checkOnboardingStatus'])->name('check-status');
     });
 
     // Routes that require completed onboarding and active subscription

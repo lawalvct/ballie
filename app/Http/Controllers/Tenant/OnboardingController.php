@@ -244,6 +244,16 @@ class OnboardingController extends Controller
    private function seedDefaultData($tenant)
     {
         try {
+            // Extend execution time for seeding operations
+            $originalTimeout = ini_get('max_execution_time');
+            set_time_limit(300); // 5 minutes for seeding
+
+            Log::info("Starting seeding for tenant", [
+                'tenant_id' => $tenant->id,
+                'tenant_name' => $tenant->name,
+                'original_timeout' => $originalTimeout
+            ]);
+
             // Refresh connection before each seeding operation
             $this->refreshDatabaseConnection();
 
@@ -257,10 +267,28 @@ class OnboardingController extends Controller
                 VoucherTypeSeeder::seedForTenant($tenant->id);
             }, "Voucher types seeding for tenant: {$tenant->id}");
 
-            // Seed Default Ledger Accounts with retry mechanism
+            // Seed Default Ledger Accounts with retry mechanism and extended timeout
+            // This is the largest dataset so we give it special attention
+            Log::info("Starting ledger accounts seeding (largest dataset)", [
+                'tenant_id' => $tenant->id
+            ]);
+
             $this->retryOperation(function() use ($tenant) {
+                // Extend timeout specifically for ledger accounts
+                set_time_limit(180); // Additional 3 minutes just for ledger accounts
                 DefaultLedgerAccountsSeeder::seedForTenant($tenant->id);
-            }, "Ledger accounts seeding for tenant: {$tenant->id}");
+            }, "Ledger accounts seeding for tenant: {$tenant->id}", 5); // 5 attempts for ledger accounts
+
+            // Verify ledger accounts were seeded
+            $ledgerCount = LedgerAccount::where('tenant_id', $tenant->id)->count();
+            Log::info("Ledger accounts seeded", [
+                'tenant_id' => $tenant->id,
+                'count' => $ledgerCount
+            ]);
+
+            if ($ledgerCount === 0) {
+                throw new \Exception("No ledger accounts were seeded for tenant {$tenant->id}");
+            }
 
             // Seed Product Categories with retry mechanism
             $this->retryOperation(function() use ($tenant) {
@@ -272,10 +300,30 @@ class OnboardingController extends Controller
                 DefaultUnitsSeeder::seedForTenant($tenant->id);
             }, "Units seeding for tenant: {$tenant->id}");
 
-            Log::info("All default data seeded successfully for tenant: {$tenant->name} (ID: {$tenant->id})");
+            // Final verification
+            $accountGroupsCount = \App\Models\AccountGroup::where('tenant_id', $tenant->id)->count();
+            $voucherTypesCount = \App\Models\VoucherType::where('tenant_id', $tenant->id)->count();
+            $categoriesCount = \App\Models\ProductCategory::where('tenant_id', $tenant->id)->count();
+            $unitsCount = \App\Models\Unit::where('tenant_id', $tenant->id)->count();
+
+            Log::info("All default data seeded successfully", [
+                'tenant_id' => $tenant->id,
+                'tenant_name' => $tenant->name,
+                'account_groups' => $accountGroupsCount,
+                'voucher_types' => $voucherTypesCount,
+                'ledger_accounts' => $ledgerCount,
+                'product_categories' => $categoriesCount,
+                'units' => $unitsCount,
+                'total' => $accountGroupsCount + $voucherTypesCount + $ledgerCount + $categoriesCount + $unitsCount
+            ]);
+
+            // Restore original timeout
+            set_time_limit((int)$originalTimeout);
 
         } catch (\Exception $e) {
-            Log::error("Error seeding default data for tenant {$tenant->id}: " . $e->getMessage());
+            Log::error("Error seeding default data for tenant {$tenant->id}: " . $e->getMessage(), [
+                'trace' => $e->getTraceAsString()
+            ]);
             throw $e;
         }
     }
@@ -384,6 +432,67 @@ class OnboardingController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Re-seeding failed: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Reseed only ledger accounts (useful if they failed during onboarding)
+     */
+    public function reseedLedgerAccounts($tenantId)
+    {
+        try {
+            $tenant = \App\Models\Tenant::findOrFail($tenantId);
+
+            // Check current ledger account count
+            $existingCount = LedgerAccount::where('tenant_id', $tenantId)->count();
+
+            Log::info("Reseeding ledger accounts", [
+                'tenant_id' => $tenantId,
+                'existing_count' => $existingCount
+            ]);
+
+            // Extend timeout
+            set_time_limit(300);
+
+            // Refresh connection
+            $this->refreshDatabaseConnection();
+
+            // Reseed ledger accounts with retries
+            $this->retryOperation(function() use ($tenant) {
+                DefaultLedgerAccountsSeeder::seedForTenant($tenant->id);
+            }, "Ledger accounts reseeding for tenant: {$tenant->id}", 5);
+
+            // Verify results
+            $newCount = LedgerAccount::where('tenant_id', $tenantId)->count();
+            $addedCount = $newCount - $existingCount;
+
+            Log::info("Ledger accounts reseeded", [
+                'tenant_id' => $tenantId,
+                'previous_count' => $existingCount,
+                'new_count' => $newCount,
+                'added' => $addedCount
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => "Ledger accounts reseeded successfully. Added {$addedCount} new accounts.",
+                'data' => [
+                    'previous_count' => $existingCount,
+                    'new_count' => $newCount,
+                    'added' => $addedCount
+                ]
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Ledger accounts reseeding failed', [
+                'tenant_id' => $tenantId,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Ledger accounts reseeding failed: ' . $e->getMessage()
             ], 500);
         }
     }

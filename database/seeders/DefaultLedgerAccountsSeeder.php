@@ -178,11 +178,11 @@ class DefaultLedgerAccountsSeeder extends Seeder
                 'is_system_account' => true,
                 'is_active' => true,
             ],
-            // NON-CURRENT ASSETS
+
             [
                 'name' => 'Fixed Assets',
                 'code' => 'FIXED-001',
-                'account_group_id' => $accountGroups->get('Non-Current Assets')?->id,
+                'account_group_id' => $accountGroups->get('Fixed Assets')?->id,
                 'account_type' => 'asset',
                 'description' => 'Tangible fixed assets (Property, Plant, Equipment)',
                 'opening_balance' => 0,
@@ -193,7 +193,7 @@ class DefaultLedgerAccountsSeeder extends Seeder
             [
                 'name' => 'Accumulated Depreciation',
                 'code' => 'ACCUM-DEPR-001',
-                'account_group_id' => $accountGroups->get('Non-Current Assets')?->id,
+                'account_group_id' => $accountGroups->get('Fixed Assets')?->id,
                 'account_type' => 'asset',
                 'description' => 'Accumulated depreciation on fixed assets',
                 'opening_balance' => 0,
@@ -204,7 +204,7 @@ class DefaultLedgerAccountsSeeder extends Seeder
             [
                 'name' => 'Intangible Assets',
                 'code' => 'INTANG-001',
-                'account_group_id' => $accountGroups->get('Non-Current Assets')?->id,
+                'account_group_id' => $accountGroups->get('Fixed Assets')?->id,
                 'account_type' => 'asset',
                 'description' => 'Intangible assets (Patents, Trademarks)',
                 'opening_balance' => 0,
@@ -215,7 +215,7 @@ class DefaultLedgerAccountsSeeder extends Seeder
             [
                 'name' => 'Long-term Investments',
                 'code' => 'LT-INV-001',
-                'account_group_id' => $accountGroups->get('Non-Current Assets')?->id,
+                'account_group_id' => $accountGroups->get('Fixed Assets')?->id,
                 'account_type' => 'asset',
                 'description' => 'Long-term investments in other companies',
                 'opening_balance' => 0,
@@ -226,7 +226,7 @@ class DefaultLedgerAccountsSeeder extends Seeder
             [
                 'name' => 'Goodwill',
                 'code' => 'GOODWILL-001',
-                'account_group_id' => $accountGroups->get('Non-Current Assets')?->id,
+                'account_group_id' => $accountGroups->get('Fixed Assets')?->id,
                 'account_type' => 'asset',
                 'description' => 'Goodwill from business acquisitions',
                 'opening_balance' => 0,
@@ -238,7 +238,7 @@ class DefaultLedgerAccountsSeeder extends Seeder
             [
                 'name' => 'Advance Payments to Suppliers',
                 'code' => 'ADVANCE-SUP-001',
-                'account_group_id' => $accountGroups->get('Non-Current Assets')?->id,
+                'account_group_id' => $accountGroups->get('Fixed Assets')?->id,
                 'account_type' => 'asset',
                 'description' => 'Advance payments made to suppliers',
                 'opening_balance' => 0,
@@ -250,7 +250,7 @@ class DefaultLedgerAccountsSeeder extends Seeder
             [
                 'name' => 'Land',
                 'code' => 'LAND-001',
-                'account_group_id' => $accountGroups->get('Non-Current Assets')?->id,
+                'account_group_id' => $accountGroups->get('Fixed Assets')?->id,
                 'account_type' => 'asset',
                 'description' => 'Land owned by the business',
                 'opening_balance' => 0,
@@ -261,7 +261,7 @@ class DefaultLedgerAccountsSeeder extends Seeder
             [
                 'name' => 'Buildings',
                 'code' => 'BUILD-001',
-                'account_group_id' => $accountGroups->get('Non-Current Assets')?->id,
+                'account_group_id' => $accountGroups->get('Fixed Assets')?->id,
                 'account_type' => 'asset',
                 'description' => 'Buildings owned by the business',
                 'opening_balance' => 0,
@@ -272,7 +272,7 @@ class DefaultLedgerAccountsSeeder extends Seeder
             [
                 'name' => 'Machinery',
                 'code' => 'MACH-001',
-                'account_group_id' => $accountGroups->get('Non-Current Assets')?->id,
+                'account_group_id' => $accountGroups->get('Fixed Assets')?->id,
                 'account_type' => 'asset',
                 'description' => 'Machinery owned by the business',
                 'opening_balance' => 0,
@@ -283,7 +283,7 @@ class DefaultLedgerAccountsSeeder extends Seeder
             [
                 'name' => 'Vehicles',
                 'code' => 'VEH-001',
-                'account_group_id' => $accountGroups->get('Non-Current Assets')?->id,
+                'account_group_id' => $accountGroups->get('Fixed Assets')?->id,
                 'account_type' => 'asset',
                 'description' => 'Vehicles owned by the business',
                 'opening_balance' => 0,
@@ -294,7 +294,7 @@ class DefaultLedgerAccountsSeeder extends Seeder
             [
                 'name' => 'Furniture & Fixtures',
                 'code' => 'FURN-001',
-                'account_group_id' => $accountGroups->get('Non-Current Assets')?->id,
+                'account_group_id' => $accountGroups->get('Fixed Assets')?->id,
                 'account_type' => 'asset',
                 'description' => 'Office furniture and fixtures',
                 'opening_balance' => 0,
@@ -305,7 +305,7 @@ class DefaultLedgerAccountsSeeder extends Seeder
             [
                 'name' => 'Computer Equipment',
                 'code' => 'COMP-EQ-001',
-                'account_group_id' => $accountGroups->get('Non-Current Assets')?->id,
+                'account_group_id' => $accountGroups->get('Fixed Assets')?->id,
                 'account_type' => 'asset',
                 'description' => 'Computers and IT equipment',
                 'opening_balance' => 0,
@@ -316,7 +316,7 @@ class DefaultLedgerAccountsSeeder extends Seeder
             [
                 'name' => 'Office Equipment',
                 'code' => 'OFF-EQ-001',
-                'account_group_id' => $accountGroups->get('Non-Current Assets')?->id,
+                'account_group_id' => $accountGroups->get('Fixed Assets')?->id,
                 'account_type' => 'asset',
                 'description' => 'Office furniture and fixtures',
                 'opening_balance' => 0,
@@ -328,7 +328,7 @@ class DefaultLedgerAccountsSeeder extends Seeder
             [
                 'name' => 'Leasehold Improvements',
                 'code' => 'LEASEHOLD-IMP-001',
-                'account_group_id' => $accountGroups->get('Non-Current Assets')?->id,
+                'account_group_id' => $accountGroups->get('Fixed Assets')?->id,
                 'account_type' => 'asset',
                 'description' => 'Improvements made to leased property',
                 'opening_balance' => 0,
@@ -340,7 +340,7 @@ class DefaultLedgerAccountsSeeder extends Seeder
             [
                 'name' => 'Patents',
                 'code' => 'PATENT-001',
-                'account_group_id' => $accountGroups->get('Intangible Assets')?->id,
+                'account_group_id' => $accountGroups->get('Fixed Assets')?->id,
                 'account_type' => 'asset',
                 'description' => 'Patents owned by the business',
                 'opening_balance' => 0,
@@ -351,7 +351,7 @@ class DefaultLedgerAccountsSeeder extends Seeder
             [
                 'name' => 'Trademarks',
                 'code' => 'TRADEMARK-001',
-                'account_group_id' => $accountGroups->get('Intangible Assets')?->id,
+                'account_group_id' => $accountGroups->get('Fixed Assets')?->id,
                 'account_type' => 'asset',
                 'description' => 'Trademarks owned by the business',
                 'opening_balance' => 0,
@@ -362,7 +362,7 @@ class DefaultLedgerAccountsSeeder extends Seeder
             [
                 'name' => 'Copyrights',
                 'code' => 'COPYRIGHT-001',
-                'account_group_id' => $accountGroups->get('Intangible Assets')?->id,
+                'account_group_id' => $accountGroups->get('Fixed Assets')?->id,
                 'account_type' => 'asset',
                 'description' => 'Copyrights owned by the business',
                 'opening_balance' => 0,
@@ -373,7 +373,7 @@ class DefaultLedgerAccountsSeeder extends Seeder
             [
                 'name' => 'Software Licenses',
                 'code' => 'SOFT-LIC-001',
-                'account_group_id' => $accountGroups->get('Intangible Assets')?->id,
+                'account_group_id' => $accountGroups->get('Fixed Assets')?->id,
                 'account_type' => 'asset',
                 'description' => 'Software licenses owned by the business',
                 'opening_balance' => 0,
@@ -385,7 +385,7 @@ class DefaultLedgerAccountsSeeder extends Seeder
             [
                 'name' => 'Accumulated Depreciation - Fixed Assets',
                 'code' => 'ACCUM-DEPR-FIXED-001',
-                'account_group_id' => $accountGroups->get('Non-Current Assets')?->id,
+                'account_group_id' => $accountGroups->get('Fixed Assets')?->id,
                 'account_type' => 'asset',
                 'description' => 'Accumulated depreciation on fixed assets',
                 'opening_balance' => 0,
@@ -397,7 +397,7 @@ class DefaultLedgerAccountsSeeder extends Seeder
             [
                 'name' => 'Long-term Investments',
                 'code' => 'LT-INVEST-001',
-                'account_group_id' => $accountGroups->get('Non-Current Assets')?->id,
+                'account_group_id' => $accountGroups->get('Fixed Assets')?->id,
                 'account_type' => 'asset',
                 'description' => 'Long-term investments in other companies',
                 'opening_balance' => 0,
@@ -410,7 +410,7 @@ class DefaultLedgerAccountsSeeder extends Seeder
             [
                 'name' => 'Real Estate Investments',
                 'code' => 'REAL-EST-INV-001',
-                'account_group_id' => $accountGroups->get('Non-Current Assets')?->id,
+                'account_group_id' => $accountGroups->get('Fixed Assets')?->id,
                 'account_type' => 'asset',
                 'description' => 'Investments in real estate properties',
                 'opening_balance' => 0,
@@ -1118,18 +1118,106 @@ class DefaultLedgerAccountsSeeder extends Seeder
             ],
         ];
 
-        // Create all default ledger accounts
-        foreach ($defaultAccounts as $accountData) {
-            // Skip if account group doesn't exist
-            if (!$accountData['account_group_id']) {
-                continue;
-            }
+        // Filter out accounts with missing account groups
+        $validAccounts = array_filter($defaultAccounts, function($accountData) {
+            return !empty($accountData['account_group_id']);
+        });
 
+        \Log::info("Starting ledger account seeding", [
+            'tenant_id' => $tenantId,
+            'total_accounts' => count($defaultAccounts),
+            'valid_accounts' => count($validAccounts),
+            'skipped' => count($defaultAccounts) - count($validAccounts)
+        ]);
+
+        // Prepare all accounts with tenant_id and timestamps
+        $preparedAccounts = array_map(function($accountData) use ($tenantId) {
             $accountData['tenant_id'] = $tenantId;
             $accountData['created_at'] = now();
             $accountData['updated_at'] = now();
+            return $accountData;
+        }, $validAccounts);
 
-            LedgerAccount::create($accountData);
+        // Seed accounts in chunks to avoid timeout and prepared statement issues
+        $chunkSize = 20; // Process 20 accounts at a time
+        $chunks = array_chunk($preparedAccounts, $chunkSize);
+        $successCount = 0;
+        $failedCount = 0;
+        $failedAccounts = [];
+
+        foreach ($chunks as $chunkIndex => $chunk) {
+            try {
+                // Refresh database connection before each chunk
+                \DB::disconnect();
+                \DB::reconnect();
+
+                // Small delay between chunks to prevent overwhelming the server
+                if ($chunkIndex > 0) {
+                    usleep(200000); // 200ms delay
+                }
+
+                // Insert chunk using batch insert for better performance
+                \DB::transaction(function() use ($chunk, &$successCount, &$failedAccounts) {
+                    foreach ($chunk as $accountData) {
+                        try {
+                            LedgerAccount::create($accountData);
+                            $successCount++;
+                        } catch (\Exception $e) {
+                            $failedCount++;
+                            $failedAccounts[] = [
+                                'name' => $accountData['name'],
+                                'code' => $accountData['code'],
+                                'error' => $e->getMessage()
+                            ];
+                            \Log::error("Failed to create ledger account", [
+                                'account_name' => $accountData['name'],
+                                'account_code' => $accountData['code'],
+                                'error' => $e->getMessage()
+                            ]);
+                        }
+                    }
+                }, 3); // Retry transaction up to 3 times
+
+                \Log::info("Chunk processed", [
+                    'chunk' => $chunkIndex + 1,
+                    'total_chunks' => count($chunks),
+                    'chunk_size' => count($chunk),
+                    'success_count' => $successCount
+                ]);
+
+            } catch (\Exception $e) {
+                $failedCount += count($chunk);
+                \Log::error("Chunk processing failed", [
+                    'chunk' => $chunkIndex + 1,
+                    'chunk_size' => count($chunk),
+                    'error' => $e->getMessage()
+                ]);
+
+                // Continue with next chunk even if this one fails
+                continue;
+            }
+        }
+
+        \Log::info("Ledger account seeding completed", [
+            'tenant_id' => $tenantId,
+            'total_attempted' => count($validAccounts),
+            'successful' => $successCount,
+            'failed' => $failedCount,
+            'failed_accounts' => $failedAccounts
+        ]);
+
+        // Throw exception if critical accounts failed
+        if ($successCount === 0) {
+            throw new \Exception("Failed to seed any ledger accounts for tenant {$tenantId}");
+        }
+
+        // Log warning if some accounts failed but continue
+        if ($failedCount > 0) {
+            \Log::warning("Some ledger accounts failed to seed", [
+                'tenant_id' => $tenantId,
+                'failed_count' => $failedCount,
+                'success_rate' => round(($successCount / count($validAccounts)) * 100, 2) . '%'
+            ]);
         }
     }
 
