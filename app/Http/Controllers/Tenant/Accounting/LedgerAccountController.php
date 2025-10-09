@@ -175,8 +175,10 @@ class LedgerAccountController extends Controller
                     'code' => strtoupper($request->code),
                     'account_type' => $request->account_type,
                     'description' => $request->description,
-                    'opening_balance' => $openingBalance,
-                    'current_balance' => $openingBalance,
+                    // Set opening_balance to 0 because the voucher will handle it
+                    // This prevents double-counting
+                    'opening_balance' => 0,
+                    'current_balance' => 0,
                     'parent_id' => $request->parent_id,
                     'is_active' => $request->boolean('is_active', true),
                     'is_system_account' => false,

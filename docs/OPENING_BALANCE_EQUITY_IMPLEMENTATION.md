@@ -1,4 +1,14 @@
-# Opening Balance Equity Implementation Guide
+# Opening Balance E## **The Solution**
+
+### Automatic Opening Balance Equity Account
+
+When a ledger account is created with an opening balance, the system now:
+
+1. **Auto-creates** an "Opening Balance Equity" account (if it doesn't exist)
+2. **Creates a journal entry** with proper double-entry bookkeeping
+3. **Links the voucher** to the ledger account for audit trail
+4. **Updates balances** for both accounts automatically
+5. **Sets opening_balance field to 0** to prevent double-counting (balance tracked via vouchers only)ementation Guide
 
 ## Overview
 

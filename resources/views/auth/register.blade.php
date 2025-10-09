@@ -345,7 +345,7 @@
                     </div>
                     @endif
 
-                    <input type="hidden" name="plan_id" id="selected_plan_id" value="{{ request('plan_id') }}">
+                    <input type="text" name="plan_id" id="selected_plan_id" value="{{ request('plan_id') }}">
 
                     <div class="mb-6">
                         <label class="flex items-center">
