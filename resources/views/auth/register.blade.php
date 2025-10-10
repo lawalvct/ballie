@@ -345,7 +345,7 @@
                     </div>
                     @endif
 
-                    <input type="text" name="plan_id" id="selected_plan_id" value="{{ request('plan_id') }}">
+                    <input type="hidden" name="plan_id" id="selected_plan_id" value="{{ request('plan_id') }}">
 
                     <div class="mb-6">
                         <label class="flex items-center">
@@ -414,6 +414,15 @@ document.addEventListener('DOMContentLoaded', function() {
             selectedPlanInput.value = this.dataset.planId;
         });
     });
+
+    // Auto-select the most popular plan on page load if no plan is pre-selected
+    if (!selectedPlanInput.value || selectedPlanInput.value === '') {
+        const popularPlan = document.querySelector('.plan-card.border-yellow-400');
+        if (popularPlan) {
+            selectedPlanInput.value = popularPlan.dataset.planId;
+            console.log('Auto-selected popular plan:', popularPlan.dataset.planId);
+        }
+    }
 
     // Step navigation
     function showStep(step) {
