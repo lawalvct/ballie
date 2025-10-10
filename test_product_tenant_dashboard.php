@@ -102,9 +102,9 @@ foreach ($products as $prod) {
         $status = '✅ OK';
     }
 
-    printf("%-5d %-35s %12.2f ₦%11s %10s\n", 
-        $prod->id, 
-        substr($prod->name, 0, 35), 
+    printf("%-5d %-35s %12.2f ₦%11s %10s\n",
+        $prod->id,
+        substr($prod->name, 0, 35),
         $stock,
         number_format($value, 2),
         $status

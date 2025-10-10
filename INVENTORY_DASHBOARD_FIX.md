@@ -5,8 +5,9 @@
 The inventory dashboard was showing incorrect **Out of Stock** and **Low Stock** counts because it was querying the old `products.current_stock` database column directly using `whereColumn()` queries, instead of using the calculated stock from `stock_movements` table.
 
 ### Affected Areas:
+
 1. ❌ Dashboard "Out of Stock" card showing wrong count
-2. ❌ Dashboard "Low Stock" card showing wrong count  
+2. ❌ Dashboard "Low Stock" card showing wrong count
 3. ❌ Dashboard "Total Stock Value" calculation using old column
 4. ❌ "Low Stock Products" section showing wrong products
 5. ❌ Stock level distribution chart showing incorrect data
@@ -37,6 +38,7 @@ These queries read from `products.current_stock` column which is stale/outdated,
 #### 1. Fixed `index()` method - Dashboard Statistics
 
 **Before:**
+
 ```php
 $totalStockValue = Product::where('tenant_id', $tenant->id)
     ->sum(DB::raw('COALESCE(current_stock, 0) * COALESCE(purchase_rate, 0)'));
@@ -53,6 +55,7 @@ $outOfStockItems = Product::where('tenant_id', $tenant->id)
 ```
 
 **After:**
+
 ```php
 // Load all products and calculate stock from movements
 $products = Product::where('tenant_id', $tenant->id)
@@ -85,6 +88,7 @@ foreach ($products as $product) {
 #### 2. Fixed Low Stock Products List
 
 **Before:**
+
 ```php
 $lowStockProducts = Product::where('tenant_id', $tenant->id)
     ->with(['category', 'primaryUnit'])
@@ -96,6 +100,7 @@ $lowStockProducts = Product::where('tenant_id', $tenant->id)
 ```
 
 **After:**
+
 ```php
 // Get all products and filter using calculated stock
 $allProducts = Product::where('tenant_id', $tenant->id)
@@ -114,6 +119,7 @@ $lowStockProducts = $allProducts->filter(function ($product) {
 #### 3. Fixed Stock Level Distribution (Chart)
 
 **Before:**
+
 ```php
 private function getStockLevelDistribution($tenant)
 {
@@ -132,12 +138,13 @@ private function getStockLevelDistribution($tenant)
         ->where('maintain_stock', true)
         ->where('current_stock', '<=', 0)  // ❌ Wrong
         ->count();
-    
+
     // ... rest of code
 }
 ```
 
 **After:**
+
 ```php
 private function getStockLevelDistribution($tenant)
 {
@@ -167,7 +174,7 @@ private function getStockLevelDistribution($tenant)
         ->count();
 
     $total = $inStock + $lowStock + $outOfStock + $noStockTracking;
-    
+
     // ... rest of code
 }
 ```
@@ -179,10 +186,10 @@ private function getStockLevelDistribution($tenant)
 1. **User visits dashboard** → `InventoryController@index()`
 2. **Controller loads products** → Fetches all active products with stock tracking
 3. **For each product:**
-   - Accesses `$product->current_stock` 
-   - Triggers `getCurrentStockAttribute()` in Product model
-   - Model calculates stock by summing `stock_movements.quantity` where `transaction_date <= today`
-   - Result is cached for 5 minutes
+    - Accesses `$product->current_stock`
+    - Triggers `getCurrentStockAttribute()` in Product model
+    - Model calculates stock by summing `stock_movements.quantity` where `transaction_date <= today`
+    - Result is cached for 5 minutes
 4. **Controller counts:** In stock / Low stock / Out of stock based on calculated values
 5. **View displays:** Correct statistics on dashboard cards and charts
 
@@ -232,51 +239,55 @@ TENANT DASHBOARD STATISTICS:
 
 ## Performance Considerations
 
-- **Caching:** Stock calculations are cached for 5 minutes per product
-- **Efficient Queries:** Loads products once, then iterates (better than N+1)
-- **Scalability:** For large tenants (1000+ products), consider:
-  - Background job to pre-calculate dashboard stats
-  - Longer cache duration (15-30 minutes)
-  - Database indexing on `stock_movements(product_id, transaction_date)`
+-   **Caching:** Stock calculations are cached for 5 minutes per product
+-   **Efficient Queries:** Loads products once, then iterates (better than N+1)
+-   **Scalability:** For large tenants (1000+ products), consider:
+    -   Background job to pre-calculate dashboard stats
+    -   Longer cache duration (15-30 minutes)
+    -   Database indexing on `stock_movements(product_id, transaction_date)`
 
 ## Files Modified
 
 1. ✅ `app/Http/Controllers/Tenant/Inventory/InventoryController.php`
-   - `index()` method - Dashboard statistics calculation
-   - `getStockLevelDistribution()` method - Chart data
+
+    - `index()` method - Dashboard statistics calculation
+    - `getStockLevelDistribution()` method - Chart data
 
 2. ✅ `app/Models/Product.php` (Already fixed in previous commit)
-   - `getCurrentStockAttribute()` - Always calculates from movements
-   - `getStockValueAttribute()` - Always calculates from movements
+    - `getCurrentStockAttribute()` - Always calculates from movements
+    - `getStockValueAttribute()` - Always calculates from movements
 
 ## Testing Scripts
 
 ### Test Product Stock:
+
 ```bash
 php test_product_stock_fix.php
 ```
 
 ### Test Dashboard Statistics:
+
 ```bash
 php test_product_tenant_dashboard.php
 ```
 
 ### Test Inventory Dashboard:
+
 ```bash
 php test_inventory_dashboard.php
 ```
 
 ## Migration Checklist
 
-- [x] Update Product model to calculate from movements
-- [x] Update ProductController show/index methods
-- [x] Update InventoryController dashboard calculations
-- [x] Update stock level distribution calculations
-- [x] Test with real product data
-- [x] Verify dashboard displays correctly
-- [ ] Monitor performance with large datasets
-- [ ] Update any reports that use stock data
-- [ ] Consider removing old `current_stock` column (future)
+-   [x] Update Product model to calculate from movements
+-   [x] Update ProductController show/index methods
+-   [x] Update InventoryController dashboard calculations
+-   [x] Update stock level distribution calculations
+-   [x] Test with real product data
+-   [x] Verify dashboard displays correctly
+-   [ ] Monitor performance with large datasets
+-   [ ] Update any reports that use stock data
+-   [ ] Consider removing old `current_stock` column (future)
 
 ## Next Steps
 
@@ -290,8 +301,8 @@ php test_inventory_dashboard.php
 
 ---
 
-**Status:** ✅ FIXED AND TESTED  
-**Date:** October 10, 2025  
-**Affected Areas:** Inventory Dashboard, Stock Statistics, Low Stock Alerts  
-**Test Tenant:** Graiden Richardsonnew (ID: 42)  
+**Status:** ✅ FIXED AND TESTED
+**Date:** October 10, 2025
+**Affected Areas:** Inventory Dashboard, Stock Statistics, Low Stock Alerts
+**Test Tenant:** Graiden Richardsonnew (ID: 42)
 **Test Product:** Milk (ID: 48) with 200 pcs showing correctly as IN STOCK

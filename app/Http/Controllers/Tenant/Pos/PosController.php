@@ -42,13 +42,20 @@ class PosController extends Controller
 
         // Only load additional data if session is active
         if ($activeSession) {
+            // Load products and filter by calculated stock (not database column)
+            $allProducts = Product::where('tenant_id', $tenant->id)
+                ->where('is_active', true)
+                ->with(['category', 'unit'])
+                ->orderBy('name')
+                ->get();
+
+            // Filter products with stock > 0 using calculated stock from movements
+            $productsWithStock = $allProducts->filter(function ($product) {
+                return $product->current_stock > 0; // Uses calculated stock from movements
+            })->values();
+
             $data = array_merge($data, [
-                'products' => Product::where('tenant_id', $tenant->id)
-                    ->where('is_active', true)
-                    ->where('current_stock', '>', 0)
-                    ->with(['category', 'unit'])
-                    ->orderBy('name')
-                    ->get(),
+                'products' => $productsWithStock,
                 'categories' => ProductCategory::where('tenant_id', $tenant->id)
                     ->where('is_active', true)
                     ->orderBy('name')

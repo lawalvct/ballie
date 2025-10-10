@@ -68,10 +68,10 @@ foreach ($products as $product) {
 
     // Display first 10 products
     if (($outOfStockItems + $lowStockItems + $inStockItems) <= 10) {
-        printf("%-5d %-30s %10.2f %10.2f %10s\n", 
-            $product->id, 
-            substr($product->name, 0, 30), 
-            $currentStock, 
+        printf("%-5d %-30s %10.2f %10.2f %10s\n",
+            $product->id,
+            substr($product->name, 0, 30),
+            $currentStock,
             $reorderLevel,
             $status
         );
@@ -106,7 +106,7 @@ if ($testProduct && $testProduct->tenant_id === $tenant->id) {
     echo "Current Stock: {$stock} pcs\n";
     echo "Stock Value: ₦" . number_format($value, 2) . "\n";
     echo "Reorder Level: {$reorder} pcs\n";
-    
+
     if ($stock <= 0) {
         echo "Status: ❌ OUT OF STOCK\n";
     } elseif ($reorder && $stock <= $reorder) {
