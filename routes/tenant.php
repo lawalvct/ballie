@@ -132,6 +132,14 @@ Route::middleware(['auth'])->group(function () {
         // Dashboard
         Route::get('/dashboard', [DashboardController::class, 'index'])->name('tenant.dashboard');
 
+        // User Profile Routes
+        Route::prefix('profile')->name('tenant.profile.')->group(function () {
+            Route::get('/', [\App\Http\Controllers\Tenant\ProfileController::class, 'index'])->name('index');
+            Route::put('/update', [\App\Http\Controllers\Tenant\ProfileController::class, 'update'])->name('update');
+            Route::put('/password', [\App\Http\Controllers\Tenant\ProfileController::class, 'updatePassword'])->name('password.update');
+            Route::delete('/avatar', [\App\Http\Controllers\Tenant\ProfileController::class, 'removeAvatar'])->name('avatar.remove');
+        });
+
         // Tour Routes - Guide for new users
         Route::prefix('tour')->name('tenant.tour.')->group(function () {
             Route::get('/start', [TourController::class, 'start'])->name('start');
