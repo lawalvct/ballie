@@ -537,4 +537,48 @@
         </div>
     </div>
 </div>
+
+@push('scripts')
+<script>
+    // Live preview for logo upload
+    document.addEventListener('DOMContentLoaded', function() {
+        const logoInput = document.getElementById('logo');
+
+        if (logoInput) {
+            logoInput.addEventListener('change', function(e) {
+                const file = e.target.files[0];
+                if (file && file.type.startsWith('image/')) {
+                    const reader = new FileReader();
+
+                    reader.onload = function(event) {
+                        // Find or create preview container
+                        let previewContainer = document.querySelector('.relative');
+                        if (!previewContainer) return;
+
+                        // Update existing image or create new one
+                        let existingImg = document.getElementById('logo-preview');
+                        if (existingImg) {
+                            existingImg.src = event.target.result;
+                        } else {
+                            // Replace placeholder with image
+                            const placeholder = previewContainer.querySelector('.bg-gradient-to-br');
+                            if (placeholder) {
+                                const newImg = document.createElement('img');
+                                newImg.id = 'logo-preview';
+                                newImg.src = event.target.result;
+                                newImg.alt = 'Company Logo Preview';
+                                newImg.className = 'w-32 h-32 rounded-xl object-cover border-4 border-gray-200';
+                                placeholder.replaceWith(newImg);
+                            }
+                        }
+                    };
+
+                    reader.readAsDataURL(file);
+                }
+            });
+        }
+    });
+</script>
+@endpush
+
 @endsection

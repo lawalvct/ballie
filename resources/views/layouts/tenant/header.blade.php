@@ -187,9 +187,15 @@
         <!-- User Menu -->
         <div class="relative" x-data="{ open: false }">
             <button @click="open = !open" @click.away="open = false" data-user-menu-button class="flex items-center space-x-3 p-2 rounded-xl hover:bg-gray-100 transition-colors duration-200">
-                <div class="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white font-semibold text-sm">
-                    {{ substr(auth()->user()->name ?? 'U', 0, 1) }}
-                </div>
+                @if(auth()->user()->avatar)
+                    <img src="{{ asset('storage/' . auth()->user()->avatar) }}"
+                         alt="{{ auth()->user()->name }}"
+                         class="w-8 h-8 rounded-full object-cover border-2 border-purple-500">
+                @else
+                    <div class="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white font-semibold text-sm">
+                        {{ substr(auth()->user()->name ?? 'U', 0, 1) }}
+                    </div>
+                @endif
                 <div class="hidden md:block text-left">
                     <div class="text-sm font-medium text-gray-700">{{ auth()->user()->name ?? 'User' }}</div>
                     <div class="text-xs text-gray-500">{{ auth()->user()->role ?? 'Admin' }}</div>
@@ -214,9 +220,15 @@
                 <!-- User Info Header -->
                 <div class="px-4 py-3 border-b border-gray-100">
                     <div class="flex items-center space-x-3">
-                        <div class="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white font-semibold">
-                            {{ substr(auth()->user()->name ?? 'U', 0, 1) }}
-                        </div>
+                        @if(auth()->user()->avatar)
+                            <img src="{{ asset('storage/' . auth()->user()->avatar) }}"
+                                 alt="{{ auth()->user()->name }}"
+                                 class="w-10 h-10 rounded-full object-cover border-2 border-purple-500">
+                        @else
+                            <div class="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white font-semibold">
+                                {{ substr(auth()->user()->name ?? 'U', 0, 1) }}
+                            </div>
+                        @endif
                         <div>
                             <div class="text-sm font-medium text-gray-900">{{ auth()->user()->name ?? 'User' }}</div>
                             <div class="text-xs text-gray-500">{{ auth()->user()->email ?? 'user@example.com' }}</div>
