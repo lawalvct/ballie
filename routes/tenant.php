@@ -688,9 +688,13 @@ Route::prefix('ledger-accounts')->name('ledger-accounts.')->group(function () {
             Route::get('/general', [SettingsController::class, 'general'])->name('general');
             Route::put('/general', [SettingsController::class, 'updateGeneral'])->name('general.update');
 
-            // Company Settings
-            Route::get('/company', [SettingsController::class, 'company'])->name('company');
-            Route::put('/company', [SettingsController::class, 'updateCompany'])->name('company.update');
+            // Company Settings (Owner Only)
+            Route::get('/company', [\App\Http\Controllers\Tenant\CompanySettingsController::class, 'index'])->name('company');
+            Route::put('/company/info', [\App\Http\Controllers\Tenant\CompanySettingsController::class, 'updateCompanyInfo'])->name('company.update-info');
+            Route::put('/company/business', [\App\Http\Controllers\Tenant\CompanySettingsController::class, 'updateBusinessDetails'])->name('company.update-business');
+            Route::put('/company/logo', [\App\Http\Controllers\Tenant\CompanySettingsController::class, 'updateLogo'])->name('company.update-logo');
+            Route::delete('/company/logo', [\App\Http\Controllers\Tenant\CompanySettingsController::class, 'removeLogo'])->name('company.remove-logo');
+            Route::put('/company/preferences', [\App\Http\Controllers\Tenant\CompanySettingsController::class, 'updatePreferences'])->name('company.update-preferences');
 
             // Financial Settings
             Route::get('/financial', [SettingsController::class, 'financial'])->name('financial');
