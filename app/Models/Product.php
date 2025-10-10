@@ -317,26 +317,32 @@ class Product extends Model
 
     public function getStockValueAttribute()
     {
-        return $this->current_stock_value;
+        // Calculate stock value from movements
+        $asOfDate = request('as_of_date', now()->toDateString());
+        $valuationMethod = request('valuation_method', 'weighted_average');
+
+        $cacheKey = "product_stock_value_{$this->id}_{$asOfDate}_{$valuationMethod}";
+
+        return Cache::remember($cacheKey, 300, function () use ($asOfDate, $valuationMethod) {
+            $result = $this->getStockValueAsOfDate($asOfDate, $valuationMethod);
+            return $result['value'] ?? 0;
+        });
     }
 
     /**
-     * Override current_stock to use date-based calculation when needed
+     * Override current_stock to always calculate from stock movements
      */
     public function getCurrentStockAttribute($value)
     {
-        // If we're requesting historical data or want real-time calculation
-        if (request()->has('as_of_date') || config('inventory.use_realtime_stock', false)) {
-            $asOfDate = request('as_of_date', now()->toDateString());
-            $cacheKey = "product_stock_{$this->id}_{$asOfDate}";
+        // Always calculate from stock movements based on transaction_date
+        $asOfDate = request('as_of_date', now()->toDateString());
 
-            return Cache::remember($cacheKey, 3600, function () use ($asOfDate) {
-                return $this->getStockAsOfDate($asOfDate);
-            });
-        }
+        // Use a short cache to avoid repeated calculations in same request
+        $cacheKey = "product_stock_{$this->id}_{$asOfDate}";
 
-        // Return stored value for performance
-        return $value ?? 0;
+        return Cache::remember($cacheKey, 300, function () use ($asOfDate) {
+            return $this->getStockAsOfDate($asOfDate);
+        });
     }
 
     // Compatibility accessors

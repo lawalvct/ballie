@@ -14,6 +14,7 @@ use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Cache;
 
 class ProductController extends Controller
 {
@@ -174,6 +175,15 @@ class ProductController extends Controller
     }
 
     $product->load(['category', 'primaryUnit', 'stockAssetAccount', 'salesAccount', 'purchaseAccount']);
+
+    // Clear cache to get fresh stock data
+    $asOfDate = now()->toDateString();
+    Cache::forget("product_stock_{$product->id}_{$asOfDate}");
+    Cache::forget("product_stock_value_{$product->id}_{$asOfDate}_weighted_average");
+
+    // Calculate real-time stock from movements
+    $product->calculated_stock = $product->getStockAsOfDate($asOfDate);
+    $product->calculated_stock_value = $product->getStockValueAsOfDate($asOfDate);
 
     return view('tenant.inventory.products.show', compact('tenant', 'product'));
 }
