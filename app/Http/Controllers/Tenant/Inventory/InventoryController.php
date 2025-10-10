@@ -17,18 +17,32 @@ class InventoryController extends Controller
         // Get inventory statistics
         $totalProducts = Product::where('tenant_id', $tenant->id)->count();
 
-        $totalStockValue = Product::where('tenant_id', $tenant->id)
-            ->sum(DB::raw('COALESCE(current_stock, 0) * COALESCE(purchase_rate, 0)'));
-
-        $lowStockItems = Product::where('tenant_id', $tenant->id)
+        // Calculate total stock value from all products with calculated stock
+        $products = Product::where('tenant_id', $tenant->id)
             ->where('maintain_stock', true)
-            ->whereColumn('current_stock', '<=', 'reorder_level')
-            ->count();
+            ->where('is_active', true)
+            ->get();
 
-        $outOfStockItems = Product::where('tenant_id', $tenant->id)
-            ->where('maintain_stock', true)
-            ->where('current_stock', '<=', 0)
-            ->count();
+        $totalStockValue = 0;
+        $lowStockItems = 0;
+        $outOfStockItems = 0;
+
+        foreach ($products as $product) {
+            $currentStock = $product->current_stock; // Uses calculated stock from movements
+            $stockValue = $product->stock_value; // Uses calculated stock value
+
+            $totalStockValue += $stockValue;
+
+            // Count low stock items
+            if ($product->reorder_level && $currentStock > 0 && $currentStock <= $product->reorder_level) {
+                $lowStockItems++;
+            }
+
+            // Count out of stock items
+            if ($currentStock <= 0) {
+                $outOfStockItems++;
+            }
+        }
 
         $totalCategories = ProductCategory::where('tenant_id', $tenant->id)->count();
 
@@ -48,15 +62,19 @@ class InventoryController extends Controller
                 return $product;
             });
 
-        // Get low stock products
-        $lowStockProducts = Product::where('tenant_id', $tenant->id)
+        // Get low stock products (calculated from movements)
+        $allProducts = Product::where('tenant_id', $tenant->id)
             ->with(['category', 'primaryUnit'])
             ->where('maintain_stock', true)
-            ->whereColumn('current_stock', '<=', 'reorder_level')
-            ->orderBy('current_stock', 'asc')
-            ->limit(5)
-            ->get()
-            ->map(function ($product) {
+            ->get();
+
+        $lowStockProducts = $allProducts->filter(function ($product) {
+            $currentStock = $product->current_stock; // Calculated from movements
+            return $product->reorder_level && $currentStock > 0 && $currentStock <= $product->reorder_level;
+        })
+        ->sortBy('current_stock')
+        ->take(5)
+        ->map(function ($product) {
                 // Add compatibility attributes
                 $product->quantity = $product->current_stock;
                 $product->minimum_stock_level = $product->reorder_level;
@@ -294,21 +312,26 @@ class InventoryController extends Controller
      */
     private function getStockLevelDistribution($tenant)
     {
-        $inStock = Product::where('tenant_id', $tenant->id)
+        // Get all products and calculate stock from movements
+        $productsWithStock = Product::where('tenant_id', $tenant->id)
             ->where('maintain_stock', true)
-            ->whereColumn('current_stock', '>', 'reorder_level')
-            ->count();
+            ->get();
 
-        $lowStock = Product::where('tenant_id', $tenant->id)
-            ->where('maintain_stock', true)
-            ->whereColumn('current_stock', '<=', 'reorder_level')
-            ->where('current_stock', '>', 0)
-            ->count();
+        $inStock = 0;
+        $lowStock = 0;
+        $outOfStock = 0;
 
-        $outOfStock = Product::where('tenant_id', $tenant->id)
-            ->where('maintain_stock', true)
-            ->where('current_stock', '<=', 0)
-            ->count();
+        foreach ($productsWithStock as $product) {
+            $currentStock = $product->current_stock; // Calculated from movements
+
+            if ($currentStock <= 0) {
+                $outOfStock++;
+            } elseif ($product->reorder_level && $currentStock <= $product->reorder_level) {
+                $lowStock++;
+            } else {
+                $inStock++;
+            }
+        }
 
         $noStockTracking = Product::where('tenant_id', $tenant->id)
             ->where('maintain_stock', false)
