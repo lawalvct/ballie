@@ -205,7 +205,7 @@
 
             <!-- Settings -->
             <li>
-                <a href="{{ route('tenant.settings.index', ['tenant' => tenant()->slug]) }}"
+                <a href="{{ route('tenant.settings.company', ['tenant' => tenant()->slug]) }}"
                    class="menu-item flex items-center px-4 py-3 rounded-xl group {{ request()->routeIs('tenant.settings.*') ? 'active' : '' }}"
                    title="Settings & Configuration">
                     <div class="flex-shrink-0 w-6 h-6 mr-4 text-gray-400 group-hover:scale-110 transition-transform duration-200">
