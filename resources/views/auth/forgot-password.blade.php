@@ -97,11 +97,16 @@
                 </div>
 
                 <!-- Submit Button -->
-                <button type="submit" class="w-full py-3 px-4 rounded-lg font-semibold text-white transition-all duration-300 hover:opacity-90 transform hover:scale-105 flex items-center justify-center" style="background-color: var(--color-gold);">
-                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <button type="submit" id="submitBtn" class="w-full py-3 px-4 rounded-lg font-semibold text-white transition-all duration-300 hover:opacity-90 transform hover:scale-105 flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none" style="background-color: var(--color-gold);">
+                    <svg id="mailIcon" class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
                     </svg>
-                    Send Reset Link
+                    <svg id="spinnerIcon" class="hidden w-5 h-5 mr-2 animate-spin" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    <span id="btnText">Send Reset Link</span>
+                    <span id="countdownText" class="hidden"></span>
                 </button>
 
                 <!-- Back to Login -->
@@ -145,4 +150,82 @@
         </div>
     </div>
 </div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const form = document.querySelector('form');
+        const submitBtn = document.getElementById('submitBtn');
+        const btnText = document.getElementById('btnText');
+        const countdownText = document.getElementById('countdownText');
+        const mailIcon = document.getElementById('mailIcon');
+        const spinnerIcon = document.getElementById('spinnerIcon');
+
+        // Check if there's a rate limit from localStorage
+        const rateLimitKey = 'password_reset_limit';
+        const rateLimitData = localStorage.getItem(rateLimitKey);
+
+        if (rateLimitData) {
+            const { email, expiresAt } = JSON.parse(rateLimitData);
+            const now = Date.now();
+
+            if (now < expiresAt) {
+                startCountdown(Math.ceil((expiresAt - now) / 1000));
+            } else {
+                localStorage.removeItem(rateLimitKey);
+            }
+        }
+
+        // Handle form submission
+        form.addEventListener('submit', function(e) {
+            // Show loading state
+            submitBtn.disabled = true;
+            mailIcon.classList.add('hidden');
+            spinnerIcon.classList.remove('hidden');
+            btnText.textContent = 'Sending...';
+
+            // Store rate limit in localStorage (1 minute = 60 seconds)
+            const emailInput = document.getElementById('email');
+            const expiresAt = Date.now() + (60 * 1000); // 1 minute from now
+
+            localStorage.setItem(rateLimitKey, JSON.stringify({
+                email: emailInput.value,
+                expiresAt: expiresAt
+            }));
+        });
+
+        function startCountdown(seconds) {
+            submitBtn.disabled = true;
+            btnText.classList.add('hidden');
+            countdownText.classList.remove('hidden');
+            mailIcon.classList.add('hidden');
+
+            updateCountdown(seconds);
+
+            const interval = setInterval(() => {
+                seconds--;
+
+                if (seconds <= 0) {
+                    clearInterval(interval);
+                    resetButton();
+                    localStorage.removeItem(rateLimitKey);
+                } else {
+                    updateCountdown(seconds);
+                }
+            }, 1000);
+        }
+
+        function updateCountdown(seconds) {
+            countdownText.textContent = `Please wait ${seconds}s before requesting again`;
+        }
+
+        function resetButton() {
+            submitBtn.disabled = false;
+            btnText.classList.remove('hidden');
+            countdownText.classList.add('hidden');
+            mailIcon.classList.remove('hidden');
+            spinnerIcon.classList.add('hidden');
+            btnText.textContent = 'Send Reset Link';
+        }
+    });
+</script>
 @endsection
