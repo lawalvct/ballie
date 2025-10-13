@@ -28,6 +28,26 @@ Route::get('/cookies', [HomeController::class, 'cookies'])->name('cookies');
 
 Route::get('/demo2', [HomeController::class, 'demo'])->name('profile.edit');
 
+// Affiliate Program Routes
+use App\Http\Controllers\AffiliateController;
+
+Route::prefix('affiliate')->name('affiliate.')->group(function () {
+    Route::get('/', [AffiliateController::class, 'index'])->name('index');
+    Route::get('/register', [AffiliateController::class, 'register'])->name('register');
+    Route::post('/register', [AffiliateController::class, 'store'])->name('store');
+
+    // Protected affiliate routes
+    Route::middleware('auth')->group(function () {
+        Route::get('/dashboard', [AffiliateController::class, 'dashboard'])->name('dashboard');
+        Route::get('/referrals', [AffiliateController::class, 'referrals'])->name('referrals');
+        Route::get('/commissions', [AffiliateController::class, 'commissions'])->name('commissions');
+        Route::get('/payouts', [AffiliateController::class, 'payouts'])->name('payouts');
+        Route::post('/payouts/request', [AffiliateController::class, 'requestPayout'])->name('payouts.request');
+        Route::get('/settings', [AffiliateController::class, 'settings'])->name('settings');
+        Route::post('/settings', [AffiliateController::class, 'updateSettings'])->name('settings.update');
+    });
+});
+
 // Social Authentication Routes
 use App\Http\Controllers\Auth\SocialAuthController;
 
