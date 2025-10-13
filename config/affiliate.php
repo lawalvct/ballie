@@ -60,7 +60,7 @@ return [
 
     'payout_methods' => [
         'bank_transfer' => 'Bank Transfer',
-        'paypal' => 'PayPal',
+        'nomba' => 'Nomba',
         'stripe' => 'Stripe',
         'paystack' => 'Paystack',
     ],

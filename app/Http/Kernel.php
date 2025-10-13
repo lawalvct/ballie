@@ -36,6 +36,7 @@ class Kernel extends HttpKernel
             \Illuminate\View\Middleware\ShareErrorsFromSession::class,
             \App\Http\Middleware\VerifyCsrfToken::class,
             \Illuminate\Routing\Middleware\SubstituteBindings::class,
+            \App\Http\Middleware\TrackAffiliateReferral::class,
         ],
 
         'api' => [
@@ -84,5 +85,6 @@ class Kernel extends HttpKernel
         'onboarding.completed' => \App\Http\Middleware\OnboardingCompleted::class,
         'role' => \App\Http\Middleware\CheckUserRole::class,
         'permission' => \App\Http\Middleware\CheckPermission::class,
+        'track.affiliate' => \App\Http\Middleware\TrackAffiliateReferral::class,
     ];
 }

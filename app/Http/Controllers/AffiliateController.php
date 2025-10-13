@@ -6,9 +6,11 @@ use App\Models\Affiliate;
 use App\Models\AffiliateReferral;
 use App\Models\AffiliateCommission;
 use App\Models\AffiliatePayout;
+use App\Models\Tenant;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class AffiliateController extends Controller
 {
@@ -50,33 +52,52 @@ class AffiliateController extends Controller
             'company_name' => 'required|string|max:255',
             'phone' => 'nullable|string|max:20',
             'bio' => 'nullable|string|max:1000',
-            'payment_method' => 'required|in:bank_transfer,paypal,stripe,paystack',
-            'payment_details' => 'required|array',
+            'payment_method' => 'required|in:bank_transfer,nomba,stripe,paystack',
+            'payment_details' => 'nullable|array',
+            'payment_details.*' => 'nullable|string|max:255',
+            'agree_terms' => 'required|accepted',
         ]);
 
         try {
             DB::beginTransaction();
 
+            // Get or create a system tenant for affiliates
+            $affiliateTenant = \App\Models\Tenant::firstOrCreate(
+                ['slug' => 'affiliates-system'],
+                [
+                    'name' => 'Affiliates System',
+                    'email' => 'affiliates@ballie.ng',
+                    'subscription_status' => 'active',
+                    'is_active' => true,
+                ]
+            );
+
             // Create user account
             $user = \App\Models\User::create([
-                'first_name' => $validated['first_name'],
-                'last_name' => $validated['last_name'],
+                'tenant_id' => $affiliateTenant->id,
+                'name' => $validated['first_name'] . ' ' . $validated['last_name'],
                 'email' => $validated['email'],
                 'password' => bcrypt($validated['password']),
+                'phone' => $validated['phone'] ?? null,
+                'is_active' => true,
+                'role' => 'employee', // Default role for affiliate users
             ]);
 
             // Create affiliate profile
             $status = config('affiliate.auto_approval') ? 'active' : 'pending';
 
+            // Prepare payment details
+            $paymentDetails = [
+                'method' => $validated['payment_method'],
+                'details' => $validated['payment_details'] ?? []
+            ];
+
             $affiliate = Affiliate::create([
                 'user_id' => $user->id,
                 'company_name' => $validated['company_name'],
-                'phone' => $validated['phone'],
-                'bio' => $validated['bio'],
-                'payment_details' => [
-                    'method' => $validated['payment_method'],
-                    'details' => $validated['payment_details'],
-                ],
+                'phone' => $validated['phone'] ?? null,
+                'bio' => $validated['bio'] ?? null,
+                'payment_details' => $paymentDetails,
                 'status' => $status,
                 'approved_at' => config('affiliate.auto_approval') ? now() : null,
             ]);
@@ -94,7 +115,11 @@ class AffiliateController extends Controller
 
         } catch (\Exception $e) {
             DB::rollBack();
-            return back()->withInput()->with('error', 'An error occurred. Please try again.');
+            Log::error('Affiliate registration error: ' . $e->getMessage(), [
+                'trace' => $e->getTraceAsString(),
+                'request' => $request->except(['password', 'password_confirmation'])
+            ]);
+            return back()->withInput()->with('error', 'An error occurred: ' . $e->getMessage());
         }
     }
 
