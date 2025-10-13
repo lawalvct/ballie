@@ -45,4 +45,9 @@ class HomeController extends Controller
     {
         return view('legal.privacy');
     }
+
+    public function cookies()
+    {
+        return view('legal.cookies');
+    }
 }

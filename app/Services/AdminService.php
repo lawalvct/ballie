@@ -24,7 +24,7 @@ class AdminService
      */
     public function getDashboardStats()
     {
-        $tenantId = tenant('id');
+        $tenantId = tenant()->id;
 
         return [
             'total_users' => User::where('tenant_id', $tenantId)->count(),
@@ -51,7 +51,7 @@ class AdminService
     {
         // This would typically come from a login_logs table
         // For now, we'll use cache or implement a simple tracking
-        return Cache::remember('recent_logins_count_' . tenant('id'), 3600, function () {
+        return Cache::remember('recent_logins_count_' . tenant()->id, 3600, function () {
             return rand(10, 50); // Placeholder
         });
     }
@@ -62,7 +62,7 @@ class AdminService
     private function getFailedLoginsToday()
     {
         // This would typically come from a failed_login_attempts table
-        return Cache::remember('failed_logins_today_' . tenant('id'), 3600, function () {
+        return Cache::remember('failed_logins_today_' . tenant()->id, 3600, function () {
             return rand(0, 5); // Placeholder
         });
     }
@@ -74,7 +74,7 @@ class AdminService
     {
         // Check if using database sessions
         if (config('session.driver') === 'database') {
-            return Cache::remember('active_sessions_' . tenant('id'), 300, function () {
+            return Cache::remember('active_sessions_' . tenant()->id, 300, function () {
                 return DB::table('sessions')
                     ->where('user_id', '!=', null)
                     ->where('last_activity', '>=', now()->subMinutes(30)->timestamp)
@@ -83,9 +83,9 @@ class AdminService
         }
 
         // For file-based sessions, return a placeholder or calculate differently
-        return Cache::remember('active_sessions_' . tenant('id'), 300, function () {
+        return Cache::remember('active_sessions_' . tenant()->id, 300, function () {
             // Return count of users active in last 30 minutes based on updated_at
-            return User::where('tenant_id', tenant('id'))
+            return User::where('tenant_id', tenant()->id)
                 ->where('updated_at', '>=', now()->subMinutes(30))
                 ->count();
         });
@@ -96,7 +96,7 @@ class AdminService
      */
     private function getUserGrowthData()
     {
-        $tenantId = tenant('id');
+        $tenantId = tenant()->id;
         $data = [];
 
         for ($i = 6; $i >= 0; $i--) {
@@ -119,7 +119,7 @@ class AdminService
      */
     private function getRoleDistribution()
     {
-        $tenantId = tenant('id');
+        $tenantId = tenant()->id;
 
         return Role::where('tenant_id', $tenantId)
             ->withCount('users')
@@ -256,7 +256,7 @@ class AdminService
     public function exportUsers($filters = [])
     {
         $query = User::with(['roles'])
-            ->where('tenant_id', tenant('id'));
+            ->where('tenant_id', tenant()->id);
 
         // Apply filters
         if (!empty($filters['role'])) {
@@ -293,7 +293,7 @@ class AdminService
      */
     public function bulkUserAction($action, $userIds)
     {
-        $tenantId = tenant('id');
+        $tenantId = tenant()->id;
         $currentUserId = auth()->id();
 
         // Remove current user from bulk actions
@@ -440,7 +440,7 @@ class AdminService
             // Get from sessions table with user information
             return DB::table('sessions')
                 ->join('users', 'sessions.user_id', '=', 'users.id')
-                ->where('users.tenant_id', tenant('id'))
+                ->where('users.tenant_id', tenant()->id)
                 ->where('sessions.last_activity', '>=', now()->subMinutes(30)->timestamp)
                 ->select([
                     'sessions.id',
@@ -466,7 +466,7 @@ class AdminService
         }
 
         // For file-based sessions, return placeholder data or recent users
-        return User::where('tenant_id', tenant('id'))
+        return User::where('tenant_id', tenant()->id)
             ->where('updated_at', '>=', now()->subMinutes(30))
             ->latest('updated_at')
             ->take(10)

@@ -24,6 +24,7 @@ Route::get('/contact', [HomeController::class, 'contact'])->name('contact');
 Route::get('/demo', [HomeController::class, 'demo'])->name('demo');
 Route::get('/terms', [HomeController::class, 'terms'])->name('terms');
 Route::get('/privacy', [HomeController::class, 'privacy'])->name('privacy');
+Route::get('/cookies', [HomeController::class, 'cookies'])->name('cookies');
 
 Route::get('/demo2', [HomeController::class, 'demo'])->name('profile.edit');
 

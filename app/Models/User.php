@@ -165,6 +165,15 @@ class User extends Authenticatable
     }
 
     /**
+     * Get the roles for the user.
+     */
+    public function roles()
+    {
+        return $this->belongsToMany(\App\Models\Tenant\Role::class, 'role_user', 'user_id', 'role_id')
+                    ->withTimestamps();
+    }
+
+    /**
      * Send the password reset notification.
      *
      * @param  string  $token

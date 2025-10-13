@@ -184,19 +184,26 @@
                                 <select name="role_id" id="role_id" required
                                         class="block w-full rounded-md shadow-sm {{ $errors->has('role_id') ? 'border-red-300 text-red-900 focus:ring-red-500 focus:border-red-500' : 'border-gray-300 focus:ring-purple-500 focus:border-purple-500' }}">
                                     <option value="">Select a role</option>
-                                    @if(isset($roles))
+                                    @if(isset($roles) && $roles->count() > 0)
                                         @foreach($roles as $role)
-                                            <option value="{{ $role->id }}" {{ old('role_id') == $role->id ? 'selected' : '' }}>
+                                            <option value="{{ $role->id }}"
+                                                    {{ old('role_id') == $role->id ? 'selected' : '' }}
+                                                    data-description="{{ $role->description }}">
                                                 {{ $role->name }}
+                                                @if($role->is_default)
+                                                    (Default)
+                                                @endif
                                             </option>
                                         @endforeach
+                                    @else
+                                        <option value="" disabled>No roles available</option>
                                     @endif
                                 </select>
                             </div>
                             @error('role_id')
                                 <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
                             @enderror
-                            <p class="mt-2 text-sm text-gray-500">Choose the role that determines user permissions.</p>
+                            <p id="role-description" class="mt-2 text-sm text-gray-500">Choose the role that determines user permissions.</p>
                         </div>
 
                         {{-- Status --}}
@@ -319,6 +326,27 @@
                 }
             }
         });
+
+        // Role selection - show description
+        const roleSelect = document.getElementById('role_id');
+        const roleDescription = document.getElementById('role-description');
+
+        if (roleSelect && roleDescription) {
+            roleSelect.addEventListener('change', function() {
+                const selectedOption = this.options[this.selectedIndex];
+                const description = selectedOption.getAttribute('data-description');
+
+                if (description && description !== 'null') {
+                    roleDescription.textContent = description;
+                    roleDescription.classList.remove('text-gray-500');
+                    roleDescription.classList.add('text-blue-600', 'font-medium');
+                } else {
+                    roleDescription.textContent = 'Choose the role that determines user permissions.';
+                    roleDescription.classList.add('text-gray-500');
+                    roleDescription.classList.remove('text-blue-600', 'font-medium');
+                }
+            });
+        }
     });
 </script>
 @endpush

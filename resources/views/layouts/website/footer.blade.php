@@ -70,9 +70,9 @@
                         © {{ date('Y') }} Ballie. All rights reserved. Built with ❤️ for Nigerian businesses.
                     </p>
                     <div class="flex space-x-6 mt-4 md:mt-0">
-                        <a href="#" class="text-gray-400 hover:text-brand-gold text-sm transition-colors">Privacy Policy</a>
-                        <a href="#" class="text-gray-400 hover:text-brand-gold text-sm transition-colors">Terms of Service</a>
-                        <a href="#" class="text-gray-400 hover:text-brand-gold text-sm transition-colors">Cookie Policy</a>
+                        <a href="{{ route('privacy') }}" class="text-gray-400 hover:text-brand-gold text-sm transition-colors">Privacy Policy</a>
+                        <a href="{{ route('terms') }}" class="text-gray-400 hover:text-brand-gold text-sm transition-colors">Terms of Service</a>
+                        <a href="{{ route('cookies') }}" class="text-gray-400 hover:text-brand-gold text-sm transition-colors">Cookie Policy</a>
                     </div>
                 </div>
 
