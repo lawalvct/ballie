@@ -375,4 +375,19 @@ class Tenant extends Model
     {
         return $this->hasMany(Voucher::class);
     }
+
+    /**
+     * Check if tenant owner has verified their email
+     *
+     * @return bool
+     */
+    public function getIsVerifiedAttribute(): bool
+    {
+        // Get the owner user (first user with owner role)
+        $owner = User::where('tenant_id', $this->id)
+            ->where('role', User::ROLE_OWNER)
+            ->first();
+
+        return $owner && !is_null($owner->email_verified_at);
+    }
 }

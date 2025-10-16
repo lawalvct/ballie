@@ -7,6 +7,7 @@ use App\Models\User;
 use App\Models\Tenant;
 use App\Helpers\TenantHelper;
 use App\Models\Plan;
+use App\Notifications\WelcomeNotification;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Http\Request;
 use Illuminate\Http\RedirectResponse;
@@ -106,8 +107,26 @@ class RegisteredUserController extends Controller
 
                 Log::info('User created successfully', ['user_id' => $user->id]);
 
-                event(new Registered($user));
+                // Generate 4-digit verification code
+                $code = sprintf('%04d', random_int(0, 9999));
 
+                // Store verification code
+                DB::table('email_verification_codes')->insert([
+                    'user_id' => $user->id,
+                    'code' => $code,
+                    'expires_at' => now()->addMinutes(60),
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ]);
+
+                Log::info('Verification code generated', ['user_id' => $user->id]);
+
+                // Send welcome email with verification code
+                $user->notify(new WelcomeNotification($code));
+
+                Log::info('Welcome email sent', ['user_id' => $user->id]);
+
+                // Log user in (but they'll need to verify email)
                 Auth::login($user);
 
                 Log::info('User logged in successfully');
@@ -115,9 +134,9 @@ class RegisteredUserController extends Controller
 
             Log::info('Registration completed successfully');
 
-            // Redirect to tenant-specific dashboard with trial welcome message
-            return redirect()->route('tenant.dashboard', ['tenant' => $tenant->slug])
-                ->with('success', 'Registration successful! Welcome to Ballie. Your 30-day trial for the ' . $tenant->plan->name . ' plan has started.');
+            // Redirect to verification notice page
+            return redirect()->route('verification.notice')
+                ->with('success', 'Registration successful! Please check your email for a verification code.');
 
         } catch (\Exception $e) {
             Log::error('Registration failed', [

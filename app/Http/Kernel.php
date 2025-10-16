@@ -75,7 +75,7 @@ class Kernel extends HttpKernel
         'precognitive' => \Illuminate\Foundation\Http\Middleware\HandlePrecognitiveRequests::class,
         'signed' => \App\Http\Middleware\ValidateSignature::class,
         'throttle' => \Illuminate\Routing\Middleware\ThrottleRequests::class,
-        'verified' => \Illuminate\Auth\Middleware\EnsureEmailIsVerified::class,
+        'verified' => \App\Http\Middleware\EnsureEmailIsVerified::class,
 
         // Custom middleware aliases
         'tenant.context' => \App\Http\Middleware\TenantContext::class,
@@ -86,5 +86,6 @@ class Kernel extends HttpKernel
         'role' => \App\Http\Middleware\CheckUserRole::class,
         'permission' => \App\Http\Middleware\CheckPermission::class,
         'track.affiliate' => \App\Http\Middleware\TrackAffiliateReferral::class,
+        'email.verified' => \App\Http\Middleware\EnsureEmailIsVerified::class,
     ];
 }

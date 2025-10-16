@@ -128,7 +128,7 @@ Route::middleware(['auth'])->group(function () {
     });
 
     // Routes that require completed onboarding and active subscription
-    Route::middleware(['onboarding.completed', 'subscription.check'])->group(function () {
+    Route::middleware(['email.verified', 'onboarding.completed', 'subscription.check'])->group(function () {
         // Dashboard
         Route::get('/dashboard', [DashboardController::class, 'index'])->name('tenant.dashboard');
 
