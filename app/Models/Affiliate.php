@@ -51,7 +51,8 @@ class Affiliate extends Model
     public static function generateUniqueCode()
     {
         do {
-            $code = 'AFF' . strtoupper(Str::random(8));
+          //    $code = 'AFF' . strtoupper(Str::random(8));
+            $code = strtoupper(Str::random(6));
         } while (static::where('affiliate_code', $code)->exists());
 
         return $code;

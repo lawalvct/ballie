@@ -49,7 +49,7 @@ class AffiliateController extends Controller
             'last_name' => 'required|string|max:255',
             'email' => 'required|email|unique:users,email',
             'password' => 'required|string|min:8|confirmed',
-            'company_name' => 'required|string|max:255',
+            'company_name' => 'nullable|string|max:255',
             'phone' => 'nullable|string|max:20',
             'bio' => 'nullable|string|max:1000',
             'payment_method' => 'required|in:bank_transfer,nomba,stripe,paystack',
@@ -94,7 +94,7 @@ class AffiliateController extends Controller
 
             $affiliate = Affiliate::create([
                 'user_id' => $user->id,
-                'company_name' => $validated['company_name'],
+                'company_name' => $validated['company_name'] ?? 'none',
                 'phone' => $validated['phone'] ?? null,
                 'bio' => $validated['bio'] ?? null,
                 'payment_details' => $paymentDetails,
