@@ -30,14 +30,22 @@ Route::get('/demo2', [HomeController::class, 'demo'])->name('profile.edit');
 
 // Affiliate Program Routes
 use App\Http\Controllers\AffiliateController;
+use App\Http\Controllers\Affiliate\AffiliateVerificationController;
 
 Route::prefix('affiliate')->name('affiliate.')->group(function () {
     Route::get('/', [AffiliateController::class, 'index'])->name('index');
     Route::get('/register', [AffiliateController::class, 'register'])->name('register');
     Route::post('/register', [AffiliateController::class, 'store'])->name('store');
 
-    // Protected affiliate routes
+    // Email verification routes (require auth but not email verification)
     Route::middleware('auth')->group(function () {
+        Route::get('/verify-email', [AffiliateVerificationController::class, 'notice'])->name('verification.notice');
+        Route::post('/verify-email', [AffiliateVerificationController::class, 'verify'])->name('verification.verify')->middleware('throttle:6,1');
+        Route::post('/verification-code/resend', [AffiliateVerificationController::class, 'resend'])->name('verification.resend')->middleware('throttle:6,1');
+    });
+
+    // Protected affiliate routes (require email verification)
+    Route::middleware(['auth', 'affiliate.verified'])->group(function () {
         Route::get('/dashboard', [AffiliateController::class, 'dashboard'])->name('dashboard');
         Route::get('/referrals', [AffiliateController::class, 'referrals'])->name('referrals');
         Route::get('/commissions', [AffiliateController::class, 'commissions'])->name('commissions');

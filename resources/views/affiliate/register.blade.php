@@ -128,8 +128,8 @@
                     </h3>
                     <div class="space-y-6">
                         <div>
-                            <label for="company_name" class="block text-sm font-medium text-gray-700 mb-2">Company/Business Name *</label>
-                            <input type="text" name="company_name" id="company_name" value="{{ old('company_name') }}" required
+                            <label for="company_name" class="block text-sm font-medium text-gray-700 mb-2">Company/Business Name (optional)</label>
+                            <input type="text" name="company_name" id="company_name" value="{{ old('company_name') }}"
                                 class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all">
                         </div>
                         <div>
@@ -194,9 +194,9 @@
                             </div>
                         </div>
 
-                        <div id="paypal-fields" class="hidden">
-                            <label class="block text-sm font-medium text-gray-700 mb-2">PayPal Email</label>
-                            <input type="email" name="payment_details[paypal_email]" value="{{ old('payment_details.paypal_email') }}"
+                        <div id="nomba-fields" class="hidden">
+                            <label class="block text-sm font-medium text-gray-700 mb-2">nomba Email</label>
+                            <input type="email" name="payment_details[nomba_email]" value="{{ old('payment_details.nomba_email') }}"
                                 class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all">
                         </div>
 
@@ -246,20 +246,20 @@
 document.addEventListener('DOMContentLoaded', function() {
     const paymentMethod = document.getElementById('payment_method');
     const bankFields = document.getElementById('bank-transfer-fields');
-    const paypalFields = document.getElementById('paypal-fields');
+    const nombaFields = document.getElementById('nomba-fields');
     const paystackFields = document.getElementById('paystack-fields');
 
     paymentMethod.addEventListener('change', function() {
         // Hide all fields first
         bankFields.classList.add('hidden');
-        paypalFields.classList.add('hidden');
+        nombaFields.classList.add('hidden');
         paystackFields.classList.add('hidden');
 
         // Show relevant fields
         if (this.value === 'bank_transfer') {
             bankFields.classList.remove('hidden');
-        } else if (this.value === 'paypal') {
-            paypalFields.classList.remove('hidden');
+        } else if (this.value === 'nomba') {
+            nombaFields.classList.remove('hidden');
         } else if (this.value === 'paystack') {
             paystackFields.classList.remove('hidden');
         }

@@ -102,16 +102,32 @@ class AffiliateController extends Controller
                 'approved_at' => config('affiliate.auto_approval') ? now() : null,
             ]);
 
+            // Generate verification code
+            $verificationCode = sprintf('%04d', random_int(0, 9999));
+
+            // Store verification code in database
+            DB::table('email_verification_codes')->insert([
+                'user_id' => $user->id,
+                'code' => $verificationCode,
+                'expires_at' => now()->addMinutes(60),
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+
             DB::commit();
+
+            // Send verification email
+            try {
+                $user->notify(new \App\Notifications\AffiliateWelcomeNotification($verificationCode));
+            } catch (\Exception $e) {
+                Log::error('Failed to send affiliate verification email: ' . $e->getMessage());
+            }
 
             // Log the user in
             Auth::login($user);
 
-            $message = $status === 'active'
-                ? 'Your affiliate account has been created successfully!'
-                : 'Your affiliate application has been submitted for review.';
-
-            return redirect()->route('affiliate.dashboard')->with('success', $message);
+            return redirect()->route('affiliate.verification.notice')
+                ->with('success', 'Registration successful! Please verify your email to activate your affiliate account.');
 
         } catch (\Exception $e) {
             DB::rollBack();

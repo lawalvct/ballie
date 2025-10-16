@@ -87,5 +87,6 @@ class Kernel extends HttpKernel
         'permission' => \App\Http\Middleware\CheckPermission::class,
         'track.affiliate' => \App\Http\Middleware\TrackAffiliateReferral::class,
         'email.verified' => \App\Http\Middleware\EnsureEmailIsVerified::class,
+        'affiliate.verified' => \App\Http\Middleware\EnsureAffiliateEmailIsVerified::class,
     ];
 }
