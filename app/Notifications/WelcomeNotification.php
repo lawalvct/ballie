@@ -37,14 +37,10 @@ class WelcomeNotification extends Notification
     {
         return (new MailMessage)
                     ->subject('Welcome to Ballie - Verify Your Email')
-                    ->greeting('Welcome to Ballie, ' . $notifiable->name . '!')
-                    ->line('Thank you for registering with Ballie. We\'re excited to have you on board!')
-                    ->line('To get started, please verify your email address using the verification code below:')
-                    ->line('**Verification Code: ' . $this->verificationCode . '**')
-                    ->line('This code will expire in 60 minutes.')
-                    ->action('Verify Email Now', route('verification.notice'))
-                    ->line('If you did not create an account, no further action is required.')
-                    ->salutation('Best regards, The Ballie Team');
+                    ->view('emails.welcome-verification', [
+                        'notifiable' => $notifiable,
+                        'verificationCode' => $this->verificationCode,
+                    ]);
     }
 
     /**
