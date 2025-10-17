@@ -6,7 +6,7 @@
 @section('content')
 <div class="space-y-8">
     <!-- Welcome Header -->
-    <div class="bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-700 rounded-2xl shadow-xl overflow-hidden">
+    <div id="welcomeHeader" class="bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-700 rounded-2xl shadow-xl overflow-hidden transition-all duration-1000 ease-in-out" style="display: none; opacity: 0;">
         <div class="px-8 py-12 text-white relative">
             <div class="absolute top-0 right-0 w-64 h-64 opacity-10">
                 <svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
@@ -329,4 +329,46 @@
         </div>
     </div>
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const welcomeHeader = document.getElementById('welcomeHeader');
+    const storageKey = 'super_admin_welcome_dismissed_{{ auth("super_admin")->id() }}';
+    const sessionKey = 'super_admin_session_{{ auth("super_admin")->id() }}';
+    
+    // Check if user has a current session marker
+    const currentSession = sessionStorage.getItem(sessionKey);
+    
+    // If no session marker, this is a new login - clear the localStorage flag
+    if (!currentSession) {
+        localStorage.removeItem(storageKey);
+        sessionStorage.setItem(sessionKey, 'active');
+    }
+    
+    // Check if welcome was already dismissed in this login session
+    const welcomeDismissed = localStorage.getItem(storageKey);
+    
+    if (!welcomeDismissed) {
+        // Show the welcome header with fade-in effect
+        welcomeHeader.style.display = 'block';
+        setTimeout(() => {
+            welcomeHeader.style.opacity = '1';
+        }, 100);
+        
+        // Hide after 10 seconds with fade-out effect
+        setTimeout(() => {
+            welcomeHeader.style.opacity = '0';
+            
+            // Remove from DOM after fade-out completes
+            setTimeout(() => {
+                welcomeHeader.style.display = 'none';
+                // Mark as dismissed in localStorage
+                localStorage.setItem(storageKey, 'true');
+            }, 1000); // Wait for transition to complete
+        }, 10000); // 10 seconds
+    }
+});
+</script>
 @endsection
+
+
