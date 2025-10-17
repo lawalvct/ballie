@@ -141,7 +141,7 @@ class TenantController extends Controller
             'email' => 'required|email|unique:tenants,email,' . $tenant->id,
             'phone' => 'nullable|string|max:20',
             'business_type' => 'required|string',
-            'subscription_plan' => 'required|in:starter,professional,enterprise',
+            'plan_id' => 'nullable|integer|exists:plans,id',
             'billing_cycle' => 'required|in:monthly,yearly',
             'is_active' => 'boolean',
         ]);

@@ -20,10 +20,13 @@ class DashboardController extends Controller
 
         $recentTenants = Tenant::latest()->take(5)->get();
 
-        $subscriptionStats = Tenant::selectRaw('subscription_plan, COUNT(*) as count')
-            ->whereNotNull('subscription_plan')
-            ->groupBy('subscription_plan')
-            ->pluck('count', 'subscription_plan');
+        // Group tenants by plan slug. The legacy subscription_plan column was removed
+        // in favor of plan_id (foreign key to the plans table).
+        $subscriptionStats = Tenant::join('plans', 'plans.id', '=', 'tenants.plan_id')
+            ->selectRaw('plans.slug as plan_slug, COUNT(*) as count')
+            ->whereNotNull('tenants.plan_id')
+            ->groupBy('plans.slug')
+            ->pluck('count', 'plan_slug');
 
         return view('super-admin.dashboard', compact('stats', 'recentTenants', 'subscriptionStats'));
     }
