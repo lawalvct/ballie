@@ -25,6 +25,7 @@ class Tenant extends Model
         'state',
         'country',
         'business_type',
+        'business_type_id',
         'business_registration_number',
         'tax_identification_number',
         'logo',
@@ -97,6 +98,14 @@ class Tenant extends Model
     public function plan(): BelongsTo
     {
         return $this->belongsTo(Plan::class);
+    }
+
+    /**
+     * Get the business type
+     */
+    public function businessType(): BelongsTo
+    {
+        return $this->belongsTo(BusinessType::class);
     }
 
     public function subscriptions(): HasMany

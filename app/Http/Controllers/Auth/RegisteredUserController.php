@@ -30,7 +30,9 @@ class RegisteredUserController extends Controller
                     ->orderBy('monthly_price')
                     ->get();
 
-        return view('auth.register', compact('plans'));
+        $businessTypes = \App\Models\BusinessType::getGroupedByCategory();
+
+        return view('auth.register', compact('plans', 'businessTypes'));
     }
 
     /**
@@ -47,7 +49,8 @@ class RegisteredUserController extends Controller
             'email' => ['required', 'string', 'lowercase', 'email', 'max:255', 'unique:'.User::class],
             'password' => ['required', 'confirmed', Rules\Password::defaults()],
             'business_name' => ['required', 'string', 'max:255'],
-            'business_type' => ['required', 'string', 'in:retail,service,restaurant,manufacturing,wholesale,other'],
+            'business_type' => ['nullable', 'string'],
+            'business_type_id' => ['required', 'integer', 'exists:business_types,id'],
             'phone' => ['nullable', 'string', 'max:20'],
             'plan_id' => ['required', 'integer', 'exists:plans,id'],
             'terms' => ['required', 'accepted'],
@@ -73,6 +76,7 @@ class RegisteredUserController extends Controller
                     'email' => $request->email,
                     'phone' => $request->phone,
                     'business_type' => $request->business_type,
+                    'business_type_id' => $request->business_type_id,
                     'plan_id' => $selectedPlan->id,
                     'trial_ends_at' => now()->addDays(30), // 30-day trial
                     'is_active' => true,
@@ -121,10 +125,20 @@ class RegisteredUserController extends Controller
 
                 Log::info('Verification code generated', ['user_id' => $user->id]);
 
-                // Send welcome email with verification code
-                $user->notify(new WelcomeNotification($code));
+                // Send welcome email with verification code (inside transaction)
+                // If this fails, the entire transaction will be rolled back
+                try {
+                    $user->notify(new WelcomeNotification($code));
+                    Log::info('Welcome email sent successfully', ['user_id' => $user->id]);
+                } catch (\Exception $emailError) {
+                    Log::error('Email sending failed', [
+                        'user_id' => $user->id,
+                        'error' => $emailError->getMessage()
+                    ]);
 
-                Log::info('Welcome email sent', ['user_id' => $user->id]);
+                    // Throw the exception to trigger transaction rollback
+                    throw new \Exception('Failed to send verification email. Please check your internet connection and try again.');
+                }
 
                 // Log user in (but they'll need to verify email)
                 Auth::login($user);
@@ -146,8 +160,18 @@ class RegisteredUserController extends Controller
                 'business_name' => $request->business_name
             ]);
 
-            return back()->withInput()->withErrors([
-                'registration' => 'Registration failed. Please try again. Error: ' . $e->getMessage()
+            // Check if it's an email-related error
+            $errorMessage = 'Registration failed. Please try again.';
+
+            if (str_contains($e->getMessage(), 'verification email') ||
+                str_contains($e->getMessage(), 'Connection could not be established') ||
+                str_contains($e->getMessage(), 'smtp') ||
+                str_contains($e->getMessage(), 'mailtrap')) {
+                $errorMessage = 'Unable to send verification email. Please check your internet connection and try again. If the problem persists, contact support.';
+            }
+
+            return back()->withInput($request->except('password', 'password_confirmation'))->withErrors([
+                'email' => $errorMessage
             ]);
         }
     }

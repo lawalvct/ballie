@@ -91,6 +91,25 @@
     .step-line.completed {
         background-color: var(--color-green);
     }
+
+    /* Prevent horizontal scroll */
+    body {
+        overflow-x: hidden;
+    }
+
+    /* Ensure dropdown doesn't cause overflow */
+    #business_type_dropdown {
+        max-width: 100%;
+        width: 100%;
+    }
+
+    /* Text truncation for long business names */
+    .line-clamp-2 {
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+    }
 </style>
 
 <div class="min-h-screen gradient-bg py-12">
@@ -126,69 +145,73 @@
                         <p class="text-gray-600">This helps us customize your experience</p>
                     </div>
 
-                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
-                        <div class="business-type-card p-6 rounded-xl text-center" data-type="retail">
-                            <div class="w-16 h-16 mx-auto mb-4 rounded-full flex items-center justify-center" style="background-color: var(--color-teal);">
-                                <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"></path>
-                                </svg>
+                    <!-- Business Type Selector -->
+                    <div class="mb-8 relative">
+                        <div>
+                            <label for="business_type_search" class="block text-sm font-medium text-gray-700 mb-2">
+                                Search for your business type
+                            </label>
+                            <div class="relative">
+                                <input type="text" id="business_type_search"
+                                       class="w-full px-4 py-3 pl-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                       placeholder="e.g., Restaurant, E-commerce, Consulting...">
+                                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                    <svg class="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                                    </svg>
+                                </div>
                             </div>
-                            <h3 class="font-semibold text-gray-900 mb-2">Retail & E-commerce</h3>
-                            <p class="text-sm text-gray-600">Selling products online or in-store</p>
                         </div>
 
-                        <div class="business-type-card p-6 rounded-xl text-center" data-type="service">
-                            <div class="w-16 h-16 mx-auto mb-4 rounded-full flex items-center justify-center" style="background-color: var(--color-purple);">
-                                <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2-2v2m8 0V6a2 2 0 012 2v6a2 2 0 01-2 2H8a2 2 0 01-2-2V8a2 2 0 012-2V6"></path>
-                                </svg>
+                        <div id="business_type_selected" class="hidden mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center">
+                                    <span id="selected_icon" class="text-2xl mr-3"></span>
+                                    <div>
+                                        <p id="selected_name" class="font-semibold text-gray-900"></p>
+                                        <p id="selected_category" class="text-sm text-gray-600"></p>
+                                    </div>
+                                </div>
+                                <button type="button" id="clear_selection" class="text-red-600 hover:text-red-800 flex-shrink-0">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                                    </svg>
+                                </button>
                             </div>
-                            <h3 class="font-semibold text-gray-900 mb-2">Service Business</h3>
-                            <p class="text-sm text-gray-600">Consulting, agency, or professional services</p>
                         </div>
 
-                        <div class="business-type-card p-6 rounded-xl text-center" data-type="restaurant">
-                            <div class="w-16 h-16 mx-auto mb-4 rounded-full flex items-center justify-center" style="background-color: var(--color-green);">
-                                <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path>
-                                </svg>
-                            </div>
-                            <h3 class="font-semibold text-gray-900 mb-2">Restaurant & Food</h3>
-                            <p class="text-sm text-gray-600">Restaurant, catering, or food business</p>
-                        </div>
-
-                        <div class="business-type-card p-6 rounded-xl text-center" data-type="manufacturing">
-                            <div class="w-16 h-16 mx-auto mb-4 rounded-full flex items-center justify-center" style="background-color: var(--color-blue);">
-                                <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"></path>
-                                </svg>
-                            </div>
-                            <h3 class="font-semibold text-gray-900 mb-2">Manufacturing</h3>
-                            <p class="text-sm text-gray-600">Production, assembly, or manufacturing</p>
-                        </div>
-
-                        <div class="business-type-card p-6 rounded-xl text-center" data-type="wholesale">
-                            <div class="w-16 h-16 mx-auto mb-4 rounded-full flex items-center justify-center" style="background-color: var(--color-light-blue);">
-                                <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path>
-                                </svg>
-                            </div>
-                            <h3 class="font-semibold text-gray-900 mb-2">Wholesale & Distribution</h3>
-                            <p class="text-sm text-gray-600">Bulk sales and distribution</p>
-                        </div>
-
-                        <div class="business-type-card p-6 rounded-xl text-center" data-type="other">
-                            <div class="w-16 h-16 mx-auto mb-4 rounded-full flex items-center justify-center" style="background-color: var(--color-violet);">
-                                <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path>
-                                </svg>
-                            </div>
-                            <h3 class="font-semibold text-gray-900 mb-2">Other</h3>
-                            <p class="text-sm text-gray-600">Something else or mixed business</p>
+                        <!-- Dropdown Results -->
+                        <div id="business_type_dropdown" class="hidden absolute z-50 mt-1 left-0 right-0 bg-white shadow-xl max-h-96 rounded-lg overflow-y-auto border border-gray-200">
+                            @if(isset($businessTypes))
+                                @foreach($businessTypes as $category => $types)
+                                    <div class="business-category" data-category="{{ $category }}">
+                                        <div class="px-4 py-2 bg-gray-50 border-b border-gray-200 sticky top-0 z-10">
+                                            <h4 class="text-sm font-semibold text-gray-700">{{ $category }}</h4>
+                                        </div>
+                                        @foreach($types as $type)
+                                            <div class="business-type-option px-4 py-3 hover:bg-blue-50 cursor-pointer border-b border-gray-100 transition-colors duration-150"
+                                                 data-id="{{ $type->id }}"
+                                                 data-name="{{ $type->name }}"
+                                                 data-category="{{ $type->category }}"
+                                                 data-icon="{{ $type->icon }}"
+                                                 data-slug="{{ $type->slug }}">
+                                                <div class="flex items-start">
+                                                    <span class="text-xl mr-3 flex-shrink-0">{{ $type->icon }}</span>
+                                                    <div class="flex-1 min-w-0">
+                                                        <p class="font-medium text-gray-900 truncate">{{ $type->name }}</p>
+                                                        <p class="text-xs text-gray-500 line-clamp-2">{{ $type->description }}</p>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        @endforeach
+                                    </div>
+                                @endforeach
+                            @endif
                         </div>
                     </div>
 
-                    <input type="hidden" name="business_type" id="business_type" required>
+                    <input type="hidden" name="business_type" id="business_type">
+                    <input type="hidden" name="business_type_id" id="business_type_id" required>
 
                     <div class="text-center">
                         <button type="button" id="next-step-1" class="px-8 py-3 rounded-lg font-semibold text-white transition-all duration-300" style="background-color: var(--color-gold);" disabled>
@@ -384,19 +407,96 @@ document.addEventListener('DOMContentLoaded', function() {
     let currentStep = 1;
     const totalSteps = 3;
 
-    // Business type selection
-    const businessTypeCards = document.querySelectorAll('.business-type-card');
+    // Business type selection with search
+    const businessTypeSearch = document.getElementById('business_type_search');
+    const businessTypeDropdown = document.getElementById('business_type_dropdown');
     const businessTypeInput = document.getElementById('business_type');
+    const businessTypeIdInput = document.getElementById('business_type_id');
+    const selectedDisplay = document.getElementById('business_type_selected');
     const nextStep1Btn = document.getElementById('next-step-1');
 
-    businessTypeCards.forEach(card => {
-        card.addEventListener('click', function() {
-            businessTypeCards.forEach(c => c.classList.remove('selected'));
-            this.classList.add('selected');
-            businessTypeInput.value = this.dataset.type;
+    // Show dropdown on focus
+    businessTypeSearch.addEventListener('focus', function() {
+        businessTypeDropdown.classList.remove('hidden');
+    });
+
+    // Hide dropdown when clicking outside
+    document.addEventListener('click', function(e) {
+        if (!businessTypeSearch.contains(e.target) && !businessTypeDropdown.contains(e.target)) {
+            businessTypeDropdown.classList.add('hidden');
+        }
+    });
+
+    // Search functionality
+    businessTypeSearch.addEventListener('input', function() {
+        const searchTerm = this.value.toLowerCase();
+        const categories = businessTypeDropdown.querySelectorAll('.business-category');
+
+        categories.forEach(category => {
+            const options = category.querySelectorAll('.business-type-option');
+            let categoryHasVisibleOptions = false;
+
+            options.forEach(option => {
+                const name = option.dataset.name.toLowerCase();
+                const categoryName = option.dataset.category.toLowerCase();
+
+                if (name.includes(searchTerm) || categoryName.includes(searchTerm)) {
+                    option.style.display = '';
+                    categoryHasVisibleOptions = true;
+                } else {
+                    option.style.display = 'none';
+                }
+            });
+
+            // Hide category if no visible options
+            category.style.display = categoryHasVisibleOptions ? '' : 'none';
+        });
+
+        businessTypeDropdown.classList.remove('hidden');
+    });
+
+    // Handle business type selection
+    const businessTypeOptions = document.querySelectorAll('.business-type-option');
+    businessTypeOptions.forEach(option => {
+        option.addEventListener('click', function() {
+            const id = this.dataset.id;
+            const name = this.dataset.name;
+            const category = this.dataset.category;
+            const icon = this.dataset.icon;
+            const slug = this.dataset.slug;
+
+            // Set hidden inputs
+            businessTypeIdInput.value = id;
+            businessTypeInput.value = slug;
+
+            // Update display
+            document.getElementById('selected_icon').textContent = icon;
+            document.getElementById('selected_name').textContent = name;
+            document.getElementById('selected_category').textContent = category;
+
+            // Show selected display
+            selectedDisplay.classList.remove('hidden');
+
+            // Hide dropdown
+            businessTypeDropdown.classList.add('hidden');
+
+            // Clear search
+            businessTypeSearch.value = '';
+
+            // Enable next button
             nextStep1Btn.disabled = false;
             nextStep1Btn.style.opacity = '1';
         });
+    });
+
+    // Clear selection
+    document.getElementById('clear_selection').addEventListener('click', function() {
+        businessTypeIdInput.value = '';
+        businessTypeInput.value = '';
+        selectedDisplay.classList.add('hidden');
+        businessTypeSearch.value = '';
+        nextStep1Btn.disabled = true;
+        nextStep1Btn.style.opacity = '0.5';
     });
 
     // Plan selection
