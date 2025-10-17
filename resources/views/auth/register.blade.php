@@ -210,7 +210,7 @@
                         </div>
                     </div>
 
-                    <input type="hidden" name="business_type" id="business_type">
+                    <input type="hidden" name="business_structure" id="business_structure">
                     <input type="hidden" name="business_type_id" id="business_type_id" required>
 
                     <div class="text-center">
@@ -410,7 +410,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // Business type selection with search
     const businessTypeSearch = document.getElementById('business_type_search');
     const businessTypeDropdown = document.getElementById('business_type_dropdown');
-    const businessTypeInput = document.getElementById('business_type');
+    const businessStructureInput = document.getElementById('business_structure');
     const businessTypeIdInput = document.getElementById('business_type_id');
     const selectedDisplay = document.getElementById('business_type_selected');
     const nextStep1Btn = document.getElementById('next-step-1');
@@ -467,7 +467,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
             // Set hidden inputs
             businessTypeIdInput.value = id;
-            businessTypeInput.value = slug;
+            businessStructureInput.value = slug;
 
             // Update display
             document.getElementById('selected_icon').textContent = icon;
@@ -492,7 +492,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // Clear selection
     document.getElementById('clear_selection').addEventListener('click', function() {
         businessTypeIdInput.value = '';
-        businessTypeInput.value = '';
+        businessStructureInput.value = '';
         selectedDisplay.classList.add('hidden');
         businessTypeSearch.value = '';
         nextStep1Btn.disabled = true;

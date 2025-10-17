@@ -112,20 +112,20 @@
                 </div>
 
                 <div>
-                    <label for="business_type" class="block text-sm font-medium text-gray-700 mb-2">
-                        Business Type <span class="text-red-500">*</span>
+                    <label for="business_structure" class="block text-sm font-medium text-gray-700 mb-2">
+                        Business Structure <span class="text-red-500">*</span>
                     </label>
-                    <select id="business_type" name="business_type"
-                            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-blue focus:border-transparent transition-colors @error('business_type') border-red-500 @enderror" required>
-                        <option value="">Select business type</option>
-                        <option value="sole_proprietorship" {{ old('business_type', $currentTenant->business_type) == 'sole_proprietorship' ? 'selected' : '' }}>Sole Proprietorship</option>
-                        <option value="partnership" {{ old('business_type', $currentTenant->business_type) == 'partnership' ? 'selected' : '' }}>Partnership</option>
-                        <option value="limited_liability" {{ old('business_type', $currentTenant->business_type) == 'limited_liability' ? 'selected' : '' }}>Limited Liability Company</option>
-                        <option value="corporation" {{ old('business_type', $currentTenant->business_type) == 'corporation' ? 'selected' : '' }}>Corporation</option>
-                        <option value="ngo" {{ old('business_type', $currentTenant->business_type) == 'ngo' ? 'selected' : '' }}>NGO/Non-Profit</option>
-                        <option value="other" {{ old('business_type', $currentTenant->business_type) == 'other' ? 'selected' : '' }}>Other</option>
+                    <select id="business_structure" name="business_structure"
+                            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-blue focus:border-transparent transition-colors @error('business_structure') border-red-500 @enderror" required>
+                        <option value="">Select business Structure</option>
+                        <option value="sole_proprietorship" {{ old('business_structure', $currentTenant->business_structure) == 'sole_proprietorship' ? 'selected' : '' }}>Sole Proprietorship</option>
+                        <option value="partnership" {{ old('business_structure', $currentTenant->business_structure) == 'partnership' ? 'selected' : '' }}>Partnership</option>
+                        <option value="limited_liability" {{ old('business_structure', $currentTenant->business_structure) == 'limited_liability' ? 'selected' : '' }}>Limited Liability Company</option>
+                        <option value="corporation" {{ old('business_structure', $currentTenant->business_structure) == 'corporation' ? 'selected' : '' }}>Corporation</option>
+                        <option value="ngo" {{ old('business_structure', $currentTenant->business_structure) == 'ngo' ? 'selected' : '' }}>NGO/Non-Profit</option>
+                        <option value="other" {{ old('business_structure', $currentTenant->business_structure) == 'other' ? 'selected' : '' }}>Other</option>
                     </select>
-                    @error('business_type')
+                    @error('business_structure')
                         <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                     @enderror
                 </div>
@@ -394,7 +394,7 @@ document.getElementById('phone').addEventListener('input', function(e) {
 
 // Form validation
 document.querySelector('form').addEventListener('submit', function(e) {
-    const requiredFields = ['company_name', 'business_type', 'email', 'phone', 'address', 'city', 'state'];
+    const requiredFields = ['company_name', 'business_structure', 'email', 'phone', 'address', 'city', 'state'];
     let hasErrors = false;
 
     requiredFields.forEach(function(fieldName) {

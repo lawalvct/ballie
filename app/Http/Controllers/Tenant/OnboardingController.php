@@ -225,7 +225,7 @@ class OnboardingController extends Controller
 
         // If any critical fields failed, throw an exception
         if (!empty($failedFields)) {
-            $criticalFields = ['name', 'business_type']; // Define which fields are critical
+            $criticalFields = ['name', 'business_structure']; // Define which fields are critical
             $failedCritical = array_filter($failedFields, function($failed) use ($criticalFields) {
                 return in_array($failed['field'], $criticalFields);
             });
@@ -539,7 +539,7 @@ class OnboardingController extends Controller
     {
         $request->validate([
             'name' => 'required|string|max:255',
-            'business_type' => 'required|string|max:100',
+            'business_structure' => 'required|string|max:100',
             'phone' => 'nullable|string|max:20',
             'email' => 'nullable|email|max:255',
             'website' => 'nullable|string|max:255',

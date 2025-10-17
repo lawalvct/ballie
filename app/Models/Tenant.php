@@ -24,7 +24,7 @@ class Tenant extends Model
         'city',
         'state',
         'country',
-        'business_type',
+        'business_structure',
         'business_type_id',
         'business_registration_number',
         'tax_identification_number',

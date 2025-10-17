@@ -26,9 +26,9 @@ return new class extends Migration
             $table->index('is_active');
         });
 
-        // Add business_type_id to tenants table
+        // Add business_type_id to tenants table (after business_structure column)
         Schema::table('tenants', function (Blueprint $table) {
-            $table->foreignId('business_type_id')->nullable()->after('business_type')->constrained('business_types')->nullOnDelete();
+            $table->foreignId('business_type_id')->nullable()->after('business_structure')->constrained('business_types')->nullOnDelete();
             $table->index('business_type_id');
         });
     }

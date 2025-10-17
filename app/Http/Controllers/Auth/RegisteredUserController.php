@@ -49,7 +49,7 @@ class RegisteredUserController extends Controller
             'email' => ['required', 'string', 'lowercase', 'email', 'max:255', 'unique:'.User::class],
             'password' => ['required', 'confirmed', Rules\Password::defaults()],
             'business_name' => ['required', 'string', 'max:255'],
-            'business_type' => ['nullable', 'string'],
+            'business_structure' => ['nullable', 'string'],
             'business_type_id' => ['required', 'integer', 'exists:business_types,id'],
             'phone' => ['nullable', 'string', 'max:20'],
             'plan_id' => ['required', 'integer', 'exists:plans,id'],
@@ -75,7 +75,7 @@ class RegisteredUserController extends Controller
                     'slug' => TenantHelper::generateUniqueSlug($request->business_name),
                     'email' => $request->email,
                     'phone' => $request->phone,
-                    'business_type' => $request->business_type,
+                    'business_structure' => $request->business_structure,
                     'business_type_id' => $request->business_type_id,
                     'plan_id' => $selectedPlan->id,
                     'trial_ends_at' => now()->addDays(30), // 30-day trial
