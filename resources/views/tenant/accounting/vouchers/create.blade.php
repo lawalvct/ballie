@@ -140,17 +140,88 @@
 
         <!-- Voucher Entries -->
         @php
-            $voucherEntryType = 'journal';
+            $voucherEntryType = 'journal'; // default
+
+            // 1. Check URL type parameter first (highest priority)
             $urlType = strtolower(request()->get('type', ''));
-            if ($urlType === 'pv') $voucherEntryType = 'payment';
-            elseif ($urlType === 'rv') $voucherEntryType = 'receipt';
+            if ($urlType === 'pv') {
+                $voucherEntryType = 'payment';
+            } elseif ($urlType === 'rv') {
+                $voucherEntryType = 'receipt';
+            } elseif ($urlType === 'cn') {
+                $voucherEntryType = 'credit-note';
+            } elseif ($urlType === 'dn') {
+                $voucherEntryType = 'debit-note';
+            }
+            // 2. Check selected voucher type from URL parameter or old input
+            else {
+                $selectedVoucherTypeId = request()->get('voucher_type_id') ?: old('voucher_type_id');
+                if ($selectedVoucherTypeId) {
+                    $selectedVoucherType = $voucherTypes->firstWhere('id', $selectedVoucherTypeId);
+                    if ($selectedVoucherType) {
+                        $code = strtolower($selectedVoucherType->code ?? '');
+                        if ($code === 'pv' || str_contains($code, 'payment')) {
+                            $voucherEntryType = 'payment';
+                        } elseif ($code === 'rv' || str_contains($code, 'receipt')) {
+                            $voucherEntryType = 'receipt';
+                        } elseif ($code === 'cn' || str_contains($code, 'credit') && str_contains($code, 'note')) {
+                            $voucherEntryType = 'credit-note';
+                        } elseif ($code === 'dn' || str_contains($code, 'debit') && str_contains($code, 'note')) {
+                            $voucherEntryType = 'debit-note';
+                        }
+                    }
+                }
+            }
+
+            // Define partial paths with fallback
+            $partialPaths = [
+                'payment' => 'tenant.accounting.vouchers.partials.payment-entries',
+                'receipt' => 'tenant.accounting.vouchers.partials.receipt-entries',
+                'credit-note' => 'tenant.accounting.vouchers.partials.credit-note-entries',
+                'debit-note' => 'tenant.accounting.vouchers.partials.debit-note-entries',
+                'journal' => 'tenant.accounting.vouchers.partials.voucher-entries'
+            ];
+
+            $selectedPartial = $partialPaths[$voucherEntryType] ?? $partialPaths['journal'];
+            $partialExists = view()->exists($selectedPartial);
         @endphp
-        @if($voucherEntryType === 'payment')
-            @include('tenant.accounting.vouchers.partials.payment-entries')
-        @elseif($voucherEntryType === 'receipt')
-            @include('tenant.accounting.vouchers.partials.receipt-entries')
+
+        @if($partialExists)
+            @include($selectedPartial)
         @else
-            @include('tenant.accounting.vouchers.partials.voucher-entries')
+            {{-- Fallback for unavailable partial --}}
+            <div class="bg-white shadow-sm rounded-lg border border-gray-200">
+                <div class="px-6 py-4 border-b border-gray-200">
+                    <h3 class="text-lg font-medium text-gray-900">Voucher Entries</h3>
+                </div>
+                <div class="p-6">
+                    <div class="bg-yellow-50 border-l-4 border-yellow-400 p-4">
+                        <div class="flex">
+                            <div class="flex-shrink-0">
+                                <svg class="h-5 w-5 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/>
+                                </svg>
+                            </div>
+                            <div class="ml-3">
+                                <h3 class="text-sm font-medium text-yellow-800">
+                                    Voucher Entry Interface Unavailable
+                                </h3>
+                                <div class="mt-2 text-sm text-yellow-700">
+                                    <p>The entry interface for "{{ ucfirst($voucherEntryType) }}" voucher type is not available.</p>
+                                    <p class="mt-1">
+                                        <strong>Attempted to load:</strong> <code>{{ $selectedPartial }}</code>
+                                    </p>
+                                    <p class="mt-2">
+                                        Please select a different voucher type or
+                                        <a href="{{ route('tenant.accounting.vouchers.create', ['tenant' => $tenant->slug]) }}"
+                                           class="font-medium underline">use the default journal entry</a>.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
         @endif
 
     </form>
@@ -284,6 +355,13 @@ function voucherForm() {
         voucherTypes: @json($voucherTypes->keyBy('id')),
 
         init() {
+            // Check if voucher_type_id is in URL parameters
+            const urlParams = new URLSearchParams(window.location.search);
+            const urlVoucherTypeId = urlParams.get('voucher_type_id');
+            if (urlVoucherTypeId) {
+                this.voucherTypeId = urlVoucherTypeId;
+            }
+
             // Initialize with old input or selected type from URL parameter
             if (this.voucherTypeId) {
                 // Trigger the select element to update visually
@@ -305,6 +383,38 @@ function voucherForm() {
                 const voucherType = this.voucherTypes[this.voucherTypeId];
                 this.voucherNumberPreview = voucherType.prefix + 'XXXX';
                 this.selectedVoucherTypeName = voucherType.name;
+
+                // Auto-redirect to the correct URL with type parameter
+                const code = (voucherType.code || '').toLowerCase();
+                const currentUrl = new URL(window.location);
+                const currentType = currentUrl.searchParams.get('type');
+
+                // Determine target type parameter based on voucher code
+                let targetType = null;
+                if (code === 'pv' || code.includes('payment')) {
+                    targetType = 'pv';
+                } else if (code === 'rv' || code.includes('receipt')) {
+                    targetType = 'rv';
+                } else if (code === 'cn' || (code.includes('credit') && code.includes('note'))) {
+                    targetType = 'cn';
+                } else if (code === 'dn' || (code.includes('debit') && code.includes('note'))) {
+                    targetType = 'dn';
+                }
+
+                // Only redirect if the type parameter needs to change
+                if (currentType !== targetType) {
+                    if (targetType) {
+                        currentUrl.searchParams.set('type', targetType);
+                    } else {
+                        currentUrl.searchParams.delete('type');
+                    }
+
+                    // Preserve form data by adding voucher type to URL
+                    currentUrl.searchParams.set('voucher_type_id', this.voucherTypeId);
+
+                    // Redirect to new URL
+                    window.location.href = currentUrl.toString();
+                }
             } else {
                 this.voucherNumberPreview = 'Auto-generated';
                 this.selectedVoucherTypeName = '';
