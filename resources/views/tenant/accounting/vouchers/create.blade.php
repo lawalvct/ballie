@@ -139,7 +139,19 @@
         </div>
 
         <!-- Voucher Entries -->
-        @include('tenant.accounting.vouchers.partials.voucher-entries')
+        @php
+            $voucherEntryType = 'journal';
+            $urlType = strtolower(request()->get('type', ''));
+            if ($urlType === 'pv') $voucherEntryType = 'payment';
+            elseif ($urlType === 'rv') $voucherEntryType = 'receipt';
+        @endphp
+        @if($voucherEntryType === 'payment')
+            @include('tenant.accounting.vouchers.partials.payment-entries')
+        @elseif($voucherEntryType === 'receipt')
+            @include('tenant.accounting.vouchers.partials.receipt-entries')
+        @else
+            @include('tenant.accounting.vouchers.partials.voucher-entries')
+        @endif
 
     </form>
 
