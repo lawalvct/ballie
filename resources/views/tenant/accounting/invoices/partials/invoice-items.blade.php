@@ -1,5 +1,5 @@
 <div class="bg-white shadow-sm rounded-lg border border-gray-200" x-data="invoiceItems()">
-   
+
 
     <div class="px-6 py-4 border-b border-gray-200">
         <div class="flex items-center justify-between">
@@ -69,7 +69,7 @@
                                 </select>
                                 <div class="mt-1 text-xs text-gray-500" x-show="item.current_stock !== null">
                                     Stock: <span x-text="item.current_stock"></span> <span x-text="item.unit"></span>
-                                    <span x-show="parseFloat(item.quantity) > parseFloat(item.current_stock)" class="text-red-600 font-medium">
+                                    <span x-show="parseFloat(item.quantity) > parseFloat(item.current_stock) && !isPurchaseInvoice()" class="text-red-600 font-medium">
                                         (Insufficient Stock!)
                                     </span>
                                 </div>

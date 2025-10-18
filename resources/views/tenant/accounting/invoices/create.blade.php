@@ -48,6 +48,22 @@
                             <option value="">Select Invoice Type</option>
                                 @php
                                     $defaultVoucherTypeId = old('voucher_type_id', $selectedType?->id ?? null);
+                                    
+                                    // Check URL parameter for type selection
+                                    $urlType = request()->get('type');
+                                    if ($urlType && strtolower($urlType) === 'pur' && !$defaultVoucherTypeId) {
+                                        // Find purchase voucher type
+                                        $purchaseVoucher = $voucherTypes->first(function($t) { 
+                                            return stripos($t->code, 'pur') !== false || 
+                                                   stripos($t->code, 'purchase') !== false ||
+                                                   stripos($t->name, 'purchase') !== false; 
+                                        });
+                                        if ($purchaseVoucher) {
+                                            $defaultVoucherTypeId = $purchaseVoucher->id;
+                                        }
+                                    }
+                                    
+                                    // Fallback to sales voucher if no type is selected
                                     if (!$defaultVoucherTypeId) {
                                         $salesVoucher = $voucherTypes->first(function($t) { return stripos($t->name, 'sales') !== false; });
                                         if ($salesVoucher) {
@@ -593,6 +609,13 @@ window.invoiceItems = function() {
             });
         },
 
+        isPurchaseInvoice() {
+            // Check URL parameter for purchase type
+            const urlParams = new URLSearchParams(window.location.search);
+            const typeParam = urlParams.get('type');
+            return typeParam && typeParam.toLowerCase() === 'pur';
+        },
+
         formatNumber(num) {
             if (!num || isNaN(num)) return '0.00';
             return parseFloat(num).toLocaleString('en-US', {
@@ -680,6 +703,8 @@ function invoiceForm() {
         totalAmount: 0,
 
         init() {
+            // Check URL parameters for type selection
+            this.handleUrlParameters();
             this.updateVoucherType();
 
             // Listen for inventory total updates
@@ -688,6 +713,34 @@ function invoiceForm() {
             });
 
             console.log('✅ Invoice form initialized');
+        },
+
+        handleUrlParameters() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const typeParam = urlParams.get('type');
+            
+            if (typeParam && typeParam.toLowerCase() === 'pur') {
+                // Find purchase voucher type
+                const purchaseVoucher = Object.values(this.voucherTypes).find(voucher => 
+                    voucher.code.toLowerCase().includes('pur') || 
+                    voucher.code.toLowerCase().includes('purchase') ||
+                    voucher.name.toLowerCase().includes('purchase')
+                );
+                
+                if (purchaseVoucher) {
+                    this.voucherTypeId = purchaseVoucher.id;
+                    
+                    // Update the select element
+                    this.$nextTick(() => {
+                        const selectElement = document.getElementById('voucher_type_id');
+                        if (selectElement) {
+                            selectElement.value = this.voucherTypeId;
+                        }
+                    });
+                    
+                    console.log('✅ Purchase voucher type auto-selected from URL parameter');
+                }
+            }
         },
 
         updateVoucherType() {
