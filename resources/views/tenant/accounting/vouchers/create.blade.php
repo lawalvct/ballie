@@ -152,6 +152,8 @@
                 $voucherEntryType = 'credit-note';
             } elseif ($urlType === 'dn') {
                 $voucherEntryType = 'debit-note';
+            } elseif ($urlType === 'cv') {
+                $voucherEntryType = 'contra';
             }
             // 2. Check selected voucher type from URL parameter or old input
             else {
@@ -168,6 +170,8 @@
                             $voucherEntryType = 'credit-note';
                         } elseif ($code === 'dn' || str_contains($code, 'debit') && str_contains($code, 'note')) {
                             $voucherEntryType = 'debit-note';
+                        } elseif ($code === 'cv' || str_contains($code, 'contra')) {
+                            $voucherEntryType = 'contra';
                         }
                     }
                 }
@@ -179,6 +183,7 @@
                 'receipt' => 'tenant.accounting.vouchers.partials.receipt-entries',
                 'credit-note' => 'tenant.accounting.vouchers.partials.credit-note-entries',
                 'debit-note' => 'tenant.accounting.vouchers.partials.debit-note-entries',
+                'contra' => 'tenant.accounting.vouchers.partials.contra-entries',
                 'journal' => 'tenant.accounting.vouchers.partials.voucher-entries'
             ];
 
@@ -399,6 +404,8 @@ function voucherForm() {
                     targetType = 'cn';
                 } else if (code === 'dn' || (code.includes('debit') && code.includes('note'))) {
                     targetType = 'dn';
+                } else if (code === 'cv' || code.includes('contra')) {
+                    targetType = 'cv';
                 }
 
                 // Only redirect if the type parameter needs to change
