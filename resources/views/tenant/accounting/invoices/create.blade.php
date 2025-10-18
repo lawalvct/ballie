@@ -1,24 +1,53 @@
 @extends('layouts.tenant')
 
 @section('title', 'Create Invoice - ' . $tenant->name)
-
+@section('page-title', "Create Invoice")
+@section('description-page', "Create a new invoice with inventory management")
 @section('content')
 <div class="space-y-6" x-data="invoiceForm()">
     <!-- Header -->
     <div class="flex items-center justify-between">
         <div>
-            <h1 class="text-2xl font-bold text-gray-900">    <span x-text="vchType">Create Invoice</span></h1>
-            <p class="mt-1 text-sm text-gray-500">
-                Create a new invoice with inventory management
-            </p>
+           <!-- Common Voucher Type Buttons -->
+            <a href="{{ route('tenant.accounting.invoices.create', ['tenant' => $tenant->slug, 'type' => 'sv']) }}"
+               class="inline-flex items-center px-4 py-2 border border-blue-200 rounded-lg shadow-sm text-sm font-medium text-white bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200 transform hover:scale-105">
+                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                </svg>
+               Sales Invoice
+            </a>
+
+            <a href="{{ route('tenant.accounting.invoices.create', ['tenant' => $tenant->slug, 'type' => 'pur']) }}"
+               class="inline-flex items-center px-4 py-2 border border-red-200 rounded-lg shadow-sm text-sm font-medium text-white bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-all duration-200 transform hover:scale-105">
+                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"></path>
+                </svg>
+                Purchase Invoice
+            </a>
+
+            <a href="{{ route('tenant.accounting.invoices.create', ['tenant' => $tenant->slug, 'type' => 'sr']) }}"
+               class="inline-flex items-center px-4 py-2 border border-green-200 rounded-lg shadow-sm text-sm font-medium text-white bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-all duration-200 transform hover:scale-105">
+                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 8h6m-5 0a3 3 0 110 6H9l3 3m-3-6h6m6 1a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                </svg>
+                Sales Return
+            </a>
+
+            <a href="{{ route('tenant.accounting.invoices.create', ['tenant' => $tenant->slug, 'type' => 'pr']) }}"
+               class="inline-flex items-center px-4 py-2 border border-purple-200 rounded-lg shadow-sm text-sm font-medium text-white bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 transition-all duration-200 transform hover:scale-105">
+                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"></path>
+                </svg>
+                Purchase return
+            </a>
+
+
         </div>
         <div class="flex items-center space-x-3">
             <a href="{{ route('tenant.accounting.invoices.index', ['tenant' => $tenant->slug]) }}"
                class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-lg shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500">
-                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
-                </svg>
-                Back to Invoices
+
+              <span x-text="vchType">
             </a>
         </div>
     </div>
@@ -48,21 +77,21 @@
                             <option value="">Select Invoice Type</option>
                                 @php
                                     $defaultVoucherTypeId = old('voucher_type_id', $selectedType?->id ?? null);
-                                    
+
                                     // Check URL parameter for type selection
                                     $urlType = request()->get('type');
                                     if ($urlType && strtolower($urlType) === 'pur' && !$defaultVoucherTypeId) {
                                         // Find purchase voucher type
-                                        $purchaseVoucher = $voucherTypes->first(function($t) { 
-                                            return stripos($t->code, 'pur') !== false || 
+                                        $purchaseVoucher = $voucherTypes->first(function($t) {
+                                            return stripos($t->code, 'pur') !== false ||
                                                    stripos($t->code, 'purchase') !== false ||
-                                                   stripos($t->name, 'purchase') !== false; 
+                                                   stripos($t->name, 'purchase') !== false;
                                         });
                                         if ($purchaseVoucher) {
                                             $defaultVoucherTypeId = $purchaseVoucher->id;
                                         }
                                     }
-                                    
+
                                     // Fallback to sales voucher if no type is selected
                                     if (!$defaultVoucherTypeId) {
                                         $salesVoucher = $voucherTypes->first(function($t) { return stripos($t->name, 'sales') !== false; });
@@ -718,18 +747,18 @@ function invoiceForm() {
         handleUrlParameters() {
             const urlParams = new URLSearchParams(window.location.search);
             const typeParam = urlParams.get('type');
-            
+
             if (typeParam && typeParam.toLowerCase() === 'pur') {
                 // Find purchase voucher type
-                const purchaseVoucher = Object.values(this.voucherTypes).find(voucher => 
-                    voucher.code.toLowerCase().includes('pur') || 
+                const purchaseVoucher = Object.values(this.voucherTypes).find(voucher =>
+                    voucher.code.toLowerCase().includes('pur') ||
                     voucher.code.toLowerCase().includes('purchase') ||
                     voucher.name.toLowerCase().includes('purchase')
                 );
-                
+
                 if (purchaseVoucher) {
                     this.voucherTypeId = purchaseVoucher.id;
-                    
+
                     // Update the select element
                     this.$nextTick(() => {
                         const selectElement = document.getElementById('voucher_type_id');
@@ -737,7 +766,7 @@ function invoiceForm() {
                             selectElement.value = this.voucherTypeId;
                         }
                     });
-                    
+
                     console.log('✅ Purchase voucher type auto-selected from URL parameter');
                 }
             }
