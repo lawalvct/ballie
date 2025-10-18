@@ -100,6 +100,7 @@ class VoucherController extends Controller
     {
         $voucherTypes = VoucherType::where('tenant_id', $tenant->id)
             ->where('is_active', true)
+            ->where('affects_inventory', false)
             ->orderBy('name')
             ->get();
 

@@ -8,7 +8,7 @@
     <!-- Header -->
     <div class="flex items-center justify-between">
         <div>
-            buttons will be here
+            {{-- buttons will be here --}}
         </div>
         <div class="flex items-center space-x-3">
             <a href="{{ route('tenant.accounting.vouchers.index', ['tenant' => $tenant->slug]) }}"
