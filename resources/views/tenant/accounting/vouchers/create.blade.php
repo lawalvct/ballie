@@ -1,26 +1,14 @@
 @extends('layouts.tenant')
 
 @section('title', 'Create Voucher - ' . $tenant->name)
-
+@section('page-title',  " Create New Voucher")
+@section('page-description', ' Create a new accounting voucher entry')
 @section('content')
 <div class="space-y-6" x-data="voucherForm()">
     <!-- Header -->
     <div class="flex items-center justify-between">
         <div>
-            <h1 class="text-2xl font-bold text-gray-900">
-                @if(isset($voucher))
-                    Duplicate Voucher
-                @else
-                    Create New Voucher
-                @endif
-            </h1>
-            <p class="mt-1 text-sm text-gray-500">
-                @if(isset($voucher))
-                    Creating a copy of voucher {{ $voucher->voucher_number }}
-                @else
-                    Create a new accounting voucher entry
-                @endif
-            </p>
+            buttons will be here
         </div>
         <div class="flex items-center space-x-3">
             <a href="{{ route('tenant.accounting.vouchers.index', ['tenant' => $tenant->slug]) }}"

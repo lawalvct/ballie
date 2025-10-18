@@ -7,9 +7,9 @@
     <!-- Header -->
     <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between">
         <div>
-            <h1 class="text-2xl font-bold text-gray-900">Sales Invoices</h1>
+            <h1 class="text-2xl font-bold text-gray-900">Sales and Purchase Invoices</h1>
             <p class="mt-1 text-sm text-gray-500">
-                Manage your sales invoices and track revenue
+                Manage your  invoices and track revenue
             </p>
         </div>
         <div class="mt-4 lg:mt-0 flex items-center space-x-3">

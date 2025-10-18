@@ -147,8 +147,82 @@ class VoucherController extends Controller
     /**
      * Store a newly created voucher.
      */
+
     public function store(Request $request, Tenant $tenant)
     {
+        // Transform contra voucher data to standard journal entry format
+        if ($request->has('cv_from_account_id') && $request->has('cv_to_account_id')) {
+            $entries = [
+                [
+                    'ledger_account_id' => $request->cv_to_account_id,
+                    'particulars' => $request->cv_particulars ?? 'Contra Transfer',
+                    'debit_amount' => $request->cv_transfer_amount,
+                    'credit_amount' => 0,
+                ],
+                [
+                    'ledger_account_id' => $request->cv_from_account_id,
+                    'particulars' => $request->cv_particulars ?? 'Contra Transfer',
+                    'debit_amount' => 0,
+                    'credit_amount' => $request->cv_transfer_amount,
+                ]
+            ];
+            $request->merge(['entries' => $entries]);
+        }
+
+        // Transform credit note data to standard journal entry format
+        if ($request->has('cn_customer_account_id') && $request->has('credit_entries')) {
+            $entries = [];
+
+            // Customer account - Debit (reduces receivable)
+            $entries[] = [
+                'ledger_account_id' => $request->cn_customer_account_id,
+                'particulars' => 'Credit Note',
+                'debit_amount' => $request->cn_customer_amount,
+                'credit_amount' => 0,
+            ];
+
+            // Sales/Revenue accounts - Credit
+            foreach ($request->credit_entries as $entry) {
+                if (!empty($entry['account_id']) && !empty($entry['amount'])) {
+                    $entries[] = [
+                        'ledger_account_id' => $entry['account_id'],
+                        'particulars' => $entry['description'] ?? 'Credit Note',
+                        'debit_amount' => 0,
+                        'credit_amount' => $entry['amount'],
+                    ];
+                }
+            }
+
+            $request->merge(['entries' => $entries]);
+        }
+
+        // Transform debit note data to standard journal entry format
+        if ($request->has('dn_customer_account_id') && $request->has('credit_entries')) {
+            $entries = [];
+
+            // Customer account - Debit (increases receivable)
+            $entries[] = [
+                'ledger_account_id' => $request->dn_customer_account_id,
+                'particulars' => 'Debit Note',
+                'debit_amount' => $request->dn_customer_amount,
+                'credit_amount' => 0,
+            ];
+
+            // Additional charge accounts - Credit
+            foreach ($request->credit_entries as $entry) {
+                if (!empty($entry['account_id']) && !empty($entry['amount'])) {
+                    $entries[] = [
+                        'ledger_account_id' => $entry['account_id'],
+                        'particulars' => $entry['description'] ?? 'Debit Note',
+                        'debit_amount' => 0,
+                        'credit_amount' => $entry['amount'],
+                    ];
+                }
+            }
+
+            $request->merge(['entries' => $entries]);
+        }
+
         $request->validate([
             'voucher_type_id' => 'required|exists:voucher_types,id',
             'voucher_date' => 'required|date',
