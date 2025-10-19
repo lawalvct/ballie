@@ -29,6 +29,7 @@ class Product extends Model
         'primary_unit_id',
         'unit_conversion_factor',
         'opening_stock',
+        'opening_stock_date',
         'current_stock',
         'quantity', // Add this for compatibility
         'reorder_level',

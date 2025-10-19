@@ -277,6 +277,7 @@ Route::prefix('ledger-accounts')->name('ledger-accounts.')->group(function () {
 
     // Export/Import routes
     Route::get('/export/template', [LedgerAccountController::class, 'downloadTemplate'])->name('export.template');
+    Route::get('/export/account-groups', [LedgerAccountController::class, 'downloadAccountGroupsReference'])->name('export.account-groups');
     Route::post('/import', [LedgerAccountController::class, 'import'])->name('import');
     Route::get('/export/all', [LedgerAccountController::class, 'export'])->name('export');
 

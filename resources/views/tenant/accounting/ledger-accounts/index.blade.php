@@ -2,6 +2,12 @@
 
 @section('title', 'Ledger Accounts')
 
+@section('page-title', 'Ledger Accounts')
+@section('page-description')
+    <span class="hidden md:inline">
+     Manage your chart of accounts and account hierarchy.
+    </span>
+@endsection
 @push('styles')
 <style>
     /* Accounting Tree Styles */
@@ -161,15 +167,15 @@
         .nature-header {
             padding: 1rem;
         }
-        
+
         .group-header {
             padding: 0.75rem;
         }
-        
+
         .account-row {
             padding: 0.75rem;
         }
-        
+
         .ml-6 { margin-left: 1rem; }
         .ml-12 { margin-left: 1.5rem; }
         .ml-18 { margin-left: 2rem; }
@@ -182,12 +188,12 @@
             background: white !important;
             border: 1px solid #000 !important;
         }
-        
+
         .account-row {
             background: white !important;
             border: 1px solid #ccc !important;
         }
-        
+
         .opacity-0 {
             display: none !important;
         }
@@ -199,10 +205,32 @@
 <div class="space-y-6">
     <!-- Header -->
     <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between">
-        <div>
-            <h1 class="text-3xl font-bold text-gray-900">Ledger Accounts</h1>
-            <p class="mt-2 text-gray-600">Manage your chart of accounts and account hierarchy</p>
-        </div>
+      <button type="button"
+                    onclick="document.getElementById('importModal').classList.remove('hidden')"
+                    class="inline-flex items-center px-4 py-2 bg-green-600 border border-transparent rounded-lg font-semibold text-xs text-white uppercase tracking-widest hover:bg-green-700 focus:bg-green-700 active:bg-green-900 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition ease-in-out duration-150">
+                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path>
+                </svg>
+               Upload Ledger Accounts
+            </button>
+
+            <a href="{{ route('tenant.crm.vendors.create', ['tenant' => $tenant->slug]) }}"
+               class="inline-flex items-center px-4 py-2 bg-primary-600 border border-transparent rounded-lg font-semibold text-xs text-white uppercase tracking-widest hover:bg-primary-700 focus:bg-primary-700 active:bg-primary-900 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 transition ease-in-out duration-150">
+                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                </svg>
+                Add Vendor
+            </a>
+
+            <a href="{{ route('tenant.accounting.invoices.create', ['tenant' => $tenant->slug]) }}"
+               class="inline-flex items-center px-4 py-2 bg-red-600 border border-transparent rounded-lg font-semibold text-xs text-white uppercase tracking-widest hover:bg-red-700 focus:bg-red-700 active:bg-red-900 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 transition ease-in-out duration-150">
+                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                </svg>
+                Create Invoice
+            </a>
+
+
         <div class="mt-4 lg:mt-0 flex items-center space-x-3">
             <!-- View Toggle -->
             <div class="inline-flex rounded-lg border border-gray-200 bg-white p-1">
@@ -279,6 +307,80 @@
             </div>
         </div>
     </div>
+
+    <!-- Success/Error Messages -->
+    @if(session('success'))
+        <div class="rounded-md bg-green-50 p-4 border border-green-200">
+            <div class="flex">
+                <div class="flex-shrink-0">
+                    <svg class="h-5 w-5 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
+                </div>
+                <div class="ml-3">
+                    <p class="text-sm font-medium text-green-800">
+                        {{ session('success') }}
+                    </p>
+                </div>
+            </div>
+        </div>
+    @endif
+
+    @if(session('warning'))
+        <div class="rounded-md bg-yellow-50 p-4 border border-yellow-200">
+            <div class="flex">
+                <div class="flex-shrink-0">
+                    <svg class="h-5 w-5 text-yellow-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+                    </svg>
+                </div>
+                <div class="ml-3">
+                    <p class="text-sm font-medium text-yellow-800">
+                        {{ session('warning') }}
+                    </p>
+                </div>
+            </div>
+        </div>
+    @endif
+
+    @if(session('error'))
+        <div class="rounded-md bg-red-50 p-4 border border-red-200">
+            <div class="flex">
+                <div class="flex-shrink-0">
+                    <svg class="h-5 w-5 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
+                </div>
+                <div class="ml-3">
+                    <p class="text-sm font-medium text-red-800">
+                        {{ session('error') }}
+                    </p>
+                </div>
+            </div>
+        </div>
+    @endif
+
+    @if(session('import_errors'))
+        <div class="rounded-md bg-red-50 p-4 border border-red-200">
+            <div class="flex">
+                <div class="flex-shrink-0">
+                    <svg class="h-5 w-5 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
+                </div>
+                <div class="ml-3">
+                    <h3 class="text-sm font-medium text-red-800">Import Errors:</h3>
+                    <div class="mt-2 text-sm text-red-700 max-h-40 overflow-y-auto">
+                        <ul class="list-disc pl-5 space-y-1">
+                            @foreach(session('import_errors') as $error)
+                                <li>{{ $error }}</li>
+                            @endforeach
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    @endif
 
     <!-- Statistics Cards -->
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -538,7 +640,7 @@
                                 @endif
                             @endif
                         </div>
-                
+
                 </div>
             </form>
         </div>
@@ -565,27 +667,12 @@
 </div>
 
 <!-- Import Modal -->
-<div x-data="importModal()" x-show="open" style="display: none;">
-    @include('tenant.accounting.ledger-accounts.partials.import-modal')
-</div>
+@include('tenant.accounting.ledger-accounts.partials.import-modal')
 
 <script>
-// Alpine.js component for import modal
-function importModal() {
-    return {
-        open: false,
-        init() {
-            // Listen for global modal open events
-            window.addEventListener('open-import-modal', () => {
-                this.open = true;
-            });
-        }
-    }
-}
-
 // Global function to open import modal
 function openImportModal() {
-    window.dispatchEvent(new CustomEvent('open-import-modal'));
+    document.getElementById('importModal').classList.remove('hidden');
 }
 
 // Auto-submit form on filter change (optional)

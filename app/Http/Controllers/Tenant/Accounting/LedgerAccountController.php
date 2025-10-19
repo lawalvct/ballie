@@ -11,6 +11,10 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\Rule;
+use Maatwebsite\Excel\Facades\Excel;
+use App\Imports\LedgerAccountsImport;
+use App\Exports\LedgerAccountsTemplateExport;
+use App\Exports\AccountGroupsReferenceExport;
 
 class LedgerAccountController extends Controller
 {
@@ -737,67 +741,53 @@ public function show(Request $request, Tenant $tenant, LedgerAccount $ledgerAcco
     /**
      * Download import template
      */
-    public function downloadTemplate(Tenant $tenant, Request $request)
+    public function downloadTemplate(Tenant $tenant)
     {
-        $withSample = $request->boolean('sample', false);
-
-        $headers = [
-            'Code',
-            'Name',
-            'Account Type',
-            'Account Group',
-            'Parent Code',
-            'Balance Type',
-            'Opening Balance',
-            'Description',
-            'Address',
-            'Phone',
-            'Email',
-            'Is Active'
-        ];
-
-        $data = [];
-
-        if ($withSample) {
-            $data = [
-                ['1000', 'Cash in Hand', 'asset', 'Current Assets', '', 'dr', '50000', 'Cash available in office', '', '', '', 'Yes'],
-                ['1001', 'Bank Account - Main', 'asset', 'Current Assets', '', 'dr', '100000', 'Primary bank account', '', '', '', 'Yes'],
-                ['2000', 'Accounts Payable', 'liability', 'Current Liabilities', '', 'cr', '0', 'Amount owed to suppliers', '', '', '', 'Yes'],
-                ['3000', 'Capital', 'equity', 'Owner Equity', '', 'cr', '150000', 'Owner capital investment', '', '', '', 'Yes'],
-                ['4000', 'Sales Revenue', 'income', 'Revenue', '', 'cr', '0', 'Income from sales', '', '', '', 'Yes'],
-                ['5000', 'Office Expenses', 'expense', 'Operating Expenses', '', 'dr', '0', 'General office expenses', '', '', '', 'Yes'],
-            ];
-        }
-
-        return Excel::download(new LedgerAccountsExport($headers, $data), 'ledger-accounts-template.xlsx');
+        return Excel::download(new LedgerAccountsTemplateExport(), 'ledger_accounts_import_template.xlsx');
     }
 
     /**
-     * Import ledger accounts
+     * Download account groups reference
      */
-    public function import(Tenant $tenant, Request $request)
+    public function downloadAccountGroupsReference(Tenant $tenant)
+    {
+        return Excel::download(new AccountGroupsReferenceExport($tenant->id), 'account_groups_reference.xlsx');
+    }
+
+    /**
+     * Import ledger accounts from Excel/CSV file
+     */
+    public function import(Request $request, Tenant $tenant)
     {
         $request->validate([
-            'import_file' => 'required|file|mimes:csv,xlsx,xls|max:10240'
+            'file' => 'required|mimes:xlsx,xls,csv|max:10240', // 10MB max
         ]);
 
         try {
-            $import = new LedgerAccountsImport($tenant);
-            Excel::import($import, $request->file('import_file'));
+            $file = $request->file('file');
+            $import = new LedgerAccountsImport();
 
-            $results = $import->getResults();
+            Excel::import($import, $file);
 
-            if ($results['errors'] > 0) {
-                return redirect()->back()
-                    ->with('warning', "Import completed with {$results['errors']} errors. {$results['success']} accounts imported successfully.")
-                    ->with('import_errors', $import->getErrorMessages());
+            $successCount = $import->getSuccessCount();
+            $failedCount = $import->getFailedCount();
+            $errors = $import->getErrors();
+
+            if ($successCount > 0 && $failedCount === 0) {
+                return redirect()->route('tenant.accounting.ledger-accounts.index', ['tenant' => $tenant->slug])
+                    ->with('success', "{$successCount} ledger account(s) imported successfully!");
+            } elseif ($successCount > 0 && $failedCount > 0) {
+                return redirect()->route('tenant.accounting.ledger-accounts.index', ['tenant' => $tenant->slug])
+                    ->with('warning', "{$successCount} account(s) imported successfully, but {$failedCount} failed.")
+                    ->with('import_errors', $errors);
+            } else {
+                return redirect()->route('tenant.accounting.ledger-accounts.index', ['tenant' => $tenant->slug])
+                    ->with('error', 'Import failed. No accounts were imported.')
+                    ->with('import_errors', $errors);
             }
-
-            return redirect()->route('tenant.accounting.ledger-accounts.index', $tenant)
-                ->with('success', "Successfully imported {$results['success']} ledger accounts.");
-
         } catch (\Exception $e) {
-            return redirect()->back()
+            Log::error('Ledger account import error: ' . $e->getMessage());
+            return redirect()->route('tenant.accounting.ledger-accounts.index', ['tenant' => $tenant->slug])
                 ->with('error', 'Import failed: ' . $e->getMessage());
         }
     }

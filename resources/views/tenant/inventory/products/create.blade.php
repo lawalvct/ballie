@@ -411,6 +411,21 @@
                         @error('opening_stock')
                             <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                         @enderror
+                        <p class="mt-1 text-xs text-gray-500">Initial stock quantity</p>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="opening_stock_date" class="block text-sm font-medium text-gray-700 mb-1">
+                            Opening Stock Date
+                        </label>
+                        <input type="date" name="opening_stock_date" id="opening_stock_date"
+                               value="{{ old('opening_stock_date', now()->subDay()->format('Y-m-d')) }}"
+                               max="{{ now()->format('Y-m-d') }}"
+                               class="mt-1 focus:ring-green-500 focus:border-green-500 block w-full shadow-sm sm:text-sm rounded-md {{ $errors->has('opening_stock_date') ? 'border-red-300' : 'border-gray-300' }}">
+                        @error('opening_stock_date')
+                            <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                        @enderror
+                        <p class="mt-1 text-xs text-gray-500">Date of stock count</p>
                     </div>
 
                     <div class="form-group">
@@ -424,15 +439,33 @@
                             <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                         @enderror
                     </div>
+                </div>
 
-                    <div class="form-group flex items-center">
-                        <div class="flex items-center h-5">
-                            <input type="checkbox" name="maintain_stock" id="maintain_stock" value="1" {{ old('maintain_stock', true) ? 'checked' : '' }}
-                                   class="h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300 rounded">
+                <!-- Maintain Stock Checkbox -->
+                <div class="mt-4 flex items-center">
+                    <div class="flex items-center h-5">
+                        <input type="checkbox" name="maintain_stock" id="maintain_stock" value="1" {{ old('maintain_stock', true) ? 'checked' : '' }}
+                               class="h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300 rounded">
+                    </div>
+                    <div class="ml-3 text-sm">
+                        <label for="maintain_stock" class="font-medium text-gray-700">Maintain Stock</label>
+                        <p class="text-gray-500">Track inventory for this product</p>
+                    </div>
+                </div>
+
+                <!-- Info Box -->
+                <div class="mt-4 bg-blue-50 border border-blue-200 rounded-lg p-4">
+                    <div class="flex">
+                        <div class="flex-shrink-0">
+                            <svg class="h-5 w-5 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                            </svg>
                         </div>
-                        <div class="ml-3 text-sm">
-                            <label for="maintain_stock" class="font-medium text-gray-700">Maintain Stock</label>
-                            <p class="text-gray-500">Track inventory for this product</p>
+                        <div class="ml-3">
+                            <h3 class="text-sm font-medium text-blue-800">About Opening Stock</h3>
+                            <div class="mt-2 text-sm text-blue-700">
+                                <p>Opening stock will be recorded as a stock movement entry dated on the specified date. All future stock calculations will be based on stock movements from this date forward, ensuring accurate date-based stock reporting.</p>
+                            </div>
                         </div>
                     </div>
                 </div>

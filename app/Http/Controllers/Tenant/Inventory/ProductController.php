@@ -126,45 +126,96 @@ class ProductController extends Controller
     public function store(Request $request, Tenant $tenant)
     {
         $request->validate([
+            'type' => 'required|in:item,service',
             'name' => 'required|string|max:255',
             'sku' => 'nullable|string|max:100|unique:products,sku,NULL,id,tenant_id,' . $tenant->id,
-            'type' => 'required|in:item,service',
+            'description' => 'nullable|string',
             'category_id' => 'nullable|exists:product_categories,id',
-            'primary_unit_id' => 'nullable|exists:units,id',
+            'brand' => 'nullable|string|max:255',
+            'hsn_code' => 'nullable|string|max:50',
             'purchase_rate' => 'required|numeric|min:0',
             'sales_rate' => 'required|numeric|min:0',
             'mrp' => 'nullable|numeric|min:0',
+            'primary_unit_id' => 'required|exists:units,id',
             'opening_stock' => 'nullable|numeric|min:0',
             'reorder_level' => 'nullable|numeric|min:0',
             'tax_rate' => 'nullable|numeric|min:0|max:100',
-            'barcode' => 'nullable|string|max:100',
+            'barcode' => 'nullable|string|max:255',
             'image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
             'stock_asset_account_id' => 'nullable|exists:ledger_accounts,id',
             'sales_account_id' => 'nullable|exists:ledger_accounts,id',
             'purchase_account_id' => 'nullable|exists:ledger_accounts,id',
+            'opening_stock_date' => 'nullable|date',
         ]);
 
-        $data = $request->all();
-        $data['tenant_id'] = $tenant->id;
-        $data['created_by'] = auth()->id();
+        try {
+            DB::beginTransaction();
 
-        // Handle image upload
-        if ($request->hasFile('image')) {
-            $data['image_path'] = $request->file('image')->store('products', 'public');
+            $data = $request->all();
+            $data['tenant_id'] = $tenant->id;
+            $data['created_by'] = auth()->id();
+
+            // Handle image upload
+            if ($request->hasFile('image')) {
+                $data['image_path'] = $request->file('image')->store('products', 'public');
+            }
+
+            // Set opening stock to 0 in product table - will be calculated from movements
+            $openingStock = $request->filled('opening_stock') ? floatval($request->opening_stock) : 0;
+            $openingStockDate = $request->filled('opening_stock_date') ? $request->opening_stock_date : now()->subDay()->toDateString();
+
+            // Calculate opening stock value
+            if ($openingStock > 0 && $request->filled('purchase_rate')) {
+                $data['opening_stock_value'] = $openingStock * floatval($request->purchase_rate);
+            } else {
+                $data['opening_stock_value'] = 0;
+            }
+
+            // Set current_stock to 0 - will be calculated from movements
+            $data['opening_stock'] = 0;
+            $data['current_stock'] = 0;
+            $data['current_stock_value'] = 0;
+
+            $product = Product::create($data);
+
+            // Create opening stock movement if opening stock is provided and product maintains stock
+            if ($openingStock > 0 && $product->maintain_stock && $product->type === 'item') {
+                StockMovement::create([
+                    'tenant_id' => $tenant->id,
+                    'product_id' => $product->id,
+                    'type' => 'in',
+                    'quantity' => $openingStock,
+                    'old_stock' => 0,
+                    'new_stock' => $openingStock,
+                    'rate' => floatval($request->purchase_rate ?? 0),
+                    'transaction_type' => 'opening_stock',
+                    'transaction_date' => $openingStockDate,
+                    'transaction_reference' => 'OPENING-' . $product->id,
+                    'reference' => 'Opening Stock for ' . $product->name,
+                    'remarks' => 'Initial opening stock entry',
+                    'created_by' => auth()->id(),
+                ]);
+
+                // Clear cache to ensure fresh calculation
+                $cacheKey = "product_stock_{$product->id}_" . now()->toDateString();
+                Cache::forget($cacheKey);
+            }
+
+            DB::commit();
+
+            return redirect()
+                ->route('tenant.inventory.products.index', ['tenant' => $tenant->slug])
+                ->with('success', 'Product created successfully!' . ($openingStock > 0 ? ' Opening stock of ' . $openingStock . ' has been recorded.' : ''));
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('Error creating product: ' . $e->getMessage());
+
+            return redirect()
+                ->back()
+                ->withInput()
+                ->with('error', 'Failed to create product: ' . $e->getMessage());
         }
-
-        // Calculate opening stock value
-        if ($request->filled('opening_stock') && $request->filled('purchase_rate')) {
-            $data['opening_stock_value'] = $request->opening_stock * $request->purchase_rate;
-            $data['current_stock'] = $request->opening_stock;
-            $data['current_stock_value'] = $data['opening_stock_value'];
-        }
-
-        $product = Product::create($data);
-
-        return redirect()
-            ->route('tenant.inventory.products.show', ['tenant' => $tenant->slug, 'product' => $product->id])
-            ->with('success', 'Product created successfully.');
     }
 
    public function show(Tenant $tenant, Product $product)
