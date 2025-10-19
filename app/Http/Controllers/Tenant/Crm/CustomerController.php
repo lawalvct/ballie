@@ -15,6 +15,9 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Auth;
+use App\Imports\CustomersImport;
+use App\Exports\CustomersTemplateExport;
+use Maatwebsite\Excel\Facades\Excel;
 
 class CustomerController extends Controller
 {
@@ -715,5 +718,71 @@ class CustomerController extends Controller
             'sort' => $sortField,
             'direction' => $sortDirection
         ]);
+    }
+
+    /**
+     * Download customer import template
+     */
+    public function exportTemplate(Tenant $tenant)
+    {
+        return Excel::download(
+            new CustomersTemplateExport(),
+            'customers_import_template_' . now()->format('Y-m-d') . '.xlsx'
+        );
+    }
+
+    /**
+     * Import customers from Excel/CSV file
+     */
+    public function import(Request $request, Tenant $tenant)
+    {
+        $request->validate([
+            'file' => 'required|mimes:xlsx,xls,csv|max:10240', // Max 10MB
+        ]);
+
+        try {
+            $import = new CustomersImport($tenant);
+
+            Excel::import($import, $request->file('file'));
+
+            $successCount = $import->getSuccessCount();
+            $failedCount = $import->getFailedCount();
+            $errors = $import->getErrors();
+
+            if ($failedCount > 0) {
+                // Store errors in session for display
+                $errorMessages = collect($errors)->map(function($error) {
+                    return "Row {$error['row']} ({$error['identifier']}): {$error['error']}";
+                })->toArray();
+
+                return redirect()->back()
+                    ->with('warning', "{$successCount} customers imported successfully, but {$failedCount} failed.")
+                    ->with('import_errors', $errorMessages);
+            }
+
+            return redirect()->route('tenant.crm.customers.index', ['tenant' => $tenant->slug])
+                ->with('success', "{$successCount} customers imported successfully!");
+
+        } catch (\Maatwebsite\Excel\Validators\ValidationException $e) {
+            $failures = $e->failures();
+            $errorMessages = [];
+
+            foreach ($failures as $failure) {
+                $errorMessages[] = "Row {$failure->row()}: " . implode(', ', $failure->errors());
+            }
+
+            return redirect()->back()
+                ->with('error', 'Import validation failed')
+                ->with('import_errors', $errorMessages);
+
+        } catch (\Exception $e) {
+            Log::error('Customer import error: ' . $e->getMessage(), [
+                'tenant_id' => $tenant->id,
+                'trace' => $e->getTraceAsString()
+            ]);
+
+            return redirect()->back()
+                ->with('error', 'Import failed: ' . $e->getMessage());
+        }
     }
 }
