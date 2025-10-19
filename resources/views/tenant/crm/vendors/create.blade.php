@@ -483,13 +483,69 @@
         </div>
         <div id="financial-section" class="hidden p-6 transition-all duration-300">
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- Opening Balance Section -->
+                <div class="md:col-span-2 bg-purple-50 border border-purple-200 rounded-lg p-4">
+                    <div class="flex items-start">
+
+                        <div class="ml-3 flex-1">
+
+                            <div class="mt-4 grid grid-cols-1 md:grid-cols-3 gap-4">
+                                <div>
+                                    <label for="opening_balance_amount" class="block text-sm font-medium text-gray-700 mb-1">
+                                        Opening Balance Amount
+                                    </label>
+                                    <div class="relative">
+                                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                            <span class="text-gray-500 sm:text-sm">₦</span>
+                                        </div>
+                                        <input type="number" name="opening_balance_amount" id="opening_balance_amount" step="0.01" min="0"
+                                            class="mt-1 focus:ring-purple-500 focus:border-purple-500 block w-full pl-7 shadow-sm sm:text-sm rounded-md border-gray-300"
+                                            value="{{ old('opening_balance_amount', '0.00') }}" placeholder="0.00">
+                                    </div>
+                                    @error('opening_balance_amount')
+                                        <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                                    @enderror
+                                </div>
+
+                                <div>
+                                    <label for="opening_balance_type" class="block text-sm font-medium text-gray-700 mb-1">
+                                        Balance Type
+                                    </label>
+                                    <select name="opening_balance_type" id="opening_balance_type"
+                                        class="mt-1 focus:ring-purple-500 focus:border-purple-500 block w-full shadow-sm sm:text-sm rounded-md border-gray-300">
+                                        <option value="none" {{ old('opening_balance_type', 'none') === 'none' ? 'selected' : '' }}>No Opening Balance</option>
+                                        <option value="credit" {{ old('opening_balance_type') === 'credit' ? 'selected' : '' }}>Credit (We Owe Vendor)</option>
+                                        <option value="debit" {{ old('opening_balance_type') === 'debit' ? 'selected' : '' }}>Debit (Vendor Owes Us)</option>
+                                    </select>
+                                    @error('opening_balance_type')
+                                        <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                                    @enderror
+
+                                </div>
+
+                                <div>
+                                    <label for="opening_balance_date" class="block text-sm font-medium text-gray-700 mb-1">
+                                        As of Date
+                                    </label>
+                                    <input type="date" name="opening_balance_date" id="opening_balance_date"
+                                        class="mt-1 focus:ring-purple-500 focus:border-purple-500 block w-full shadow-sm sm:text-sm rounded-md border-gray-300"
+                                        value="{{ old('opening_balance_date', now()->format('Y-m-d')) }}">
+                                    @error('opening_balance_date')
+                                        <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                                    @enderror
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
                 <div>
                     <label for="credit_limit" class="block text-sm font-medium text-gray-700 mb-1">
                         Credit Limit
                     </label>
                     <div class="relative">
                         <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                            <span class="text-gray-500 sm:text-sm">$</span>
+                            <span class="text-gray-500 sm:text-sm">₦</span>
                         </div>
                         <input type="number" name="credit_limit" id="credit_limit" step="0.01" min="0"
                             class="mt-1 focus:ring-purple-500 focus:border-purple-500 block w-full pl-7 shadow-sm sm:text-sm rounded-md border-gray-300"
@@ -919,6 +975,26 @@ if (creditLimitInput) {
 
 // Initialize progress on page load
 updateProgress();
+
+// Opening balance handling
+const openingBalanceAmount = document.getElementById('opening_balance_amount');
+const openingBalanceType = document.getElementById('opening_balance_type');
+
+// Update balance type when amount changes
+openingBalanceAmount.addEventListener('input', function() {
+    if (parseFloat(this.value) > 0 && openingBalanceType.value === 'none') {
+        openingBalanceType.value = 'credit'; // Default to credit (we owe vendor)
+    } else if (parseFloat(this.value) === 0) {
+        openingBalanceType.value = 'none';
+    }
+});
+
+// Reset amount if type is set to none
+openingBalanceType.addEventListener('change', function() {
+    if (this.value === 'none') {
+        openingBalanceAmount.value = '0.00';
+    }
+});
 
 // Auto-save functionality (optional)
 let autoSaveTimer;

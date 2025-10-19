@@ -6,7 +6,15 @@ use App\Http\Controllers\Controller;
 use App\Models\Vendor;
 use Illuminate\Http\Request;
 use App\Models\Tenant;
+use App\Models\LedgerAccount;
+use App\Models\Voucher;
+use App\Models\VoucherEntry;
+use App\Models\VoucherType;
+use App\Models\AccountGroup;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Auth;
 
 class VendorController extends Controller
 {
@@ -61,6 +69,9 @@ class VendorController extends Controller
             'bank_account_number' => 'nullable|string|max:50',
             'bank_account_name' => 'nullable|string|max:255',
             'notes' => 'nullable|string',
+            'opening_balance_amount' => 'nullable|numeric|min:0',
+            'opening_balance_type' => 'nullable|in:none,debit,credit',
+            'opening_balance_date' => 'nullable|date',
         ]);
 
         if ($validator->fails()) {
@@ -69,36 +80,195 @@ class VendorController extends Controller
                 ->withInput();
         }
 
-        $vendor = new Vendor($request->all());
-        $vendor->tenant_id = tenant()->id;
-        $vendor->status = 'active';
-        $vendor->save();
+        try {
+            DB::beginTransaction();
 
-        // Check if this is an AJAX request (from quick add modal)
-        if ($request->ajax() || $request->expectsJson()) {
-            // Ensure ledger account is created and refresh the vendor
+            $vendor = new Vendor($request->except(['save_and_new', 'opening_balance_amount', 'opening_balance_type', 'opening_balance_date']));
+            $vendor->tenant_id = tenant()->id;
+            $vendor->status = 'active';
+            $vendor->save();
+
+            // Ensure ledger account is created
             $vendor->refresh();
-
-            // If ledger account is not created by boot method, create it manually
             if (!$vendor->ledgerAccount) {
                 $vendor->createLedgerAccount();
                 $vendor->refresh();
             }
 
-            // Format display name like in InvoiceController
-            $displayName = $vendor->company_name ?: trim($vendor->first_name . ' ' . $vendor->last_name);
+            // Handle opening balance if provided
+            $openingBalanceAmount = $request->input('opening_balance_amount', 0);
+            $openingBalanceType = $request->input('opening_balance_type', 'none');
+            $openingBalanceDate = $request->input('opening_balance_date', now()->format('Y-m-d'));
 
-            return response()->json([
-                'success' => true,
-                'message' => 'Vendor created successfully',
-                'vendor_id' => $vendor->id,
-                'ledger_account_id' => $vendor->ledgerAccount->id,
-                'display_name' => $displayName
+            if ($openingBalanceAmount > 0 && $openingBalanceType !== 'none') {
+                $this->createOpeningBalanceVoucher(
+                    $vendor,
+                    $openingBalanceAmount,
+                    $openingBalanceType,
+                    $openingBalanceDate
+                );
+            }
+
+            DB::commit();
+
+            // Check if this is an AJAX request (from quick add modal)
+            if ($request->ajax() || $request->expectsJson()) {
+                // Format display name like in InvoiceController
+                $displayName = $vendor->company_name ?: trim($vendor->first_name . ' ' . $vendor->last_name);
+
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Vendor created successfully',
+                    'vendor_id' => $vendor->id,
+                    'ledger_account_id' => $vendor->ledgerAccount->id,
+                    'display_name' => $displayName
+                ]);
+            }
+
+            return redirect()->route('tenant.crm.vendors.index', ['tenant' => tenant()->slug])
+                ->with('success', 'Vendor created successfully with ledger account.');
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('Error creating vendor: ' . $e->getMessage());
+
+            if ($request->ajax() || $request->expectsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Failed to create vendor: ' . $e->getMessage()
+                ], 500);
+            }
+
+            return redirect()->back()
+                ->with('error', 'An error occurred while creating the vendor. Please try again.')
+                ->withInput();
+        }
+    }
+
+    /**
+     * Create opening balance voucher for vendor
+     */
+    private function createOpeningBalanceVoucher(Vendor $vendor, $amount, $type, $date)
+    {
+        // Get or create Journal Voucher type
+        $journalVoucherType = VoucherType::where('tenant_id', $vendor->tenant_id)
+            ->where('code', 'JV')
+            ->first();
+
+        if (!$journalVoucherType) {
+            throw new \Exception('Journal Voucher type not found. Please ensure system voucher types are initialized.');
+        }
+
+        // Get Opening Balance Equity account
+        $openingBalanceEquity = LedgerAccount::where('tenant_id', $vendor->tenant_id)
+            ->where('is_opening_balance_account', true)
+            ->first();
+
+        if (!$openingBalanceEquity) {
+            // Get or create Equity account group
+            $equityGroup = AccountGroup::where('tenant_id', $vendor->tenant_id)
+                ->where('nature', 'equity')
+                ->first();
+
+            if (!$equityGroup) {
+                // Create equity account group if it doesn't exist
+                $equityGroup = AccountGroup::create([
+                    'tenant_id' => $vendor->tenant_id,
+                    'name' => 'Equity',
+                    'nature' => 'equity',
+                    'code' => 'EQ',
+                    'description' => 'Equity accounts',
+                    'parent_id' => null,
+                    'is_active' => true,
+                ]);
+            }
+
+            // Check if code already exists and generate a unique one
+            $code = 'OBE-001';
+            $counter = 1;
+            while (LedgerAccount::where('tenant_id', $vendor->tenant_id)->where('code', $code)->exists()) {
+                $counter++;
+                $code = 'OBE-' . str_pad($counter, 3, '0', STR_PAD_LEFT);
+            }
+
+            // Create Opening Balance Equity account if it doesn't exist
+            $openingBalanceEquity = LedgerAccount::create([
+                'tenant_id' => $vendor->tenant_id,
+                'name' => 'Opening Balance Equity',
+                'code' => $code,
+                'account_group_id' => $equityGroup->id,
+                'description' => 'Opening balance equity account',
+                'opening_balance' => 0,
+                'current_balance' => 0,
+                'nature' => 'equity',
+                'is_opening_balance_account' => true,
+                'is_active' => true,
             ]);
         }
 
-        return redirect()->route('tenant.crm.vendors.index', ['tenant' => tenant()->slug])
-            ->with('success', 'Vendor created successfully with ledger account.');
+        // Get vendor name for narration
+        $vendorName = $vendor->company_name ?: trim($vendor->first_name . ' ' . $vendor->last_name);
+
+        // Create voucher
+        $voucher = Voucher::create([
+            'tenant_id' => $vendor->tenant_id,
+            'voucher_type_id' => $journalVoucherType->id,
+            'voucher_number' => $journalVoucherType->getNextVoucherNumber(),
+            'voucher_date' => $date,
+            'narration' => 'Opening Balance for ' . $vendorName,
+            'total_amount' => $amount,
+            'status' => 'posted',
+            'created_by' => Auth::id(),
+            'posted_at' => now(),
+            'posted_by' => Auth::id(),
+        ]);
+
+        // Create voucher entries based on balance type
+        if ($type === 'credit') {
+            // We owe vendor money (Credit Vendor, Debit Opening Balance Equity)
+            VoucherEntry::create([
+                'voucher_id' => $voucher->id,
+                'ledger_account_id' => $vendor->ledgerAccount->id,
+                'credit_amount' => $amount,
+                'debit_amount' => 0,
+                'narration' => 'Opening Balance - Vendor Payable',
+            ]);
+
+            VoucherEntry::create([
+                'voucher_id' => $voucher->id,
+                'ledger_account_id' => $openingBalanceEquity->id,
+                'debit_amount' => $amount,
+                'credit_amount' => 0,
+                'narration' => 'Opening Balance Equity',
+            ]);
+        } else {
+            // Debit balance - Vendor owes us (Debit Vendor, Credit Opening Balance Equity)
+            VoucherEntry::create([
+                'voucher_id' => $voucher->id,
+                'ledger_account_id' => $vendor->ledgerAccount->id,
+                'debit_amount' => $amount,
+                'credit_amount' => 0,
+                'narration' => 'Opening Balance - Vendor Advance',
+            ]);
+
+            VoucherEntry::create([
+                'voucher_id' => $voucher->id,
+                'ledger_account_id' => $openingBalanceEquity->id,
+                'credit_amount' => $amount,
+                'debit_amount' => 0,
+                'narration' => 'Opening Balance Equity',
+            ]);
+        }
+
+        // Update ledger account's opening balance voucher reference
+        $vendor->ledgerAccount->update([
+            'opening_balance_voucher_id' => $voucher->id,
+            'opening_balance' => $type === 'credit' ? $amount : -$amount,
+        ]);
+
+        // Update vendor's ledger account balance
+        $vendor->ledgerAccount->updateCurrentBalance();
+
+        return $voucher;
     }
 
     public function show(Tenant $tenant, $id)
