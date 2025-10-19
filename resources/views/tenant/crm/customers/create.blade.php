@@ -413,6 +413,69 @@
             </div>
             <div id="financial-section" class="hidden p-6 transition-all duration-300">
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <!-- Opening Balance Section -->
+                    <div class="md:col-span-2 bg-blue-50 border border-blue-200 rounded-lg p-4">
+                        <h4 class="text-sm font-semibold text-blue-900 mb-3 flex items-center">
+                            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                            </svg>
+                            Opening Balance
+                        </h4>
+                        <p class="text-sm text-blue-700 mb-4">Set an initial balance if this customer has an existing balance from a previous system</p>
+
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label for="opening_balance_amount" class="block text-sm font-medium text-gray-700 mb-1">
+                                    Opening Balance Amount
+                                </label>
+                                <div class="relative">
+                                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                        <span class="text-gray-500 sm:text-sm">$</span>
+                                    </div>
+                                    <input type="number" name="opening_balance_amount" id="opening_balance_amount" step="0.01" min="0"
+                                        class="mt-1 focus:ring-blue-500 focus:border-blue-500 block w-full pl-7 shadow-sm sm:text-sm rounded-md border-gray-300"
+                                        value="{{ old('opening_balance_amount', '0.00') }}" placeholder="0.00">
+                                </div>
+                                @error('opening_balance_amount')
+                                    <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                                @enderror
+                                <p class="mt-1 text-xs text-gray-500">Enter the balance amount (always positive)</p>
+                            </div>
+
+                            <div>
+                                <label for="opening_balance_type" class="block text-sm font-medium text-gray-700 mb-1">
+                                    Balance Type
+                                </label>
+                                <select name="opening_balance_type" id="opening_balance_type"
+                                    class="mt-1 focus:ring-blue-500 focus:border-blue-500 block w-full shadow-sm sm:text-sm rounded-md border-gray-300">
+                                    <option value="none" {{ old('opening_balance_type', 'none') === 'none' ? 'selected' : '' }}>None (No Opening Balance)</option>
+                                    <option value="debit" {{ old('opening_balance_type') === 'debit' ? 'selected' : '' }}>Debit (Customer Owes You)</option>
+                                    <option value="credit" {{ old('opening_balance_type') === 'credit' ? 'selected' : '' }}>Credit (You Owe Customer)</option>
+                                </select>
+                                @error('opening_balance_type')
+                                    <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                                @enderror
+                                <p class="mt-1 text-xs text-gray-500">
+                                    <strong>Debit:</strong> Customer has outstanding balance<br>
+                                    <strong>Credit:</strong> Customer has advance payment or credit
+                                </p>
+                            </div>
+                        </div>
+
+                        <div class="mt-3">
+                            <label for="opening_balance_date" class="block text-sm font-medium text-gray-700 mb-1">
+                                Opening Balance Date
+                            </label>
+                            <input type="date" name="opening_balance_date" id="opening_balance_date"
+                                class="mt-1 focus:ring-blue-500 focus:border-blue-500 block w-full shadow-sm sm:text-sm rounded-md border-gray-300"
+                                value="{{ old('opening_balance_date', date('Y-m-d')) }}">
+                            @error('opening_balance_date')
+                                <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                            @enderror
+                            <p class="mt-1 text-xs text-gray-500">The date when this opening balance should be recorded</p>
+                        </div>
+                    </div>
+
                     <div>
                         <label for="credit_limit" class="block text-sm font-medium text-gray-700 mb-1">
                             Credit Limit
@@ -690,6 +753,26 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Initialize progress on page load
     updateProgress();
+
+    // Opening balance handling
+    const openingBalanceAmount = document.getElementById('opening_balance_amount');
+    const openingBalanceType = document.getElementById('opening_balance_type');
+
+    // Update balance type when amount changes
+    openingBalanceAmount.addEventListener('input', function() {
+        if (parseFloat(this.value) > 0 && openingBalanceType.value === 'none') {
+            openingBalanceType.value = 'debit'; // Default to debit (customer owes)
+        } else if (parseFloat(this.value) === 0) {
+            openingBalanceType.value = 'none';
+        }
+    });
+
+    // Reset amount if type is set to none
+    openingBalanceType.addEventListener('change', function() {
+        if (this.value === 'none') {
+            openingBalanceAmount.value = '0.00';
+        }
+    });
 });
 </script>
 @endsection

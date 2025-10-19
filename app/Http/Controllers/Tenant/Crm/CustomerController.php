@@ -5,9 +5,15 @@ namespace App\Http\Controllers\Tenant\Crm;
 use App\Http\Controllers\Controller;
 use App\Models\Customer;
 use App\Models\Tenant;
+use App\Models\LedgerAccount;
+use App\Models\Voucher;
+use App\Models\VoucherEntry;
+use App\Models\VoucherType;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\Auth;
 
 class CustomerController extends Controller
 {
@@ -118,6 +124,9 @@ class CustomerController extends Controller
             'notes' => 'nullable|string',
             'tax_id' => 'nullable|string|max:50',
             'credit_limit' => 'nullable|numeric|min:0',
+            'opening_balance_amount' => 'nullable|numeric|min:0',
+            'opening_balance_type' => 'nullable|in:none,debit,credit',
+            'opening_balance_date' => 'nullable|date',
         ]);
 
         if ($validator->fails()) {
@@ -127,22 +136,38 @@ class CustomerController extends Controller
         }
 
         try {
-            $customer = new Customer($request->except(['save_and_new']));
+            DB::beginTransaction();
+
+            $customer = new Customer($request->except(['save_and_new', 'opening_balance_amount', 'opening_balance_type', 'opening_balance_date']));
             $customer->tenant_id = $tenant->id;
             $customer->status = 'active';
             $customer->save();
 
+            // Ensure ledger account is created
+            $customer->refresh();
+            if (!$customer->ledgerAccount) {
+                $customer->createLedgerAccount();
+                $customer->refresh();
+            }
+
+            // Handle opening balance if provided
+            $openingBalanceAmount = $request->input('opening_balance_amount', 0);
+            $openingBalanceType = $request->input('opening_balance_type', 'none');
+            $openingBalanceDate = $request->input('opening_balance_date', now()->format('Y-m-d'));
+
+            if ($openingBalanceAmount > 0 && $openingBalanceType !== 'none') {
+                $this->createOpeningBalanceVoucher(
+                    $customer,
+                    $openingBalanceAmount,
+                    $openingBalanceType,
+                    $openingBalanceDate
+                );
+            }
+
+            DB::commit();
+
             // Check if this is an AJAX request (from quick add modal)
             if ($request->ajax() || $request->expectsJson()) {
-                // Ensure ledger account is created and refresh the customer
-                $customer->refresh();
-
-                // If ledger account is not created by boot method, create it manually
-                if (!$customer->ledgerAccount) {
-                    $customer->createLedgerAccount();
-                    $customer->refresh();
-                }
-
                 // Format display name like in InvoiceController
                 $displayName = $customer->company_name ?: trim($customer->first_name . ' ' . $customer->last_name);
 
@@ -164,7 +189,8 @@ class CustomerController extends Controller
             return redirect()->route('tenant.crm.customers.index', ['tenant' => $tenant->slug])
                 ->with('success', 'Customer created successfully.');
         } catch (\Exception $e) {
-            \Log::error('Error creating customer: ' . $e->getMessage());
+            DB::rollBack();
+            Log::error('Error creating customer: ' . $e->getMessage());
 
             if ($request->ajax() || $request->expectsJson()) {
                 return response()->json([
@@ -177,6 +203,103 @@ class CustomerController extends Controller
                 ->with('error', 'An error occurred while creating the customer. Please try again.')
                 ->withInput();
         }
+    }
+
+    /**
+     * Create opening balance voucher for customer
+     */
+    private function createOpeningBalanceVoucher(Customer $customer, $amount, $type, $date)
+    {
+        // Get or create Journal Voucher type
+        $journalVoucherType = VoucherType::where('tenant_id', $customer->tenant_id)
+            ->where('code', 'JV')
+            ->first();
+
+        if (!$journalVoucherType) {
+            throw new \Exception('Journal Voucher type not found. Please ensure system voucher types are initialized.');
+        }
+
+        // Get Opening Balance Equity account
+        $openingBalanceEquity = LedgerAccount::where('tenant_id', $customer->tenant_id)
+            ->where('is_opening_balance_account', true)
+            ->first();
+
+        if (!$openingBalanceEquity) {
+            // Create Opening Balance Equity account if it doesn't exist
+            $openingBalanceEquity = LedgerAccount::create([
+                'tenant_id' => $customer->tenant_id,
+                'name' => 'Opening Balance Equity',
+                'code' => 'OBE',
+                'account_type' => 'equity',
+                'opening_balance' => 0,
+                'balance_type' => 'cr',
+                'is_opening_balance_account' => true,
+                'is_system_account' => true,
+                'is_active' => true,
+            ]);
+        }
+
+        // Create voucher
+        $voucher = Voucher::create([
+            'tenant_id' => $customer->tenant_id,
+            'voucher_type_id' => $journalVoucherType->id,
+            'voucher_number' => $journalVoucherType->getNextVoucherNumber(),
+            'voucher_date' => $date,
+            'narration' => 'Opening Balance for ' . $customer->getFullNameAttribute(),
+            'total_amount' => $amount,
+            'status' => 'posted',
+            'created_by' => Auth::id(),
+            'posted_at' => now(),
+            'posted_by' => Auth::id(),
+        ]);
+
+        // Create voucher entries based on balance type
+        if ($type === 'debit') {
+            // Customer owes money (Debit Customer, Credit Opening Balance Equity)
+            VoucherEntry::create([
+                'voucher_id' => $voucher->id,
+                'ledger_account_id' => $customer->ledgerAccount->id,
+                'debit_amount' => $amount,
+                'credit_amount' => 0,
+                'narration' => 'Opening Balance - Customer Receivable',
+            ]);
+
+            VoucherEntry::create([
+                'voucher_id' => $voucher->id,
+                'ledger_account_id' => $openingBalanceEquity->id,
+                'debit_amount' => 0,
+                'credit_amount' => $amount,
+                'narration' => 'Opening Balance Equity',
+            ]);
+        } else {
+            // Credit balance - We owe customer (Credit Customer, Debit Opening Balance Equity)
+            VoucherEntry::create([
+                'voucher_id' => $voucher->id,
+                'ledger_account_id' => $customer->ledgerAccount->id,
+                'debit_amount' => 0,
+                'credit_amount' => $amount,
+                'narration' => 'Opening Balance - Customer Credit',
+            ]);
+
+            VoucherEntry::create([
+                'voucher_id' => $voucher->id,
+                'ledger_account_id' => $openingBalanceEquity->id,
+                'debit_amount' => $amount,
+                'credit_amount' => 0,
+                'narration' => 'Opening Balance Equity',
+            ]);
+        }
+
+        // Update ledger account's opening balance voucher reference
+        $customer->ledgerAccount->update([
+            'opening_balance_voucher_id' => $voucher->id,
+            'opening_balance' => $type === 'debit' ? $amount : -$amount,
+        ]);
+
+        // Update customer's ledger account balance
+        $customer->ledgerAccount->updateCurrentBalance();
+
+        return $voucher;
     }
 
     /**
@@ -249,7 +372,7 @@ class CustomerController extends Controller
             return redirect()->route('tenant.crm.customers.index', ['tenant' => $tenant->slug])
                 ->with('success', 'Customer updated successfully.');
         } catch (\Exception $e) {
-            \Log::error('Error updating customer: ' . $e->getMessage());
+            Log::error('Error updating customer: ' . $e->getMessage());
 
             return redirect()->back()
                 ->with('error', 'An error occurred while updating the customer. Please try again.')
@@ -281,7 +404,7 @@ class CustomerController extends Controller
             return redirect()->route('tenant.crm.customers.index', ['tenant' => $tenant->slug])
                 ->with('success', 'Customer deleted successfully.');
         } catch (\Exception $e) {
-            \Log::error('Error deleting customer: ' . $e->getMessage());
+            Log::error('Error deleting customer: ' . $e->getMessage());
 
             return redirect()->back()
                 ->with('error', 'An error occurred while deleting the customer. Please try again.');
@@ -308,7 +431,7 @@ class CustomerController extends Controller
             return redirect()->back()
                 ->with('success', "Customer {$status} successfully.");
         } catch (\Exception $e) {
-            \Log::error('Error toggling customer status: ' . $e->getMessage());
+            Log::error('Error toggling customer status: ' . $e->getMessage());
 
             return redirect()->back()
                 ->with('error', 'An error occurred while updating the customer status.');
@@ -367,7 +490,7 @@ class CustomerController extends Controller
             return redirect()->back()->with('success', $message);
 
         } catch (\Exception $e) {
-            \Log::error('Error in bulk action: ' . $e->getMessage());
+            Log::error('Error in bulk action: ' . $e->getMessage());
 
             return redirect()->back()
                 ->with('error', 'An error occurred while performing the bulk action.');
