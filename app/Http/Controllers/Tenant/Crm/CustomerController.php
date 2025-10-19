@@ -9,6 +9,7 @@ use App\Models\LedgerAccount;
 use App\Models\Voucher;
 use App\Models\VoucherEntry;
 use App\Models\VoucherType;
+use App\Models\AccountGroup;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -225,14 +226,42 @@ class CustomerController extends Controller
             ->first();
 
         if (!$openingBalanceEquity) {
+            // Get or create Equity account group
+            $equityGroup = AccountGroup::where('tenant_id', $customer->tenant_id)
+                ->where('nature', 'equity')
+                ->first();
+
+            if (!$equityGroup) {
+                // Create equity account group if it doesn't exist
+                $equityGroup = AccountGroup::create([
+                    'tenant_id' => $customer->tenant_id,
+                    'name' => 'Capital Account',
+                    'code' => 'CAP',
+                    'nature' => 'equity',
+                    'parent_id' => null,
+                    'is_system_defined' => true,
+                    'is_active' => true,
+                ]);
+            }
+
+            // Check if code already exists and generate a unique one
+            $code = 'OBE-001';
+            $counter = 1;
+            while (LedgerAccount::where('tenant_id', $customer->tenant_id)->where('code', $code)->exists()) {
+                $counter++;
+                $code = 'OBE-' . str_pad($counter, 3, '0', STR_PAD_LEFT);
+            }
+
             // Create Opening Balance Equity account if it doesn't exist
             $openingBalanceEquity = LedgerAccount::create([
                 'tenant_id' => $customer->tenant_id,
                 'name' => 'Opening Balance Equity',
-                'code' => 'OBE',
+                'code' => $code,
+                'account_group_id' => $equityGroup->id,
                 'account_type' => 'equity',
                 'opening_balance' => 0,
                 'balance_type' => 'cr',
+                'description' => 'System account for opening balance entries. This should be reclassified to appropriate equity accounts after initial setup is complete.',
                 'is_opening_balance_account' => true,
                 'is_system_account' => true,
                 'is_active' => true,

@@ -415,22 +415,17 @@
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <!-- Opening Balance Section -->
                     <div class="md:col-span-2 bg-blue-50 border border-blue-200 rounded-lg p-4">
-                        <h4 class="text-sm font-semibold text-blue-900 mb-3 flex items-center">
-                            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                            </svg>
-                            Opening Balance
-                        </h4>
-                        <p class="text-sm text-blue-700 mb-4">Set an initial balance if this customer has an existing balance from a previous system</p>
 
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                             <div>
                                 <label for="opening_balance_amount" class="block text-sm font-medium text-gray-700 mb-1">
                                     Opening Balance Amount
                                 </label>
                                 <div class="relative">
                                     <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                        <span class="text-gray-500 sm:text-sm">$</span>
+                                        <span class="text-gray-500 sm:text-sm">₦</span>
                                     </div>
                                     <input type="number" name="opening_balance_amount" id="opening_balance_amount" step="0.01" min="0"
                                         class="mt-1 focus:ring-blue-500 focus:border-blue-500 block w-full pl-7 shadow-sm sm:text-sm rounded-md border-gray-300"
@@ -455,10 +450,7 @@
                                 @error('opening_balance_type')
                                     <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                                 @enderror
-                                <p class="mt-1 text-xs text-gray-500">
-                                    <strong>Debit:</strong> Customer has outstanding balance<br>
-                                    <strong>Credit:</strong> Customer has advance payment or credit
-                                </p>
+
                             </div>
                         </div>
 
@@ -482,7 +474,7 @@
                         </label>
                         <div class="relative">
                             <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                <span class="text-gray-500 sm:text-sm">$</span>
+                                <span class="text-gray-500 sm:text-sm">₦</span>
                             </div>
                             <input type="number" name="credit_limit" id="credit_limit" step="0.01" min="0"
                                 class="mt-1 focus:ring-blue-500 focus:border-blue-500 block w-full pl-7 shadow-sm sm:text-sm rounded-md border-gray-300"
@@ -520,10 +512,10 @@
                             class="mt-1 focus:ring-blue-500 focus:border-blue-500 block w-full shadow-sm sm:text-sm rounded-md border-gray-300">
                             <option value="">Select Payment Method</option>
                             <option value="cash" {{ old('preferred_payment_method') === 'cash' ? 'selected' : '' }}>Cash</option>
-                            <option value="check" {{ old('preferred_payment_method') === 'check' ? 'selected' : '' }}>Check</option>
-                            <option value="credit_card" {{ old('preferred_payment_method') === 'credit_card' ? 'selected' : '' }}>Credit Card</option>
+                            <option value="cheque" {{ old('preferred_payment_method') === 'cheque' ? 'selected' : '' }}>Cheque</option>
+
                             <option value="bank_transfer" {{ old('preferred_payment_method') === 'bank_transfer' ? 'selected' : '' }}>Bank Transfer</option>
-                            <option value="paypal" {{ old('preferred_payment_method') === 'paypal' ? 'selected' : '' }}>PayPal</option>
+
                         </select>
                         @error('preferred_payment_method')
                             <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
