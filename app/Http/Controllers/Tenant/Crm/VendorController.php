@@ -15,6 +15,9 @@ use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Auth;
+use Maatwebsite\Excel\Facades\Excel;
+use App\Imports\VendorsImport;
+use App\Exports\VendorsTemplateExport;
 
 class VendorController extends Controller
 {
@@ -26,6 +29,7 @@ class VendorController extends Controller
             ->paginate(10);
 
         $totalVendors = Vendor::where('tenant_id', tenant()->id)->count();
+        $activeVendors = Vendor::where('tenant_id', tenant()->id)->where('status', 'active')->count();
         $totalPurchases = Vendor::where('tenant_id', tenant()->id)->sum('total_purchases');
         $totalOutstanding = Vendor::where('tenant_id', tenant()->id)->sum('outstanding_balance');
         $avgPaymentDays = 0; // Calculate based on your payment data
@@ -33,6 +37,7 @@ class VendorController extends Controller
         return view('tenant.crm.vendors.index', compact(
             'vendors',
             'totalVendors',
+            'activeVendors',
             'totalPurchases',
             'totalOutstanding',
             'avgPaymentDays'
@@ -349,5 +354,57 @@ class VendorController extends Controller
 
         return redirect()->route('tenant.crm.vendors.index', ['tenant' => tenant()->slug])
             ->with('success', 'Vendor deleted successfully.');
+    }
+
+    /**
+     * Download vendor import template
+     */
+    public function exportTemplate(Tenant $tenant)
+    {
+        return Excel::download(new VendorsTemplateExport(), 'vendors_import_template.xlsx');
+    }
+
+    /**
+     * Import vendors from Excel/CSV file
+     */
+    public function import(Request $request, Tenant $tenant)
+    {
+        $validator = Validator::make($request->all(), [
+            'file' => 'required|mimes:xlsx,xls,csv|max:10240', // 10MB max
+        ]);
+
+        if ($validator->fails()) {
+            return redirect()->back()
+                ->with('error', 'Invalid file. Please upload a valid Excel or CSV file (max 10MB).')
+                ->withErrors($validator);
+        }
+
+        try {
+            $file = $request->file('file');
+            $import = new VendorsImport();
+
+            Excel::import($import, $file);
+
+            $successCount = $import->getSuccessCount();
+            $failedCount = $import->getFailedCount();
+            $errors = $import->getErrors();
+
+            if ($successCount > 0 && $failedCount === 0) {
+                return redirect()->route('tenant.crm.vendors.index', ['tenant' => tenant()->slug])
+                    ->with('success', "{$successCount} vendor(s) imported successfully!");
+            } elseif ($successCount > 0 && $failedCount > 0) {
+                return redirect()->route('tenant.crm.vendors.index', ['tenant' => tenant()->slug])
+                    ->with('warning', "{$successCount} vendor(s) imported successfully, but {$failedCount} failed.")
+                    ->with('import_errors', $errors);
+            } else {
+                return redirect()->route('tenant.crm.vendors.index', ['tenant' => tenant()->slug])
+                    ->with('error', 'Import failed. No vendors were imported.')
+                    ->with('import_errors', $errors);
+            }
+        } catch (\Exception $e) {
+            Log::error('Vendor import error: ' . $e->getMessage());
+            return redirect()->route('tenant.crm.vendors.index', ['tenant' => tenant()->slug])
+                ->with('error', 'An error occurred during import: ' . $e->getMessage());
+        }
     }
 }

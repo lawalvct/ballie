@@ -756,25 +756,28 @@ document.addEventListener('DOMContentLoaded', function() {
                     </div>
 
                     <!-- Instructions -->
-                    <div class="bg-blue-50 border-l-4 border-blue-400 p-4 mb-6">
-                        <div class="flex">
-                            <div class="flex-shrink-0">
-                                <svg class="h-5 w-5 text-blue-400" fill="currentColor" viewBox="0 0 20 20">
-                                    <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"></path>
-                                </svg>
-                            </div>
-                            <div class="ml-3 flex-1">
-                                <h4 class="text-sm font-medium text-blue-800">Import Instructions</h4>
-                                <div class="mt-2 text-sm text-blue-700">
-                                    <ul class="list-disc list-inside space-y-1">
-                                        <li>Download the template file to see the required format</li>
-                                        <li>Fill in your customer data following the template structure</li>
-                                        <li>Required fields: <strong>email</strong>, and either <strong>first_name & last_name</strong> (for individuals) or <strong>company_name</strong> (for businesses)</li>
-                                        <li>Customer type must be either <strong>individual</strong> or <strong>business</strong></li>
-                                        <li>Opening balance is optional (amount, type: debit/credit/none, date)</li>
-                                        <li>Supported file formats: <strong>.xlsx, .xls, .csv</strong></li>
-                                        <li>Maximum file size: <strong>10MB</strong></li>
-                                    </ul>
+                    <div class="mb-6">
+                        <button type="button" onclick="document.getElementById('importInstructions').classList.toggle('hidden')" class="flex items-center text-sm font-medium text-blue-600 hover:text-blue-800">
+                            <svg class="h-5 w-5 mr-2 text-blue-500" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"></path>
+                            </svg>
+                            View Import Instructions
+                        </button>
+                        <div id="importInstructions" class="hidden mt-3 bg-blue-50 border-l-4 border-blue-400 p-4 rounded">
+                            <div class="flex">
+                                <div class="ml-3 flex-1">
+                                    <h4 class="text-sm font-medium text-blue-800 mb-2">Import Instructions</h4>
+                                    <div class="text-sm text-blue-700">
+                                        <ul class="list-disc list-inside space-y-1">
+                                            <li>Download the template file to see the required format</li>
+                                            <li>Fill in your customer data following the template structure</li>
+                                            <li>Required fields: <strong>email</strong>, and either <strong>first_name & last_name</strong> (for individuals) or <strong>company_name</strong> (for businesses)</li>
+                                            <li>Customer type must be either <strong>individual</strong> or <strong>business</strong></li>
+                                            <li>Opening balance is optional (amount, type: debit/credit/none, date)</li>
+                                            <li>Supported file formats: <strong>.xlsx, .xls, .csv</strong></li>
+                                            <li>Maximum file size: <strong>10MB</strong></li>
+                                        </ul>
+                                    </div>
                                 </div>
                             </div>
                         </div>
