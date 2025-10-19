@@ -454,21 +454,7 @@
                 </div>
 
                 <!-- Info Box -->
-                <div class="mt-4 bg-blue-50 border border-blue-200 rounded-lg p-4">
-                    <div class="flex">
-                        <div class="flex-shrink-0">
-                            <svg class="h-5 w-5 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                            </svg>
-                        </div>
-                        <div class="ml-3">
-                            <h3 class="text-sm font-medium text-blue-800">About Opening Stock</h3>
-                            <div class="mt-2 text-sm text-blue-700">
-                                <p>Opening stock will be recorded as a stock movement entry dated on the specified date. All future stock calculations will be based on stock movements from this date forward, ensuring accurate date-based stock reporting.</p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+                
             </div>
         </div>
 
@@ -752,6 +738,13 @@ document.addEventListener('DOMContentLoaded', function() {
     toggleSection('product-image', true);
     toggleSection('product-options', true);
 
+    // Declare all form elements at the top to avoid reference errors
+    const productForm = document.getElementById('productForm');
+    const nameInput = document.getElementById('name');
+    const purchaseRateInput = document.getElementById('purchase_rate');
+    const salesRateInput = document.getElementById('sales_rate');
+    const mrpInput = document.getElementById('mrp');
+
     // Toggle sections based on product type
     const typeRadios = document.querySelectorAll('input[name="type"]');
     const unitsSection = document.getElementById('units-section');
@@ -810,11 +803,6 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     // Form validation
-    const productForm = document.getElementById('productForm');
-    const nameInput = document.getElementById('name');
-    const purchaseRateInput = document.getElementById('purchase_rate');
-    const salesRateInput = document.getElementById('sales_rate');
-
     productForm.addEventListener('submit', function(e) {
         let isValid = true;
 
@@ -892,6 +880,35 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Initialize progress bar
     updateProgressBar();
+
+    // Sync sales_rate to MRP in real-time
+    let mrpManuallyEdited = false;
+
+    // Sync sales rate to MRP unless MRP was manually edited
+    salesRateInput.addEventListener('input', function() {
+        if (!mrpManuallyEdited) {
+            mrpInput.value = this.value;
+        }
+    });
+
+    // Track if user manually edits MRP
+    mrpInput.addEventListener('input', function() {
+        // If user types in MRP, mark it as manually edited
+        mrpManuallyEdited = true;
+    });
+
+    // If user clears MRP, resume auto-sync
+    mrpInput.addEventListener('blur', function() {
+        if (this.value === '' || this.value === '0') {
+            mrpManuallyEdited = false;
+            this.value = salesRateInput.value;
+        }
+    });
+
+    // Initialize MRP with sales_rate value on page load if MRP is empty
+    if (!mrpInput.value || mrpInput.value === '0') {
+        mrpInput.value = salesRateInput.value;
+    }
 });
 
 // Function to toggle collapsible sections
