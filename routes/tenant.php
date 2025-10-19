@@ -50,6 +50,7 @@ use App\Http\Controllers\Tenant\Api\SearchController;
 use App\Http\Controllers\Tenant\Api\NotificationController;
 use App\Http\Controllers\Tenant\Api\UploadController;
 use App\Http\Controllers\Tenant\Api\ExportController;
+use App\Http\Controllers\Tenant\Api\GlobalSearchController;
 use App\Http\Controllers\Tenant\SubscriptionController;
 
 /*
@@ -129,6 +130,12 @@ Route::middleware(['auth'])->group(function () {
 
     // Routes that require completed onboarding and active subscription
     Route::middleware(['email.verified', 'onboarding.completed', 'subscription.check'])->group(function () {
+        // Global Search API
+        Route::prefix('api')->name('tenant.api.')->group(function () {
+            Route::get('/global-search', [GlobalSearchController::class, 'search'])->name('global-search');
+            Route::get('/quick-actions', [GlobalSearchController::class, 'quickActions'])->name('quick-actions');
+        });
+
         // Dashboard
         Route::get('/dashboard', [DashboardController::class, 'index'])->name('tenant.dashboard');
 

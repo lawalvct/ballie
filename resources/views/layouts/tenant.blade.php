@@ -771,6 +771,9 @@
         });
     </script>
 
+    <!-- Global Search Widget -->
+    @include('components.global-search-widget')
+
     @stack('scripts')
 </body>
 </html>
