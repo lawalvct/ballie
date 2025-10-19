@@ -123,6 +123,33 @@ class InvoiceController extends Controller
 
     public function store(Request $request, Tenant $tenant)
     {
+        Log::info('=== INVOICE STORE STARTED ===', [
+            'tenant_id' => $tenant->id,
+            'tenant_slug' => $tenant->slug,
+            'user_id' => auth()->id(),
+            'timestamp' => now()->toDateTimeString()
+        ]);
+
+        Log::info('Request Data Received', [
+            'all_request_data' => $request->all(),
+            'action' => $request->input('action'),
+            'voucher_type_id' => $request->input('voucher_type_id'),
+            'customer_id' => $request->input('customer_id'),
+            'customer_id_is_null' => is_null($request->input('customer_id')),
+            'customer_id_is_empty' => empty($request->input('customer_id')),
+            'inventory_items_count' => count($request->input('inventory_items', []))
+        ]);
+
+        // Check if customer_id is missing and log the form state
+        if (is_null($request->input('customer_id')) || empty($request->input('customer_id'))) {
+            Log::warning('Customer ID is missing from request', [
+                'has_customer_id_key' => $request->has('customer_id'),
+                'customer_id_value' => $request->input('customer_id'),
+                'all_form_keys' => array_keys($request->except(['_token', 'current_tenant'])),
+                'voucher_type_id' => $request->input('voucher_type_id')
+            ]);
+        }
+
         $validator = Validator::make($request->all(), [
             'voucher_type_id' => 'required|exists:voucher_types,id',
             'voucher_date' => 'required|date',
@@ -135,26 +162,61 @@ class InvoiceController extends Controller
             'inventory_items.*.rate' => 'required|numeric|min:0',
             'inventory_items.*.purchase_rate' => 'nullable|numeric|min:0',
             'inventory_items.*.description' => 'nullable|string',
+        ], [
+            'customer_id.required' => 'Please select a customer or vendor before saving the invoice.',
+            'customer_id.exists' => 'The selected customer or vendor is invalid. Please select a valid customer/vendor.',
         ]);
 
         if ($validator->fails()) {
+            Log::warning('Validation Failed', [
+                'errors' => $validator->errors()->toArray(),
+                'failed_rules' => $validator->failed(),
+                'customer_id_submitted' => $request->input('customer_id'),
+                'voucher_type_id' => $request->input('voucher_type_id')
+            ]);
             return redirect()->back()
                 ->withErrors($validator)
                 ->withInput();
         }
 
+        Log::info('Validation Passed Successfully');
+
         try {
             DB::beginTransaction();
+            Log::info('Database Transaction Started');
 
             // Get voucher type
             $voucherType = VoucherType::findOrFail($request->voucher_type_id);
+            Log::info('Voucher Type Retrieved', [
+                'voucher_type_id' => $voucherType->id,
+                'voucher_type_name' => $voucherType->name,
+                'voucher_type_code' => $voucherType->code,
+                'affects_inventory' => $voucherType->affects_inventory,
+                'inventory_effect' => $voucherType->inventory_effect
+            ]);
 
             // Calculate total amount
             $totalAmount = 0;
             $inventoryItems = [];
 
-            foreach ($request->inventory_items as $item) {
+            Log::info('Processing Inventory Items', [
+                'items_count' => count($request->inventory_items)
+            ]);
+
+            foreach ($request->inventory_items as $index => $item) {
+                Log::info("Processing Item {$index}", [
+                    'product_id' => $item['product_id'],
+                    'quantity' => $item['quantity'],
+                    'rate' => $item['rate']
+                ]);
+
                 $product = Product::findOrFail($item['product_id']);
+                Log::info("Product Retrieved", [
+                    'product_id' => $product->id,
+                    'product_name' => $product->name,
+                    'current_stock' => $product->stock_quantity
+                ]);
+
                 $amount = $item['quantity'] * $item['rate'];
                 $totalAmount += $amount;
 
@@ -167,7 +229,17 @@ class InvoiceController extends Controller
                     'amount' => $amount,
                     'purchase_rate' => $item['purchase_rate'] ?? $product->purchase_rate,
                 ];
+
+                Log::info("Item Processed", [
+                    'amount' => $amount,
+                    'running_total' => $totalAmount
+                ]);
             }
+
+            Log::info('All Items Processed', [
+                'total_amount' => $totalAmount,
+                'items_count' => count($inventoryItems)
+            ]);
 
             // Generate voucher number
             $lastVoucher = Voucher::where('tenant_id', $tenant->id)
@@ -177,8 +249,14 @@ class InvoiceController extends Controller
 
             $nextNumber = $lastVoucher ? $lastVoucher->voucher_number + 1 : 1;
 
+            Log::info('Voucher Number Generated', [
+                'last_voucher_id' => $lastVoucher?->id,
+                'last_voucher_number' => $lastVoucher?->voucher_number,
+                'next_number' => $nextNumber
+            ]);
+
             // Create voucher
-            $voucher = Voucher::create([
+            $voucherData = [
                 'tenant_id' => $tenant->id,
                 'voucher_type_id' => $voucherType->id,
                 'voucher_number' => $nextNumber,
@@ -191,9 +269,25 @@ class InvoiceController extends Controller
                 'posted_at' => $request->action === 'save_and_post' ? now() : null,
                 'posted_by' => $request->action === 'save_and_post' ? auth()->id() : null,
                 'meta_data' => json_encode(['inventory_items' => $inventoryItems]),
+            ];
+
+            Log::info('Creating Voucher with Data', $voucherData);
+
+            $voucher = Voucher::create($voucherData);
+
+            Log::info('Voucher Created Successfully', [
+                'voucher_id' => $voucher->id,
+                'voucher_number' => $voucher->voucher_number,
+                'status' => $voucher->status
             ]);
 
           foreach ($inventoryItems as $item) {
+    Log::info('Creating Voucher Item', [
+        'product_id' => $item['product_id'],
+        'quantity' => $item['quantity'],
+        'amount' => $item['amount']
+    ]);
+
     $voucher->items()->create([
         'product_id' => $item['product_id'],
         'product_name' => $item['product_name'],
@@ -211,23 +305,53 @@ class InvoiceController extends Controller
     ]);
 }
 
+            Log::info('All Voucher Items Created', [
+                'items_count' => count($inventoryItems)
+            ]);
+
             // Create accounting entries
+            Log::info('Creating Accounting Entries', [
+                'customer_ledger_id' => $request->customer_id
+            ]);
+
             $this->createAccountingEntries($voucher, $inventoryItems, $tenant, $request->customer_id);
+
+            Log::info('Accounting Entries Created Successfully');
 
             // Update product stock if posted, using voucher type's inventory_effect
             if ($request->action === 'save_and_post') {
+                Log::info('Updating Product Stock', [
+                    'effect' => $voucherType->inventory_effect ?? 'decrease'
+                ]);
+
                 $effect = $voucherType->inventory_effect ?? 'decrease';
                 if ($effect === 'increase' || $effect === 'decrease') {
                     $this->updateProductStock($inventoryItems, $effect, $voucher);
+                    Log::info('Product Stock Updated Successfully');
+                } else {
+                    Log::info('Stock Update Skipped', [
+                        'effect' => $effect
+                    ]);
                 }
                 // If 'none', do not update stock
+            } else {
+                Log::info('Stock Update Skipped - Draft Invoice');
             }
 
             DB::commit();
+            Log::info('Database Transaction Committed Successfully');
 
             $message = $request->action === 'save_and_post'
                 ? 'Invoice created and posted successfully!'
                 : 'Invoice saved as draft successfully!';
+
+            Log::info('=== INVOICE STORE COMPLETED SUCCESSFULLY ===', [
+                'voucher_id' => $voucher->id,
+                'voucher_number' => $voucher->voucher_number,
+                'status' => $voucher->status,
+                'total_amount' => $voucher->total_amount,
+                'message' => $message
+            ]);
 
             return redirect()
                 ->route('tenant.accounting.invoices.show', ['tenant' => $tenant->slug, 'invoice' => $voucher->id])
@@ -235,10 +359,19 @@ class InvoiceController extends Controller
 
         } catch (\Exception $e) {
             DB::rollBack();
-            \Log::error('Error creating invoice: ' . $e->getMessage());
+
+            Log::error('=== INVOICE STORE FAILED ===', [
+                'error_message' => $e->getMessage(),
+                'error_file' => $e->getFile(),
+                'error_line' => $e->getLine(),
+                'stack_trace' => $e->getTraceAsString(),
+                'tenant_id' => $tenant->id,
+                'user_id' => auth()->id(),
+                'request_data' => $request->except(['_token'])
+            ]);
 
             return redirect()->back()
-                ->with('error', 'An error occurred while creating the invoice. Please try again.')
+                ->with('error', 'An error occurred while creating the invoice: ' . $e->getMessage())
                 ->withInput();
         }
     }
@@ -414,7 +547,7 @@ class InvoiceController extends Controller
 
             // Delete old entries and create new ones
             $invoice->entries()->delete();
-            $this->createAccountingEntries($invoice, $inventoryItems, $tenant);
+            $this->createAccountingEntries($invoice, $inventoryItems, $tenant, $request->customer_id);
 
             // Update product stock if posted
             if ($request->action === 'save_and_post') {
@@ -433,7 +566,7 @@ class InvoiceController extends Controller
 
         } catch (\Exception $e) {
             DB::rollBack();
-            \Log::error('Error updating invoice: ' . $e->getMessage());
+            Log::error('Error updating invoice: ' . $e->getMessage());
 
             return redirect()->back()
                 ->with('error', 'An error occurred while updating the invoice. Please try again.')
@@ -470,7 +603,7 @@ class InvoiceController extends Controller
 
         } catch (\Exception $e) {
             DB::rollBack();
-            \Log::error('Error deleting invoice: ' . $e->getMessage());
+            Log::error('Error deleting invoice: ' . $e->getMessage());
 
             return redirect()->back()
                 ->with('error', 'An error occurred while deleting the invoice. Please try again.');
@@ -518,7 +651,7 @@ class InvoiceController extends Controller
 
         } catch (\Exception $e) {
             DB::rollBack();
-            \Log::error('Error posting invoice: ' . $e->getMessage());
+            Log::error('Error posting invoice: ' . $e->getMessage());
 
             return redirect()->back()
                 ->with('error', 'An error occurred while posting the invoice. Please try again.');
@@ -568,7 +701,7 @@ class InvoiceController extends Controller
 
         } catch (\Exception $e) {
             DB::rollBack();
-            \Log::error('Error unposting invoice: ' . $e->getMessage());
+            Log::error('Error unposting invoice: ' . $e->getMessage());
 
             return redirect()->back()
                 ->with('error', 'An error occurred while unposting the invoice. Please try again.');
@@ -741,7 +874,7 @@ private function createAccountingEntries(Voucher $voucher, array $inventoryItems
 
     private function updateProductStock(array $inventoryItems, string $operation, $voucher = null)
     {
-    
+
         if (!$voucher) {
             throw new \Exception('Voucher is required for stock movement tracking');
         }

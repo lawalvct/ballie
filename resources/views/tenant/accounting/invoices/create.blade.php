@@ -163,8 +163,9 @@
                             Customer <span class="text-red-500">*</span>
                         </label>
                         <div class="flex gap-2">
-                            <select required name="customer_id"
+                            <select name="customer_id"
                                     id="customer_id"
+                                    required
                                     class="flex-1 pl-3 pr-10 py-2 text-base border border-gray-300 focus:outline-none focus:ring-primary-500 focus:border-primary-500 rounded-lg">
                                 <option value="">Select Customer</option>
                                 @foreach($customers as $customer)
@@ -192,6 +193,7 @@
                         <div class="flex gap-2">
                             <select name="customer_id"
                                     id="vendor_select"
+                                    disabled
                                     class="flex-1 pl-3 pr-10 py-2 text-base border border-gray-300 focus:outline-none focus:ring-primary-500 focus:border-primary-500 rounded-lg">
                                 <option value="">Select Vendor</option>
                                 @if(isset($vendors))
@@ -367,6 +369,56 @@
                                     </div>
                                 </div>
                             </div>
+
+                            <!-- Opening Balance Section -->
+                            <div class="mt-4 pt-4 border-t border-gray-200">
+                                <div class="flex items-center mb-3">
+                                    <svg class="w-4 h-4 text-blue-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                    </svg>
+                                    <h4 class="text-sm font-medium text-gray-900">Opening Balance (Optional)</h4>
+                                </div>
+                                <div class="space-y-3">
+                                    <div class="grid grid-cols-2 gap-3">
+                                        <div>
+                                            <label class="block text-xs font-medium text-gray-600 mb-1">Amount</label>
+                                            <div class="relative">
+                                                <span class="absolute left-3 top-2.5 text-gray-500 text-sm">₦</span>
+                                                <input type="number"
+                                                       name="opening_balance_amount"
+                                                       id="opening_balance_amount"
+                                                       step="0.01"
+                                                       min="0"
+                                                       value="0.00"
+                                                       class="w-full pl-7 pr-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm">
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <label class="block text-xs font-medium text-gray-600 mb-1">Balance Type</label>
+                                            <select name="opening_balance_type"
+                                                    id="opening_balance_type"
+                                                    class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm">
+                                                <option value="none">No Balance</option>
+                                                <option value="debit" id="debitOption">Debit (Owes Us)</option>
+                                                <option value="credit" id="creditOption">Credit (We Owe)</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <label class="block text-xs font-medium text-gray-600 mb-1">As of Date</label>
+                                        <input type="date"
+                                               name="opening_balance_date"
+                                               id="opening_balance_date"
+                                               value="{{ date('Y-m-d') }}"
+                                               class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm">
+                                    </div>
+                                    <div class="bg-blue-50 border border-blue-200 rounded-lg p-2">
+                                        <p class="text-xs text-blue-800" id="balanceTypeHelp">
+                                            Set an opening balance if migrating from another system.
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -431,6 +483,9 @@ function openQuickAddModal(type = 'customer') {
     form.action = selectedCrmType === 'customer'
         ? '{{ route("tenant.crm.customers.store", ["tenant" => $tenant->slug]) }}'
         : '{{ route("tenant.crm.vendors.store", ["tenant" => $tenant->slug]) }}';
+
+    // Update opening balance help text and default type
+    updateOpeningBalanceLabels(selectedCrmType);
 }
 
 function closeQuickAddModal() {
@@ -581,7 +636,75 @@ document.addEventListener('DOMContentLoaded', function() {
             updateCrmType();
         }
     });
+
+    // Opening balance amount change handler
+    const openingBalanceAmount = document.getElementById('opening_balance_amount');
+    const openingBalanceType = document.getElementById('opening_balance_type');
+
+    if (openingBalanceAmount) {
+        openingBalanceAmount.addEventListener('input', function() {
+            if (parseFloat(this.value) > 0 && openingBalanceType.value === 'none') {
+                // Auto-select appropriate balance type based on CRM type
+                const crmType = document.querySelector('input[name="crm_type"]:checked')?.value || 'customer';
+                openingBalanceType.value = crmType === 'customer' ? 'debit' : 'credit';
+                updateBalanceTypeHelp();
+            } else if (parseFloat(this.value) === 0 || !this.value) {
+                openingBalanceType.value = 'none';
+                updateBalanceTypeHelp();
+            }
+        });
+    }
+
+    if (openingBalanceType) {
+        openingBalanceType.addEventListener('change', function() {
+            if (this.value === 'none') {
+                openingBalanceAmount.value = '0.00';
+            }
+            updateBalanceTypeHelp();
+        });
+    }
 });
+
+// Update opening balance labels based on CRM type
+function updateOpeningBalanceLabels(crmType) {
+    const debitOption = document.getElementById('debitOption');
+    const creditOption = document.getElementById('creditOption');
+
+    if (crmType === 'customer') {
+        debitOption.textContent = 'Debit (Customer Owes)';
+        creditOption.textContent = 'Credit (We Owe Customer)';
+    } else {
+        debitOption.textContent = 'Debit (Vendor Owes)';
+        creditOption.textContent = 'Credit (We Owe Vendor)';
+    }
+
+    updateBalanceTypeHelp();
+}
+
+// Update help text based on selected balance type
+function updateBalanceTypeHelp() {
+    const balanceType = document.getElementById('opening_balance_type')?.value;
+    const crmType = document.querySelector('input[name="crm_type"]:checked')?.value || 'customer';
+    const helpText = document.getElementById('balanceTypeHelp');
+
+    if (!helpText) return;
+
+    if (balanceType === 'none') {
+        helpText.textContent = 'Set an opening balance if migrating from another system.';
+    } else if (balanceType === 'debit') {
+        if (crmType === 'customer') {
+            helpText.textContent = 'Customer owes you money (Accounts Receivable).';
+        } else {
+            helpText.textContent = 'Vendor owes you money (advance payment/prepayment).';
+        }
+    } else if (balanceType === 'credit') {
+        if (crmType === 'customer') {
+            helpText.textContent = 'You owe customer money (overpayment/credit memo).';
+        } else {
+            helpText.textContent = 'You owe vendor money (Accounts Payable).';
+        }
+    }
+}
 
 // Notification function
 function showNotification(type, message) {
@@ -807,18 +930,28 @@ function invoiceForm() {
                 vendorSection.classList.remove('hidden');
 
                 // Enable vendor select and disable customer select
-                vendorSelect.required = true;
-                customerSelect.required = false;
+                vendorSelect.removeAttribute('disabled');
+                vendorSelect.setAttribute('required', 'required');
+
+                customerSelect.setAttribute('disabled', 'disabled');
+                customerSelect.removeAttribute('required');
                 customerSelect.value = ''; // Clear customer selection
+
+                console.log('✅ Switched to vendor field');
             } else {
                 // Show customer field, hide vendor field (default for sales)
                 customerSection.classList.remove('hidden');
                 vendorSection.classList.add('hidden');
 
                 // Enable customer select and disable vendor select
-                customerSelect.required = true;
-                vendorSelect.required = false;
+                customerSelect.removeAttribute('disabled');
+                customerSelect.setAttribute('required', 'required');
+
+                vendorSelect.setAttribute('disabled', 'disabled');
+                vendorSelect.removeAttribute('required');
                 vendorSelect.value = ''; // Clear vendor selection
+
+                console.log('✅ Switched to customer field');
             }
         },
 
