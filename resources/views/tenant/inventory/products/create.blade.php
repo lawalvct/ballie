@@ -454,7 +454,7 @@
                 </div>
 
                 <!-- Info Box -->
-                
+
             </div>
         </div>
 
@@ -479,15 +479,31 @@
                         <select name="stock_asset_account_id" id="stock_asset_account_id"
                                 class="mt-1 focus:ring-green-500 focus:border-green-500 block w-full shadow-sm sm:text-sm rounded-md {{ $errors->has('stock_asset_account_id') ? 'border-red-300' : 'border-gray-300' }}">
                             <option value="">Select Account</option>
-                            @foreach($ledgerAccounts->where('type', 'asset') as $account)
+                            @php
+                                $stockAccounts = $ledgerAccounts->where('account_type', 'asset')->filter(function($account) {
+                                    return stripos($account->name, 'inventory') !== false ||
+                                           stripos($account->name, 'stock') !== false ||
+                                           stripos($account->code, 'INV') !== false ||
+                                           stripos($account->code, 'STOCK') !== false;
+                                });
+                            @endphp
+                            @foreach($stockAccounts as $account)
                                 <option value="{{ $account->id }}" {{ old('stock_asset_account_id') == $account->id ? 'selected' : '' }}>
-                                    {{ $account->name }}
+                                    {{ $account->name }} @if($account->code)({{ $account->code }})@endif
                                 </option>
                             @endforeach
+                            @if($stockAccounts->isEmpty())
+                                @foreach($ledgerAccounts->where('account_type', 'asset') as $account)
+                                    <option value="{{ $account->id }}" {{ old('stock_asset_account_id') == $account->id ? 'selected' : '' }}>
+                                        {{ $account->name }} @if($account->code)({{ $account->code }})@endif
+                                    </option>
+                                @endforeach
+                            @endif
                         </select>
                         @error('stock_asset_account_id')
                             <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                         @enderror
+                        <p class="mt-1 text-xs text-gray-500">For stock inventory valuation (e.g., Inventory, Stock in Hand)</p>
                     </div>
 
                     <div class="form-group">
@@ -497,15 +513,32 @@
                         <select name="sales_account_id" id="sales_account_id"
                                 class="mt-1 focus:ring-green-500 focus:border-green-500 block w-full shadow-sm sm:text-sm rounded-md {{ $errors->has('sales_account_id') ? 'border-red-300' : 'border-gray-300' }}">
                             <option value="">Select Account</option>
-                            @foreach($ledgerAccounts->where('type', 'income') as $account)
+                            @php
+                                $salesAccounts = $ledgerAccounts->where('account_type', 'income')->filter(function($account) {
+                                    return stripos($account->name, 'sales') !== false ||
+                                           stripos($account->name, 'service income') !== false ||
+                                           stripos($account->name, 'revenue') !== false ||
+                                           stripos($account->code, 'SALES') !== false ||
+                                           stripos($account->code, 'SERV') !== false;
+                                });
+                            @endphp
+                            @foreach($salesAccounts as $account)
                                 <option value="{{ $account->id }}" {{ old('sales_account_id') == $account->id ? 'selected' : '' }}>
-                                    {{ $account->name }}
+                                    {{ $account->name }} @if($account->code)({{ $account->code }})@endif
                                 </option>
                             @endforeach
+                            @if($salesAccounts->isEmpty())
+                                @foreach($ledgerAccounts->where('account_type', 'income') as $account)
+                                    <option value="{{ $account->id }}" {{ old('sales_account_id') == $account->id ? 'selected' : '' }}>
+                                        {{ $account->name }} @if($account->code)({{ $account->code }})@endif
+                                    </option>
+                                @endforeach
+                            @endif
                         </select>
                         @error('sales_account_id')
                             <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                         @enderror
+                        <p class="mt-1 text-xs text-gray-500">Revenue from product sales (e.g., Sales Revenue, Service Income)</p>
                     </div>
 
                     <div class="form-group">
@@ -515,15 +548,33 @@
                         <select name="purchase_account_id" id="purchase_account_id"
                                 class="mt-1 focus:ring-green-500 focus:border-green-500 block w-full shadow-sm sm:text-sm rounded-md {{ $errors->has('purchase_account_id') ? 'border-red-300' : 'border-gray-300' }}">
                             <option value="">Select Account</option>
-                            @foreach($ledgerAccounts->where('type', 'expense') as $account)
+                            @php
+                                $purchaseAccounts = $ledgerAccounts->where('account_type', 'expense')->filter(function($account) {
+                                    return stripos($account->name, 'purchase') !== false ||
+                                           stripos($account->name, 'cost of goods') !== false ||
+                                           stripos($account->name, 'cogs') !== false ||
+                                           stripos($account->name, 'direct expenses') !== false ||
+                                           stripos($account->code, 'PURCH') !== false ||
+                                           stripos($account->code, 'COGS') !== false;
+                                });
+                            @endphp
+                            @foreach($purchaseAccounts as $account)
                                 <option value="{{ $account->id }}" {{ old('purchase_account_id') == $account->id ? 'selected' : '' }}>
-                                    {{ $account->name }}
+                                    {{ $account->name }} @if($account->code)({{ $account->code }})@endif
                                 </option>
                             @endforeach
+                            @if($purchaseAccounts->isEmpty())
+                                @foreach($ledgerAccounts->where('account_type', 'expense') as $account)
+                                    <option value="{{ $account->id }}" {{ old('purchase_account_id') == $account->id ? 'selected' : '' }}>
+                                        {{ $account->name }} @if($account->code)({{ $account->code }})@endif
+                                    </option>
+                                @endforeach
+                            @endif
                         </select>
                         @error('purchase_account_id')
                             <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                         @enderror
+                        <p class="mt-1 text-xs text-gray-500">Cost of goods purchased (e.g., Purchases, Cost of Goods Sold)</p>
                     </div>
                 </div>
             </div>

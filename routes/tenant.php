@@ -352,11 +352,12 @@ Route::prefix('ledger-accounts')->name('ledger-accounts.')->group(function () {
         Route::prefix('inventory')->name('tenant.inventory.')->group(function () {
             // Products
             Route::get('products/{product}/stock-movements', [ProductController::class, 'stockMovements'])->name('products.stock-movements');
+            Route::get('products/export/template', [ProductController::class, 'downloadTemplate'])->name('products.export.template');
+            Route::get('products/export/categories-reference', [ProductController::class, 'downloadCategoriesReference'])->name('products.export.categories-reference');
+            Route::post('products/import', [ProductController::class, 'importProducts'])->name('products.import');
             Route::resource('products', ProductController::class);
             Route::patch('products/{product}/toggle-status', [ProductController::class, 'toggleStatus'])->name('products.toggle-status');
             Route::get('products/export/all', [ProductController::class, 'export'])->name('products.export');
-            Route::get('products/export/template', [ProductController::class, 'exportTemplate'])->name('products.export.template');
-            Route::post('products/import', [ProductController::class, 'import'])->name('products.import');
             Route::post('products/bulk', [ProductController::class, 'bulk'])->name('products.bulk');
             Route::post('products/bulk-action', [ProductController::class, 'bulkAction'])->name('products.bulk-action');
 

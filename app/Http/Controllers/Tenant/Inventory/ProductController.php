@@ -9,12 +9,16 @@ use App\Models\Unit;
 use App\Models\LedgerAccount;
 use App\Models\Tenant;
 use App\Models\StockMovement;
+use App\Imports\ProductsImport;
+use App\Exports\ProductsTemplateExport;
+use App\Exports\ProductCategoriesReferenceExport;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Cache;
+use Maatwebsite\Excel\Facades\Excel;
 
 class ProductController extends Controller
 {
@@ -746,5 +750,79 @@ public function importProcess(Request $request, Tenant $tenant)
     }
 }
 
+    /**
+     * Download products import template
+     */
+    public function downloadTemplate(Tenant $tenant)
+    {
+        try {
+            return Excel::download(
+                new ProductsTemplateExport(),
+                'products_import_template.xlsx'
+            );
+        } catch (\Exception $e) {
+            Log::error('Error downloading products template: ' . $e->getMessage());
 
+            return redirect()->back()
+                ->with('error', 'Failed to download template. Please try again.');
+        }
+    }
+
+    /**
+     * Download product categories reference
+     */
+    public function downloadCategoriesReference(Tenant $tenant)
+    {
+        try {
+            return Excel::download(
+                new ProductCategoriesReferenceExport($tenant),
+                'product_categories_reference.xlsx'
+            );
+        } catch (\Exception $e) {
+            Log::error('Error downloading categories reference: ' . $e->getMessage());
+
+            return redirect()->back()
+                ->with('error', 'Failed to download categories reference. Please try again.');
+        }
+    }
+
+    /**
+     * Import products from Excel file
+     */
+    public function importProducts(Request $request, Tenant $tenant)
+    {
+        $request->validate([
+            'import_file' => 'required|file|mimes:xlsx,xls,csv|max:10240',
+        ]);
+
+        try {
+            $file = $request->file('import_file');
+            $import = new ProductsImport($tenant);
+
+            Excel::import($import, $file);
+
+            $message = "{$import->getImported()} products imported successfully.";
+
+            if ($import->getSkipped() > 0) {
+                $message .= " {$import->getSkipped()} rows skipped.";
+            }
+
+            $response = redirect()
+                ->route('tenant.inventory.products.index', ['tenant' => $tenant->slug])
+                ->with('success', $message);
+
+            if (count($import->getErrors()) > 0) {
+                $response->with('import_errors', $import->getErrors());
+            }
+
+            return $response;
+
+        } catch (\Exception $e) {
+            Log::error('Error importing products: ' . $e->getMessage());
+
+            return redirect()->back()
+                ->with('error', 'Failed to import products: ' . $e->getMessage())
+                ->withInput();
+        }
+    }
 }
