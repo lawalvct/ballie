@@ -486,15 +486,16 @@
                                            stripos($account->code, 'INV') !== false ||
                                            stripos($account->code, 'STOCK') !== false;
                                 });
+                                $defaultStockId = $defaultStockAccount->id ?? null;
                             @endphp
                             @foreach($stockAccounts as $account)
-                                <option value="{{ $account->id }}" {{ old('stock_asset_account_id') == $account->id ? 'selected' : '' }}>
+                                <option value="{{ $account->id }}" {{ old('stock_asset_account_id', $defaultStockId) == $account->id ? 'selected' : '' }}>
                                     {{ $account->name }} @if($account->code)({{ $account->code }})@endif
                                 </option>
                             @endforeach
                             @if($stockAccounts->isEmpty())
                                 @foreach($ledgerAccounts->where('account_type', 'asset') as $account)
-                                    <option value="{{ $account->id }}" {{ old('stock_asset_account_id') == $account->id ? 'selected' : '' }}>
+                                    <option value="{{ $account->id }}" {{ old('stock_asset_account_id', $defaultStockId) == $account->id ? 'selected' : '' }}>
                                         {{ $account->name }} @if($account->code)({{ $account->code }})@endif
                                     </option>
                                 @endforeach
@@ -521,15 +522,16 @@
                                            stripos($account->code, 'SALES') !== false ||
                                            stripos($account->code, 'SERV') !== false;
                                 });
+                                $defaultSalesId = $defaultSalesAccount->id ?? null;
                             @endphp
                             @foreach($salesAccounts as $account)
-                                <option value="{{ $account->id }}" {{ old('sales_account_id') == $account->id ? 'selected' : '' }}>
+                                <option value="{{ $account->id }}" {{ old('sales_account_id', $defaultSalesId) == $account->id ? 'selected' : '' }}>
                                     {{ $account->name }} @if($account->code)({{ $account->code }})@endif
                                 </option>
                             @endforeach
                             @if($salesAccounts->isEmpty())
                                 @foreach($ledgerAccounts->where('account_type', 'income') as $account)
-                                    <option value="{{ $account->id }}" {{ old('sales_account_id') == $account->id ? 'selected' : '' }}>
+                                    <option value="{{ $account->id }}" {{ old('sales_account_id', $defaultSalesId) == $account->id ? 'selected' : '' }}>
                                         {{ $account->name }} @if($account->code)({{ $account->code }})@endif
                                     </option>
                                 @endforeach
@@ -557,15 +559,16 @@
                                            stripos($account->code, 'PURCH') !== false ||
                                            stripos($account->code, 'COGS') !== false;
                                 });
+                                $defaultPurchaseId = $defaultPurchaseAccount->id ?? null;
                             @endphp
                             @foreach($purchaseAccounts as $account)
-                                <option value="{{ $account->id }}" {{ old('purchase_account_id') == $account->id ? 'selected' : '' }}>
+                                <option value="{{ $account->id }}" {{ old('purchase_account_id', $defaultPurchaseId) == $account->id ? 'selected' : '' }}>
                                     {{ $account->name }} @if($account->code)({{ $account->code }})@endif
                                 </option>
                             @endforeach
                             @if($purchaseAccounts->isEmpty())
                                 @foreach($ledgerAccounts->where('account_type', 'expense') as $account)
-                                    <option value="{{ $account->id }}" {{ old('purchase_account_id') == $account->id ? 'selected' : '' }}>
+                                    <option value="{{ $account->id }}" {{ old('purchase_account_id', $defaultPurchaseId) == $account->id ? 'selected' : '' }}>
                                         {{ $account->name }} @if($account->code)({{ $account->code }})@endif
                                     </option>
                                 @endforeach

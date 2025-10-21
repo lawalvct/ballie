@@ -124,7 +124,31 @@ class ProductController extends Controller
         $units = Unit::where('tenant_id', $tenant->id)->active()->get();
         $ledgerAccounts = LedgerAccount::where('tenant_id', $tenant->id)->active()->get();
 
-        return view('tenant.inventory.products.create', compact('categories', 'units', 'ledgerAccounts', 'tenant'));
+        // Get default accounts by name for this tenant
+        $defaultStockAccount = LedgerAccount::where('tenant_id', $tenant->id)
+            ->where('name', 'Inventory')
+            ->active()
+            ->first();
+
+        $defaultSalesAccount = LedgerAccount::where('tenant_id', $tenant->id)
+            ->where('name', 'Sales Revenue')
+            ->active()
+            ->first();
+
+        $defaultPurchaseAccount = LedgerAccount::where('tenant_id', $tenant->id)
+            ->where('name', 'Cost of Goods Sold')
+            ->active()
+            ->first();
+
+        return view('tenant.inventory.products.create', compact(
+            'categories',
+            'units',
+            'ledgerAccounts',
+            'tenant',
+            'defaultStockAccount',
+            'defaultSalesAccount',
+            'defaultPurchaseAccount'
+        ));
     }
 
     public function store(Request $request, Tenant $tenant)
