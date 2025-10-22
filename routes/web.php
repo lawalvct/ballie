@@ -12,6 +12,32 @@ Route::get('/firebase-messaging-sw.js', function () {
     abort(404);
 });
 
+// Debugbar Test Route (Development Only)
+Route::get('/debugbar-test', function () {
+    // Send test messages to debugbar
+    \Debugbar::info('Debugbar test page loaded successfully! 🎉');
+    \Debugbar::warning('Testing VSCode integration - click file paths to open in VSCode');
+    \Debugbar::error('This is a test error message (not a real error!)');
+
+    // Add some context data
+    \Debugbar::info('Current Environment', [
+        'app_env' => config('app.env'),
+        'debug_enabled' => config('app.debug'),
+        'debugbar_enabled' => config('debugbar.enabled'),
+        'editor' => config('debugbar.editor'),
+    ]);
+
+    // Measure some fake operation
+    \Debugbar::startMeasure('test_operation', 'Testing Performance Measurement');
+    usleep(100000); // Sleep 100ms
+    \Debugbar::stopMeasure('test_operation');
+
+    // Execute a simple database query to show in queries tab
+    \DB::table('users')->count();
+
+    return view('debugbar-test');
+})->name('debugbar.test');
+
 // Include authentication routes
 require __DIR__.'/auth.php';
 

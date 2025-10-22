@@ -14,7 +14,7 @@
                 <div class="flex items-center justify-between">
                     <div>
                         <h1 class="text-2xl font-bold text-gray-900">Welcome back, {{ $user->name }}!</h1>
-                        <p class="text-gray-600">{{ $tenant->name }} Dashboard</p>
+                        {{-- <p class="text-gray-600">{{ $tenant->name }} Dashboard</p> --}}
                     </div>
                     @if($trialDaysRemaining > 0)
                         <div class="bg-yellow-100 border border-yellow-400 text-yellow-700 px-4 py-3 rounded">

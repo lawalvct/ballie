@@ -7,10 +7,11 @@ use Illuminate\Http\Request;
 use App\Models\Tenant;
 use App\Models\Customer;
 use App\Models\Product;
-use App\Models\Sale;
 use App\Models\Voucher;
+use App\Models\VoucherType;
 use App\Models\VoucherEntry;
 use App\Models\StockMovement;
+use App\Models\InvoiceItem;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 
@@ -39,33 +40,33 @@ class DashboardController extends Controller
         // Total Customers
         $totalCustomers = Customer::where('tenant_id', $tenant->id)->count();
 
-        // Total Revenue (from Sales + Posted Sales Vouchers)
-        $salesRevenue = Sale::where('tenant_id', $tenant->id)
-            ->where('status', 'completed')
-            ->sum('total_amount');
+        // Get sales voucher types (SV, Sales, etc.)
+        $salesVoucherTypes = VoucherType::where('tenant_id', $tenant->id)
+            ->where('affects_inventory', true)
+            ->where('inventory_effect', 'decrease')
+            ->whereIn('code', ['SV', 'SALES'])
+            ->pluck('id');
 
-        $voucherRevenue = Voucher::where('tenant_id', $tenant->id)
+        // Total Revenue from Sales Invoices (Posted only)
+        $totalRevenue = Voucher::where('tenant_id', $tenant->id)
+            ->whereIn('voucher_type_id', $salesVoucherTypes)
             ->where('status', 'posted')
-            ->whereHas('voucherType', function($q) {
-                $q->where('inventory_effect', 'decrease')
-                  ->where('affects_inventory', true);
-            })
             ->sum('total_amount');
 
-        $totalRevenue = $salesRevenue + $voucherRevenue;
-
-        // Monthly Revenue
-        $monthlyRevenue = Sale::where('tenant_id', $tenant->id)
-            ->where('status', 'completed')
-            ->whereMonth('sale_date', Carbon::now()->month)
-            ->whereYear('sale_date', Carbon::now()->year)
+        // Monthly Revenue (current month)
+        $monthlyRevenue = Voucher::where('tenant_id', $tenant->id)
+            ->whereIn('voucher_type_id', $salesVoucherTypes)
+            ->where('status', 'posted')
+            ->whereMonth('voucher_date', Carbon::now()->month)
+            ->whereYear('voucher_date', Carbon::now()->year)
             ->sum('total_amount');
 
         // Last Month Revenue
-        $lastMonthRevenue = Sale::where('tenant_id', $tenant->id)
-            ->where('status', 'completed')
-            ->whereMonth('sale_date', Carbon::now()->subMonth()->month)
-            ->whereYear('sale_date', Carbon::now()->subMonth()->year)
+        $lastMonthRevenue = Voucher::where('tenant_id', $tenant->id)
+            ->whereIn('voucher_type_id', $salesVoucherTypes)
+            ->where('status', 'posted')
+            ->whereMonth('voucher_date', Carbon::now()->subMonth()->month)
+            ->whereYear('voucher_date', Carbon::now()->subMonth()->year)
             ->sum('total_amount');
 
         // Calculate growth percentage
@@ -80,30 +81,46 @@ class DashboardController extends Controller
             'expenses' => []
         ];
 
-        // Get monthly revenue data
+        // Get monthly revenue and expense data using ledger accounts
         for ($month = 1; $month <= 12; $month++) {
-            $revenue = Sale::where('tenant_id', $tenant->id)
-                ->where('status', 'completed')
-                ->whereMonth('sale_date', $month)
-                ->whereYear('sale_date', Carbon::now()->year)
-                ->sum('total_amount');
+            // Calculate month end date
+            $monthEnd = Carbon::create(Carbon::now()->year, $month, 1)->endOfMonth()->toDateString();
+            $monthStart = Carbon::create(Carbon::now()->year, $month, 1)->startOfMonth()->toDateString();
+            $prevMonthEnd = Carbon::create(Carbon::now()->year, $month, 1)->subDay()->toDateString();
 
-            $expenses = VoucherEntry::whereHas('voucher', function($q) use ($tenant, $month) {
-                $q->where('tenant_id', $tenant->id)
-                  ->where('status', 'posted')
-                  ->whereMonth('voucher_date', $month)
-                  ->whereYear('voucher_date', Carbon::now()->year);
-            })
-            ->where('debit_amount', '>', 0)
-            ->whereHas('ledgerAccount', function($q) {
-                $q->whereHas('accountGroup', function($q2) {
-                    $q2->where('nature', 'expense');
-                });
-            })
-            ->sum('debit_amount');
+            // Get all income accounts and calculate total revenue for the month
+            $incomeAccounts = \App\Models\LedgerAccount::where('tenant_id', $tenant->id)
+                ->where('account_type', 'income')
+                ->where('is_active', true)
+                ->get();
 
-            $chartData['revenue'][] = (float) $revenue;
-            $chartData['expenses'][] = (float) $expenses;
+            $monthRevenue = 0;
+            foreach ($incomeAccounts as $account) {
+                $openingBalance = $account->getCurrentBalance($prevMonthEnd, false);
+                $closingBalance = $account->getCurrentBalance($monthEnd, false);
+                // For income accounts, credit increases balance (shown as negative in our system)
+                // So period revenue = closing - opening (absolute value)
+                $monthRevenue += abs($closingBalance - $openingBalance);
+            }
+
+            // Get all expense accounts and calculate total expenses for the month
+            $expenseAccounts = \App\Models\LedgerAccount::where('tenant_id', $tenant->id)
+                ->where('account_type', 'expense')
+                ->where('is_active', true)
+                ->get();
+
+            $monthExpenses = 0;
+            foreach ($expenseAccounts as $account) {
+                $openingBalance = $account->getCurrentBalance($prevMonthEnd, false);
+                $closingBalance = $account->getCurrentBalance($monthEnd, false);
+                // For expense accounts, debit increases balance
+                // So period expense = closing - opening (if positive)
+                $periodExpense = $closingBalance - $openingBalance;
+                $monthExpenses += max(0, $periodExpense);
+            }
+
+            $chartData['revenue'][] = (float) $monthRevenue;
+            $chartData['expenses'][] = (float) $monthExpenses;
         }
 
         // Alerts data
@@ -140,47 +157,67 @@ class DashboardController extends Controller
         }
 
         // Quick stats
-        $totalSalesCount = Sale::where('tenant_id', $tenant->id)
-            ->where('status', 'completed')
+        // Total sales/invoices count for THIS MONTH
+        $totalSalesCount = Voucher::where('tenant_id', $tenant->id)
+            ->whereIn('voucher_type_id', $salesVoucherTypes)
+            ->where('status', 'posted')
+            ->whereMonth('voucher_date', Carbon::now()->month)
+            ->whereYear('voucher_date', Carbon::now()->year)
             ->count();
 
-        $avgSalesValue = $totalSalesCount > 0 ? $totalRevenue / $totalSalesCount : 0;
+        // Average sales value based on all-time posted sales invoices
+        $totalSalesCountAllTime = Voucher::where('tenant_id', $tenant->id)
+            ->whereIn('voucher_type_id', $salesVoucherTypes)
+            ->where('status', 'posted')
+            ->count();
+
+        $avgSalesValue = $totalSalesCountAllTime > 0 ? $totalRevenue / $totalSalesCountAllTime : 0;
+
+        // Calculate current month expenses from expense accounts
+        $currentMonthExpenses = $chartData['expenses'][Carbon::now()->month - 1] ?? 0;
 
         $quickStats = [
             'monthly_sales' => $monthlyRevenue,
             'monthly_sales_percentage' => $revenueGrowth,
             'customer_growth' => $totalCustomers,
             'expense_ratio' => $monthlyRevenue > 0
-                ? (($chartData['expenses'][Carbon::now()->month - 1] ?? 0) / $monthlyRevenue) * 100
+                ? ($currentMonthExpenses / $monthlyRevenue) * 100
                 : 0
         ];
 
-        // Recent transactions - Using direct DB queries to avoid Eloquent issues
+        // Recent transactions - Using direct DB queries
         $recentTransactions = [];
 
-        // Get recent sales using DB query
-        $salesData = DB::table('sales')
-            ->leftJoin('customers', 'sales.customer_id', '=', 'customers.id')
-            ->where('sales.tenant_id', $tenant->id)
-            ->where('sales.status', 'completed')
+        // Get recent sales invoices using DB query
+        $salesInvoices = DB::table('vouchers')
+            ->join('voucher_types', 'vouchers.voucher_type_id', '=', 'voucher_types.id')
+            ->leftJoin('voucher_entries', function($join) {
+                $join->on('vouchers.id', '=', 'voucher_entries.voucher_id')
+                     ->where('voucher_entries.debit_amount', '>', 0);
+            })
+            ->leftJoin('ledger_accounts', 'voucher_entries.ledger_account_id', '=', 'ledger_accounts.id')
+            ->where('vouchers.tenant_id', $tenant->id)
+            ->where('vouchers.status', 'posted')
+            ->whereIn('vouchers.voucher_type_id', $salesVoucherTypes->toArray())
             ->select(
-                'sales.sale_number',
-                'sales.total_amount',
-                'sales.sale_date',
-                'customers.company_name'
+                'vouchers.voucher_number',
+                'vouchers.total_amount',
+                'vouchers.voucher_date',
+                'voucher_types.prefix',
+                'ledger_accounts.name as customer_name'
             )
-            ->orderBy('sales.created_at', 'desc')
+            ->orderBy('vouchers.created_at', 'desc')
             ->limit(5)
             ->get();
 
-        foreach ($salesData as $sale) {
+        foreach ($salesInvoices as $invoice) {
             $recentTransactions[] = [
                 'type' => 'sale',
                 'icon_color' => 'green',
-                'description' => $sale->company_name ? "Sale to {$sale->company_name}" : 'Sale',
-                'reference' => "Sale #{$sale->sale_number}",
-                'amount' => (float) $sale->total_amount,
-                'date' => $sale->sale_date
+                'description' => $invoice->customer_name ? "Sale to {$invoice->customer_name}" : 'Sale',
+                'reference' => "{$invoice->prefix}{$invoice->voucher_number}",
+                'amount' => (float) $invoice->total_amount,
+                'date' => $invoice->voucher_date
             ];
         }
 
@@ -242,29 +279,37 @@ class DashboardController extends Controller
             ];
         }
 
-        // Recent sales using DB query
-        $recentSalesData = DB::table('sales')
-            ->leftJoin('customers', 'sales.customer_id', '=', 'customers.id')
-            ->where('sales.tenant_id', $tenant->id)
-            ->where('sales.status', 'completed')
+        // Recent sales invoices using DB query
+        $recentSalesInvoices = DB::table('vouchers')
+            ->join('voucher_types', 'vouchers.voucher_type_id', '=', 'voucher_types.id')
+            ->leftJoin('voucher_entries', function($join) {
+                $join->on('vouchers.id', '=', 'voucher_entries.voucher_id')
+                     ->where('voucher_entries.debit_amount', '>', 0);
+            })
+            ->leftJoin('ledger_accounts', 'voucher_entries.ledger_account_id', '=', 'ledger_accounts.id')
+            ->where('vouchers.tenant_id', $tenant->id)
+            ->where('vouchers.status', 'posted')
+            ->whereIn('vouchers.voucher_type_id', $salesVoucherTypes->toArray())
             ->select(
-                'sales.total_amount',
-                'sales.sale_date',
-                'sales.created_at',
-                'customers.company_name'
+                'vouchers.total_amount',
+                'vouchers.voucher_date',
+                'vouchers.created_at',
+                'voucher_types.prefix',
+                'vouchers.voucher_number',
+                'ledger_accounts.name as customer_name'
             )
-            ->orderBy('sales.created_at', 'desc')
+            ->orderBy('vouchers.created_at', 'desc')
             ->limit(3)
             ->get();
 
-        foreach ($recentSalesData as $sale) {
-            $customerName = $sale->company_name ?: 'Customer';
+        foreach ($recentSalesInvoices as $invoice) {
+            $customerName = $invoice->customer_name ?: 'Customer';
             $recentActivities[] = [
                 'type' => 'payment_received',
                 'icon_color' => 'green',
-                'description' => 'Sale completed',
-                'details' => '₦' . number_format($sale->total_amount, 2) . " from {$customerName}",
-                'date' => $sale->created_at
+                'description' => 'Invoice posted',
+                'details' => '₦' . number_format($invoice->total_amount, 2) . " - {$invoice->prefix}{$invoice->voucher_number}",
+                'date' => $invoice->created_at
             ];
         }
 
@@ -336,36 +381,30 @@ class DashboardController extends Controller
             ->values()
             ->toArray();
 
-        // Open invoices/sales count
-        $openInvoices = Sale::where('tenant_id', $currentTenant->id)
-            ->where('status', '!=', 'completed')
+        // Open invoices/sales count (draft + posted pending payment)
+        $openInvoices = Voucher::where('tenant_id', $currentTenant->id)
+            ->whereIn('voucher_type_id', $salesVoucherTypes)
+            ->where('status', '!=', 'cancelled')
             ->count();
 
-        // Average payment days (calculated from completed sales)
-        $completedSales = Sale::where('tenant_id', $currentTenant->id)
-            ->where('status', 'completed')
-            ->whereNotNull('updated_at')
-            ->get();
+        // Average payment days - not applicable for voucher system
+        // Can be implemented later based on payment vouchers linked to sales invoices
+        $avgPaymentDays = 0;
 
-        $avgPaymentDays = $completedSales->count() > 0
-            ? $completedSales->avg(function($sale) {
-                return Carbon::parse($sale->created_at)->diffInDays(Carbon::parse($sale->updated_at));
-            })
-            : 0;
-
-        // Top selling products (based on sales items and stock movements)
-        $topProducts = DB::table('sale_items')
-            ->join('sales', 'sale_items.sale_id', '=', 'sales.id')
-            ->join('products', 'sale_items.product_id', '=', 'products.id')
-            ->where('sales.tenant_id', $tenant->id)
-            ->where('sales.status', 'completed')
-            ->whereMonth('sales.sale_date', Carbon::now()->month)
-            ->whereYear('sales.sale_date', Carbon::now()->year)
+        // Top selling products (based on invoice items)
+        $topProducts = DB::table('invoice_items')
+            ->join('vouchers', 'invoice_items.voucher_id', '=', 'vouchers.id')
+            ->join('products', 'invoice_items.product_id', '=', 'products.id')
+            ->where('vouchers.tenant_id', $tenant->id)
+            ->where('vouchers.status', 'posted')
+            ->whereIn('vouchers.voucher_type_id', $salesVoucherTypes->toArray())
+            ->whereMonth('vouchers.voucher_date', Carbon::now()->month)
+            ->whereYear('vouchers.voucher_date', Carbon::now()->year)
             ->select(
                 'products.name',
-                DB::raw('COUNT(sale_items.id) as sales_count'),
-                DB::raw('SUM(sale_items.line_total) as total_revenue'),
-                DB::raw('SUM(sale_items.quantity) as total_quantity')
+                DB::raw('COUNT(invoice_items.id) as sales_count'),
+                DB::raw('SUM(invoice_items.amount) as total_revenue'),
+                DB::raw('SUM(invoice_items.quantity) as total_quantity')
             )
             ->groupBy('products.id', 'products.name')
             ->orderByDesc('total_revenue')
@@ -382,26 +421,33 @@ class DashboardController extends Controller
             ->values()
             ->toArray();
 
-        // Top customers (based on sales)
-        $topCustomers = DB::table('sales')
-            ->join('customers', 'sales.customer_id', '=', 'customers.id')
-            ->where('sales.tenant_id', $tenant->id)
-            ->where('sales.status', 'completed')
-            ->whereMonth('sales.sale_date', Carbon::now()->month)
-            ->whereYear('sales.sale_date', Carbon::now()->year)
+        // Top customers (based on sales invoices)
+        // Join customers via ledger_account_id (customers.ledger_account_id -> ledger_accounts.id)
+        $topCustomers = DB::table('vouchers')
+            ->join('voucher_entries', 'vouchers.id', '=', 'voucher_entries.voucher_id')
+            ->join('ledger_accounts', 'voucher_entries.ledger_account_id', '=', 'ledger_accounts.id')
+            ->leftJoin('customers', 'customers.ledger_account_id', '=', 'ledger_accounts.id')
+            ->where('vouchers.tenant_id', $tenant->id)
+            ->where('vouchers.status', 'posted')
+            ->whereIn('vouchers.voucher_type_id', $salesVoucherTypes->toArray())
+            ->where('voucher_entries.debit_amount', '>', 0) // Customer entry is debit
+            ->whereNotNull('customers.id') // Only include entries linked to customers
+            ->whereMonth('vouchers.voucher_date', Carbon::now()->month)
+            ->whereYear('vouchers.voucher_date', Carbon::now()->year)
             ->select(
+                'ledger_accounts.name as customer_name',
                 'customers.company_name',
                 'customers.first_name',
                 'customers.last_name',
-                DB::raw('COUNT(sales.id) as order_count'),
-                DB::raw('SUM(sales.total_amount) as total_spent')
+                DB::raw('COUNT(DISTINCT vouchers.id) as order_count'),
+                DB::raw('SUM(vouchers.total_amount) as total_spent')
             )
-            ->groupBy('customers.id', 'customers.company_name', 'customers.first_name', 'customers.last_name')
+            ->groupBy('ledger_accounts.id', 'ledger_accounts.name', 'customers.id', 'customers.company_name', 'customers.first_name', 'customers.last_name')
             ->orderByDesc('total_spent')
             ->limit(5)
             ->get()
             ->map(function($item) {
-                $name = $item->company_name ?: trim($item->first_name . ' ' . $item->last_name);
+                $name = $item->customer_name ?: ($item->company_name ?: trim($item->first_name . ' ' . $item->last_name));
                 return [
                     'name' => $name ?: 'Unknown Customer',
                     'orders' => (int) $item->order_count,
