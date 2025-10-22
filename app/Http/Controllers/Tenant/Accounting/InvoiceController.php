@@ -751,125 +751,172 @@ class InvoiceController extends Controller
 
 private function createAccountingEntries(Voucher $voucher, array $inventoryItems, Tenant $tenant, $customerLedger_id)
 {
-    // Get default accounts
-    $salesAccount = LedgerAccount::where('tenant_id', $tenant->id)
-        ->where('name', 'LIKE', '%Sales%')
-        ->first();
-
-    if (!$salesAccount || !$customerLedger_id) {
-        throw new \Exception('Required ledger accounts (Sales, and customer ledger id) not found. Please create them first.');
+    // Get the customer/supplier account using the ID
+    $partyAccount = LedgerAccount::find($customerLedger_id);
+    if (!$partyAccount) {
+        throw new \Exception('Party ledger account not found.');
     }
 
-    // Get the customer account using the ID
-    $customerAccount = LedgerAccount::find($customerLedger_id);
-    if (!$customerAccount) {
-        throw new \Exception('Customer ledger account not found.');
-    }
+    // Determine if this is a sales or purchase voucher
+    $isSales = in_array($voucher->voucherType->name, ['Sales', 'Sales Return']);
+    $isPurchase = in_array($voucher->voucherType->name, ['Purchase', 'Purchase Return']);
 
     $totalAmount = collect($inventoryItems)->sum('amount');
 
-    // Debit: Customer Account (Accounts Receivable)
-    VoucherEntry::create([
-        'voucher_id' => $voucher->id,
-        'ledger_account_id' => $customerLedger_id,
-        'debit_amount' => $totalAmount,
-        'credit_amount' => 0,
-        'particulars' => 'Sales invoice - ' . $voucher->getDisplayNumber(),
-    ]);
+    // Group items by their ledger account (sales_account_id or purchase_account_id)
+    $groupedItems = [];
 
-    // Credit: Sales Account
-    VoucherEntry::create([
-        'voucher_id' => $voucher->id,
-        'ledger_account_id' => $salesAccount->id,
-        'debit_amount' => 0,
-        'credit_amount' => $totalAmount,
-        'particulars' => 'Sales invoice - ' . $voucher->getDisplayNumber(),
-    ]);
+    foreach ($inventoryItems as $item) {
+        $product = Product::find($item['product_id']);
 
-    // Explicitly update ledger account balances and last transaction date
+        if (!$product) {
+            throw new \Exception("Product with ID {$item['product_id']} not found.");
+        }
+
+        // Determine which account to use based on voucher type
+        $accountId = null;
+        if ($isSales) {
+            $accountId = $product->sales_account_id;
+        } elseif ($isPurchase) {
+            $accountId = $product->purchase_account_id;
+        }
+
+        if (!$accountId) {
+            // Fallback to default account if product doesn't have specific account
+            if ($isSales) {
+                $defaultAccount = LedgerAccount::where('tenant_id', $tenant->id)
+                    ->where('name', 'Sales Revenue')
+                    ->first();
+            } else {
+                $defaultAccount = LedgerAccount::where('tenant_id', $tenant->id)
+                    ->where('name', 'Cost of Goods Sold')
+                    ->first();
+            }
+
+            if (!$defaultAccount) {
+                throw new \Exception("Product {$product->name} does not have a " .
+                    ($isSales ? 'sales' : 'purchase') . " account assigned, and no default account found.");
+            }
+            $accountId = $defaultAccount->id;
+        }
+
+        if (!isset($groupedItems[$accountId])) {
+            $groupedItems[$accountId] = 0;
+        }
+        $groupedItems[$accountId] += $item['amount'];
+    }
+
+    // Create accounting entries based on voucher type
+    if ($isSales) {
+        // SALES INVOICE:
+        // Debit: Customer Account (Accounts Receivable)
+        VoucherEntry::create([
+            'voucher_id' => $voucher->id,
+            'ledger_account_id' => $customerLedger_id,
+            'debit_amount' => $totalAmount,
+            'credit_amount' => 0,
+            'particulars' => 'Sales invoice - ' . $voucher->getDisplayNumber(),
+        ]);
+
+        // Credit: Product's Sales Account(s) - one entry per unique sales account
+        foreach ($groupedItems as $accountId => $amount) {
+            VoucherEntry::create([
+                'voucher_id' => $voucher->id,
+                'ledger_account_id' => $accountId,
+                'debit_amount' => 0,
+                'credit_amount' => $amount,
+                'particulars' => 'Sales invoice - ' . $voucher->getDisplayNumber(),
+            ]);
+        }
+    } elseif ($isPurchase) {
+        // PURCHASE INVOICE:
+        // Debit: Product's Purchase Account(s) - one entry per unique purchase account
+        foreach ($groupedItems as $accountId => $amount) {
+            VoucherEntry::create([
+                'voucher_id' => $voucher->id,
+                'ledger_account_id' => $accountId,
+                'debit_amount' => $amount,
+                'credit_amount' => 0,
+                'particulars' => 'Purchase invoice - ' . $voucher->getDisplayNumber(),
+            ]);
+        }
+
+        // Credit: Supplier Account (Accounts Payable)
+        VoucherEntry::create([
+            'voucher_id' => $voucher->id,
+            'ledger_account_id' => $customerLedger_id, // Note: variable name is customerLedger_id but can be supplier too
+            'debit_amount' => 0,
+            'credit_amount' => $totalAmount,
+            'particulars' => 'Purchase invoice - ' . $voucher->getDisplayNumber(),
+        ]);
+    }
+
+    // Update ledger account balances
     try {
-        Log::info('Before updating customer balance', [
-            'customer_account_id' => $customerAccount->id,
-            'current_balance_before' => $customerAccount->current_balance
+        // Update party (customer/supplier) account balance
+        Log::info('Before updating party balance', [
+            'party_account_id' => $partyAccount->id,
+            'current_balance_before' => $partyAccount->current_balance
         ]);
 
-        $customerBalance = $customerAccount->updateCurrentBalance();
+        $partyBalance = $partyAccount->updateCurrentBalance();
 
-        Log::info('After updating customer balance', [
-            'customer_account_id' => $customerAccount->id,
-            'current_balance_after' => $customerAccount->fresh()->current_balance,
-            'calculated_balance' => $customerBalance
+        Log::info('After updating party balance', [
+            'party_account_id' => $partyAccount->id,
+            'current_balance_after' => $partyAccount->fresh()->current_balance,
+            'calculated_balance' => $partyBalance
         ]);
 
-        Log::info('Before updating sales balance', [
-            'sales_account_id' => $salesAccount->id,
-            'current_balance_before' => $salesAccount->current_balance
-        ]);
+        // Update all affected product ledger accounts
+        foreach ($groupedItems as $accountId => $amount) {
+            $productAccount = LedgerAccount::find($accountId);
+            if ($productAccount) {
+                Log::info('Before updating product account balance', [
+                    'account_id' => $productAccount->id,
+                    'account_name' => $productAccount->name,
+                    'current_balance_before' => $productAccount->current_balance
+                ]);
 
-        $salesBalance = $salesAccount->updateCurrentBalance();
+                $productBalance = $productAccount->updateCurrentBalance();
 
-        Log::info('After updating sales balance', [
-            'sales_account_id' => $salesAccount->id,
-            'current_balance_after' => $salesAccount->fresh()->current_balance,
-            'calculated_balance' => $salesBalance
-        ]);
-
-        // Manual backup calculation if the automatic update didn't work
-        if ($customerAccount->fresh()->current_balance == $customerAccount->opening_balance) {
-            // Calculate manually for customer account (asset type)
-            $totalDebits = $customerAccount->voucherEntries()->sum('debit_amount');
-            $totalCredits = $customerAccount->voucherEntries()->sum('credit_amount');
-            $manualBalance = $customerAccount->opening_balance + $totalDebits - $totalCredits;
-
-            $customerAccount->update(['current_balance' => $manualBalance]);
-
-            Log::info('Manual customer balance update', [
-                'manual_balance' => $manualBalance,
-                'total_debits' => $totalDebits,
-                'total_credits' => $totalCredits
-            ]);
+                Log::info('After updating product account balance', [
+                    'account_id' => $productAccount->id,
+                    'account_name' => $productAccount->name,
+                    'current_balance_after' => $productAccount->fresh()->current_balance,
+                    'calculated_balance' => $productBalance
+                ]);
+            }
         }
 
-        if ($salesAccount->fresh()->current_balance == $salesAccount->opening_balance) {
-            // Calculate manually for sales account (income type)
-            $totalDebits = $salesAccount->voucherEntries()->sum('debit_amount');
-            $totalCredits = $salesAccount->voucherEntries()->sum('credit_amount');
-            $manualBalance = $salesAccount->opening_balance + $totalCredits - $totalDebits;
+        // Also update customer/vendor outstanding balance if linked
+        if ($isSales) {
+            $customer = Customer::where('ledger_account_id', $partyAccount->id)->first();
+            if ($customer) {
+                $outstandingBalance = max(0, $partyBalance);
+                $customer->update(['outstanding_balance' => $outstandingBalance]);
 
-            $salesAccount->update(['current_balance' => $manualBalance]);
+                Log::info('Updated customer outstanding balance', [
+                    'customer_id' => $customer->id,
+                    'outstanding_balance' => $outstandingBalance
+                ]);
+            }
+        } elseif ($isPurchase) {
+            $vendor = Vendor::where('ledger_account_id', $partyAccount->id)->first();
+            if ($vendor) {
+                $outstandingBalance = max(0, abs($partyBalance)); // Vendors have credit balances
+                $vendor->update(['outstanding_balance' => $outstandingBalance]);
 
-            Log::info('Manual sales balance update', [
-                'manual_balance' => $manualBalance,
-                'total_debits' => $totalDebits,
-                'total_credits' => $totalCredits
-            ]);
-        }
-
-        Log::info('After updating sales balance', [
-            'sales_account_id' => $salesAccount->id,
-            'current_balance_after' => $salesAccount->fresh()->current_balance,
-            'calculated_balance' => $salesBalance
-        ]);
-
-        // Also update customer outstanding balance if linked
-        $customer = Customer::where('ledger_account_id', $customerAccount->id)->first();
-        if ($customer) {
-            $outstandingBalance = max(0, $customerBalance);
-            $customer->update(['outstanding_balance' => $outstandingBalance]);
-
-            Log::info('Updated customer outstanding balance', [
-                'customer_id' => $customer->id,
-                'outstanding_balance' => $outstandingBalance
-            ]);
+                Log::info('Updated vendor outstanding balance', [
+                    'vendor_id' => $vendor->id,
+                    'outstanding_balance' => $outstandingBalance
+                ]);
+            }
         }
 
     } catch (\Exception $e) {
         Log::error('Error updating account balances: ' . $e->getMessage());
         throw $e;
     }
-
-    // If you want to track Cost of Goods Sold (COGS), add those entries here
-    // This would require tracking purchase costs of products
 }
 
     private function updateProductStock(array $inventoryItems, string $operation, $voucher = null)
