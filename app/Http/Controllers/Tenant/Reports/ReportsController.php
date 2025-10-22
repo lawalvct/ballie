@@ -471,63 +471,33 @@ class ReportsController extends Controller
 
     /**
      * Calculate account balance as of specific date
+     * Uses the LedgerAccount model's getCurrentBalance method for consistency
      */
     private function calculateAccountBalance($account, $asOfDate)
     {
-        // Start with opening balance
-        $balance = $account->opening_balance ?? 0;
-
-        // Add all transactions up to the specified date
-        $totalDebits = $account->voucherEntries()->whereHas('voucher', function($query) use ($asOfDate) {
-            $query->where('voucher_date', '<=', $asOfDate)
-                  ->where('status', 'posted');
-        })->sum('debit_amount');
-
-        $totalCredits = $account->voucherEntries()->whereHas('voucher', function($query) use ($asOfDate) {
-            $query->where('voucher_date', '<=', $asOfDate)
-                  ->where('status', 'posted');
-        })->sum('credit_amount');
-
-        // For accounting: Debit increases assets and expenses, Credit increases liabilities, equity, and income
-        if (in_array($account->account_type, ['asset', 'expense'])) {
-            // Assets and Expenses: Debit increases, Credit decreases
-            $balance = $balance + $totalDebits - $totalCredits;
-        } else {
-            // Liabilities, Equity, Income: Credit increases, Debit decreases
-            $balance = $balance + $totalCredits - $totalDebits;
-        }
-
-        return $balance;
+        // Use the model's getCurrentBalance method which respects account types
+        // and provides consistent balance calculation across the system
+        return $account->getCurrentBalance($asOfDate, false);
     }
 
     /**
      * Calculate account balance for a specific period
+     * Returns the net movement during the period (not cumulative balance)
      */
     private function calculateAccountBalanceForPeriod($account, $fromDate, $toDate)
     {
-        // For period reporting, we typically show activity during the period
-        // rather than cumulative balance
+        // For period reporting, we show activity during the period
+        // Calculate opening balance (day before period start)
+        $openingDate = date('Y-m-d', strtotime($fromDate . ' -1 day'));
+        $openingBalance = $account->getCurrentBalance($openingDate, false);
 
-        $totalDebits = $account->voucherEntries()->whereHas('voucher', function($query) use ($fromDate, $toDate) {
-            $query->whereBetween('voucher_date', [$fromDate, $toDate])
-                  ->where('status', 'posted');
-        })->sum('debit_amount');
+        // Calculate closing balance (end of period)
+        $closingBalance = $account->getCurrentBalance($toDate, false);
 
-        $totalCredits = $account->voucherEntries()->whereHas('voucher', function($query) use ($fromDate, $toDate) {
-            $query->whereBetween('voucher_date', [$fromDate, $toDate])
-                  ->where('status', 'posted');
-        })->sum('credit_amount');
+        // Period movement is the difference
+        $periodMovement = $closingBalance - $openingBalance;
 
-        // For period reports, show net activity during the period
-        if (in_array($account->account_type, ['asset', 'expense'])) {
-            // Assets and Expenses: Debit increases, Credit decreases
-            $balance = $totalDebits - $totalCredits;
-        } else {
-            // Liabilities, Equity, Income: Credit increases, Debit decreases
-            $balance = $totalCredits - $totalDebits;
-        }
-
-        return $balance;
+        return $periodMovement;
     }
 
     /**
