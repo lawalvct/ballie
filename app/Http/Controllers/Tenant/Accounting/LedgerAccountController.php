@@ -245,32 +245,52 @@ public function show(Request $request, Tenant $tenant, LedgerAccount $ledgerAcco
 {
     $ledgerAccount->load(['accountGroup', 'parent', 'children']);
 
-    // Get recent transactions for this account
+    // Get date filters (similar to product stock filtering)
+    $fromDate = $request->get('from_date', now()->startOfMonth()->toDateString());
+    $toDate = $request->get('to_date', now()->toDateString());
+    $asOfDate = $request->get('as_of_date', $toDate); // For balance calculation
+
+    // Calculate opening balance (balance before from_date)
+    $openingBalance = $ledgerAccount->getCurrentBalance(
+        date('Y-m-d', strtotime($fromDate . ' -1 day')),
+        false // Don't use cache for historical data
+    );
+
+    // Get transactions for the selected period
     $recentTransactions = $ledgerAccount->voucherEntries()
-        ->with(['voucher'])
-        ->whereHas('voucher', function ($query) {
-            $query->where('status', 'posted');
+        ->with(['voucher.voucherType'])
+        ->whereHas('voucher', function ($query) use ($fromDate, $toDate) {
+            $query->where('status', 'posted')
+                  ->whereBetween('voucher_date', [$fromDate, $toDate]);
+        })
+        ->orderByDesc(function ($query) {
+            $query->select('voucher_date')
+                  ->from('vouchers')
+                  ->whereColumn('vouchers.id', 'voucher_entries.voucher_id')
+                  ->limit(1);
         })
         ->orderBy('created_at', 'desc')
-        ->take(10)
-        ->get();
+        ->paginate(50);
 
-    // Get account balance totals
+    // Get account balance totals for the period
     $totalDebits = $ledgerAccount->voucherEntries()
-        ->whereHas('voucher', function ($query) {
-            $query->where('status', 'posted');
+        ->whereHas('voucher', function ($query) use ($fromDate, $toDate) {
+            $query->where('status', 'posted')
+                  ->whereBetween('voucher_date', [$fromDate, $toDate]);
         })
         ->sum('debit_amount');
 
     $totalCredits = $ledgerAccount->voucherEntries()
-        ->whereHas('voucher', function ($query) {
-            $query->where('status', 'posted');
+        ->whereHas('voucher', function ($query) use ($fromDate, $toDate) {
+            $query->where('status', 'posted')
+                  ->whereBetween('voucher_date', [$fromDate, $toDate]);
         })
         ->sum('credit_amount');
 
     $transactionCount = $ledgerAccount->voucherEntries()
-        ->whereHas('voucher', function ($query) {
-            $query->where('status', 'posted');
+        ->whereHas('voucher', function ($query) use ($fromDate, $toDate) {
+            $query->where('status', 'posted')
+                  ->whereBetween('voucher_date', [$fromDate, $toDate]);
         })
         ->count();
 
@@ -281,8 +301,21 @@ public function show(Request $request, Tenant $tenant, LedgerAccount $ledgerAcco
         ->latest()
         ->first();
 
-    // Get current balance using the model method
-    $currentBalance = $ledgerAccount->getCurrentBalance();
+    // Calculate closing balance as of the end date
+    $closingBalance = $ledgerAccount->getCurrentBalance($asOfDate, false);
+
+    // Determine account nature for proper balance calculation
+    $accountType = $ledgerAccount->account_type ?? 'asset';
+
+    // Calculate period movement
+    if (in_array($accountType, ['asset', 'expense'])) {
+        $periodMovement = $totalDebits - $totalCredits;
+    } else {
+        $periodMovement = $totalCredits - $totalDebits;
+    }
+
+    // Get current balance (as of today) for comparison
+    $currentBalance = $ledgerAccount->getCurrentBalance(null, false);
 
     return view('tenant.accounting.ledger-accounts.show', compact(
         'tenant',
@@ -292,7 +325,13 @@ public function show(Request $request, Tenant $tenant, LedgerAccount $ledgerAcco
         'totalCredits',
         'transactionCount',
         'lastTransaction',
-        'currentBalance'
+        'openingBalance',
+        'closingBalance',
+        'currentBalance',
+        'periodMovement',
+        'fromDate',
+        'toDate',
+        'asOfDate'
     ));
 }
 

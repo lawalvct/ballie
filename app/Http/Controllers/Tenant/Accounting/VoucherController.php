@@ -655,4 +655,92 @@ class VoucherController extends Controller
 
         return view('tenant.accounting.vouchers.print', compact('tenant', 'voucher'));
     }
+
+    /**
+     * Show ledger statement for an account with date filtering
+     * Similar to product stock movements, shows historical balances
+     */
+    public function ledgerStatement(Request $request, Tenant $tenant, LedgerAccount $ledgerAccount)
+    {
+        // Ensure account belongs to tenant
+        if ($ledgerAccount->tenant_id !== $tenant->id) {
+            abort(404);
+        }
+
+        // Get date range (similar to product stock filtering)
+        $fromDate = $request->get('from_date', now()->startOfMonth()->toDateString());
+        $toDate = $request->get('to_date', now()->toDateString());
+
+        // Calculate opening balance (balance as of day before from_date)
+        $openingDate = date('Y-m-d', strtotime($fromDate . ' -1 day'));
+        $openingBalance = $ledgerAccount->getCurrentBalance($openingDate, false);
+
+        // Get all entries for the period, ordered by voucher date
+        $entries = $ledgerAccount->voucherEntries()
+            ->with(['voucher.voucherType', 'voucher.createdBy'])
+            ->whereHas('voucher', function ($query) use ($fromDate, $toDate) {
+                $query->where('status', 'posted')
+                      ->whereBetween('voucher_date', [$fromDate, $toDate]);
+            })
+            ->get()
+            ->sortBy(function ($entry) {
+                return $entry->voucher->voucher_date . ' ' . $entry->voucher->id;
+            });
+
+        // Build statement with running balance (like stock movements)
+        $accountType = $ledgerAccount->account_type ?? 'asset';
+        $runningBalance = $openingBalance;
+        $statementLines = collect();
+
+        foreach ($entries as $entry) {
+            // Calculate movement based on account type
+            if (in_array($accountType, ['asset', 'expense'])) {
+                // Debit increases, Credit decreases
+                $movement = $entry->debit_amount - $entry->credit_amount;
+            } else {
+                // Credit increases, Debit decreases (liability, equity, income)
+                $movement = $entry->credit_amount - $entry->debit_amount;
+            }
+
+            $runningBalance += $movement;
+
+            $statementLines->push([
+                'id' => $entry->id,
+                'date' => $entry->voucher->voucher_date,
+                'voucher_number' => $entry->voucher->voucher_number,
+                'voucher_type' => $entry->voucher->voucherType->name ?? 'Unknown',
+                'particulars' => $entry->particulars,
+                'reference' => $entry->voucher->reference_number,
+                'debit_amount' => $entry->debit_amount,
+                'credit_amount' => $entry->credit_amount,
+                'movement' => $movement,
+                'running_balance' => $runningBalance,
+                'voucher_id' => $entry->voucher_id,
+            ]);
+        }
+
+        // Calculate closing balance
+        $closingBalance = $runningBalance;
+
+        // Calculate period totals
+        $periodDebits = $entries->sum('debit_amount');
+        $periodCredits = $entries->sum('credit_amount');
+
+        // Get current balance (as of today) for reference
+        $currentBalance = $ledgerAccount->getCurrentBalance(null, false);
+
+        return view('tenant.accounting.vouchers.ledger-statement', compact(
+            'tenant',
+            'ledgerAccount',
+            'statementLines',
+            'openingBalance',
+            'closingBalance',
+            'currentBalance',
+            'periodDebits',
+            'periodCredits',
+            'fromDate',
+            'toDate',
+            'accountType'
+        ));
+    }
 }
