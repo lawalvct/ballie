@@ -52,15 +52,26 @@
 
 
     <!-- Sales Register -->
-    <div class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+    <div class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden sales-register-container">
         <!-- Report Header -->
-        <div class="bg-teal-700 text-white px-6 py-3 flex items-center justify-between">
+        <div class="bg-teal-700 text-white px-6 py-3 flex items-center justify-between sales-register-header">
             <h3 class="text-lg font-bold">Sales Register</h3>
             <div class="text-sm">
                 <span class="font-semibold">{{ $tenant->company_name ?? $tenant->name }}</span>
             </div>
             <div class="text-sm">
                 {{ date('d-M-Y', strtotime($fromDate)) }} to {{ date('d-M-Y', strtotime($toDate)) }}
+            </div>
+            <div class="flex items-center space-x-2">
+                <button onclick="printSalesRegister(event); return false;"
+                        type="button"
+                        class="inline-flex items-center px-3 py-2 bg-teal-600 hover:bg-teal-500 border border-teal-500 rounded-md text-sm font-medium text-white transition-colors duration-150"
+                        title="Print Sales Register">
+                    <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path>
+                    </svg>
+                    Print
+                </button>
             </div>
         </div>
 
@@ -122,7 +133,7 @@
             <!-- Bar Chart Section -->
             @if($salesTrend->count() > 0)
             <div class="mt-8">
-              
+
 
                 <div class="relative" style="height: 300px;">
                     @php
@@ -228,8 +239,189 @@
 </div>
 
 @push('scripts')
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script>
-    // Print styles
+    // Print Sales Register function
+    function printSalesRegister(event) {
+        if (event) {
+            event.preventDefault();
+        }
+
+        // Get the sales register container
+        const salesRegister = document.querySelector('.sales-register-container');
+
+        if (!salesRegister) {
+            alert('Sales register not found');
+            return;
+        }
+
+        // Get the chart element
+        const chartElement = salesRegister.querySelector('.mt-8 .relative');
+
+        if (chartElement) {
+            // Convert chart to canvas/image
+            html2canvas(chartElement, {
+                backgroundColor: '#ffffff',
+                scale: 2, // Higher quality
+                logging: false
+            }).then(canvas => {
+                // Convert canvas to image
+                const chartImage = canvas.toDataURL('image/png');
+
+                // Now create the print content with the chart image
+                createPrintWindow(salesRegister, chartImage);
+            }).catch(error => {
+                console.error('Error converting chart to image:', error);
+                // Fallback: print without chart image
+                createPrintWindow(salesRegister, null);
+            });
+        } else {
+            // No chart, print normally
+            createPrintWindow(salesRegister, null);
+        }
+
+        return false;
+    }
+
+    function createPrintWindow(salesRegister, chartImageData) {
+        // Clone the element to avoid modifying the original
+        const printContent = salesRegister.cloneNode(true);
+
+        // Remove the print button from the cloned content
+        const printButton = printContent.querySelector('button');
+        if (printButton) {
+            printButton.remove();
+        }
+
+        // Remove debug info if exists
+        const debugInfo = printContent.querySelectorAll('.bg-yellow-100, .bg-blue-100');
+        debugInfo.forEach(el => el.remove());
+
+        // If we have chart image, replace the chart section
+        if (chartImageData) {
+            const chartSection = printContent.querySelector('.mt-8');
+            if (chartSection) {
+                chartSection.innerHTML = `
+                    <div style="margin-top: 2rem; page-break-inside: avoid;">
+                        <img src="${chartImageData}" style="width: 100%; max-width: 800px; height: auto; display: block; margin: 0 auto;" alt="Sales Chart" />
+                    </div>
+                `;
+            }
+        }
+
+        // Create print HTML
+        const printHTML = `
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <title>Sales Register - {{ $tenant->company_name ?? $tenant->name }}</title>
+                <meta charset="utf-8">
+                <style>
+                    * {
+                        margin: 0;
+                        padding: 0;
+                        box-sizing: border-box;
+                    }
+                    body {
+                        font-family: Arial, sans-serif;
+                        padding: 20px;
+                        color: #000;
+                    }
+                    .sales-register-header {
+                        background-color: #0f766e !important;
+                        color: white !important;
+                        padding: 15px 20px;
+                        margin-bottom: 20px;
+                        display: flex;
+                        justify-content: space-between;
+                        align-items: center;
+                        print-color-adjust: exact;
+                        -webkit-print-color-adjust: exact;
+                    }
+                    .sales-register-header h3 {
+                        font-size: 18px;
+                        font-weight: bold;
+                    }
+                    table {
+                        width: 100%;
+                        border-collapse: collapse;
+                        margin: 20px 0;
+                    }
+                    th, td {
+                        border: 1px solid #333;
+                        padding: 8px 12px;
+                        text-align: left;
+                        font-size: 12px;
+                    }
+                    th {
+                        background-color: #e5e7eb;
+                        font-weight: bold;
+                    }
+                    .text-center { text-align: center !important; }
+                    .text-right { text-align: right !important; }
+                    .text-left { text-align: left !important; }
+                    .font-bold { font-weight: bold; }
+                    .bg-gray-100 { background-color: #f3f4f6; }
+                    .mb-6 { margin-bottom: 1.5rem; }
+                    .text-center h4 {
+                        font-size: 20px;
+                        margin-bottom: 5px;
+                    }
+                    .text-center p {
+                        font-size: 13px;
+                        margin: 2px 0;
+                    }
+                    .overflow-x-auto {
+                        overflow: visible !important;
+                    }
+                    img {
+                        page-break-inside: avoid;
+                        max-width: 100%;
+                        height: auto;
+                    }
+                    @media print {
+                        body {
+                            padding: 10px;
+                        }
+                        @page {
+                            margin: 0.75in;
+                            size: A4 portrait;
+                        }
+                        .sales-register-header {
+                            print-color-adjust: exact;
+                            -webkit-print-color-adjust: exact;
+                        }
+                    }
+                </style>
+            </head>
+            <body>
+                ${printContent.innerHTML}
+            </body>
+            </html>
+        `;
+
+        // Open new window for printing
+        const printWindow = window.open('', '_blank', 'width=800,height=600');
+
+        if (!printWindow) {
+            alert('Please allow popups for this website to print');
+            return;
+        }
+
+        printWindow.document.open();
+        printWindow.document.write(printHTML);
+        printWindow.document.close();
+
+        // Wait for content to load before printing
+        printWindow.onload = function() {
+            printWindow.focus();
+            setTimeout(function() {
+                printWindow.print();
+            }, 500); // Increased delay to ensure images load
+        };
+    }
+
+    // Original print event handlers
     window.addEventListener('beforeprint', function() {
         document.body.classList.add('printing');
     });
