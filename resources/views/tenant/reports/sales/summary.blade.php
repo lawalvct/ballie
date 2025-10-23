@@ -106,7 +106,7 @@
                             <tr class="border-b border-gray-200 hover:bg-yellow-50">
                                 <td class="px-4 py-3 text-sm text-gray-900 border-r border-gray-200">{{ $trend->period }}</td>
                                 <td class="px-4 py-3 text-sm text-gray-900 text-center border-r border-gray-200">{{ number_format($trend->invoice_count) }}</td>
-                                <td class="px-4 py-3 text-sm text-gray-900 text-right border-r border-gray-200">{{ number_format($trend->total_sales, 2) }}</td>
+                                <td class="px-4 py-3 text-sm text-gray-900 text-right border-r border-gray-200">--</td>
                                 <td class="px-4 py-3 text-sm text-gray-900 text-right border-r border-gray-200">{{ number_format($trend->total_sales, 2) }}</td>
                                 <td class="px-4 py-3 text-sm text-gray-900 text-right font-medium">{{ number_format($runningBalance, 2) }} Cr</td>
                             </tr>
@@ -121,7 +121,7 @@
                         <tr class="border-t-2 border-gray-400 bg-gray-100 font-bold">
                             <td class="px-4 py-3 text-sm text-gray-900 border-r border-gray-300">Grand Total</td>
                             <td class="px-4 py-3 text-sm text-gray-900 text-center border-r border-gray-300">{{ number_format($salesTrend->sum('invoice_count')) }}</td>
-                            <td class="px-4 py-3 text-sm text-gray-900 text-right border-r border-gray-300">{{ number_format($salesTrend->sum('total_sales'), 2) }}</td>
+                            <td class="px-4 py-3 text-sm text-gray-900 text-right border-r border-gray-300">--</td>
                             <td class="px-4 py-3 text-sm text-gray-900 text-right border-r border-gray-300">{{ number_format($salesTrend->sum('total_sales'), 2) }}</td>
                             <td class="px-4 py-3 text-sm text-gray-900 text-right">{{ number_format($salesTrend->sum('total_sales'), 2) }} Cr</td>
                         </tr>
