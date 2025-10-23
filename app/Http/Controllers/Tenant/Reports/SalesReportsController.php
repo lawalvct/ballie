@@ -268,21 +268,31 @@ class SalesReportsController extends Controller
 
         // Summary stats
         $totalProducts = $productSales->total();
-        $totalQuantitySold = InvoiceItem::whereHas('voucher', function($voucherQuery) use ($tenant, $salesVoucherTypes, $fromDate, $toDate) {
-                $voucherQuery->where('tenant_id', $tenant->id)
-                    ->whereIn('voucher_type_id', $salesVoucherTypes)
-                    ->where('status', 'posted')
-                    ->whereBetween('voucher_date', [$fromDate, $toDate]);
-            })
-            ->sum('quantity');
 
-        $totalRevenue = InvoiceItem::whereHas('voucher', function($voucherQuery) use ($tenant, $salesVoucherTypes, $fromDate, $toDate) {
+        // Calculate total revenue and total profit based on filters
+        $baseQuery = InvoiceItem::whereHas('voucher', function($voucherQuery) use ($tenant, $salesVoucherTypes, $fromDate, $toDate) {
                 $voucherQuery->where('tenant_id', $tenant->id)
                     ->whereIn('voucher_type_id', $salesVoucherTypes)
                     ->where('status', 'posted')
                     ->whereBetween('voucher_date', [$fromDate, $toDate]);
             })
-            ->sum('amount');
+            ->join('products', 'invoice_items.product_id', '=', 'products.id');
+
+        if ($productId) {
+            $baseQuery->where('products.id', $productId);
+        }
+
+        if ($categoryId) {
+            $baseQuery->where('products.category_id', $categoryId);
+        }
+
+        $totalRevenue = (clone $baseQuery)->sum('invoice_items.amount');
+
+        $totalCost = (clone $baseQuery)
+            ->selectRaw('SUM(invoice_items.quantity * COALESCE(invoice_items.purchase_rate, products.purchase_rate, 0)) as total_cost')
+            ->value('total_cost') ?? 0;
+
+        $totalProfit = $totalRevenue - $totalCost;
 
         return view('tenant.reports.sales.product-sales', compact(
             'tenant',
@@ -296,8 +306,8 @@ class SalesReportsController extends Controller
             'sortBy',
             'sortOrder',
             'totalProducts',
-            'totalQuantitySold',
-            'totalRevenue'
+            'totalRevenue',
+            'totalProfit'
         ));
     }
 
