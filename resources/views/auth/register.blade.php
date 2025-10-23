@@ -279,11 +279,17 @@
                             @enderror
                         </div>
 
-                        <div>
+                        <div class="relative">
                             <label for="email" class="block text-sm font-medium text-gray-700 mb-2">Email Address</label>
-                            <input type="email" id="email" name="email" required
+                            <input type="email" id="email" name="email" required autocomplete="off"
                                    class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                   placeholder="john@business.com">
+                                   placeholder="lawal@ballie.co">
+
+                            <!-- Email Suggestions Dropdown -->
+                            <div id="email_suggestions" class="hidden absolute z-50 mt-1 w-full bg-white shadow-xl max-h-48 rounded-lg overflow-y-auto border border-gray-200">
+                                <!-- Suggestions will be inserted here by JavaScript -->
+                            </div>
+
                             @error('email')
                                 <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                             @enderror
@@ -570,6 +576,99 @@ document.addEventListener('DOMContentLoaded', function() {
             planCard.click();
         }
     }
+
+    // Email autocomplete functionality
+    const emailInput = document.getElementById('email');
+    const emailSuggestions = document.getElementById('email_suggestions');
+    const emailDomains = ['@gmail.com', '@yahoo.com', '@hotmail.com', '@outlook.com', '@icloud.com'];
+
+    emailInput.addEventListener('input', function() {
+        const value = this.value.trim();
+
+        // Clear suggestions if input is empty or already contains @
+        if (!value || value.includes('@')) {
+            emailSuggestions.classList.add('hidden');
+            emailSuggestions.innerHTML = '';
+            return;
+        }
+
+        // Generate suggestions
+        const suggestions = emailDomains.map(domain => value + domain);
+
+        // Build suggestions HTML
+        let suggestionsHTML = '';
+        suggestions.forEach(suggestion => {
+            suggestionsHTML += `
+                <div class="email-suggestion px-4 py-3 hover:bg-blue-50 cursor-pointer border-b border-gray-100 transition-colors duration-150"
+                     data-email="${suggestion}">
+                    <div class="flex items-center">
+                        <svg class="w-4 h-4 mr-3 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
+                        </svg>
+                        <span class="text-sm text-gray-900">${suggestion}</span>
+                    </div>
+                </div>
+            `;
+        });
+
+        emailSuggestions.innerHTML = suggestionsHTML;
+        emailSuggestions.classList.remove('hidden');
+
+        // Add mousedown handlers to suggestions (fires before blur event)
+        document.querySelectorAll('.email-suggestion').forEach(suggestion => {
+            suggestion.addEventListener('mousedown', function(e) {
+                e.preventDefault(); // Prevent blur event
+                emailInput.value = this.dataset.email;
+                emailSuggestions.classList.add('hidden');
+                emailSuggestions.innerHTML = '';
+            });
+        });
+    });
+
+    // Hide suggestions when clicking outside
+    document.addEventListener('click', function(e) {
+        if (!emailInput.contains(e.target) && !emailSuggestions.contains(e.target)) {
+            emailSuggestions.classList.add('hidden');
+        }
+    });
+
+    // Hide suggestions when email input loses focus (delay removed since we use mousedown with preventDefault)
+    emailInput.addEventListener('blur', function() {
+        // Small timeout to allow mousedown event to fire first
+        setTimeout(() => {
+            emailSuggestions.classList.add('hidden');
+        }, 150);
+    });
+
+    // Keyboard navigation for email suggestions
+    emailInput.addEventListener('keydown', function(e) {
+        const suggestions = emailSuggestions.querySelectorAll('.email-suggestion');
+        if (suggestions.length === 0) return;
+
+        let selectedIndex = -1;
+        suggestions.forEach((suggestion, index) => {
+            if (suggestion.classList.contains('bg-blue-50')) {
+                selectedIndex = index;
+            }
+        });
+
+        if (e.key === 'ArrowDown') {
+            e.preventDefault();
+            if (selectedIndex < suggestions.length - 1) {
+                suggestions.forEach(s => s.classList.remove('bg-blue-50'));
+                suggestions[selectedIndex + 1].classList.add('bg-blue-50');
+            }
+        } else if (e.key === 'ArrowUp') {
+            e.preventDefault();
+            if (selectedIndex > 0) {
+                suggestions.forEach(s => s.classList.remove('bg-blue-50'));
+                suggestions[selectedIndex - 1].classList.add('bg-blue-50');
+            }
+        } else if (e.key === 'Enter' && selectedIndex >= 0) {
+            e.preventDefault();
+            suggestions[selectedIndex].click();
+        }
+    });
 });
 </script>
 @endsection

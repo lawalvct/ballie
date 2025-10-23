@@ -165,13 +165,20 @@ class DashboardController extends Controller
             ->whereYear('voucher_date', Carbon::now()->year)
             ->count();
 
-        // Average sales value based on all-time posted sales invoices
-        $totalSalesCountAllTime = Voucher::where('tenant_id', $tenant->id)
-            ->whereIn('voucher_type_id', $salesVoucherTypes)
-            ->where('status', 'posted')
-            ->count();
+        // Get purchase voucher types (PUR, PURCHASE, etc.)
+        $purchaseVoucherTypes = VoucherType::where('tenant_id', $tenant->id)
+            ->where('affects_inventory', true)
+            ->where('inventory_effect', 'increase')
+            ->whereIn('code', ['PUR', 'PURCHASE'])
+            ->pluck('id');
 
-        $avgSalesValue = $totalSalesCountAllTime > 0 ? $totalRevenue / $totalSalesCountAllTime : 0;
+        // Total purchases this month
+        $totalPurchase = Voucher::where('tenant_id', $tenant->id)
+            ->whereIn('voucher_type_id', $purchaseVoucherTypes)
+            ->where('status', 'posted')
+            ->whereMonth('voucher_date', Carbon::now()->month)
+            ->whereYear('voucher_date', Carbon::now()->year)
+            ->sum('total_amount');
 
         // Calculate current month expenses from expense accounts
         $currentMonthExpenses = $chartData['expenses'][Carbon::now()->month - 1] ?? 0;
@@ -476,7 +483,7 @@ class DashboardController extends Controller
             'topProducts' => $topProducts,
             'topCustomers' => $topCustomers,
             'totalSalesCount' => $totalSalesCount,
-            'avgSalesValue' => $avgSalesValue,
+            'totalPurchase' => $totalPurchase,
             'showTour' => !$user->tour_completed,
         ]);
     }
