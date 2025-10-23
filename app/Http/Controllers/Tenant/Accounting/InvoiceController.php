@@ -25,8 +25,16 @@ class InvoiceController extends Controller
     public function index(Request $request, Tenant $tenant)
     {
         $query = Voucher::where('tenant_id', $tenant->id)
-            ->whereHas('voucherType', function($q) {
+            ->whereHas('voucherType', function($q) use ($request) {
                 $q->where('affects_inventory', true);
+
+                // Filter by type (sales or purchase)
+                $type = $request->input('type', 'sales'); // Default to sales
+                if ($type === 'sales') {
+                    $q->where('inventory_effect', 'decrease');
+                } elseif ($type === 'purchase') {
+                    $q->where('inventory_effect', 'increase');
+                }
             })
             ->with(['voucherType', 'createdBy', 'entries.ledgerAccount']);
 

@@ -116,8 +116,9 @@
     <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
         <!-- Header -->
         <div class="text-center mb-8">
-            <div class="w-16 h-16 bg-white bg-opacity-20 rounded-full flex items-center justify-center mx-auto mb-4">
-                <span class="text-white font-bold text-2xl">B'</span>
+            <div class="w-16 h-16 bg-white bg-opacity-70 rounded-full flex items-center justify-center mx-auto mb-4">
+                <img src="{{ asset('images/ballie.png') }}" alt="Ballie Logo" class="w-10 h-10" onerror="this.style.display='none'; this.nextElementSibling.style.display='inline';">
+                <span class="text-white font-bold text-2xl" style="display: none;">B'</span>
             </div>
             <h1 class="text-3xl md:text-4xl font-bold text-white mb-2">Join Ballie Today</h1>
             <p class="text-gray-200">Start your 30-day free trial and transform your business</p>

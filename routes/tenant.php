@@ -51,6 +51,7 @@ use App\Http\Controllers\Tenant\Api\NotificationController;
 use App\Http\Controllers\Tenant\Api\UploadController;
 use App\Http\Controllers\Tenant\Api\ExportController;
 use App\Http\Controllers\Tenant\Api\GlobalSearchController;
+use App\Http\Controllers\Tenant\Reports\SalesReportsController;
 use App\Http\Controllers\Tenant\SubscriptionController;
 
 /*
@@ -684,7 +685,10 @@ Route::prefix('ledger-accounts')->name('ledger-accounts.')->group(function () {
 
             // Sales Reports
             Route::get('/sales', [ReportsController::class, 'sales'])->name('sales');
-            Route::get('/sales-summary', [ReportsController::class, 'salesSummary'])->name('sales-summary');
+            Route::get('/sales-summary', [SalesReportsController::class, 'salesSummary'])->name('sales-summary');
+            Route::get('/customer-sales', [SalesReportsController::class, 'customerSales'])->name('customer-sales');
+            Route::get('/product-sales', [SalesReportsController::class, 'productSales'])->name('product-sales');
+            Route::get('/sales-by-period', [SalesReportsController::class, 'salesByPeriod'])->name('sales-by-period');
             Route::get('/customer-analysis', [ReportsController::class, 'customerAnalysis'])->name('customer-analysis');
             Route::get('/product-performance', [ReportsController::class, 'productPerformance'])->name('product-performance');
         });

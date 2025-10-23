@@ -7,7 +7,7 @@
 @section('content')
 <div class="space-y-6">
     <!-- Header -->
-    <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between">
+
         <!-- Action Buttons -->
         <div class="mt-4 lg:mt-0 flex flex-wrap gap-3">
             <a href="{{ route('tenant.accounting.invoices.create', ['tenant' => $tenant->slug]) }}"
@@ -41,9 +41,7 @@
                 </svg>
                 View Vouchers
             </a>
-        </div>
-         <div class="mt-4 sm:mt-0 flex space-x-3">
-            <div class="flex items-center space-x-3">
+
             <a href="{{ route('tenant.accounting.index', ['tenant' => $tenant->slug]) }}"
                class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-lg shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500">
                 <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -51,13 +49,13 @@
                 </svg>
                 Back to home
             </a>
-        </div>
+
     </div>
 
     <!-- Filters -->
     <div class="bg-white shadow-sm rounded-lg border border-gray-200">
         <div class="p-6">
-            <form method="GET" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+            <form method="GET" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4">
                 <!-- Search -->
                 <div>
                     <label for="search" class="block text-sm font-medium text-gray-700 mb-1">Search</label>
@@ -67,6 +65,17 @@
                            value="{{ request('search') }}"
                            placeholder="Invoice number, customer name, reference..."
                            class="block w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-primary-500 focus:border-primary-500 text-sm">
+                </div>
+
+                <!-- Type -->
+                <div>
+                    <label for="type" class="block text-sm font-medium text-gray-700 mb-1">Type</label>
+                    <select name="type"
+                            id="type"
+                            class="block w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-primary-500 focus:border-primary-500 text-sm">
+                        <option value="sales" {{ (request('type', 'sales') === 'sales') ? 'selected' : '' }}>Sales</option>
+                        <option value="purchase" {{ request('type') === 'purchase' ? 'selected' : '' }}>Purchase</option>
+                    </select>
                 </div>
 
                 <!-- Status -->

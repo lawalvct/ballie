@@ -58,10 +58,10 @@
                 </div>
             </div>
             <div class="space-y-2">
-                <a href="#" class="block text-sm text-blue-600 hover:text-blue-800">• Sales Summary</a>
-                <a href="#" class="block text-sm text-blue-600 hover:text-blue-800">• Customer Sales Report</a>
-                <a href="#" class="block text-sm text-blue-600 hover:text-blue-800">• Product Sales Report</a>
-                <a href="#" class="block text-sm text-blue-600 hover:text-blue-800">• Sales by Period</a>
+                <a href="{{ route('tenant.reports.sales-summary', $tenant->slug) }}" class="block text-sm text-blue-600 hover:text-blue-800 hover:underline">• Sales Summary</a>
+                <a href="{{ route('tenant.reports.customer-sales', $tenant->slug) }}" class="block text-sm text-blue-600 hover:text-blue-800 hover:underline">• Customer Sales Report</a>
+                <a href="{{ route('tenant.reports.product-sales', $tenant->slug) }}" class="block text-sm text-blue-600 hover:text-blue-800 hover:underline">• Product Sales Report</a>
+                <a href="{{ route('tenant.reports.sales-by-period', $tenant->slug) }}" class="block text-sm text-blue-600 hover:text-blue-800 hover:underline">• Sales by Period</a>
             </div>
         </div>
 
