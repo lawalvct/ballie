@@ -147,13 +147,13 @@ class SalesReportsController extends Controller
                 'ledger_accounts.name as customer_name',
                 'ledger_accounts.email',
                 'ledger_accounts.phone',
+                'ledger_accounts.current_balance as outstanding_balance',
                 DB::raw('COUNT(DISTINCT vouchers.id) as invoice_count'),
                 DB::raw('SUM(vouchers.total_amount) as total_sales'),
-                DB::raw('AVG(vouchers.total_amount) as avg_sale'),
                 DB::raw('MIN(vouchers.voucher_date) as first_sale_date'),
                 DB::raw('MAX(vouchers.voucher_date) as last_sale_date')
             )
-            ->groupBy('ledger_accounts.id', 'ledger_accounts.name', 'ledger_accounts.email', 'ledger_accounts.phone')
+            ->groupBy('ledger_accounts.id', 'ledger_accounts.name', 'ledger_accounts.email', 'ledger_accounts.phone', 'ledger_accounts.current_balance')
             ->orderBy($sortBy, $sortOrder)
             ->paginate(20);
 
@@ -173,6 +173,11 @@ class SalesReportsController extends Controller
             ->whereBetween('voucher_date', [$fromDate, $toDate])
             ->sum('total_amount');
 
+        // Calculate total outstanding balance from customer ledger accounts
+        $customerLedgerIds = $customers->pluck('ledgerAccount.id')->filter();
+        $totalOutstanding = LedgerAccount::whereIn('id', $customerLedgerIds)
+            ->sum('current_balance');
+
         return view('tenant.reports.sales.customer-sales', compact(
             'tenant',
             'fromDate',
@@ -183,7 +188,8 @@ class SalesReportsController extends Controller
             'sortBy',
             'sortOrder',
             'totalCustomers',
-            'totalRevenue'
+            'totalRevenue',
+            'totalOutstanding'
         ));
     }
 
