@@ -45,28 +45,48 @@
                     <template x-for="(item, index) in items" :key="index">
                         <tr class="border-b border-gray-100 hover:bg-gray-50">
                             <td class="py-3 px-2">
-                                <select :name="`inventory_items[${index}][product_id]`"
-                                x-model="item.product_id"
-                                @change="updateProductDetails(index)"
-                                class="block w-full pl-3 pr-10 py-2 text-sm border border-gray-300 focus:outline-none focus:ring-primary-500 focus:border-primary-500 rounded-md"
-                                required>
-                                <option value="">Select Product</option>
-                                @if(isset($products) && count($products) > 0)
-                                @foreach($products as $product)
-                                <option value="{{ $product->id }}"
-                                    data-name="{{ $product->name }}"
-                                    data-sales-rate="{{ $product->sales_rate }}"
-                                    data-purchase-rate="{{ $product->purchase_rate }}"
-                                    data-stock="{{ $product->current_stock }}"
-                                    data-unit="{{ $product->primaryUnit->name ?? 'Pcs' }}"
-                                        data-sku="{{ $product->sku }}">
-                                        {{ $product->name }} @if($product->sku)({{ $product->sku }})@endif
-                                        </option>
-                                        @endforeach
-                                    @else
-                                        <option value="" disabled>No products available</option>
-                                    @endif
-                                </select>
+                                <div x-data="productSearch(index)" class="relative">
+                                    <input type="text"
+                                           x-model="searchTerm"
+                                           @input="searchProducts()"
+                                           @focus="showDropdown = true"
+                                           placeholder="Type to search products..."
+                                           class="block w-full pl-3 pr-10 py-2 text-sm border border-gray-300 focus:outline-none focus:ring-primary-500 focus:border-primary-500 rounded-md">
+                                    <input type="hidden"
+                                           :name="`inventory_items[${index}][product_id]`"
+                                           x-model="selectedProductId"
+                                           required>
+
+                                    <!-- Dropdown -->
+                                    <div x-show="showDropdown && (products.length > 0 || loading)"
+                                         x-transition
+                                         class="absolute z-20 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+
+                                        <!-- Loading -->
+                                        <div x-show="loading" class="px-3 py-2 text-gray-500 text-xs">
+                                            Searching...
+                                        </div>
+
+                                        <!-- Results -->
+                                        <template x-for="product in products" :key="product.id">
+                                            <div @click="selectProduct(product)"
+                                                 class="px-3 py-2 cursor-pointer hover:bg-gray-100 border-b border-gray-100 last:border-b-0">
+                                                <div class="font-medium text-gray-900 text-xs" x-text="product.name"></div>
+                                                <div class="text-xs text-gray-500">
+                                                    <span x-show="product.sku">SKU: <span x-text="product.sku"></span> | </span>
+                                                    Stock: <span x-text="product.current_stock"></span> <span x-text="product.unit"></span> |
+                                                    Rate: ₦<span x-text="product.sales_rate"></span>
+                                                </div>
+                                            </div>
+                                        </template>
+
+                                        <!-- No results -->
+                                        <div x-show="!loading && products.length === 0 && searchTerm.length >= 2"
+                                             class="px-3 py-2 text-gray-500 text-xs">
+                                            No products found
+                                        </div>
+                                    </div>
+                                </div>
                                 <div class="mt-1 text-xs text-gray-500" x-show="item.current_stock !== null">
                                     Stock: <span x-text="item.current_stock"></span> <span x-text="item.unit"></span>
                                     <span x-show="parseFloat(item.quantity) > parseFloat(item.current_stock) && !isPurchaseInvoice()" class="text-red-600 font-medium">
@@ -160,22 +180,47 @@
                 <template x-for="(ledger, index) in ledgerAccounts" :key="index">
                     <div class="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
                         <div class="flex-1">
-                            <select :name="`ledger_accounts[${index}][ledger_account_id]`"
-                                    x-model="ledger.ledger_account_id"
-                                    class="block w-full px-3 py-2 text-sm border border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 rounded-md"
-                                    required>
-                                <option value="">Select Ledger Account</option>
-                                @if(isset($ledgerAccounts) && count($ledgerAccounts) > 0)
-                                    @foreach($ledgerAccounts as $account)
-                                        <option value="{{ $account->id }}">
-                                            {{ $account->name }}
-                                            @if($account->accountGroup)
-                                                ({{ $account->accountGroup->name }})
-                                            @endif
-                                        </option>
-                                    @endforeach
-                                @endif
-                            </select>
+                            <div x-data="ledgerAccountSearch(index)" class="relative">
+                                <input type="text"
+                                       x-model="searchTerm"
+                                       @input="searchLedgerAccounts()"
+                                       @focus="showDropdown = true"
+                                       placeholder="Type to search ledger accounts..."
+                                       class="block w-full px-3 py-2 text-sm border border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 rounded-md">
+                                <input type="hidden"
+                                       :name="`ledger_accounts[${index}][ledger_account_id]`"
+                                       x-model="selectedLedgerAccountId"
+                                       required>
+
+                                <!-- Dropdown -->
+                                <div x-show="showDropdown && (accounts.length > 0 || loading)"
+                                     x-transition
+                                     class="absolute z-20 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+
+                                    <!-- Loading -->
+                                    <div x-show="loading" class="px-3 py-2 text-gray-500 text-xs">
+                                        Searching...
+                                    </div>
+
+                                    <!-- Results -->
+                                    <template x-for="account in accounts" :key="account.id">
+                                        <div @click="selectLedgerAccount(account)"
+                                             class="px-3 py-2 cursor-pointer hover:bg-gray-100 border-b border-gray-100 last:border-b-0">
+                                            <div class="font-medium text-gray-900 text-xs" x-text="account.name"></div>
+                                            <div class="text-xs text-gray-500">
+                                                <span x-show="account.code">Code: <span x-text="account.code"></span> | </span>
+                                                <span x-text="account.account_group_name"></span>
+                                            </div>
+                                        </div>
+                                    </template>
+
+                                    <!-- No results -->
+                                    <div x-show="!loading && accounts.length === 0 && searchTerm.length >= 2"
+                                         class="px-3 py-2 text-gray-500 text-xs">
+                                        No ledger accounts found
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                         <div class="w-48">
                             <input type="number"

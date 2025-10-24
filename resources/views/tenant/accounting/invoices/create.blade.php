@@ -171,17 +171,17 @@
                                        placeholder="Type to search customers..."
                                        class="w-full pl-3 pr-10 py-2 text-base border border-gray-300 focus:outline-none focus:ring-primary-500 focus:border-primary-500 rounded-lg">
                                 <input type="hidden" name="customer_id" x-model="selectedCustomerId" required>
-                                
+
                                 <!-- Dropdown -->
                                 <div x-show="showDropdown && (customers.length > 0 || loading)"
                                      x-transition
                                      class="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto">
-                                    
+
                                     <!-- Loading -->
                                     <div x-show="loading" class="px-3 py-2 text-gray-500">
                                         Searching...
                                     </div>
-                                    
+
                                     <!-- Results -->
                                     <template x-for="customer in customers" :key="customer.id">
                                         <div @click="selectCustomer(customer)"
@@ -190,7 +190,7 @@
                                             <div class="text-sm text-gray-500" x-text="customer.email || 'No email'"></div>
                                         </div>
                                     </template>
-                                    
+
                                     <!-- No results -->
                                     <div x-show="!loading && customers.length === 0 && searchTerm.length >= 2"
                                          class="px-3 py-2 text-gray-500">
@@ -855,17 +855,17 @@ window.invoiceItems = function() {
                 const selectElement = document.querySelector(`select[name="inventory_items[${index}][product_id]"]`);
                 if (selectElement && selectElement.selectedIndex > 0) {
                     const selectedOption = selectElement.options[selectElement.selectedIndex];
-                    
+
                     item.product_name = selectedOption.getAttribute('data-name') || '';
                     item.rate = parseFloat(selectedOption.getAttribute('data-sales-rate')) || 0;
                     item.purchase_rate = parseFloat(selectedOption.getAttribute('data-purchase-rate')) || 0;
                     item.current_stock = parseFloat(selectedOption.getAttribute('data-stock')) || 0;
                     item.unit = selectedOption.getAttribute('data-unit') || 'Pcs';
-                    
+
                     if (!item.description) {
                         item.description = item.product_name;
                     }
-                    
+
                     this.calculateAmount(index);
                 }
             } else {
@@ -945,7 +945,148 @@ function customerSearch() {
     }
 }
 
-// Main Invoice Form Component
+// Product Search Component
+function productSearch(itemIndex) {
+    return {
+        searchTerm: '',
+        products: [],
+        selectedProductId: '',
+        showDropdown: false,
+        loading: false,
+        searchTimeout: null,
+        itemIndex: itemIndex,
+
+        searchProducts() {
+            if (this.searchTerm.length < 2) {
+                this.products = [];
+                this.showDropdown = false;
+                return;
+            }
+
+            if (this.searchTimeout) {
+                clearTimeout(this.searchTimeout);
+            }
+
+            this.searchTimeout = setTimeout(() => {
+                this.loading = true;
+                this.showDropdown = true;
+
+                fetch('/{{ $tenant->slug }}/api/products/search?q=' + encodeURIComponent(this.searchTerm))
+                    .then(response => response.json())
+                    .then(data => {
+                        this.products = data;
+                        this.loading = false;
+                    })
+                    .catch(error => {
+                        console.error('Search error:', error);
+                        this.products = [];
+                        this.loading = false;
+                    });
+            }, 300);
+        },
+
+        selectProduct(product) {
+            this.searchTerm = product.name;
+            this.selectedProductId = product.id;
+            this.showDropdown = false;
+            this.products = [];
+
+            // Get the parent Alpine component (invoiceItems)
+            const invoiceItemsComponent = Alpine.$data(this.$el.closest('[x-data*="invoiceItems"]'));
+            if (invoiceItemsComponent && invoiceItemsComponent.items[this.itemIndex]) {
+                const item = invoiceItemsComponent.items[this.itemIndex];
+                item.product_id = product.id;
+                item.product_name = product.name;
+                item.rate = parseFloat(product.sales_rate) || 0;
+                item.purchase_rate = parseFloat(product.purchase_rate) || 0;
+                item.current_stock = parseFloat(product.current_stock) || 0;
+                item.unit = product.unit || 'Pcs';
+
+                if (!item.description) {
+                    item.description = product.name;
+                }
+
+                invoiceItemsComponent.calculateAmount(this.itemIndex);
+            }
+        },
+
+        init() {
+            document.addEventListener('click', (e) => {
+                if (!this.$el.contains(e.target)) {
+                    this.showDropdown = false;
+                }
+            });
+        }
+    }
+}
+
+// Ledger Account Search Component
+function ledgerAccountSearch(ledgerIndex) {
+    return {
+        searchTerm: '',
+        accounts: [],
+        selectedLedgerAccountId: '',
+        showDropdown: false,
+        loading: false,
+        searchTimeout: null,
+        ledgerIndex: ledgerIndex,
+
+        searchLedgerAccounts() {
+            if (this.searchTerm.length < 2) {
+                this.accounts = [];
+                this.showDropdown = false;
+                return;
+            }
+
+            if (this.searchTimeout) {
+                clearTimeout(this.searchTimeout);
+            }
+
+            this.searchTimeout = setTimeout(() => {
+                this.loading = true;
+                this.showDropdown = true;
+
+                fetch('/{{ $tenant->slug }}/api/ledger-accounts/search?q=' + encodeURIComponent(this.searchTerm))
+                    .then(response => response.json())
+                    .then(data => {
+                        this.accounts = data;
+                        this.loading = false;
+                    })
+                    .catch(error => {
+                        console.error('Search error:', error);
+                        this.accounts = [];
+                        this.loading = false;
+                    });
+            }, 300);
+        },
+
+        selectLedgerAccount(account) {
+            this.searchTerm = account.name;
+            this.selectedLedgerAccountId = account.id;
+            this.showDropdown = false;
+            this.accounts = [];
+
+            // Get the parent Alpine component (invoiceItems)
+            const invoiceItemsComponent = Alpine.$data(this.$el.closest('[x-data*="invoiceItems"]'));
+            if (invoiceItemsComponent && invoiceItemsComponent.ledgerAccounts[this.ledgerIndex]) {
+                const ledger = invoiceItemsComponent.ledgerAccounts[this.ledgerIndex];
+                ledger.ledger_account_id = account.id;
+                ledger.ledger_account_name = account.name;
+
+                // Trigger totals update
+                invoiceItemsComponent.debouncedUpdateTotals();
+            }
+        },
+
+        init() {
+            document.addEventListener('click', (e) => {
+                if (!this.$el.contains(e.target)) {
+                    this.showDropdown = false;
+                }
+            });
+        }
+    }
+}// Main Invoice Form Component
 function invoiceForm() {
     return {
         voucherTypeId: '{{ old('voucher_type_id', $selectedType?->id ?? '') }}',
@@ -963,11 +1104,11 @@ function invoiceForm() {
 
         setupEventListeners() {
             if (this._eventListenersAdded) return;
-            
+
             this.$el.addEventListener('invoice-total-changed', (event) => {
                 this.totalAmount = event.detail.grandTotal || event.detail.total || 0;
             });
-            
+
             this._eventListenersAdded = true;
         },
 

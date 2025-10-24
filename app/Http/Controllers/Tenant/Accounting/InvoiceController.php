@@ -808,7 +808,7 @@ class InvoiceController extends Controller
     public function searchCustomers(Request $request, Tenant $tenant)
     {
         $query = $request->get('q', '');
-        
+
         if (strlen($query) < 2) {
             return response()->json([]);
         }
@@ -835,7 +835,76 @@ class InvoiceController extends Controller
         return response()->json($customers);
     }
 
-private function createAccountingEntries(Voucher $voucher, array $inventoryItems, Tenant $tenant, $customerLedger_id, array $additionalLedgerAccounts = [])
+    public function searchProducts(Request $request, Tenant $tenant)
+    {
+        $query = $request->get('q', '');
+
+        if (strlen($query) < 2) {
+            return response()->json([]);
+        }
+
+        $products = Product::where('tenant_id', $tenant->id)
+            ->where('is_active', true)
+            ->where('is_saleable', true)
+            ->with(['primaryUnit'])
+            ->where(function($q) use ($query) {
+                $q->where('name', 'like', "%{$query}%")
+                  ->orWhere('sku', 'like', "%{$query}%")
+                  ->orWhere('description', 'like', "%{$query}%");
+            })
+            ->limit(10)
+            ->get()
+            ->map(function($product) {
+                return [
+                    'id' => $product->id,
+                    'name' => $product->name,
+                    'sku' => $product->sku,
+                    'sales_rate' => $product->sales_rate,
+                    'purchase_rate' => $product->purchase_rate,
+                    'current_stock' => $product->current_stock,
+                    'unit' => $product->primaryUnit->abbreviation ?? 'Pcs',
+                    'description' => $product->description
+                ];
+            });
+
+        return response()->json($products);
+    }
+
+    public function searchLedgerAccounts(Request $request, Tenant $tenant)
+    {
+        $query = $request->get('q', '');
+
+        if (strlen($query) < 2) {
+            return response()->json([]);
+        }
+
+        $ledgerAccounts = LedgerAccount::where('tenant_id', $tenant->id)
+            ->whereHas('accountGroup', function($q) {
+                $q->whereIn('nature', ['expenses', 'income', 'liabilities', 'assets'])
+                  ->whereNotIn('code', ['AR', 'AP']); // Exclude Accounts Receivable/Payable
+            })
+            ->where('is_active', true)
+            ->with('accountGroup')
+            ->where(function($q) use ($query) {
+                $q->where('name', 'like', "%{$query}%")
+                  ->orWhere('code', 'like', "%{$query}%")
+                  ->orWhere('description', 'like', "%{$query}%");
+            })
+            ->limit(10)
+            ->get()
+            ->map(function($account) {
+                return [
+                    'id' => $account->id,
+                    'name' => $account->name,
+                    'code' => $account->code,
+                    'account_group_name' => $account->accountGroup->name ?? '',
+                    'nature' => $account->accountGroup->nature ?? '',
+                    'description' => $account->description
+                ];
+            });
+
+        return response()->json($ledgerAccounts);
+    }private function createAccountingEntries(Voucher $voucher, array $inventoryItems, Tenant $tenant, $customerLedger_id, array $additionalLedgerAccounts = [])
 {
     // Get the customer/supplier account using the ID
     $partyAccount = LedgerAccount::find($customerLedger_id);

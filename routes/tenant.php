@@ -136,6 +136,8 @@ Route::middleware(['auth'])->group(function () {
             Route::get('/global-search', [GlobalSearchController::class, 'search'])->name('global-search');
             Route::get('/quick-actions', [GlobalSearchController::class, 'quickActions'])->name('quick-actions');
             Route::get('/customers/search', [InvoiceController::class, 'searchCustomers'])->name('customers.search');
+            Route::get('/products/search', [InvoiceController::class, 'searchProducts'])->name('products.search');
+            Route::get('/ledger-accounts/search', [InvoiceController::class, 'searchLedgerAccounts'])->name('ledger-accounts.search');
         });
 
         // Dashboard
@@ -184,10 +186,10 @@ Route::prefix('invoices')->name('invoices.')->group(function () {
     Route::get('/{invoice}/pdf', [InvoiceController::class, 'pdf'])->name('pdf');
     Route::post('/{invoice}/email', [InvoiceController::class, 'email'])->name('email');
     Route::post('/{invoice}/record-payment', [InvoiceController::class, 'recordPayment'])->name('record-payment');
-
-
-
 });
+
+            // Invoice API routes
+            Route::get('/api/customers/search', [InvoiceController::class, 'searchCustomers'])->name('api.customers.search');
 
             // Account Groups
            Route::prefix('account-groups')->name('account-groups.')->group(function () {
