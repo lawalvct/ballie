@@ -37,10 +37,10 @@
                 </div>
             </div>
             <div class="space-y-2">
-                <a href="#" class="block text-sm text-blue-600 hover:text-blue-800">• Profit & Loss Statement</a>
-                <a href="#" class="block text-sm text-blue-600 hover:text-blue-800">• Balance Sheet</a>
-                <a href="#" class="block text-sm text-blue-600 hover:text-blue-800">• Cash Flow Statement</a>
-                <a href="#" class="block text-sm text-blue-600 hover:text-blue-800">• Trial Balance</a>
+                <a href="{{ route('tenant.reports.profit-loss', $tenant->slug) }}" class="block text-sm text-blue-600 hover:text-blue-800 hover:underline">• Profit & Loss Statement</a>
+                <a href="{{ route('tenant.reports.balance-sheet', $tenant->slug) }}" class="block text-sm text-blue-600 hover:text-blue-800 hover:underline">• Balance Sheet</a>
+                <a href="{{ route('tenant.reports.cash-flow', $tenant->slug) }}" class="block text-sm text-blue-600 hover:text-blue-800 hover:underline">• Cash Flow Statement</a>
+                <a href="{{ route('tenant.reports.trial-balance', $tenant->slug) }}" class="block text-sm text-blue-600 hover:text-blue-800 hover:underline">• Trial Balance</a>
             </div>
         </div>
 
