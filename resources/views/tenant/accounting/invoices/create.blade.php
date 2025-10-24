@@ -727,42 +727,42 @@ window.invoiceItems = function() {
         items: [
             {
                 product_id: '',
+                product_name: '',
                 description: '',
-                quantity: '',
-                rate: '',
-                amount: '',
-                purchase_rate: '',
+                quantity: 1,
+                rate: 0,
+                amount: 0,
+                purchase_rate: 0,
                 current_stock: null,
                 unit: 'Pcs'
             }
         ],
+        ledgerAccounts: [],
+        _updateTimeout: null,
 
         get totalAmount() {
-            const total = this.items.reduce((sum, item) => {
+            return this.items.reduce((sum, item) => {
                 return sum + (parseFloat(item.amount) || 0);
             }, 0);
+        },
 
-            // Notify parent component about total change
-            this.$nextTick(() => {
-                document.dispatchEvent(new CustomEvent('inventory-total-updated', {
-                    detail: { total: total }
-                }));
-            });
+        get ledgerAccountsTotal() {
+            return this.ledgerAccounts.reduce((sum, ledger) => {
+                return sum + (parseFloat(ledger.amount) || 0);
+            }, 0);
+        },
 
-            return total;
+        get grandTotal() {
+            return this.totalAmount + this.ledgerAccountsTotal;
         },
 
         get hasStockWarnings() {
             return this.items.some(item => {
-                return item.product_id &&
-                       item.quantity &&
-                       item.current_stock !== null &&
-                       parseFloat(item.quantity) > parseFloat(item.current_stock);
+                return parseFloat(item.quantity) > parseFloat(item.current_stock) && !this.isPurchaseInvoice();
             });
         },
 
         isPurchaseInvoice() {
-            // Check URL parameter for purchase type
             const urlParams = new URLSearchParams(window.location.search);
             const typeParam = urlParams.get('type');
             return typeParam && typeParam.toLowerCase() === 'pur';
@@ -779,55 +779,74 @@ window.invoiceItems = function() {
         addItem() {
             this.items.push({
                 product_id: '',
+                product_name: '',
                 description: '',
-                quantity: '',
-                rate: '',
-                amount: '',
-                purchase_rate: '',
+                quantity: 1,
+                rate: 0,
+                amount: 0,
+                purchase_rate: 0,
                 current_stock: null,
                 unit: 'Pcs'
             });
+            this.debouncedUpdateTotals();
         },
 
         removeItem(index) {
             if (this.items.length > 1) {
                 this.items.splice(index, 1);
+                this.debouncedUpdateTotals();
             }
+        },
+
+        addLedgerAccount() {
+            this.ledgerAccounts.push({
+                ledger_account_id: '',
+                amount: 0,
+                narration: ''
+            });
+            this.debouncedUpdateTotals();
+        },
+
+        removeLedgerAccount(index) {
+            this.ledgerAccounts.splice(index, 1);
+            this.debouncedUpdateTotals();
+        },
+
+        debouncedUpdateTotals() {
+            if (this._updateTimeout) {
+                clearTimeout(this._updateTimeout);
+            }
+            this._updateTimeout = setTimeout(() => {
+                this.$dispatch('invoice-total-changed', {
+                    subtotal: this.totalAmount,
+                    ledgerTotal: this.ledgerAccountsTotal,
+                    grandTotal: this.grandTotal
+                });
+            }, 100);
         },
 
         updateProductDetails(index) {
             const item = this.items[index];
             if (item.product_id) {
                 const selectElement = document.querySelector(`select[name="inventory_items[${index}][product_id]"]`);
-                const selectedOption = selectElement.options[selectElement.selectedIndex];
-
-                if (selectedOption) {
-                    const productName = selectedOption.getAttribute('data-name');
-                    const salesRate = selectedOption.getAttribute('data-sales-rate');
-                    const purchaseRate = selectedOption.getAttribute('data-purchase-rate');
-                    const currentStock = selectedOption.getAttribute('data-stock');
-                    const unit = selectedOption.getAttribute('data-unit');
-
-                    // Set description if empty
+                if (selectElement && selectElement.selectedIndex > 0) {
+                    const selectedOption = selectElement.options[selectElement.selectedIndex];
+                    
+                    item.product_name = selectedOption.getAttribute('data-name') || '';
+                    item.rate = parseFloat(selectedOption.getAttribute('data-sales-rate')) || 0;
+                    item.purchase_rate = parseFloat(selectedOption.getAttribute('data-purchase-rate')) || 0;
+                    item.current_stock = parseFloat(selectedOption.getAttribute('data-stock')) || 0;
+                    item.unit = selectedOption.getAttribute('data-unit') || 'Pcs';
+                    
                     if (!item.description) {
-                        item.description = productName;
+                        item.description = item.product_name;
                     }
-
-                    // Set sales rate and purchase rate
-                    item.rate = salesRate;
-                    item.purchase_rate = purchaseRate;
-                    item.current_stock = currentStock;
-                    item.unit = unit;
-
-                    // Calculate amount if quantity is already set
-                    if (item.quantity) {
-                        this.calculateAmount(index);
-                    }
+                    
+                    this.calculateAmount(index);
                 }
             } else {
-                // Clear related fields when product is deselected
                 item.current_stock = null;
-                item.purchase_rate = '';
+                item.purchase_rate = 0;
                 item.unit = 'Pcs';
             }
         },
@@ -837,11 +856,11 @@ window.invoiceItems = function() {
             const quantity = parseFloat(item.quantity) || 0;
             const rate = parseFloat(item.rate) || 0;
             item.amount = (quantity * rate).toFixed(2);
+            this.debouncedUpdateTotals();
         },
 
         init() {
             console.log('✅ Invoice items component initialized');
-            console.log('Initial items:', this.items);
         }
     }
 };
@@ -853,18 +872,23 @@ function invoiceForm() {
         invoiceNumberPreview: 'Auto-generated',
         voucherTypes: @json($voucherTypes->keyBy('id')),
         totalAmount: 0,
+        _eventListenersAdded: false,
 
         init() {
-            // Check URL parameters for type selection
             this.handleUrlParameters();
             this.updateVoucherType();
-
-            // Listen for inventory total updates
-            document.addEventListener('inventory-total-updated', (e) => {
-                this.totalAmount = e.detail.total;
-            });
-
+            this.setupEventListeners();
             console.log('✅ Invoice form initialized');
+        },
+
+        setupEventListeners() {
+            if (this._eventListenersAdded) return;
+            
+            this.$el.addEventListener('invoice-total-changed', (event) => {
+                this.totalAmount = event.detail.grandTotal || event.detail.total || 0;
+            });
+            
+            this._eventListenersAdded = true;
         },
 
         handleUrlParameters() {
@@ -872,7 +896,6 @@ function invoiceForm() {
             const typeParam = urlParams.get('type');
 
             if (typeParam && typeParam.toLowerCase() === 'pur') {
-                // Find purchase voucher type
                 const purchaseVoucher = Object.values(this.voucherTypes).find(voucher =>
                     voucher.code.toLowerCase().includes('pur') ||
                     voucher.code.toLowerCase().includes('purchase') ||
@@ -881,16 +904,12 @@ function invoiceForm() {
 
                 if (purchaseVoucher) {
                     this.voucherTypeId = purchaseVoucher.id;
-
-                    // Update the select element
                     this.$nextTick(() => {
                         const selectElement = document.getElementById('voucher_type_id');
                         if (selectElement) {
                             selectElement.value = this.voucherTypeId;
                         }
                     });
-
-                    console.log('✅ Purchase voucher type auto-selected from URL parameter');
                 }
             }
         },
@@ -899,15 +918,8 @@ function invoiceForm() {
             if (this.voucherTypeId && this.voucherTypes[this.voucherTypeId]) {
                 const voucherType = this.voucherTypes[this.voucherTypeId];
                 this.invoiceNumberPreview = voucherType.prefix + 'XXXX';
-                this.vchType = 'Create '+voucherType.name+ ' Invoice';
-
-                // Switch between customer and vendor fields based on voucher type
+                this.vchType = 'Create ' + voucherType.name + ' Invoice';
                 this.toggleCustomerVendorFields(voucherType);
-
-                // Notify inventory component about voucher type change
-                document.dispatchEvent(new CustomEvent('voucher-type-changed', {
-                    detail: { voucherType: voucherType, vchType: this.vchType }
-                }));
             } else {
                 this.invoiceNumberPreview = 'Auto-generated';
             }
@@ -919,39 +931,28 @@ function invoiceForm() {
             const customerSelect = document.getElementById('customer_id');
             const vendorSelect = document.getElementById('vendor_select');
 
-            // Check if this is a purchase voucher type
+            if (!customerSection || !vendorSection || !customerSelect || !vendorSelect) return;
+
             const isPurchase = voucherType.code.includes('PUR') ||
                              voucherType.code.includes('PURCHASE') ||
                              voucherType.name.toLowerCase().includes('purchase');
 
             if (isPurchase) {
-                // Show vendor field, hide customer field
                 customerSection.classList.add('hidden');
                 vendorSection.classList.remove('hidden');
-
-                // Enable vendor select and disable customer select
                 vendorSelect.removeAttribute('disabled');
                 vendorSelect.setAttribute('required', 'required');
-
                 customerSelect.setAttribute('disabled', 'disabled');
                 customerSelect.removeAttribute('required');
-                customerSelect.value = ''; // Clear customer selection
-
-                console.log('✅ Switched to vendor field');
+                customerSelect.value = '';
             } else {
-                // Show customer field, hide vendor field (default for sales)
                 customerSection.classList.remove('hidden');
                 vendorSection.classList.add('hidden');
-
-                // Enable customer select and disable vendor select
                 customerSelect.removeAttribute('disabled');
                 customerSelect.setAttribute('required', 'required');
-
                 vendorSelect.setAttribute('disabled', 'disabled');
                 vendorSelect.removeAttribute('required');
-                vendorSelect.value = ''; // Clear vendor selection
-
-                console.log('✅ Switched to customer field');
+                vendorSelect.value = '';
             }
         },
 

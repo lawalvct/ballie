@@ -116,6 +116,18 @@ class InvoiceController extends Controller
         // Also merge for backward compatibility if needed
         $allPartners = $buyers->concat($vendors);
 
+        // Get ledger accounts for additional charges (like VAT, Transport, etc.)
+        // Exclude customer and vendor accounts, get expense/income/liability accounts
+        $ledgerAccounts = LedgerAccount::where('tenant_id', $tenant->id)
+            ->whereHas('accountGroup', function($query) {
+                $query->whereIn('nature', ['expenses', 'income', 'liabilities', 'assets'])
+                    ->whereNotIn('code', ['AR', 'AP']); // Exclude Accounts Receivable/Payable
+            })
+            ->where('is_active', true)
+            ->with('accountGroup')
+            ->orderBy('name')
+            ->get();
+
         // Get default sales voucher type
         $selectedType = $voucherTypes->where('code', 'SALES')->first() ?? $voucherTypes->first();
 
@@ -125,6 +137,7 @@ class InvoiceController extends Controller
             'products',
             'customers',
             'vendors',
+            'ledgerAccounts',
             'selectedType'
         ));
     }
@@ -170,6 +183,10 @@ class InvoiceController extends Controller
             'inventory_items.*.rate' => 'required|numeric|min:0',
             'inventory_items.*.purchase_rate' => 'nullable|numeric|min:0',
             'inventory_items.*.description' => 'nullable|string',
+            'ledger_accounts' => 'nullable|array',
+            'ledger_accounts.*.ledger_account_id' => 'required_with:ledger_accounts|exists:ledger_accounts,id',
+            'ledger_accounts.*.amount' => 'required_with:ledger_accounts|numeric|min:0',
+            'ledger_accounts.*.narration' => 'nullable|string',
         ], [
             'customer_id.required' => 'Please select a customer or vendor before saving the invoice.',
             'customer_id.exists' => 'The selected customer or vendor is invalid. Please select a valid customer/vendor.',
@@ -203,7 +220,7 @@ class InvoiceController extends Controller
                 'inventory_effect' => $voucherType->inventory_effect
             ]);
 
-            // Calculate total amount
+            // Calculate total amount from inventory items
             $totalAmount = 0;
             $inventoryItems = [];
 
@@ -244,9 +261,39 @@ class InvoiceController extends Controller
                 ]);
             }
 
+            // Process additional ledger accounts (like VAT, Transport, etc.)
+            $additionalLedgerAccounts = [];
+            if ($request->has('ledger_accounts') && is_array($request->ledger_accounts)) {
+                Log::info('Processing Additional Ledger Accounts', [
+                    'count' => count($request->ledger_accounts)
+                ]);
+
+                foreach ($request->ledger_accounts as $index => $ledgerItem) {
+                    if (!empty($ledgerItem['ledger_account_id']) && !empty($ledgerItem['amount'])) {
+                        $amount = (float) $ledgerItem['amount'];
+                        $totalAmount += $amount;
+
+                        $additionalLedgerAccounts[] = [
+                            'ledger_account_id' => $ledgerItem['ledger_account_id'],
+                            'amount' => $amount,
+                            'narration' => $ledgerItem['narration'] ?? ''
+                        ];
+
+                        Log::info("Additional Ledger Account {$index}", [
+                            'ledger_account_id' => $ledgerItem['ledger_account_id'],
+                            'amount' => $amount,
+                            'running_total' => $totalAmount
+                        ]);
+                    }
+                }
+            }
+
             Log::info('All Items Processed', [
-                'total_amount' => $totalAmount,
-                'items_count' => count($inventoryItems)
+                'products_total' => array_sum(array_column($inventoryItems, 'amount')),
+                'ledger_accounts_total' => array_sum(array_column($additionalLedgerAccounts, 'amount')),
+                'grand_total' => $totalAmount,
+                'items_count' => count($inventoryItems),
+                'ledger_accounts_count' => count($additionalLedgerAccounts)
             ]);
 
             // Generate voucher number
@@ -319,10 +366,11 @@ class InvoiceController extends Controller
 
             // Create accounting entries
             Log::info('Creating Accounting Entries', [
-                'customer_ledger_id' => $request->customer_id
+                'customer_ledger_id' => $request->customer_id,
+                'additional_ledger_accounts' => count($additionalLedgerAccounts)
             ]);
 
-            $this->createAccountingEntries($voucher, $inventoryItems, $tenant, $request->customer_id);
+            $this->createAccountingEntries($voucher, $inventoryItems, $tenant, $request->customer_id, $additionalLedgerAccounts);
 
             Log::info('Accounting Entries Created Successfully');
 
@@ -757,7 +805,7 @@ class InvoiceController extends Controller
         return view('tenant.accounting.invoices.print', compact('tenant', 'invoice', 'inventoryItems', 'customer'));
     }
 
-private function createAccountingEntries(Voucher $voucher, array $inventoryItems, Tenant $tenant, $customerLedger_id)
+private function createAccountingEntries(Voucher $voucher, array $inventoryItems, Tenant $tenant, $customerLedger_id, array $additionalLedgerAccounts = [])
 {
     // Get the customer/supplier account using the ID
     $partyAccount = LedgerAccount::find($customerLedger_id);
@@ -770,6 +818,10 @@ private function createAccountingEntries(Voucher $voucher, array $inventoryItems
     $isPurchase = in_array($voucher->voucherType->name, ['Purchase', 'Purchase Return']);
 
     $totalAmount = collect($inventoryItems)->sum('amount');
+
+    // Add additional ledger accounts to total
+    $additionalTotal = collect($additionalLedgerAccounts)->sum('amount');
+    $totalAmount += $additionalTotal;
 
     // Group items by their ledger account (sales_account_id or purchase_account_id)
     $groupedItems = [];
@@ -836,6 +888,17 @@ private function createAccountingEntries(Voucher $voucher, array $inventoryItems
                 'particulars' => 'Sales invoice - ' . $voucher->getDisplayNumber(),
             ]);
         }
+
+        // Credit: Additional Ledger Accounts (VAT, Transport, etc.)
+        foreach ($additionalLedgerAccounts as $additionalLedger) {
+            VoucherEntry::create([
+                'voucher_id' => $voucher->id,
+                'ledger_account_id' => $additionalLedger['ledger_account_id'],
+                'debit_amount' => 0,
+                'credit_amount' => $additionalLedger['amount'],
+                'particulars' => $additionalLedger['narration'] ?: ('Additional charge - ' . $voucher->getDisplayNumber()),
+            ]);
+        }
     } elseif ($isPurchase) {
         // PURCHASE INVOICE:
         // Debit: Product's Purchase Account(s) - one entry per unique purchase account
@@ -846,6 +909,17 @@ private function createAccountingEntries(Voucher $voucher, array $inventoryItems
                 'debit_amount' => $amount,
                 'credit_amount' => 0,
                 'particulars' => 'Purchase invoice - ' . $voucher->getDisplayNumber(),
+            ]);
+        }
+
+        // Debit: Additional Ledger Accounts (VAT, Transport, etc.)
+        foreach ($additionalLedgerAccounts as $additionalLedger) {
+            VoucherEntry::create([
+                'voucher_id' => $voucher->id,
+                'ledger_account_id' => $additionalLedger['ledger_account_id'],
+                'debit_amount' => $additionalLedger['amount'],
+                'credit_amount' => 0,
+                'particulars' => $additionalLedger['narration'] ?: ('Additional charge - ' . $voucher->getDisplayNumber()),
             ]);
         }
 
@@ -892,6 +966,27 @@ private function createAccountingEntries(Voucher $voucher, array $inventoryItems
                     'account_name' => $productAccount->name,
                     'current_balance_after' => $productAccount->fresh()->current_balance,
                     'calculated_balance' => $productBalance
+                ]);
+            }
+        }
+
+        // Update additional ledger accounts balances
+        foreach ($additionalLedgerAccounts as $additionalLedger) {
+            $additionalAccount = LedgerAccount::find($additionalLedger['ledger_account_id']);
+            if ($additionalAccount) {
+                Log::info('Before updating additional account balance', [
+                    'account_id' => $additionalAccount->id,
+                    'account_name' => $additionalAccount->name,
+                    'current_balance_before' => $additionalAccount->current_balance
+                ]);
+
+                $additionalBalance = $additionalAccount->updateCurrentBalance();
+
+                Log::info('After updating additional account balance', [
+                    'account_id' => $additionalAccount->id,
+                    'account_name' => $additionalAccount->name,
+                    'current_balance_after' => $additionalAccount->fresh()->current_balance,
+                    'calculated_balance' => $additionalBalance
                 ]);
             }
         }

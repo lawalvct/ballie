@@ -129,9 +129,9 @@
                     </template>
                 </tbody>
                 <tfoot>
-                    <tr class="border-t-2 border-gray-300 bg-gray-50">
-                        <td colspan="4" class="py-3 px-2 text-sm font-medium text-gray-900 text-right">
-                            Total Invoice Amount:
+                    <tr class="border-t border-gray-200 bg-gray-50">
+                        <td colspan="4" class="py-3 px-2 text-sm font-medium text-gray-700 text-right">
+                            Subtotal (Products):
                         </td>
                         <td class="py-3 px-2 text-right text-sm font-medium text-gray-900">
                             ₦<span x-text="formatNumber(totalAmount)"></span>
@@ -140,6 +140,96 @@
                     </tr>
                 </tfoot>
             </table>
+        </div>
+
+        <!-- Additional Ledger Accounts Section -->
+        <div class="mt-6 border-t border-gray-200 pt-6">
+            <div class="flex items-center justify-between mb-4">
+                <h4 class="text-sm font-medium text-gray-900">Additional Charges (Optional)</h4>
+                <button type="button"
+                        @click="addLedgerAccount()"
+                        class="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded text-blue-700 bg-blue-100 hover:bg-blue-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                    <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                    </svg>
+                    Add Charge
+                </button>
+            </div>
+
+            <div x-show="ledgerAccounts.length > 0" class="space-y-2">
+                <template x-for="(ledger, index) in ledgerAccounts" :key="index">
+                    <div class="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+                        <div class="flex-1">
+                            <select :name="`ledger_accounts[${index}][ledger_account_id]`"
+                                    x-model="ledger.ledger_account_id"
+                                    class="block w-full px-3 py-2 text-sm border border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 rounded-md"
+                                    required>
+                                <option value="">Select Ledger Account</option>
+                                @if(isset($ledgerAccounts) && count($ledgerAccounts) > 0)
+                                    @foreach($ledgerAccounts as $account)
+                                        <option value="{{ $account->id }}">
+                                            {{ $account->name }}
+                                            @if($account->accountGroup)
+                                                ({{ $account->accountGroup->name }})
+                                            @endif
+                                        </option>
+                                    @endforeach
+                                @endif
+                            </select>
+                        </div>
+                        <div class="w-48">
+                            <input type="number"
+                                   :name="`ledger_accounts[${index}][amount]`"
+                                   x-model="ledger.amount"
+                                   @input="updateTotals()"
+                                   class="block w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-right"
+                                   placeholder="0.00"
+                                   step="0.01"
+                                   min="0"
+                                   required>
+                        </div>
+                        <div class="w-64">
+                            <input type="text"
+                                   :name="`ledger_accounts[${index}][narration]`"
+                                   x-model="ledger.narration"
+                                   class="block w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                                   placeholder="Description (optional)">
+                        </div>
+                        <button type="button"
+                                @click="removeLedgerAccount(index)"
+                                class="text-red-600 hover:text-red-900 p-2 rounded hover:bg-red-50"
+                                title="Remove">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                            </svg>
+                        </button>
+                    </div>
+                </template>
+            </div>
+
+            <div x-show="ledgerAccounts.length === 0" class="text-sm text-gray-500 italic py-2">
+                No additional charges added. Click "Add Charge" to include VAT, transport, or other charges.
+            </div>
+        </div>
+
+        <!-- Grand Total Section -->
+        <div class="mt-6 border-t-2 border-gray-300 pt-4">
+            <div class="flex justify-end">
+                <div class="w-1/2">
+                    <div class="flex justify-between items-center py-2">
+                        <span class="text-sm font-medium text-gray-700">Products Subtotal:</span>
+                        <span class="text-sm font-medium text-gray-900">₦<span x-text="formatNumber(totalAmount)"></span></span>
+                    </div>
+                    <div x-show="ledgerAccountsTotal > 0" class="flex justify-between items-center py-2">
+                        <span class="text-sm font-medium text-gray-700">Additional Charges:</span>
+                        <span class="text-sm font-medium text-gray-900">₦<span x-text="formatNumber(ledgerAccountsTotal)"></span></span>
+                    </div>
+                    <div class="flex justify-between items-center py-3 border-t border-gray-300 mt-2">
+                        <span class="text-base font-bold text-gray-900">Grand Total:</span>
+                        <span class="text-lg font-bold text-gray-900">₦<span x-text="formatNumber(grandTotal)"></span></span>
+                    </div>
+                </div>
+            </div>
         </div>
 
         <!-- Stock Warning -->
