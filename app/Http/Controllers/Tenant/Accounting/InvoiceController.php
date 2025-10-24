@@ -805,6 +805,36 @@ class InvoiceController extends Controller
         return view('tenant.accounting.invoices.print', compact('tenant', 'invoice', 'inventoryItems', 'customer'));
     }
 
+    public function searchCustomers(Request $request, Tenant $tenant)
+    {
+        $query = $request->get('q', '');
+        
+        if (strlen($query) < 2) {
+            return response()->json([]);
+        }
+
+        $customers = Customer::where('tenant_id', $tenant->id)
+            ->with('ledgerAccount')
+            ->where(function($q) use ($query) {
+                $q->where('first_name', 'like', "%{$query}%")
+                  ->orWhere('last_name', 'like', "%{$query}%")
+                  ->orWhere('company_name', 'like', "%{$query}%")
+                  ->orWhere('email', 'like', "%{$query}%");
+            })
+            ->limit(10)
+            ->get()
+            ->map(function($customer) {
+                return [
+                    'id' => $customer->id,
+                    'ledger_account_id' => $customer->ledgerAccount->id,
+                    'display_name' => $customer->company_name ?: trim($customer->first_name . ' ' . $customer->last_name),
+                    'email' => $customer->email
+                ];
+            });
+
+        return response()->json($customers);
+    }
+
 private function createAccountingEntries(Voucher $voucher, array $inventoryItems, Tenant $tenant, $customerLedger_id, array $additionalLedgerAccounts = [])
 {
     // Get the customer/supplier account using the ID

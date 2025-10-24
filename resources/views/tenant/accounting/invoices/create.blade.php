@@ -159,21 +159,45 @@
                 <div class="mt-6 grid grid-cols-1 md:grid-cols-2 gap-6">
                     <!-- Customer (for Sales transactions) -->
                     <div id="customerSection">
-                        <label for="customer_id" class="block text-sm font-medium text-gray-700 mb-2">
+                        <label for="customer_search" class="block text-sm font-medium text-gray-700 mb-2">
                             Customer <span class="text-red-500">*</span>
                         </label>
                         <div class="flex gap-2">
-                            <select name="customer_id"
-                                    id="customer_id"
-                                    required
-                                    class="flex-1 pl-3 pr-10 py-2 text-base border border-gray-300 focus:outline-none focus:ring-primary-500 focus:border-primary-500 rounded-lg">
-                                <option value="">Select Customer</option>
-                                @foreach($customers as $customer)
-                                    <option value="{{ $customer->ledgerAccount->id }}" {{ old('customer_id') == $customer->ledgerAccount->id ? 'selected' : '' }}>
-                                        {{ $customer->display_name }}
-                                    </option>
-                                @endforeach
-                            </select>
+                            <div class="relative flex-1" x-data="customerSearch()">
+                                <input type="text"
+                                       x-model="searchTerm"
+                                       @input="searchCustomers()"
+                                       @focus="showDropdown = true"
+                                       placeholder="Type to search customers..."
+                                       class="w-full pl-3 pr-10 py-2 text-base border border-gray-300 focus:outline-none focus:ring-primary-500 focus:border-primary-500 rounded-lg">
+                                <input type="hidden" name="customer_id" x-model="selectedCustomerId" required>
+                                
+                                <!-- Dropdown -->
+                                <div x-show="showDropdown && (customers.length > 0 || loading)"
+                                     x-transition
+                                     class="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                                    
+                                    <!-- Loading -->
+                                    <div x-show="loading" class="px-3 py-2 text-gray-500">
+                                        Searching...
+                                    </div>
+                                    
+                                    <!-- Results -->
+                                    <template x-for="customer in customers" :key="customer.id">
+                                        <div @click="selectCustomer(customer)"
+                                             class="px-3 py-2 cursor-pointer hover:bg-gray-100 border-b border-gray-100 last:border-b-0">
+                                            <div class="font-medium text-gray-900" x-text="customer.display_name"></div>
+                                            <div class="text-sm text-gray-500" x-text="customer.email || 'No email'"></div>
+                                        </div>
+                                    </template>
+                                    
+                                    <!-- No results -->
+                                    <div x-show="!loading && customers.length === 0 && searchTerm.length >= 2"
+                                         class="px-3 py-2 text-gray-500">
+                                        No customers found
+                                    </div>
+                                </div>
+                            </div>
                             <button type="button"
                                     onclick="openQuickAddModal('customer')"
                                     class="px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors"
@@ -864,6 +888,62 @@ window.invoiceItems = function() {
         }
     }
 };
+
+// Customer Search Component
+function customerSearch() {
+    return {
+        searchTerm: '',
+        customers: [],
+        selectedCustomerId: '{{ old('customer_id') }}',
+        showDropdown: false,
+        loading: false,
+        searchTimeout: null,
+
+        searchCustomers() {
+            if (this.searchTerm.length < 2) {
+                this.customers = [];
+                this.showDropdown = false;
+                return;
+            }
+
+            if (this.searchTimeout) {
+                clearTimeout(this.searchTimeout);
+            }
+
+            this.searchTimeout = setTimeout(() => {
+                this.loading = true;
+                this.showDropdown = true;
+
+                fetch('/{{ $tenant->slug }}/api/customers/search?q=' + encodeURIComponent(this.searchTerm))
+                    .then(response => response.json())
+                    .then(data => {
+                        this.customers = data;
+                        this.loading = false;
+                    })
+                    .catch(error => {
+                        console.error('Search error:', error);
+                        this.customers = [];
+                        this.loading = false;
+                    });
+            }, 300);
+        },
+
+        selectCustomer(customer) {
+            this.searchTerm = customer.display_name;
+            this.selectedCustomerId = customer.ledger_account_id;
+            this.showDropdown = false;
+            this.customers = [];
+        },
+
+        init() {
+            document.addEventListener('click', (e) => {
+                if (!this.$el.contains(e.target)) {
+                    this.showDropdown = false;
+                }
+            });
+        }
+    }
+}
 
 // Main Invoice Form Component
 function invoiceForm() {

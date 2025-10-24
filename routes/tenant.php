@@ -135,6 +135,7 @@ Route::middleware(['auth'])->group(function () {
         Route::prefix('api')->name('tenant.api.')->group(function () {
             Route::get('/global-search', [GlobalSearchController::class, 'search'])->name('global-search');
             Route::get('/quick-actions', [GlobalSearchController::class, 'quickActions'])->name('quick-actions');
+            Route::get('/customers/search', [InvoiceController::class, 'searchCustomers'])->name('customers.search');
         });
 
         // Dashboard
