@@ -52,6 +52,7 @@ use App\Http\Controllers\Tenant\Api\UploadController;
 use App\Http\Controllers\Tenant\Api\ExportController;
 use App\Http\Controllers\Tenant\Api\GlobalSearchController;
 use App\Http\Controllers\Tenant\Reports\SalesReportsController;
+use App\Http\Controllers\Tenant\Reports\PurchaseReportsController;
 use App\Http\Controllers\Tenant\SubscriptionController;
 
 /*
@@ -694,6 +695,12 @@ Route::prefix('ledger-accounts')->name('ledger-accounts.')->group(function () {
             Route::get('/sales-by-period', [SalesReportsController::class, 'salesByPeriod'])->name('sales-by-period');
             Route::get('/customer-analysis', [ReportsController::class, 'customerAnalysis'])->name('customer-analysis');
             Route::get('/product-performance', [ReportsController::class, 'productPerformance'])->name('product-performance');
+
+            // Purchase Reports
+            Route::get('/purchase-summary', [PurchaseReportsController::class, 'purchaseSummary'])->name('purchase-summary');
+            Route::get('/vendor-purchases', [PurchaseReportsController::class, 'vendorPurchases'])->name('vendor-purchases');
+            Route::get('/product-purchases', [PurchaseReportsController::class, 'productPurchases'])->name('product-purchases');
+            Route::get('/purchases-by-period', [PurchaseReportsController::class, 'purchasesByPeriod'])->name('purchases-by-period');
         });
 
         // Settings & Configuration Module
