@@ -100,10 +100,10 @@
                 </div>
             </div>
             <div class="space-y-2">
-                <a href="#" class="block text-sm text-blue-600 hover:text-blue-800">• Stock Summary</a>
-                <a href="#" class="block text-sm text-blue-600 hover:text-blue-800">• Low Stock Alert</a>
-                <a href="#" class="block text-sm text-blue-600 hover:text-blue-800">• Stock Valuation</a>
-                <a href="#" class="block text-sm text-blue-600 hover:text-blue-800">• Stock Movement</a>
+                <a href="{{ route('tenant.reports.stock-summary', $tenant->slug) }}" class="block text-sm text-blue-600 hover:text-blue-800 hover:underline">• Stock Summary</a>
+                <a href="{{ route('tenant.reports.low-stock-alert', $tenant->slug) }}" class="block text-sm text-blue-600 hover:text-blue-800 hover:underline">• Low Stock Alert</a>
+                <a href="{{ route('tenant.reports.stock-valuation', $tenant->slug) }}" class="block text-sm text-blue-600 hover:text-blue-800 hover:underline">• Stock Valuation</a>
+                <a href="{{ route('tenant.reports.stock-movement', $tenant->slug) }}" class="block text-sm text-blue-600 hover:text-blue-800 hover:underline">• Stock Movement</a>
             </div>
         </div>
 
