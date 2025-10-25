@@ -204,8 +204,8 @@
                     @forelse($paginatedProducts as $product)
                         <tr class="hover:bg-gray-50">
                             <td class="px-6 py-4 whitespace-nowrap">
-                                <div class="text-sm font-medium text-gray-900">{{ $product->name }}</div>
-                                <div class="text-xs text-gray-500">SKU: {{ $product->sku ?? 'N/A' }}</div>
+                                <div class="text-sm font-medium text-gray-900">   <a href="{{ route('tenant.reports.bin-card', ['tenant' => $tenant->slug, 'product_id' => $product->id]) }}" target="_blank" >{{ $product->name }}</a></div>
+                                {{-- <div class="text-xs text-gray-500">SKU: {{ $product->sku ?? 'N/A' }}</div> --}}
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ $product->category->name ?? '-' }}</td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right font-semibold">{{ number_format($product->calculated_stock, 2) }}</td>
@@ -230,12 +230,10 @@
                                     </span>
                                 @endif
                             </td>
-                           <td class="px-6 py-4 whitespace-nowrap text-sm font-semibold text-gray-900 text-right"></td>
+                           <td class="px-6 py-4 whitespace-nowrap text-sm font-semibold text-gray-900 text-right">
                                 <a href="{{ route('tenant.reports.bin-card', ['tenant' => $tenant->slug, 'product_id' => $product->id]) }}" target="_blank" class="inline-flex items-center px-3 py-1 bg-blue-600 border border-transparent rounded-lg text-xs font-medium text-white hover:bg-blue-700">
-                                    <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 17l4 4 4-4m0-5l-4-4-4 4m8 5H4m16 0h-4m0 0V3m0 13v4"/>
-                                    </svg>
-                               View
+                                    View
+                                </a>
                             </td>
                         </tr>
 

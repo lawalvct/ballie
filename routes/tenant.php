@@ -707,6 +707,8 @@ Route::prefix('ledger-accounts')->name('ledger-accounts.')->group(function () {
             Route::get('/low-stock-alert', [\App\Http\Controllers\Tenant\Reports\InventoryReportsController::class, 'lowStockAlert'])->name('low-stock-alert');
             Route::get('/stock-valuation', [\App\Http\Controllers\Tenant\Reports\InventoryReportsController::class, 'stockValuation'])->name('stock-valuation');
             Route::get('/stock-movement', [\App\Http\Controllers\Tenant\Reports\InventoryReportsController::class, 'stockMovement'])->name('stock-movement');
+            // Bin Card (Inventory Ledger) - per product running balance
+            Route::get('/bin-card', [\App\Http\Controllers\Tenant\Reports\InventoryReportsController::class, 'binCard'])->name('bin-card');
         });
 
         // Settings & Configuration Module

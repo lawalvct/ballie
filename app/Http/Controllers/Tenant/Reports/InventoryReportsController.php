@@ -423,4 +423,119 @@ class InventoryReportsController extends Controller
             'transactionCount'
         ));
     }
+
+    /**
+     * Bin Card (Inventory Ledger) per product
+     * Shows opening balance, movements (in/out) and running closing balance
+     */
+    public function binCard(Request $request, Tenant $tenant)
+    {
+        $fromDate = $request->get('from_date', now()->startOfMonth()->toDateString());
+        $toDate = $request->get('to_date', now()->toDateString());
+        $productId = $request->get('product_id');
+
+        // Products for filter
+        $products = Product::where('tenant_id', $tenant->id)
+            ->where('maintain_stock', true)
+            ->orderBy('name')
+            ->get();
+
+        $product = null;
+        if ($productId) {
+            $product = $products->firstWhere('id', $productId);
+        }
+
+        // If no product selected, pick the first one if available
+        if (!$product && $products->count() > 0) {
+            $product = $products->first();
+            $productId = $product->id;
+        }
+
+        $rows = collect();
+        $openingQty = 0;
+        $openingValue = 0;
+
+        if ($product) {
+            // Opening balance as of the day before fromDate
+            $openingDate = Carbon::parse($fromDate)->subDay()->toDateString();
+            try {
+                $openingData = $product->getStockValueAsOfDate($openingDate, 'weighted_average');
+                $openingQty = $openingData['quantity'] ?? 0;
+                $openingValue = $openingData['value'] ?? 0;
+            } catch (\Throwable $e) {
+                // Fallback to zero if product method not available
+                $openingQty = 0;
+                $openingValue = 0;
+            }
+
+            // Movements between fromDate and toDate inclusive
+            $movements = StockMovement::where('tenant_id', $tenant->id)
+                ->where('product_id', $product->id)
+                ->whereBetween('transaction_date', [$fromDate, $toDate])
+                ->with(['product', 'creator'])
+                ->orderBy('transaction_date', 'asc')
+                ->orderBy('created_at', 'asc')
+                ->get();
+
+            $runningQty = $openingQty;
+            $runningValue = $openingValue;
+
+            foreach ($movements as $m) {
+                $inQty = $m->quantity > 0 ? $m->quantity : 0;
+                $outQty = $m->quantity < 0 ? abs($m->quantity) : 0;
+                $inValue = $inQty * ($m->rate ?? 0);
+                $outValue = $outQty * ($m->rate ?? 0);
+
+                $runningQty += $m->quantity;
+                $runningValue += ($m->quantity * ($m->rate ?? 0));
+
+                $rows->push((object)[
+                    'date' => $m->transaction_date,
+                    'particulars' => $m->reference ?? ($m->particulars ?? '-'),
+                    'vch_type' => $m->vch_type ?? '-',
+                    'vch_no' => $m->vch_no ?? '-',
+                    'in_qty' => $inQty,
+                    'in_value' => $inValue,
+                    'out_qty' => $outQty,
+                    'out_value' => $outValue,
+                    'closing_qty' => $runningQty,
+                    'closing_value' => $runningValue,
+                    'created_by' => $m->creator->name ?? null,
+                ]);
+            }
+        }
+
+        // Totals
+        $totalInQty = $rows->sum('in_qty');
+        $totalOutQty = $rows->sum('out_qty');
+        $totalInValue = $rows->sum('in_value');
+        $totalOutValue = $rows->sum('out_value');
+
+        // Build a pagination for the ledger rows
+        $page = $request->get('page', 1);
+        $perPage = 50;
+        $paginatedRows = new \Illuminate\Pagination\LengthAwarePaginator(
+            $rows->forPage($page, $perPage),
+            $rows->count(),
+            $perPage,
+            $page,
+            ['path' => $request->url(), 'query' => $request->query()]
+        );
+
+        return view('tenant.reports.inventory.bin-card', compact(
+            'tenant',
+            'fromDate',
+            'toDate',
+            'productId',
+            'products',
+            'rows',
+            'paginatedRows',
+            'openingQty',
+            'openingValue',
+            'totalInQty',
+            'totalOutQty',
+            'totalInValue',
+            'totalOutValue'
+        ));
+    }
 }
