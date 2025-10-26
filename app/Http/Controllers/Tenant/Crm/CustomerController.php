@@ -785,4 +785,91 @@ class CustomerController extends Controller
                 ->with('error', 'Import failed: ' . $e->getMessage());
         }
     }
+
+    /**
+     * Display individual customer statement with transaction details
+     */
+    public function showStatement(Request $request, Tenant $tenant, $customerId)
+    {
+        // Find customer with ledger account
+        $customer = Customer::with(['ledgerAccount'])
+            ->where('tenant_id', $tenant->id)
+            ->findOrFail($customerId);
+
+        if (!$customer->ledgerAccount) {
+            return redirect()->back()
+                ->with('error', 'Customer does not have an associated ledger account.');
+        }
+
+        $ledgerAccount = $customer->ledgerAccount;
+
+        // Get date range from request or default to current month
+        $startDate = $request->get('start_date', now()->startOfMonth()->format('Y-m-d'));
+        $endDate = $request->get('end_date', now()->endOfMonth()->format('Y-m-d'));
+
+        // Get opening balance (balance before start date)
+        $openingBalance = VoucherEntry::where('ledger_account_id', $ledgerAccount->id)
+            ->whereHas('voucher', function($query) use ($startDate, $tenant) {
+                $query->where('tenant_id', $tenant->id)
+                      ->where('status', Voucher::STATUS_POSTED)
+                      ->where('voucher_date', '<', $startDate);
+            })
+            ->selectRaw('
+                SUM(debit_amount) as total_debits,
+                SUM(credit_amount) as total_credits
+            ')
+            ->first();
+
+        $openingBalanceAmount = ($openingBalance->total_debits ?? 0) - ($openingBalance->total_credits ?? 0);
+
+        // Get transactions within date range
+        $transactions = VoucherEntry::with(['voucher.voucherType'])
+            ->where('ledger_account_id', $ledgerAccount->id)
+            ->whereHas('voucher', function($query) use ($startDate, $endDate, $tenant) {
+                $query->where('tenant_id', $tenant->id)
+                      ->where('status', Voucher::STATUS_POSTED)
+                      ->whereBetween('voucher_date', [$startDate, $endDate]);
+            })
+            ->orderBy('id')
+            ->get();
+
+        // Calculate running balance for each transaction
+        $runningBalance = $openingBalanceAmount;
+        $transactionsWithBalance = [];
+
+        foreach ($transactions as $transaction) {
+            $debit = $transaction->debit_amount ?? 0;
+            $credit = $transaction->credit_amount ?? 0;
+
+            $runningBalance += ($debit - $credit);
+
+            $transactionsWithBalance[] = [
+                'date' => $transaction->voucher->voucher_date,
+                'particulars' => $transaction->particulars ?? $transaction->voucher->voucherType->name,
+                'voucher_type' => $transaction->voucher->voucherType->name,
+                'voucher_number' => $transaction->voucher->voucher_number,
+                'debit' => $debit,
+                'credit' => $credit,
+                'running_balance' => $runningBalance,
+            ];
+        }
+
+        // Calculate totals
+        $totalDebits = collect($transactionsWithBalance)->sum('debit');
+        $totalCredits = collect($transactionsWithBalance)->sum('credit');
+        $closingBalance = $runningBalance;
+
+        return view('tenant.crm.customers.statement', compact(
+            'tenant',
+            'customer',
+            'ledgerAccount',
+            'startDate',
+            'endDate',
+            'openingBalanceAmount',
+            'transactionsWithBalance',
+            'totalDebits',
+            'totalCredits',
+            'closingBalance'
+        ));
+    }
 }

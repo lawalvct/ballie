@@ -448,13 +448,14 @@ Route::prefix('ledger-accounts')->name('ledger-accounts.')->group(function () {
         // CRM - Customer & Vendor Management
         Route::prefix('crm')->name('tenant.crm.')->group(function () {
             // Customers
-            Route::resource('customers', CustomerController::class);
             Route::get('customers/statements', [CustomerController::class, 'statements'])->name('customers.statements');
+            Route::get('customers/{customer}/statement', [CustomerController::class, 'showStatement'])->name('customers.statement');
             Route::get('customers/export/all', [CustomerController::class, 'export'])->name('customers.export');
             Route::get('customers/export/template', [CustomerController::class, 'exportTemplate'])->name('customers.export.template');
             Route::post('customers/import', [CustomerController::class, 'import'])->name('customers.import');
             Route::post('customers/bulk', [CustomerController::class, 'bulk'])->name('customers.bulk');
             Route::post('customers/bulk-action', [CustomerController::class, 'bulkAction'])->name('customers.bulk-action');
+            Route::resource('customers', CustomerController::class);
 
             // Vendors
             Route::resource('vendors', VendorController::class);
