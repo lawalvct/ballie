@@ -575,22 +575,28 @@ Route::prefix('ledger-accounts')->name('ledger-accounts.')->group(function () {
         Route::prefix('admin')->name('tenant.admin.')->group(function () {
             Route::get('/', [AdminController::class, 'index'])->name('index');
 
+            // Diagnostic routes (temporary - remove in production)
+            Route::prefix('diagnostic')->name('diagnostic.')->group(function () {
+                Route::get('/routes', [\App\Http\Controllers\Tenant\Admin\DiagnosticController::class, 'checkRoutes'])->name('routes');
+                Route::get('/user/{userId}', [\App\Http\Controllers\Tenant\Admin\DiagnosticController::class, 'testUserAccess'])->name('user');
+            });
+
             // Users & Admins Management
             Route::prefix('users')->name('users.')->group(function () {
                 Route::get('/', [AdminController::class, 'users'])->name('index');
                 Route::get('/create', [AdminController::class, 'createUser'])->name('create');
                 Route::post('/', [AdminController::class, 'storeUser'])->name('store');
-                Route::get('/{user}', [AdminController::class, 'showUser'])->name('show');
-                Route::get('/{user}/edit', [AdminController::class, 'editUser'])->name('edit');
-                Route::put('/{user}', [AdminController::class, 'updateUser'])->name('update');
-                Route::delete('/{user}', [AdminController::class, 'destroyUser'])->name('destroy');
-                Route::post('/{user}/activate', [AdminController::class, 'activateUser'])->name('activate');
-                Route::post('/{user}/deactivate', [AdminController::class, 'deactivateUser'])->name('deactivate');
-                Route::post('/{user}/reset-password', [AdminController::class, 'resetUserPassword'])->name('reset-password');
-                Route::get('/{user}/login-as', [AdminController::class, 'loginAsUser'])->name('login-as');
                 Route::get('/export', [AdminController::class, 'exportUsers'])->name('export');
                 Route::post('/import', [AdminController::class, 'importUsers'])->name('import');
                 Route::post('/bulk-action', [AdminController::class, 'bulkUserAction'])->name('bulk-action');
+                Route::get('/{userId}/edit', [AdminController::class, 'editUser'])->name('edit');
+                Route::get('/{userId}/login-as', [AdminController::class, 'loginAsUser'])->name('login-as');
+                Route::get('/{userId}', [AdminController::class, 'showUser'])->name('show');
+                Route::put('/{userId}', [AdminController::class, 'updateUser'])->name('update');
+                Route::delete('/{userId}', [AdminController::class, 'destroyUser'])->name('destroy');
+                Route::post('/{userId}/activate', [AdminController::class, 'activateUser'])->name('activate');
+                Route::post('/{userId}/deactivate', [AdminController::class, 'deactivateUser'])->name('deactivate');
+                Route::post('/{userId}/reset-password', [AdminController::class, 'resetUserPassword'])->name('reset-password');
             });
 
             // Roles & Permissions

@@ -231,23 +231,35 @@ class AdminService
     public function getUserActivityLogs($userId, $limit = 50)
     {
         // This would typically come from an activity_logs table
-        // For now, return placeholder data
-        return collect([
-            [
+        // For now, return placeholder data as a collection
+        $activityData = [
+            (object) [
+                'id' => 1,
                 'action' => 'login',
                 'description' => 'User logged in',
                 'ip_address' => '192.168.1.1',
                 'user_agent' => 'Mozilla/5.0...',
                 'created_at' => now()->subHours(1),
             ],
-            [
+            (object) [
+                'id' => 2,
                 'action' => 'profile_update',
                 'description' => 'Updated profile information',
                 'ip_address' => '192.168.1.1',
                 'user_agent' => 'Mozilla/5.0...',
                 'created_at' => now()->subHours(2),
             ],
-        ]);
+            (object) [
+                'id' => 3,
+                'action' => 'settings_update',
+                'description' => 'Updated account settings',
+                'ip_address' => '192.168.1.1',
+                'user_agent' => 'Mozilla/5.0...',
+                'created_at' => now()->subHours(4),
+            ],
+        ];
+
+        return collect($activityData)->take($limit);
     }
 
     /**

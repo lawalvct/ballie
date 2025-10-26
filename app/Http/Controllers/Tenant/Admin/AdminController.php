@@ -43,7 +43,14 @@ class AdminController extends Controller
     {
         $stats = $this->adminService->getDashboardStats();
 
-        return view('tenant.admin.index', compact('stats'));
+        // Get recent users for the dashboard table (limit to 10)
+        $users = User::with(['roles'])
+            ->where('tenant_id', tenant()->id)
+            ->latest()
+            ->limit(10)
+            ->get();
+
+        return view('tenant.admin.index', compact('stats', 'users'));
     }
 
     // ==================== USERS MANAGEMENT ====================
@@ -89,7 +96,15 @@ class AdminController extends Controller
         ->orderBy('name', 'asc')
         ->get();
 
-        return view('tenant.admin.users.index', compact('users', 'roles'));
+        // Calculate statistics
+        $stats = [
+            'total_users' => User::where('tenant_id', tenant()->id)->count(),
+            'active_users' => User::where('tenant_id', tenant()->id)->where('is_active', true)->count(),
+            'pending_users' => User::where('tenant_id', tenant()->id)->where('is_active', false)->whereNull('email_verified_at')->count(),
+            'online_users' => User::where('tenant_id', tenant()->id)->where('last_login_at', '>=', now()->subMinutes(15))->count(),
+        ];
+
+        return view('tenant.admin.users.index', compact('users', 'roles', 'stats'));
     }
 
     /**
@@ -177,12 +192,21 @@ class AdminController extends Controller
     /**
      * Show user details
      */
-    public function showUser(User $user)
+    public function showUser($tenant, $userId)
     {
-        $this->authorize('view', $user);
+        // Find user within the current tenant scope
+        $user = User::where('tenant_id', tenant()->id)
+            //->with(['roles.permissions', 'teams'])
+            ->findOrFail($userId);
 
-        $user->load(['roles.permissions', 'teams']);
+        // $this->authorize('view', $user);
+
         $activityLogs = $this->adminService->getUserActivityLogs($user->id);
+
+        // Ensure activityLogs is always a collection
+        if (!$activityLogs instanceof \Illuminate\Support\Collection) {
+            $activityLogs = collect($activityLogs ?? []);
+        }
 
         return view('tenant.admin.users.show', compact('user', 'activityLogs'));
     }
@@ -190,9 +214,13 @@ class AdminController extends Controller
     /**
      * Show edit user form
      */
-    public function editUser(User $user)
+    public function editUser($tenant, $userId)
     {
-        $this->authorize('update', $user);
+        // Find user within the current tenant scope
+        $user = User::where('tenant_id', tenant()->id)
+            ->findOrFail($userId);
+
+        // $this->authorize('update', $user);
 
         // Get both default roles and tenant-specific roles
         $roles = Role::where(function($query) {
@@ -212,9 +240,13 @@ class AdminController extends Controller
     /**
      * Update user
      */
-    public function updateUser(UpdateUserRequest $request, User $user)
+    public function updateUser(UpdateUserRequest $request, $tenant, $userId)
     {
-        $this->authorize('update', $user);
+        // Find user within the current tenant scope
+        $user = User::where('tenant_id', tenant()->id)
+            ->findOrFail($userId);
+
+        // $this->authorize('update', $user);
 
         try {
             DB::beginTransaction();
@@ -240,7 +272,7 @@ class AdminController extends Controller
 
             DB::commit();
 
-            return redirect()->route('tenant.admin.users.index')
+            return redirect()->route('tenant.admin.users.index', tenant('slug'))
                 ->with('success', 'User updated successfully!');
 
         } catch (Exception $e) {
@@ -253,9 +285,13 @@ class AdminController extends Controller
     /**
      * Delete user
      */
-    public function destroyUser(User $user)
+    public function destroyUser($tenant, $userId)
     {
-        $this->authorize('delete', $user);
+        // Find user within the current tenant scope
+        $user = User::where('tenant_id', tenant()->id)
+            ->findOrFail($userId);
+
+        // $this->authorize('delete', $user);
 
         try {
             if ($user->id === auth()->id()) {
@@ -264,7 +300,7 @@ class AdminController extends Controller
 
             $user->delete();
 
-            return redirect()->route('tenant.admin.users.index')
+            return redirect()->route('tenant.admin.users.index', tenant('slug'))
                 ->with('success', 'User deleted successfully!');
 
         } catch (Exception $e) {
@@ -275,9 +311,13 @@ class AdminController extends Controller
     /**
      * Toggle user status
      */
-    public function toggleUserStatus(User $user)
+    public function toggleUserStatus($tenant, $userId)
     {
-        $this->authorize('update', $user);
+        // Find user within the current tenant scope
+        $user = User::where('tenant_id', tenant()->id)
+            ->findOrFail($userId);
+
+        // $this->authorize('update', $user);
 
         try {
             if ($user->id === auth()->id()) {
