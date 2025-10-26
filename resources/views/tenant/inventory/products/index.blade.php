@@ -2,13 +2,18 @@
 
 @section('title', 'Products & Services')
 
+@section('page-title', 'Products & Services')
+@section('page-description')
+    <span class="hidden md:inline">
+  Manage your inventory items and services.
+    </span>
+@endsection
 @section('content')
 <div class="space-y-6">
     <!-- Header -->
     <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between">
         <div>
-            <h1 class="text-3xl font-bold text-gray-900">Products & Services</h1>
-            <p class="mt-2 text-gray-600">Manage your inventory items and services</p>
+           
         </div>
         <div class="mt-4 lg:mt-0">
             <a href="{{ route('tenant.inventory.products.create', ['tenant' => $tenant->slug]) }}"

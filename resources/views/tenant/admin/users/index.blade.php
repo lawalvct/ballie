@@ -1,7 +1,12 @@
 @extends('layouts.tenant')
 
 @section('title', 'Users Management')
-
+@section('page-title', 'Users')
+@section('page-description')
+    <span class="hidden md:inline">
+     View and manage user information.
+    </span>
+@endsection
 @section('content')
     {{-- Page Header --}}
     @include('tenant.admin.partials.header', [
@@ -159,13 +164,13 @@
                             <div class="flex-shrink-0 h-10 w-10">
                                 <div class="h-10 w-10 rounded-full bg-gray-300 flex items-center justify-center">
                                     <span class="text-sm font-medium text-gray-700">
-                                        {{ substr($user->first_name ?? 'U', 0, 1) }}{{ substr($user->last_name ?? 'U', 0, 1) }}
+                                        {{ strtoupper(substr($user->name, 0, 2)) }}
                                     </span>
                                 </div>
                             </div>
                             <div class="ml-4">
                                 <div class="text-sm font-medium text-gray-900">
-                                    {{ $user->first_name }} {{ $user->last_name }}
+                                    {{ $user->name }}
                                 </div>
                                 <div class="text-sm text-gray-500">
                                     {{ $user->email }}
@@ -175,17 +180,13 @@
                     </td>
                     <td class="px-6 py-4 whitespace-nowrap">
                         <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">
-                            {{ $user->role->name ?? 'No Role' }}
+                            {{ $user->roles->first()->name ?? 'No Role' }}
                         </span>
                     </td>
                     <td class="px-6 py-4 whitespace-nowrap">
-                        @if($user->status === 'active')
+                        @if($user->is_active)
                             <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">
                                 Active
-                            </span>
-                        @elseif($user->status === 'pending')
-                            <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-yellow-100 text-yellow-800">
-                                Pending
                             </span>
                         @else
                             <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800">

@@ -1,14 +1,18 @@
 @extends('layouts.tenant')
 
 @section('title', 'Edit User')
-
+@section('page-title', 'Edit User')
+@section('page-description')
+    <span class="hidden md:inline">
+     Update user information and permissions.
+    </span>
+@endsection
 @section('content')
 <div class="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
     <!-- Header -->
     <div class="mb-6 flex items-center justify-between">
         <div>
-            <h1 class="text-2xl font-semibold text-gray-900">Edit User</h1>
-            <p class="mt-1 text-sm text-gray-500">Update user information and permissions</p>
+           
         </div>
         <div class="flex space-x-3">
             <a href="{{ route('tenant.admin.users.show', [tenant('slug'), $user->id]) }}"
