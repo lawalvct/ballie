@@ -1,19 +1,19 @@
 <aside id="sidebar" class="sidebar sidebar-expanded text-white h-screen fixed shadow-2xl z-30 transform lg:transform-none transition-all duration-300">
     <!-- Sidebar Header -->
     <div class="flex items-center justify-between h-20 px-6 border-b border-white border-opacity-10">
-        <div class="flex items-center space-x-3">
+        <div class="flex items-center space-x-3 min-w-0 flex-1">
             @if(isset($tenant) && $tenant->logo)
                 <img src="{{ asset('storage/' . $tenant->logo) }}"
                      alt="{{ $tenant->name }}"
-                     class="w-10 h-10 rounded-xl object-cover shadow-lg border-2 border-white border-opacity-20">
+                     class="w-10 h-10 rounded-xl object-cover shadow-lg border-2 border-white border-opacity-20 flex-shrink-0">
             @else
-                <div class="w-10 h-10 bg-gradient-to-br from-yellow-400 to-yellow-600 rounded-xl flex items-center justify-center shadow-lg">
+                <div class="w-10 h-10 bg-gradient-to-br from-yellow-400 to-yellow-600 rounded-xl flex items-center justify-center shadow-lg flex-shrink-0">
                     <span class="text-white font-bold text-lg">{{ isset($tenant) ? substr($tenant->name, 0, 1) : 'B' }}</span>
                 </div>
             @endif
-            <div class="sidebar-title overflow-hidden whitespace-nowrap transition-opacity">
-                <span class="text-xl font-bold bg-gradient-to-r from-white to-gray-200 bg-clip-text text-transparent">
-                    {{ $tenant->name ?? 'Ballie' }}
+            <div class="sidebar-title min-w-0 flex-1 transition-opacity">
+                <span class="text-xl font-bold bg-gradient-to-r from-white to-gray-200 bg-clip-text text-transparent truncate block" title="{{ $tenant->name ?? 'Ballie' }}">
+                   {{ $tenant->name ?? 'Ballie' }}
                 </span>
                 @if(isset($tenant))
                 <div class="flex items-center space-x-2 mt-1">
