@@ -470,6 +470,25 @@ Route::prefix('ledger-accounts')->name('ledger-accounts.')->group(function () {
             Route::get('reports', [CrmController::class, 'reports'])->name('reports');
         });
 
+        // Banking - Bank Account Management
+        Route::prefix('banking')->name('tenant.banking.')->group(function () {
+            // Bank Accounts
+            Route::get('banks/{bank}/statement', [\App\Http\Controllers\Tenant\Banking\BankController::class, 'statement'])->name('banks.statement');
+            Route::resource('banks', \App\Http\Controllers\Tenant\Banking\BankController::class);
+
+            // Bank Reconciliation
+            Route::prefix('reconciliations')->name('reconciliations.')->group(function () {
+                Route::get('/', [\App\Http\Controllers\Tenant\Banking\BankReconciliationController::class, 'index'])->name('index');
+                Route::get('/create', [\App\Http\Controllers\Tenant\Banking\BankReconciliationController::class, 'create'])->name('create');
+                Route::post('/', [\App\Http\Controllers\Tenant\Banking\BankReconciliationController::class, 'store'])->name('store');
+                Route::get('/{reconciliation}', [\App\Http\Controllers\Tenant\Banking\BankReconciliationController::class, 'show'])->name('show');
+                Route::post('/{reconciliation}/update-item', [\App\Http\Controllers\Tenant\Banking\BankReconciliationController::class, 'updateItemStatus'])->name('update-item');
+                Route::post('/{reconciliation}/complete', [\App\Http\Controllers\Tenant\Banking\BankReconciliationController::class, 'complete'])->name('complete');
+                Route::post('/{reconciliation}/cancel', [\App\Http\Controllers\Tenant\Banking\BankReconciliationController::class, 'cancel'])->name('cancel');
+                Route::delete('/{reconciliation}', [\App\Http\Controllers\Tenant\Banking\BankReconciliationController::class, 'destroy'])->name('destroy');
+            });
+        });
+
         // POS - Point of Sale System
         Route::prefix('pos')->name('tenant.pos.')->group(function () {
             Route::get('/', [PosController::class, 'index'])->name('index');
