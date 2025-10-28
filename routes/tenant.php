@@ -270,6 +270,7 @@ Route::prefix('ledger-accounts')->name('ledger-accounts.')->group(function () {
 
     // Search API - MUST be before parameterized routes
     Route::get('/search', [LedgerAccountController::class, 'search'])->name('search');
+    Route::get('/download-pdf', [LedgerAccountController::class, 'downloadPdf'])->name('download-pdf');
 
     // Opening balance reclassification
     Route::post('/reclassify-opening-balance', [LedgerAccountController::class, 'reclassifyOpeningBalance'])->name('reclassify-opening-balance');

@@ -271,7 +271,7 @@
     </div>
 
     <!-- Quick Actions Section -->
-    <div>
+    {{-- <div>
         <h4 class="text-xl font-semibold text-white mb-6 flex items-center">
             <div class="w-8 h-8 bg-gray-600 rounded-lg flex items-center justify-center mr-3">
                 <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -351,7 +351,7 @@
                 <p class="text-xs text-amber-200">Access help documentation and support resources.</p>
             </a>
         </div>
-    </div>
+    </div> --}}
 </div>
 
 <script>

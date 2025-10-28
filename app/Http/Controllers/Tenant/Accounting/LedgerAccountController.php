@@ -71,7 +71,7 @@ class LedgerAccountController extends Controller
             $accounts = $query->orderBy('code')->get();
             $ledgerAccounts = null; // Not needed for tree view
         } else {
-            $ledgerAccounts = $query->paginate(20)->withQueryString();
+            $ledgerAccounts = $query->paginate(100)->withQueryString();
             $accounts = $ledgerAccounts; // For list view compatibility
         }
 
@@ -522,6 +522,72 @@ public function show(Request $request, Tenant $tenant, LedgerAccount $ledgerAcco
         } catch (\Exception $e) {
             return back()->with('error', 'Bulk action failed: ' . $e->getMessage());
         }
+    }
+
+    public function downloadPdf(Request $request, Tenant $tenant)
+    {
+        $accounts = LedgerAccount::with(['accountGroup'])
+            ->where('tenant_id', $tenant->id)
+            ->orderBy('account_type')
+            ->orderBy('code')
+            ->get()
+            ->groupBy('account_type');
+
+        $html = '
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <meta charset="utf-8">
+            <title>Chart of Accounts</title>
+            <style>
+                body { font-family: Arial, sans-serif; font-size: 12px; }
+                h1 { text-align: center; color: #333; margin-bottom: 5px; }
+                .company { text-align: center; color: #666; margin-bottom: 20px; }
+                table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
+                th { background: #f3f4f6; padding: 8px; text-align: left; border: 1px solid #ddd; font-weight: bold; }
+                td { padding: 8px; border: 1px solid #ddd; }
+                .section { background: #e5e7eb; font-weight: bold; padding: 8px; margin-top: 10px; }
+                .amount { text-align: right; }
+            </style>
+        </head>
+        <body>
+            <h1>Chart of Accounts</h1>
+            <div class="company">' . e($tenant->name) . '</div>
+            <div class="company">As of ' . now()->format('F d, Y') . '</div>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th width="15%">Code</th>
+                        <th width="40%">Account Name</th>
+                        <th width="25%">Account Group</th>
+                        <th width="20%" class="amount">Balance</th>
+                    </tr>
+                </thead>
+                <tbody>';
+
+        foreach ($accounts as $type => $typeAccounts) {
+            $html .= '<tr><td colspan="4" class="section">' . strtoupper($type) . '</td></tr>';
+
+            foreach ($typeAccounts as $account) {
+                $balance = number_format(abs($account->current_balance), 2);
+                $html .= '<tr>
+                    <td>' . e($account->code) . '</td>
+                    <td>' . e($account->name) . '</td>
+                    <td>' . e($account->accountGroup?->name ?? 'N/A') . '</td>
+                    <td class="amount">' . $balance . '</td>
+                </tr>';
+            }
+        }
+
+        $html .= '</tbody></table></body></html>';
+
+        $dompdf = new \Dompdf\Dompdf();
+        $dompdf->loadHtml($html);
+        $dompdf->setPaper('A4', 'portrait');
+        $dompdf->render();
+
+        return $dompdf->stream('chart-of-accounts-' . now()->format('Y-m-d') . '.pdf');
     }
 
     public function export(Request $request, Tenant $tenant)
