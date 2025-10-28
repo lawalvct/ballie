@@ -100,6 +100,7 @@ class CrmController extends Controller
         // Get recent payment vouchers (receipts)
         $recentPaymentsActivity = Voucher::where('tenant_id', $tenant->id)
             ->where('status', Voucher::STATUS_POSTED)
+            ->whereNotNull('posted_at')
             ->whereHas('voucherType', function($query) {
                 $query->where('code', 'RCV') // Receipt vouchers
                       ->orWhere('affects_cashbank', true);
@@ -121,6 +122,7 @@ class CrmController extends Controller
         // Get recent vouchers
         $recentVouchersActivity = Voucher::where('tenant_id', $tenant->id)
             ->where('status', Voucher::STATUS_POSTED)
+            ->whereNotNull('posted_at')
             ->with('voucherType')
             ->orderBy('posted_at', 'desc')
             ->limit(5)

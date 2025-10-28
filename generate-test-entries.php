@@ -10,9 +10,11 @@ use App\Models\LedgerAccount;
 use App\Models\VoucherType;
 use App\Models\Voucher;
 use App\Models\VoucherEntry;
+use App\Models\InvoiceItem;
+use App\Models\Product;
+use App\Models\Customer;
 use Illuminate\Support\Facades\DB;
 
-// Get tenant ID from command line
 $tenantId = $argv[1] ?? null;
 
 if (!$tenantId) {
@@ -26,103 +28,184 @@ if (!$tenant) {
     exit(1);
 }
 
-echo "Generating test entries for tenant: {$tenant->name} (ID: {$tenantId})\n";
+echo "Generating test data for tenant: {$tenant->name} (ID: {$tenantId})\n\n";
+
+// Create products
+echo "Creating products...\n";
+$products = [
+    ['name' => 'Laptop Computer', 'sku' => 'PROD-001', 'price' => 150000, 'cost' => 100000],
+    ['name' => 'Office Chair', 'sku' => 'PROD-002', 'price' => 25000, 'cost' => 15000],
+    ['name' => 'Desk Lamp', 'sku' => 'PROD-003', 'price' => 5000, 'cost' => 3000],
+    ['name' => 'Wireless Mouse', 'sku' => 'PROD-004', 'price' => 3500, 'cost' => 2000],
+    ['name' => 'USB Cable', 'sku' => 'PROD-005', 'price' => 1500, 'cost' => 800],
+];
+
+$createdProducts = [];
+foreach ($products as $prod) {
+    $product = Product::where('tenant_id', $tenantId)->where('sku', $prod['sku'])->first();
+    if (!$product) {
+        $product = Product::create([
+            'tenant_id' => $tenantId,
+            'name' => $prod['name'],
+            'sku' => $prod['sku'],
+            'selling_price' => $prod['price'],
+            'cost_price' => $prod['cost'],
+            'current_stock' => 100,
+            'reorder_level' => 10,
+            'is_active' => true,
+        ]);
+        echo "Created product: {$product->name}\n";
+    } else {
+        echo "Product exists: {$product->name}\n";
+    }
+    $createdProducts[] = $product;
+}
+
+// Create customers
+echo "\nCreating customers...\n";
+$customersData = [
+    ['name' => 'ABC Company Ltd', 'email' => 'abc@example.com', 'phone' => '08012345678'],
+    ['name' => 'XYZ Enterprises', 'email' => 'xyz@example.com', 'phone' => '08087654321'],
+];
+
+$createdCustomers = [];
+foreach ($customersData as $cust) {
+    $existing = Customer::where('tenant_id', $tenantId)->where('company_name', $cust['name'])->first();
+    if (!$existing) {
+        $customer = Customer::create([
+            'tenant_id' => $tenantId,
+            'customer_type' => 'business',
+            'company_name' => $cust['name'],
+            'email' => $cust['email'],
+            'phone' => $cust['phone'],
+            'status' => 'active',
+        ]);
+        echo "Created customer: {$customer->company_name}\n";
+        $createdCustomers[] = $customer;
+    } else {
+        echo "Customer exists: {$existing->company_name}\n";
+        $createdCustomers[] = $existing;
+    }
+}
 
 // Get accounts
 $cash = LedgerAccount::where('tenant_id', $tenantId)->where('code', 'CASH-001')->first();
 $sales = LedgerAccount::where('tenant_id', $tenantId)->where('code', 'SALES-001')->first();
 $cogs = LedgerAccount::where('tenant_id', $tenantId)->where('code', 'COGS-001')->first();
 $inventory = LedgerAccount::where('tenant_id', $tenantId)->where('code', 'INV-001')->first();
-$rent = LedgerAccount::where('tenant_id', $tenantId)->where('code', 'RENT-001')->first();
-$salary = LedgerAccount::where('tenant_id', $tenantId)->where('code', 'SAL-001')->first();
-$utilities = LedgerAccount::where('tenant_id', $tenantId)->where('code', 'UTIL-001')->first();
-$ar = LedgerAccount::where('tenant_id', $tenantId)->where('code', 'AR-001')->first();
-$ap = LedgerAccount::where('tenant_id', $tenantId)->where('code', 'AP-001')->first();
 
-// Get voucher type
-$voucherType = VoucherType::where('tenant_id', $tenantId)->where('code', 'JV')->first();
+// Get voucher types
+$salesVoucherType = VoucherType::where('tenant_id', $tenantId)->where('code', 'SALES')->first();
 
-if (!$voucherType) {
-    echo "Creating Journal Voucher type...\n";
-    $voucherType = VoucherType::create([
+if (!$salesVoucherType) {
+    echo "\nCreating SALES voucher type...\n";
+    $salesVoucherType = VoucherType::create([
         'tenant_id' => $tenantId,
-        'name' => 'Journal Voucher',
-        'code' => 'JV',
-        'prefix' => 'JV',
-        'next_number' => 1,
+        'name' => 'Sales Invoice',
+        'code' => 'SALES',
+        'prefix' => 'INV',
         'is_active' => true,
     ]);
 }
 
-$entries = [
-    ['date' => '2025-01-05', 'desc' => 'Cash sales', 'debit' => $cash, 'credit' => $sales, 'amount' => 50000],
-    ['date' => '2025-01-05', 'desc' => 'Cost of goods sold', 'debit' => $cogs, 'credit' => $inventory, 'amount' => 30000],
-    ['date' => '2025-01-10', 'desc' => 'Credit sales', 'debit' => $ar, 'credit' => $sales, 'amount' => 75000],
-    ['date' => '2025-01-10', 'desc' => 'Cost of goods sold', 'debit' => $cogs, 'credit' => $inventory, 'amount' => 45000],
-    ['date' => '2025-01-15', 'desc' => 'Rent payment', 'debit' => $rent, 'credit' => $cash, 'amount' => 20000],
-    ['date' => '2025-01-20', 'desc' => 'Salary payment', 'debit' => $salary, 'credit' => $cash, 'amount' => 35000],
-    ['date' => '2025-01-25', 'desc' => 'Utilities payment', 'debit' => $utilities, 'credit' => $cash, 'amount' => 5000],
-    ['date' => '2025-01-28', 'desc' => 'Customer payment received', 'debit' => $cash, 'credit' => $ar, 'amount' => 40000],
-    ['date' => '2025-02-05', 'desc' => 'Cash sales', 'debit' => $cash, 'credit' => $sales, 'amount' => 60000],
-    ['date' => '2025-02-05', 'desc' => 'Cost of goods sold', 'debit' => $cogs, 'credit' => $inventory, 'amount' => 36000],
-    ['date' => '2025-02-10', 'desc' => 'Credit sales', 'debit' => $ar, 'credit' => $sales, 'amount' => 85000],
-    ['date' => '2025-02-10', 'desc' => 'Cost of goods sold', 'debit' => $cogs, 'credit' => $inventory, 'amount' => 51000],
-    ['date' => '2025-02-15', 'desc' => 'Rent payment', 'debit' => $rent, 'credit' => $cash, 'amount' => 20000],
-    ['date' => '2025-02-20', 'desc' => 'Salary payment', 'debit' => $salary, 'credit' => $cash, 'amount' => 35000],
-    ['date' => '2025-02-25', 'desc' => 'Utilities payment', 'debit' => $utilities, 'credit' => $cash, 'amount' => 6000],
-    ['date' => '2025-02-28', 'desc' => 'Customer payment received', 'debit' => $cash, 'credit' => $ar, 'amount' => 50000],
-    ['date' => '2025-03-05', 'desc' => 'Cash sales', 'debit' => $cash, 'credit' => $sales, 'amount' => 70000],
-    ['date' => '2025-03-05', 'desc' => 'Cost of goods sold', 'debit' => $cogs, 'credit' => $inventory, 'amount' => 42000],
-    ['date' => '2025-03-10', 'desc' => 'Credit sales', 'debit' => $ar, 'credit' => $sales, 'amount' => 95000],
-    ['date' => '2025-03-10', 'desc' => 'Cost of goods sold', 'debit' => $cogs, 'credit' => $inventory, 'amount' => 57000],
+// Create sales invoices
+echo "\nCreating sales invoices...\n";
+$invoices = [
+    ['date' => '2025-01-15', 'customer' => $createdCustomers[0], 'items' => [
+        ['product' => $createdProducts[0], 'qty' => 2],
+        ['product' => $createdProducts[1], 'qty' => 5],
+    ]],
+    ['date' => '2025-02-10', 'customer' => $createdCustomers[1], 'items' => [
+        ['product' => $createdProducts[2], 'qty' => 10],
+        ['product' => $createdProducts[3], 'qty' => 15],
+    ]],
+    ['date' => '2025-03-05', 'customer' => $createdCustomers[0], 'items' => [
+        ['product' => $createdProducts[4], 'qty' => 50],
+        ['product' => $createdProducts[0], 'qty' => 1],
+    ]],
 ];
 
 DB::beginTransaction();
 try {
-    foreach ($entries as $entry) {
-        if (!$entry['debit'] || !$entry['credit']) {
-            echo "Skipping entry: {$entry['desc']} - missing accounts\n";
-            continue;
+    $invNum = 1;
+    foreach ($invoices as $inv) {
+        $subtotal = 0;
+        $costTotal = 0;
+        
+        foreach ($inv['items'] as $item) {
+            $subtotal += $item['product']->selling_price * $item['qty'];
+            $costTotal += $item['product']->cost_price * $item['qty'];
         }
-
+        
         $voucher = Voucher::create([
             'tenant_id' => $tenantId,
-            'voucher_type_id' => $voucherType->id,
-            'voucher_number' => $voucherType->prefix . '-' . str_pad($voucherType->next_number++, 4, '0', STR_PAD_LEFT),
-            'voucher_date' => $entry['date'],
-            'description' => $entry['desc'],
+            'voucher_type_id' => $salesVoucherType->id,
+            'voucher_number' => 'INV-' . str_pad($invNum++, 4, '0', STR_PAD_LEFT),
+            'voucher_date' => $inv['date'],
+            'narration' => 'Sales invoice to ' . $inv['customer']->company_name,
+            'total_amount' => $subtotal,
             'status' => 'posted',
-            'total_amount' => $entry['amount'],
-            'total_debit' => $entry['amount'],
-            'total_credit' => $entry['amount'],
             'created_by' => 1,
         ]);
-
+        
+        // Create invoice items
+        foreach ($inv['items'] as $item) {
+            InvoiceItem::create([
+                'voucher_id' => $voucher->id,
+                'product_id' => $item['product']->id,
+                'product_name' => $item['product']->name,
+                'quantity' => $item['qty'],
+                'rate' => $item['product']->selling_price,
+                'amount' => $item['product']->selling_price * $item['qty'],
+                'purchase_rate' => $item['product']->cost_price,
+            ]);
+        }
+        
+        // Create voucher entries (double entry)
+        // Debit: Customer (AR)
         VoucherEntry::create([
             'voucher_id' => $voucher->id,
-            'ledger_account_id' => $entry['debit']->id,
-            'debit_amount' => $entry['amount'],
+            'ledger_account_id' => $inv['customer']->ledger_account_id,
+            'debit_amount' => $subtotal,
             'credit_amount' => 0,
-            'particulars' => $entry['desc'],
+            'particulars' => 'Sales to ' . $inv['customer']->company_name,
         ]);
-
+        
+        // Credit: Sales
         VoucherEntry::create([
             'voucher_id' => $voucher->id,
-            'ledger_account_id' => $entry['credit']->id,
+            'ledger_account_id' => $sales->id,
             'debit_amount' => 0,
-            'credit_amount' => $entry['amount'],
-            'particulars' => $entry['desc'],
+            'credit_amount' => $subtotal,
+            'particulars' => 'Sales revenue',
         ]);
-
-        // Update account balances
-        $entry['debit']->increment('current_balance', $entry['amount']);
-        $entry['credit']->decrement('current_balance', $entry['amount']);
-
-        echo "Created: {$voucher->voucher_number} - {$entry['desc']}\n";
+        
+        // Debit: COGS
+        VoucherEntry::create([
+            'voucher_id' => $voucher->id,
+            'ledger_account_id' => $cogs->id,
+            'debit_amount' => $costTotal,
+            'credit_amount' => 0,
+            'particulars' => 'Cost of goods sold',
+        ]);
+        
+        // Credit: Inventory
+        VoucherEntry::create([
+            'voucher_id' => $voucher->id,
+            'ledger_account_id' => $inventory->id,
+            'debit_amount' => 0,
+            'credit_amount' => $costTotal,
+            'particulars' => 'Inventory reduction',
+        ]);
+        
+        echo "Created invoice: {$voucher->voucher_number} for {$inv['customer']->company_name} - ₦" . number_format($subtotal, 2) . "\n";
     }
-
+    
     DB::commit();
-    echo "\nSuccessfully created 20 test entries!\n";
+    echo "\n=== Test Data Generation Complete ===\n";
+    echo "Products: 5\n";
+    echo "Customers: 2\n";
+    echo "Sales Invoices: 3\n";
 } catch (\Exception $e) {
     DB::rollBack();
     echo "Error: " . $e->getMessage() . "\n";
