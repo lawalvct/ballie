@@ -10,6 +10,7 @@
        <!-- WhatsApp Floating Button -->
        <a href="https://wa.me/2348132712715?text=Hi,%20I'm%20interested%20in%20Ballie%20Business%20Management%20Software" 
           target="_blank" 
+          id="whatsapp-float"
           class="whatsapp-float" 
           aria-label="Chat on WhatsApp">
            <svg viewBox="0 0 32 32" width="32" height="32" fill="white">
@@ -36,6 +37,12 @@
                justify-content: center;
                transition: all 0.3s ease;
                animation: pulse 2s infinite;
+               cursor: move;
+           }
+
+           .whatsapp-float.dragging {
+               animation: none;
+               transition: none;
            }
 
            .whatsapp-float:hover {
@@ -66,4 +73,48 @@
                }
            }
        </style>
+
+       <script>
+           (function() {
+               const btn = document.getElementById('whatsapp-float');
+               let isDragging = false;
+               let startX, startY, startBottom, startRight;
+
+               btn.addEventListener('mousedown', function(e) {
+                   if (e.button !== 0) return;
+                   isDragging = true;
+                   btn.classList.add('dragging');
+                   startX = e.clientX;
+                   startY = e.clientY;
+                   startBottom = parseInt(window.getComputedStyle(btn).bottom);
+                   startRight = parseInt(window.getComputedStyle(btn).right);
+                   e.preventDefault();
+               });
+
+               document.addEventListener('mousemove', function(e) {
+                   if (!isDragging) return;
+                   const deltaX = startX - e.clientX;
+                   const deltaY = startY - e.clientY;
+                   btn.style.right = (startRight + deltaX) + 'px';
+                   btn.style.bottom = (startBottom + deltaY) + 'px';
+               });
+
+               document.addEventListener('mouseup', function(e) {
+                   if (isDragging) {
+                       isDragging = false;
+                       btn.classList.remove('dragging');
+                       if (Math.abs(e.clientX - startX) < 5 && Math.abs(e.clientY - startY) < 5) {
+                           return;
+                       }
+                       e.preventDefault();
+                   }
+               });
+
+               btn.addEventListener('click', function(e) {
+                   if (Math.abs(e.clientX - startX) >= 5 || Math.abs(e.clientY - startY) >= 5) {
+                       e.preventDefault();
+                   }
+               });
+           })();
+       </script>
 
