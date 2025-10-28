@@ -72,8 +72,15 @@ class GlobalSearchController extends Controller
             ['name' => 'tenant.inventory.products.index', 'title' => 'Products', 'description' => 'View all products', 'icon' => 'fas fa-boxes', 'category' => 'Inventory'],
             ['name' => 'tenant.inventory.products.create', 'title' => 'Add Product', 'description' => 'Create a new product', 'icon' => 'fas fa-box', 'category' => 'Inventory'],
             ['name' => 'tenant.inventory.categories.index', 'title' => 'Product Categories', 'description' => 'Manage product categories', 'icon' => 'fas fa-tags', 'category' => 'Inventory'],
-            ['name' => 'tenant.inventory.stock-movements.index', 'title' => 'Stock Movements', 'description' => 'View stock movement history', 'icon' => 'fas fa-exchange-alt', 'category' => 'Inventory'],
-            ['name' => 'tenant.inventory.low-stock', 'title' => 'Low Stock Alert', 'description' => 'View low stock items', 'icon' => 'fas fa-exclamation-triangle', 'category' => 'Inventory'],
+            ['name' => 'tenant.inventory.stock-journal.index', 'title' => 'Stock Journal', 'description' => 'Manage stock journal entries', 'icon' => 'fas fa-exchange-alt', 'category' => 'Inventory'],
+            ['name' => 'tenant.inventory.physical-stock.index', 'title' => 'Physical Stock', 'description' => 'Physical stock verification', 'icon' => 'fas fa-clipboard-check', 'category' => 'Inventory'],
+            ['name' => 'tenant.inventory.units.index', 'title' => 'Units', 'description' => 'Manage product units', 'icon' => 'fas fa-ruler', 'category' => 'Inventory'],
+
+            // Banking
+            ['name' => 'tenant.banking.banks.index', 'title' => 'Bank Accounts', 'description' => 'Manage bank accounts', 'icon' => 'fas fa-university', 'category' => 'Banking'],
+            ['name' => 'tenant.banking.banks.create', 'title' => 'Add Bank Account', 'description' => 'Create a new bank account', 'icon' => 'fas fa-plus', 'category' => 'Banking'],
+            ['name' => 'tenant.banking.reconciliations.index', 'title' => 'Bank Reconciliation', 'description' => 'Reconcile bank statements', 'icon' => 'fas fa-balance-scale', 'category' => 'Banking'],
+            ['name' => 'tenant.banking.reconciliations.create', 'title' => 'New Reconciliation', 'description' => 'Create bank reconciliation', 'icon' => 'fas fa-check-double', 'category' => 'Banking'],
 
             // POS
             ['name' => 'tenant.pos.index', 'title' => 'Point of Sale', 'description' => 'Open POS terminal', 'icon' => 'fas fa-cash-register', 'category' => 'POS'],
@@ -84,9 +91,21 @@ class GlobalSearchController extends Controller
             ['name' => 'tenant.settings.profile', 'title' => 'Company Profile', 'description' => 'Update company information', 'icon' => 'fas fa-building', 'category' => 'Settings'],
             ['name' => 'tenant.settings.users', 'title' => 'User Management', 'description' => 'Manage users and permissions', 'icon' => 'fas fa-users-cog', 'category' => 'Settings'],
 
-            // Dashboard & Reports
+            // Reports
+            ['name' => 'tenant.reports.index', 'title' => 'Reports', 'description' => 'View all reports', 'icon' => 'fas fa-chart-bar', 'category' => 'Reports'],
+            ['name' => 'tenant.reports.sales-by-period', 'title' => 'Sales By Period', 'description' => 'Sales analysis by period', 'icon' => 'fas fa-chart-line', 'category' => 'Reports'],
+            ['name' => 'tenant.reports.purchases-by-period', 'title' => 'Purchases By Period', 'description' => 'Purchase analysis by period', 'icon' => 'fas fa-shopping-cart', 'category' => 'Reports'],
+            ['name' => 'tenant.reports.stock-summary', 'title' => 'Stock Summary', 'description' => 'Inventory stock summary', 'icon' => 'fas fa-boxes', 'category' => 'Reports'],
+            ['name' => 'tenant.reports.trial-balance', 'title' => 'Trial Balance', 'description' => 'View trial balance', 'icon' => 'fas fa-balance-scale', 'category' => 'Reports'],
+            ['name' => 'tenant.reports.profit-loss', 'title' => 'Profit & Loss', 'description' => 'Profit and loss statement', 'icon' => 'fas fa-chart-pie', 'category' => 'Reports'],
+            ['name' => 'tenant.reports.balance-sheet', 'title' => 'Balance Sheet', 'description' => 'View balance sheet', 'icon' => 'fas fa-file-invoice-dollar', 'category' => 'Reports'],
+
+            // Admin
+            ['name' => 'tenant.admin.users.index', 'title' => 'User Management', 'description' => 'Manage users and permissions', 'icon' => 'fas fa-users-cog', 'category' => 'Admin'],
+            ['name' => 'tenant.admin.roles.index', 'title' => 'Roles & Permissions', 'description' => 'Manage roles and permissions', 'icon' => 'fas fa-user-shield', 'category' => 'Admin'],
+
+            // Dashboard
             ['name' => 'tenant.dashboard', 'title' => 'Dashboard', 'description' => 'Main dashboard overview', 'icon' => 'fas fa-tachometer-alt', 'category' => 'Dashboard'],
-            ['name' => 'tenant.reports.sales', 'title' => 'Sales Reports', 'description' => 'View detailed sales reports', 'icon' => 'fas fa-chart-pie', 'category' => 'Reports'],
         ];
 
         $matched = collect($searchableRoutes)->filter(function ($route) use ($query) {
