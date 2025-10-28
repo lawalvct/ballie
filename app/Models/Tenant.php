@@ -385,6 +385,11 @@ class Tenant extends Model
         return $this->hasMany(Voucher::class);
     }
 
+    public function banks()
+    {
+        return $this->hasMany(Bank::class);
+    }
+
     /**
      * Check if tenant owner has verified their email
      *

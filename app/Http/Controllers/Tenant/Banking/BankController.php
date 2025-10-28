@@ -94,7 +94,7 @@ class BankController extends Controller
         $validated = $request->validate([
             'bank_name' => 'required|string|max:255',
             'account_name' => 'required|string|max:255',
-            'account_number' => 'required|string|max:255|unique:banks,account_number',
+            'account_number' => 'required|string|max:255|unique:banks,account_number,NULL,id,tenant_id,' . $tenant->id,
             'account_type' => 'nullable|string|max:255',
             'branch_name' => 'nullable|string|max:255',
             'branch_code' => 'nullable|string|max:255',
@@ -221,7 +221,7 @@ class BankController extends Controller
         $validated = $request->validate([
             'bank_name' => 'required|string|max:255',
             'account_name' => 'required|string|max:255',
-            'account_number' => 'required|string|max:255|unique:banks,account_number,' . $bank->id,
+            'account_number' => 'required|string|max:255|unique:banks,account_number,' . $bank->id . ',id,tenant_id,' . $tenant->id,
             'account_type' => 'nullable|string|max:255',
             'branch_name' => 'nullable|string|max:255',
             'branch_code' => 'nullable|string|max:255',

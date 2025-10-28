@@ -252,20 +252,20 @@
             </a>
 
             <!-- Reconciliation Card -->
-            <a href="#"
-               class="action-card bg-gradient-to-br from-violet-600 to-violet-800 hover:from-violet-500 hover:to-violet-700 border border-violet-500 rounded-xl p-4 transition-all duration-300 hover:shadow-lg hover:scale-105 group">
-                <div class="flex items-center mb-3">
-                    <div class="w-10 h-10 bg-violet-500 bg-opacity-30 rounded-lg flex items-center justify-center mr-3 group-hover:scale-110 transition-transform duration-300">
-                        <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                        </svg>
-                    </div>
-                    <div>
-                        <h5 class="font-semibold text-white group-hover:text-violet-200 transition-colors duration-300">Reconciliation</h5>
-                        <p class="text-xs text-violet-200">Balance matching</p>
-                    </div>
-                </div>
-                <p class="text-xs text-violet-200">Reconcile bank statements with your records.</p>
+            <a href="{{ route('tenant.banking.reconciliations.index', ['tenant' => $tenant->slug]) }}"
+                class="action-card bg-gradient-to-br from-violet-600 to-violet-800 hover:from-violet-500 hover:to-violet-700 border border-violet-500 rounded-xl p-4 transition-all duration-300 hover:shadow-lg hover:scale-105 group">
+                 <div class="flex items-center mb-3">
+                      <div class="w-10 h-10 bg-violet-500 bg-opacity-30 rounded-lg flex items-center justify-center mr-3 group-hover:scale-110 transition-transform duration-300">
+                            <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                            </svg>
+                      </div>
+                      <div>
+                            <h5 class="font-semibold text-white group-hover:text-violet-200 transition-colors duration-300">Reconciliation</h5>
+                            <p class="text-xs text-violet-200">Balance matching</p>
+                      </div>
+                 </div>
+                 <p class="text-xs text-violet-200">Reconcile bank statements with your records.</p>
             </a>
         </div>
     </div>

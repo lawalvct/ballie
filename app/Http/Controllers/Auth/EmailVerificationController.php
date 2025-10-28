@@ -15,7 +15,7 @@ class EmailVerificationController extends Controller
     /**
      * Display the email verification notice.
      */
-    public function notice(): View
+    public function notice(): View|RedirectResponse
     {
         // If already verified, redirect to dashboard
         if (Auth::user()->hasVerifiedEmail()) {

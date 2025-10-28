@@ -18,6 +18,7 @@ use Illuminate\Validation\Rule;
 use Database\Seeders\AccountGroupSeeder;
 use Database\Seeders\VoucherTypeSeeder;
 use Database\Seeders\DefaultLedgerAccountsSeeder;
+use Database\Seeders\DefaultBanksSeeder;
 use Database\Seeders\DefaultProductCategoriesSeeder;
 use Database\Seeders\DefaultUnitsSeeder;
 
@@ -290,6 +291,24 @@ class OnboardingController extends Controller
                 throw new \Exception("No ledger accounts were seeded for tenant {$tenant->id}");
             }
 
+            // Seed Default Banks with retry mechanism
+            // This must happen AFTER ledger accounts are seeded because
+            // the Bank model's boot() method creates a linked ledger account
+            Log::info("Starting default banks seeding", [
+                'tenant_id' => $tenant->id
+            ]);
+
+            $this->retryOperation(function() use ($tenant) {
+                DefaultBanksSeeder::seedForTenant($tenant->id);
+            }, "Default banks seeding for tenant: {$tenant->id}");
+
+            // Verify default bank was seeded
+            $banksCount = \App\Models\Bank::where('tenant_id', $tenant->id)->count();
+            Log::info("Default banks seeded", [
+                'tenant_id' => $tenant->id,
+                'count' => $banksCount
+            ]);
+
             // Seed Product Categories with retry mechanism
             $this->retryOperation(function() use ($tenant) {
                 DefaultProductCategoriesSeeder::seedForTenant($tenant->id);
@@ -312,9 +331,10 @@ class OnboardingController extends Controller
                 'account_groups' => $accountGroupsCount,
                 'voucher_types' => $voucherTypesCount,
                 'ledger_accounts' => $ledgerCount,
+                'banks' => $banksCount,
                 'product_categories' => $categoriesCount,
                 'units' => $unitsCount,
-                'total' => $accountGroupsCount + $voucherTypesCount + $ledgerCount + $categoriesCount + $unitsCount
+                'total' => $accountGroupsCount + $voucherTypesCount + $ledgerCount + $banksCount + $categoriesCount + $unitsCount
             ]);
 
             // Restore original timeout

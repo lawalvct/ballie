@@ -32,17 +32,8 @@ class DefaultLedgerAccountsSeeder extends Seeder
                 'is_system_account' => true,
                 'is_active' => true,
             ],
-            [
-                'name' => 'Bank Account - Current',
-                'code' => 'BANK-001',
-                'account_group_id' => $accountGroups->get('Current Assets')?->id,
-                'account_type' => 'asset',
-                'description' => 'Primary bank current account',
-                'opening_balance' => 0,
-                'current_balance' => 0,
-                'is_system_account' => true,
-                'is_active' => true,
-            ],
+            // Note: Bank accounts are now created via the Bank model
+            // which automatically creates linked ledger accounts
             [
                 'name' => 'Petty Cash',
                 'code' => 'PETTY-001',

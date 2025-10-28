@@ -196,7 +196,7 @@ class Bank extends Model
             'opening_balance' => $this->opening_balance ?? 0,
             'current_balance' => $this->opening_balance ?? 0,
             'description' => 'Bank account: ' . $this->account_name,
-            'is_active' => $this->status === 'active',
+            'is_active' => 1,
         ]);
 
         $this->update(['ledger_account_id' => $ledgerAccount->id]);

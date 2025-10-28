@@ -26,3 +26,22 @@ if (!function_exists('tenant')) {
         return null;
     }
 }
+
+if (!function_exists('tenant_currency')) {
+    /**
+     * Get the current tenant's currency symbol.
+     *
+     * @return string
+     */
+    function tenant_currency()
+    {
+        $tenant = tenant();
+
+        if ($tenant && isset($tenant->settings['currency_symbol'])) {
+            return $tenant->settings['currency_symbol'];
+        }
+
+        // Default to Nigerian Naira symbol
+        return '₦';
+    }
+}
