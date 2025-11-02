@@ -466,9 +466,143 @@
     </div>
 </div>
 
+<!-- Quick Add Product Modal -->
+<div id="quickAddProductModal" class="fixed inset-0 z-50 hidden overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+    <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+        <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" aria-hidden="true" onclick="closeQuickAddProduct()"></div>
+        <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+
+        <div class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
+            <form id="quickAddProductForm" onsubmit="event.preventDefault(); submitQuickAddProduct();">
+                @csrf
+                <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+                    <div class="sm:flex sm:items-start">
+                        <div class="mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-green-100 sm:mx-0 sm:h-10 sm:w-10">
+                            <svg class="h-6 w-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                            </svg>
+                        </div>
+                        <div class="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left w-full">
+                            <h3 class="text-lg leading-6 font-medium text-gray-900 mb-4" id="modal-title">
+                                Quick Add Product
+                            </h3>
+
+                            <div class="space-y-4">
+                                <!-- Product Type -->
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">Product Type</label>
+                                    <div class="flex space-x-4">
+                                        <label class="flex items-center">
+                                            <input type="radio" name="type" value="item" checked class="mr-2" onchange="toggleQuickProductType()">
+                                            <span class="text-sm">Item</span>
+                                        </label>
+                                        <label class="flex items-center">
+                                            <input type="radio" name="type" value="service" class="mr-2" onchange="toggleQuickProductType()">
+                                            <span class="text-sm">Service</span>
+                                        </label>
+                                    </div>
+                                </div>
+
+                                <!-- Product Name -->
+                                <div>
+                                    <label for="quick_product_name" class="block text-sm font-medium text-gray-700 mb-1">
+                                        Product Name <span class="text-red-500">*</span>
+                                    </label>
+                                    <input type="text" name="name" id="quick_product_name" required
+                                           class="block w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-green-500 focus:border-green-500 text-sm"
+                                           placeholder="Enter product name">
+                                </div>
+
+                                <!-- SKU -->
+                                <div>
+                                    <label for="quick_product_sku" class="block text-sm font-medium text-gray-700 mb-1">
+                                        SKU (Optional)
+                                    </label>
+                                    <input type="text" name="sku" id="quick_product_sku"
+                                           class="block w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-green-500 focus:border-green-500 text-sm"
+                                           placeholder="Product code">
+                                </div>
+
+                                <!-- Sales Rate -->
+                                <div>
+                                    <label for="quick_sales_rate" class="block text-sm font-medium text-gray-700 mb-1">
+                                        Sales Rate <span class="text-red-500">*</span>
+                                    </label>
+                                    <input type="number" name="sales_rate" id="quick_sales_rate" required step="0.01" min="0"
+                                           class="block w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-green-500 focus:border-green-500 text-sm"
+                                           placeholder="0.00">
+                                </div>
+
+                                <!-- Purchase Rate -->
+                                <div>
+                                    <label for="quick_purchase_rate" class="block text-sm font-medium text-gray-700 mb-1">
+                                        Purchase Rate <span class="text-red-500">*</span>
+                                    </label>
+                                    <input type="number" name="purchase_rate" id="quick_purchase_rate" required step="0.01" min="0"
+                                           class="block w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-green-500 focus:border-green-500 text-sm"
+                                           placeholder="0.00">
+                                </div>
+
+                                <!-- Unit (for items only) -->
+                                <div id="quick_unit_section">
+                                    <label for="quick_unit" class="block text-sm font-medium text-gray-700 mb-1">
+                                        Unit <span class="text-red-500">*</span>
+                                    </label>
+                                    <select name="primary_unit_id" id="quick_unit" required
+                                            class="block w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-green-500 focus:border-green-500 text-sm">
+                                        <option value="">Select Unit</option>
+                                        @if(isset($units))
+                                            @foreach($units as $unit)
+                                                <option value="{{ $unit->id }}">{{ $unit->name }} ({{ $unit->abbreviation }})</option>
+                                            @endforeach
+                                        @endif
+                                    </select>
+                                </div>
+
+                                <!-- Opening Stock (for items only) -->
+                                <div id="quick_stock_section">
+                                    <label for="quick_opening_stock" class="block text-sm font-medium text-gray-700 mb-1">
+                                        Opening Stock
+                                    </label>
+                                    <input type="number" name="opening_stock" id="quick_opening_stock" step="0.01" min="0" value="0"
+                                           class="block w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-green-500 focus:border-green-500 text-sm"
+                                           placeholder="0.00">
+                                </div>
+
+                                <!-- Hidden fields -->
+                                <input type="hidden" name="maintain_stock" value="1">
+                                <input type="hidden" name="is_active" value="1">
+                                <input type="hidden" name="is_saleable" value="1">
+                                <input type="hidden" name="is_purchasable" value="1">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse gap-2">
+                    <button type="submit"
+                            class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-green-600 text-base font-medium text-white hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 sm:ml-3 sm:w-auto sm:text-sm">
+                        <span id="quick-product-submit-text">Create Product</span>
+                        <svg id="quick-product-submit-loading" class="hidden animate-spin ml-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                    </button>
+                    <button type="button"
+                            onclick="closeQuickAddProduct()"
+                            class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 sm:mt-0 sm:w-auto sm:text-sm">
+                        Cancel
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
 @push('scripts')
 <script>
 let currentModalType = 'customer';
+let currentProductRowIndex = null;
 
 // Quick Add Modal Functions
 function openQuickAddModal(type = 'customer') {
@@ -1192,6 +1326,145 @@ function invoiceForm() {
         }
     }
 }
+
+// Quick Add Product Functions
+function openQuickAddProduct(index) {
+    currentProductRowIndex = index;
+    document.getElementById('quickAddProductModal').classList.remove('hidden');
+    document.getElementById('quick_product_name').focus();
+}
+
+function closeQuickAddProduct() {
+    document.getElementById('quickAddProductModal').classList.add('hidden');
+    document.getElementById('quickAddProductForm').reset();
+    document.getElementById('quick-product-submit-text').textContent = 'Create Product';
+    document.getElementById('quick-product-submit-loading').classList.add('hidden');
+    toggleQuickProductType();
+    currentProductRowIndex = null;
+}
+
+function toggleQuickProductType() {
+    const isService = document.querySelector('input[name="type"]:checked').value === 'service';
+    const unitSection = document.getElementById('quick_unit_section');
+    const stockSection = document.getElementById('quick_stock_section');
+    const unitSelect = document.getElementById('quick_unit');
+
+    if (isService) {
+        unitSection.classList.add('hidden');
+        stockSection.classList.add('hidden');
+        unitSelect.required = false;
+    } else {
+        unitSection.classList.remove('hidden');
+        stockSection.classList.remove('hidden');
+        unitSelect.required = true;
+    }
+}
+
+function submitQuickAddProduct() {
+    const form = document.getElementById('quickAddProductForm');
+    const formData = new FormData(form);
+    const submitButton = form.querySelector('button[type="submit"]');
+    const submitText = document.getElementById('quick-product-submit-text');
+    const submitLoading = document.getElementById('quick-product-submit-loading');
+
+    // Validate required fields
+    const name = document.getElementById('quick_product_name').value.trim();
+    const salesRate = document.getElementById('quick_sales_rate').value;
+    const purchaseRate = document.getElementById('quick_purchase_rate').value;
+
+    if (!name) {
+        alert('Please enter product name');
+        return;
+    }
+
+    if (!salesRate || salesRate < 0) {
+        alert('Please enter valid sales rate');
+        return;
+    }
+
+    if (!purchaseRate || purchaseRate < 0) {
+        alert('Please enter valid purchase rate');
+        return;
+    }
+
+    // Show loading state
+    submitButton.disabled = true;
+    submitText.textContent = 'Creating...';
+    submitLoading.classList.remove('hidden');
+
+    // Make AJAX request
+    fetch(`{{ route('tenant.inventory.products.store', ['tenant' => $tenant->slug]) }}`, {
+        method: 'POST',
+        headers: {
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+            'Accept': 'application/json',
+        },
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Close modal
+            closeQuickAddProduct();
+
+            // Show success notification
+            showNotification('success', 'Product created successfully!');
+
+            // If we have a row index, auto-select the product
+            if (currentProductRowIndex !== null && data.product) {
+                // Trigger product selection in the invoice items component
+                setTimeout(() => {
+                    const event = new CustomEvent('product-created', {
+                        detail: {
+                            index: currentProductRowIndex,
+                            product: data.product
+                        }
+                    });
+                    window.dispatchEvent(event);
+                }, 300);
+            }
+        } else {
+            alert(data.message || 'Error creating product. Please try again.');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Error creating product. Please try again.');
+    })
+    .finally(() => {
+        submitButton.disabled = false;
+        submitText.textContent = 'Create Product';
+        submitLoading.classList.add('hidden');
+    });
+}
+
+// Listen for product created event to auto-select in invoice items
+window.addEventListener('product-created', function(e) {
+    const { index, product } = e.detail;
+
+    // Find the Alpine component and update the item
+    const invoiceItemsEl = document.querySelector('[x-data*="invoiceItems"]');
+    if (invoiceItemsEl && invoiceItemsEl.__x) {
+        const component = invoiceItemsEl.__x.$data;
+        if (component.items && component.items[index]) {
+            // Update the item with the new product
+            component.items[index] = {
+                ...component.items[index],
+                product_id: product.id,
+                name: product.name,
+                rate: product.sales_rate,
+                purchase_rate: product.purchase_rate,
+                current_stock: product.current_stock,
+                unit: product.unit_name
+            };
+
+            // Calculate amount
+            if (component.calculateAmount) {
+                component.calculateAmount(index);
+            }
+        }
+    }
+});
 </script>
 @endpush
 @endsection
