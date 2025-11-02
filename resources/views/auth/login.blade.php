@@ -42,8 +42,9 @@
     <div class="max-w-md w-full space-y-8">
         <!-- Header -->
         <div class="text-center">
-            <div class="w-16 h-16 bg-white bg-opacity-20 rounded-full flex items-center justify-center mx-auto mb-4">
-                <span class="text-white font-bold text-2xl">B'</span>
+            <div class="w-16 h-16 bg-white bg-opacity-70 rounded-full flex items-center justify-center mx-auto mb-4">
+                <img src="{{ asset('images/ballie.png') }}" alt="Ballie Logo" class="w-10 h-10" onerror="this.style.display='none'; this.nextElementSibling.style.display='inline';">
+                <span class="text-white font-bold text-2xl" style="display: none;">B'</span>
             </div>
             <h1 class="text-3xl font-bold text-white mb-2">Welcome Back</h1>
             <p class="text-gray-200">Sign in to your Ballie account</p>

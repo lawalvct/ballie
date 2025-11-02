@@ -49,7 +49,8 @@ foreach ($products as $prod) {
             'name' => $prod['name'],
             'sku' => $prod['sku'],
             'selling_price' => $prod['price'],
-            'cost_price' => $prod['cost'],
+            'sales_rate' => $prod['price'],
+            'purchase_rate' => $prod['cost'],
             'current_stock' => 100,
             'reorder_level' => 10,
             'is_active' => true,
@@ -103,6 +104,7 @@ if (!$salesVoucherType) {
         'tenant_id' => $tenantId,
         'name' => 'Sales Invoice',
         'code' => 'SALES',
+        'abbreviation' => 'SI',
         'prefix' => 'INV',
         'is_active' => true,
     ]);
@@ -131,12 +133,12 @@ try {
     foreach ($invoices as $inv) {
         $subtotal = 0;
         $costTotal = 0;
-        
+
         foreach ($inv['items'] as $item) {
             $subtotal += $item['product']->selling_price * $item['qty'];
-            $costTotal += $item['product']->cost_price * $item['qty'];
+            $costTotal += $item['product']->purchase_rate * $item['qty'];
         }
-        
+
         $voucher = Voucher::create([
             'tenant_id' => $tenantId,
             'voucher_type_id' => $salesVoucherType->id,
@@ -147,7 +149,7 @@ try {
             'status' => 'posted',
             'created_by' => 1,
         ]);
-        
+
         // Create invoice items
         foreach ($inv['items'] as $item) {
             InvoiceItem::create([
@@ -157,10 +159,10 @@ try {
                 'quantity' => $item['qty'],
                 'rate' => $item['product']->selling_price,
                 'amount' => $item['product']->selling_price * $item['qty'],
-                'purchase_rate' => $item['product']->cost_price,
+                'purchase_rate' => $item['product']->purchase_rate ?? 0,
             ]);
         }
-        
+
         // Create voucher entries (double entry)
         // Debit: Customer (AR)
         VoucherEntry::create([
@@ -170,7 +172,7 @@ try {
             'credit_amount' => 0,
             'particulars' => 'Sales to ' . $inv['customer']->company_name,
         ]);
-        
+
         // Credit: Sales
         VoucherEntry::create([
             'voucher_id' => $voucher->id,
@@ -179,7 +181,7 @@ try {
             'credit_amount' => $subtotal,
             'particulars' => 'Sales revenue',
         ]);
-        
+
         // Debit: COGS
         VoucherEntry::create([
             'voucher_id' => $voucher->id,
@@ -188,7 +190,7 @@ try {
             'credit_amount' => 0,
             'particulars' => 'Cost of goods sold',
         ]);
-        
+
         // Credit: Inventory
         VoucherEntry::create([
             'voucher_id' => $voucher->id,
@@ -197,10 +199,10 @@ try {
             'credit_amount' => $costTotal,
             'particulars' => 'Inventory reduction',
         ]);
-        
+
         echo "Created invoice: {$voucher->voucher_number} for {$inv['customer']->company_name} - ₦" . number_format($subtotal, 2) . "\n";
     }
-    
+
     DB::commit();
     echo "\n=== Test Data Generation Complete ===\n";
     echo "Products: 5\n";
