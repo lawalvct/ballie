@@ -324,7 +324,7 @@
 </div>
 
 <!-- Help Section -->
-<div class="mt-8 bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+{{-- <div class="mt-8 bg-white rounded-lg shadow-sm border border-gray-200 p-6">
     <div class="flex items-start">
         <div class="w-10 h-10 bg-brand-teal bg-opacity-10 rounded-lg flex items-center justify-center mr-4 flex-shrink-0">
             <svg class="w-5 h-5 text-brand-teal" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -350,7 +350,7 @@
             </div>
         </div>
     </div>
-</div>
+</div> --}}
 @endsection
 
 @push('scripts')

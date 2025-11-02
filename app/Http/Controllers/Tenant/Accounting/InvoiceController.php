@@ -13,6 +13,7 @@ use App\Models\LedgerAccount;
 use App\Models\Tenant;
 use App\Models\AccountGroup;
 use App\Models\StockMovement;
+use App\Models\Unit;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
@@ -131,6 +132,12 @@ class InvoiceController extends Controller
         // Get default sales voucher type
         $selectedType = $voucherTypes->where('code', 'SALES')->first() ?? $voucherTypes->first();
 
+        // Get units for quick add product
+        $units = Unit::where('tenant_id', $tenant->id)
+            ->where('is_active', true)
+            ->orderBy('name')
+            ->get();
+
         return view('tenant.accounting.invoices.create', compact(
             'tenant',
             'voucherTypes',
@@ -138,7 +145,8 @@ class InvoiceController extends Controller
             'customers',
             'vendors',
             'ledgerAccounts',
-            'selectedType'
+            'selectedType',
+            'units'
         ));
     }
 

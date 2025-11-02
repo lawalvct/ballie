@@ -38,7 +38,7 @@
 </div>
 
 <!-- Quick Start Cards -->
-<div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden mb-8">
+{{-- <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden mb-8">
     <div class="p-6 md:p-8">
         <h2 class="text-xl font-bold text-gray-900 mb-6">Quick Start Actions</h2>
 
@@ -86,10 +86,10 @@
             </div>
         </div>
     </div>
-</div>
+</div> --}}
 
 <!-- Additional Resources -->
-<div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden mb-8">
+{{-- <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden mb-8">
     <div class="p-6 md:p-8">
         <h2 class="text-xl font-bold text-gray-900 mb-6">Additional Resources</h2>
 
@@ -159,7 +159,7 @@
             </div>
         </div>
     </div>
-</div>
+</div> --}}
 
 <!-- Go to Dashboard Button -->
 <div class="text-center mt-12">

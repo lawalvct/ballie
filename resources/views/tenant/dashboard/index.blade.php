@@ -1,8 +1,16 @@
 @extends('layouts.tenant')
 
 @section('title', 'Reports & Analytics')
-@section('page-title', 'Reports & Analytics')
-@section('page-description', 'View comprehensive business reports and analytics')
+
+@section('page-title')
+        <span class="md:hidden">Dashboard</span>
+        <span class="hidden md:inline">Reports & Analytics</span>
+@endsection
+@section('page-description')
+  <span class="hidden md:inline">
+     View comprehensive business reports and analytics
+  </span>
+  @endsection
 
 @push('styles')
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>

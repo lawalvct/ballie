@@ -153,7 +153,7 @@ class ProductController extends Controller
 
     public function store(Request $request, Tenant $tenant)
     {
-        $request->validate([
+        $rules = [
             'type' => 'required|in:item,service',
             'name' => 'required|string|max:255',
             'sku' => 'nullable|string|max:100|unique:products,sku,NULL,id,tenant_id,' . $tenant->id,
@@ -164,7 +164,7 @@ class ProductController extends Controller
             'purchase_rate' => 'required|numeric|min:0',
             'sales_rate' => 'required|numeric|min:0',
             'mrp' => 'nullable|numeric|min:0',
-            'primary_unit_id' => 'required|exists:units,id',
+            'primary_unit_id' => $request->type === 'service' ? 'nullable|exists:units,id' : 'required|exists:units,id',
             'opening_stock' => 'nullable|numeric|min:0',
             'reorder_level' => 'nullable|numeric|min:0',
             'tax_rate' => 'nullable|numeric|min:0|max:100',
@@ -174,7 +174,9 @@ class ProductController extends Controller
             'sales_account_id' => 'nullable|exists:ledger_accounts,id',
             'purchase_account_id' => 'nullable|exists:ledger_accounts,id',
             'opening_stock_date' => 'nullable|date',
-        ]);
+        ];
+
+        $request->validate($rules);
 
         try {
             DB::beginTransaction();
@@ -231,6 +233,23 @@ class ProductController extends Controller
 
             DB::commit();
 
+            // Check if it's an AJAX request
+            if ($request->wantsJson() || $request->ajax()) {
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Product created successfully!',
+                    'product' => [
+                        'id' => $product->id,
+                        'name' => $product->name,
+                        'sku' => $product->sku,
+                        'sales_rate' => $product->sales_rate,
+                        'purchase_rate' => $product->purchase_rate,
+                        'current_stock' => $product->getStockAsOfDate(now()->toDateString()),
+                        'unit_name' => $product->primaryUnit ? $product->primaryUnit->abbreviation : '',
+                    ]
+                ]);
+            }
+
             return redirect()
                 ->route('tenant.inventory.products.index', ['tenant' => $tenant->slug])
                 ->with('success', 'Product created successfully!' . ($openingStock > 0 ? ' Opening stock of ' . $openingStock . ' has been recorded.' : ''));
@@ -238,6 +257,14 @@ class ProductController extends Controller
         } catch (\Exception $e) {
             DB::rollBack();
             Log::error('Error creating product: ' . $e->getMessage());
+
+            // Check if it's an AJAX request
+            if ($request->wantsJson() || $request->ajax()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Failed to create product: ' . $e->getMessage()
+                ], 422);
+            }
 
             return redirect()
                 ->back()
