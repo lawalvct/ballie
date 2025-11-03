@@ -97,7 +97,7 @@
 
     <div class="content">
         <div class="message">
-            {{ $message }}
+            {{ $emailMessage }}
         </div>
 
         <div class="invoice-details">

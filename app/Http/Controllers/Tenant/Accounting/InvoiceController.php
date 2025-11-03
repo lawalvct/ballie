@@ -586,12 +586,12 @@ class InvoiceController extends Controller
         ]);
 
         return view('tenant.accounting.invoices.show', compact(
-            'tenant', 
-            'invoice', 
-            'bankAccounts', 
-            'payments', 
-            'totalPaid', 
-            'balanceDue', 
+            'tenant',
+            'invoice',
+            'bankAccounts',
+            'payments',
+            'totalPaid',
+            'balanceDue',
             'paymentStatus',
             'paymentPercentage',
             'customer',
@@ -1308,7 +1308,7 @@ class InvoiceController extends Controller
             Mail::send('emails.invoice', [
                 'invoice' => $invoice,
                 'tenant' => $tenant,
-                'message' => $request->message,
+                'emailMessage' => $request->message,
             ], function ($mail) use ($request, $invoice, $pdf) {
                 $mail->to($request->to)
                      ->subject($request->subject)
