@@ -463,6 +463,13 @@ class InvoiceController extends Controller
                 'message' => $message
             ]);
 
+            // If user chose to Save, Post and open a new Sales invoice, redirect to create page with type=sv
+            if ($request->action === 'save_and_post_new_sales') {
+                return redirect()
+                    ->route('tenant.accounting.invoices.create', ['tenant' => $tenant->slug, 'type' => 'sv'])
+                    ->with('success', $message);
+            }
+
             return redirect()
                 ->route('tenant.accounting.invoices.show', ['tenant' => $tenant->slug, 'invoice' => $voucher->id])
                 ->with('success', $message);
