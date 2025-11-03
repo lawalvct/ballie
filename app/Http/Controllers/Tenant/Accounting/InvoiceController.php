@@ -296,6 +296,52 @@ class InvoiceController extends Controller
                 }
             }
 
+            // Process VAT if enabled
+            if ($request->has('vat_enabled') && $request->vat_enabled == '1') {
+                $vatAmount = (float) $request->vat_amount;
+                $vatAppliesTo = $request->input('vat_applies_to', 'items_only');
+
+                if ($vatAmount > 0) {
+                    // Determine VAT account based on invoice type
+                    $isSales = $voucherType->inventory_effect === 'decrease';
+                    $vatAccountCode = $isSales ? 'VAT-OUT-001' : 'VAT-IN-001';
+
+                    // Get VAT ledger account
+                    $vatAccount = LedgerAccount::where('tenant_id', $tenant->id)
+                        ->where('code', $vatAccountCode)
+                        ->first();
+
+                    if ($vatAccount) {
+                        $totalAmount += $vatAmount;
+
+                        // Create descriptive narration based on what VAT applies to
+                        $narration = $vatAppliesTo === 'items_only'
+                            ? 'VAT @ 7.5% (on items)'
+                            : 'VAT @ 7.5% (on items + charges)';
+
+                        $additionalLedgerAccounts[] = [
+                            'ledger_account_id' => $vatAccount->id,
+                            'amount' => $vatAmount,
+                            'narration' => $narration
+                        ];
+
+                        Log::info('VAT Added', [
+                            'vat_account' => $vatAccount->name,
+                            'vat_account_code' => $vatAccountCode,
+                            'vat_amount' => $vatAmount,
+                            'vat_applies_to' => $vatAppliesTo,
+                            'is_sales' => $isSales,
+                            'running_total' => $totalAmount
+                        ]);
+                    } else {
+                        Log::warning('VAT Account Not Found', [
+                            'vat_account_code' => $vatAccountCode,
+                            'tenant_id' => $tenant->id
+                        ]);
+                    }
+                }
+            }
+
             Log::info('All Items Processed', [
                 'products_total' => array_sum(array_column($inventoryItems, 'amount')),
                 'ledger_accounts_total' => array_sum(array_column($additionalLedgerAccounts, 'amount')),

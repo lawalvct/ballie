@@ -738,6 +738,21 @@ Route::prefix('ledger-accounts')->name('ledger-accounts.')->group(function () {
             Route::get('/bin-card', [\App\Http\Controllers\Tenant\Reports\InventoryReportsController::class, 'binCard'])->name('bin-card');
         });
 
+        // Statutory & Tax Management Module
+        Route::prefix('statutory')->name('tenant.statutory.')->group(function () {
+            Route::get('/', [\App\Http\Controllers\Tenant\StatutoryController::class, 'index'])->name('index');
+
+            // VAT Management
+            Route::get('/vat/dashboard', [\App\Http\Controllers\Tenant\StatutoryController::class, 'vatDashboard'])->name('vat.dashboard');
+            Route::get('/vat/output', [\App\Http\Controllers\Tenant\StatutoryController::class, 'vatOutput'])->name('vat.output');
+            Route::get('/vat/input', [\App\Http\Controllers\Tenant\StatutoryController::class, 'vatInput'])->name('vat.input');
+            Route::get('/vat/report', [\App\Http\Controllers\Tenant\StatutoryController::class, 'vatReport'])->name('vat.report');
+
+            // Tax Settings
+            Route::get('/settings', [\App\Http\Controllers\Tenant\StatutoryController::class, 'settings'])->name('settings');
+            Route::put('/settings', [\App\Http\Controllers\Tenant\StatutoryController::class, 'updateSettings'])->name('settings.update');
+        });
+
         // Settings & Configuration Module
         Route::prefix('settings')->name('tenant.settings.')->group(function () {
             Route::get('/', [SettingsController::class, 'index'])->name('index');

@@ -284,6 +284,54 @@
                         <span class="text-xs md:text-sm font-medium text-gray-700">Additional Charges:</span>
                         <span class="text-xs md:text-sm font-medium text-gray-900">₦<span x-text="formatNumber(ledgerAccountsTotal)"></span></span>
                     </div>
+
+                    <!-- VAT Section -->
+                    <div class="border-t border-gray-200 pt-3 mt-3">
+                        <div class="flex items-center justify-between mb-2">
+                            <label class="flex items-center cursor-pointer">
+                                <input type="checkbox"
+                                       x-model="vatEnabled"
+                                       @change="updateTotals()"
+                                       class="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded">
+                                <span class="ml-2 text-xs md:text-sm font-medium text-gray-700">Add VAT (7.5%)</span>
+                            </label>
+                            <span x-show="vatEnabled" class="text-xs md:text-sm font-medium text-gray-900">
+                                ₦<span x-text="formatNumber(vatAmount)"></span>
+                            </span>
+                        </div>
+
+                        <!-- VAT Calculation Options -->
+                        <div x-show="vatEnabled" class="mt-3 space-y-2">
+                            <label class="text-xs font-medium text-gray-700">VAT applies to:</label>
+                            <div class="flex flex-col sm:flex-row gap-2">
+                                <label class="flex items-center cursor-pointer">
+                                    <input type="radio"
+                                           x-model="vatAppliesTo"
+                                           value="items_only"
+                                           @change="updateTotals()"
+                                           class="h-3 w-3 text-primary-600 focus:ring-primary-500 border-gray-300">
+                                    <span class="ml-2 text-xs text-gray-700">Items only</span>
+                                </label>
+                                <label class="flex items-center cursor-pointer">
+                                    <input type="radio"
+                                           x-model="vatAppliesTo"
+                                           value="items_and_charges"
+                                           @change="updateTotals()"
+                                           class="h-3 w-3 text-primary-600 focus:ring-primary-500 border-gray-300">
+                                    <span class="ml-2 text-xs text-gray-700">Items + Additional Charges</span>
+                                </label>
+                            </div>
+                            <p class="text-xs text-gray-500 italic">
+                                <span x-show="vatAppliesTo === 'items_only'">VAT calculated on products subtotal (₦<span x-text="formatNumber(totalAmount)"></span>)</span>
+                                <span x-show="vatAppliesTo === 'items_and_charges'">VAT calculated on products + charges (₦<span x-text="formatNumber(totalAmount + ledgerAccountsTotal)"></span>)</span>
+                            </p>
+                        </div>
+
+                        <p class="text-xs text-gray-500 mt-2" x-show="vatEnabled">
+                            VAT will be automatically posted to <span x-text="isPurchaseInvoice() ? 'VAT Input' : 'VAT Output'"></span> account
+                        </p>
+                    </div>
+
                     <div class="flex justify-between items-center py-2 md:py-3 border-t border-gray-300 mt-2">
                         <span class="text-sm md:text-base font-bold text-gray-900">Grand Total:</span>
                         <span class="text-base md:text-lg font-bold text-gray-900">₦<span x-text="formatNumber(grandTotal)"></span></span>

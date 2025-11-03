@@ -268,6 +268,11 @@
         <!-- Inventory Items Section -->
         @include('tenant.accounting.invoices.partials.invoice-items')
 
+        <!-- Hidden VAT Inputs -->
+        <input type="hidden" name="vat_enabled" x-model="vatEnabled" value="0">
+        <input type="hidden" name="vat_amount" x-bind:value="vatAmount.toFixed(2)">
+        <input type="hidden" name="vat_applies_to" x-model="vatAppliesTo">
+
         <!-- Submit Buttons -->
         <div class="bg-white shadow-sm rounded-lg border border-gray-200">
             <div class="px-4 md:px-6 py-4">
@@ -902,6 +907,9 @@ window.invoiceItems = function() {
             }
         ],
         ledgerAccounts: [],
+        vatEnabled: false,
+        vatRate: 0.075, // 7.5%
+        vatAppliesTo: 'items_only', // 'items_only' or 'items_and_charges'
         _updateTimeout: null,
 
         get totalAmount() {
@@ -916,8 +924,20 @@ window.invoiceItems = function() {
             }, 0);
         },
 
+        get vatAmount() {
+            if (!this.vatEnabled) return 0;
+            // VAT calculation based on user choice
+            if (this.vatAppliesTo === 'items_only') {
+                // VAT only on products
+                return this.totalAmount * this.vatRate;
+            } else {
+                // VAT on products + additional charges
+                return (this.totalAmount + this.ledgerAccountsTotal) * this.vatRate;
+            }
+        },
+
         get grandTotal() {
-            return this.totalAmount + this.ledgerAccountsTotal;
+            return this.totalAmount + this.ledgerAccountsTotal + this.vatAmount;
         },
 
         get hasStockWarnings() {
