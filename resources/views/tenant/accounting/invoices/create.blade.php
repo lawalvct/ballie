@@ -119,14 +119,19 @@
                     <!-- Invoice Date -->
                     <div>
                         <label for="voucher_date" class="block text-sm font-medium text-gray-700 mb-2">
-                            Invoice Date <span class="text-red-500">*</span>
+                            Invoice Date <span class="text-red-500">*</span> <span x-text="dayName" class="ml-2 text-sm text-gray-600 w-24"></span>
                         </label>
-                        <input type="date"
-                               name="voucher_date"
-                               id="voucher_date"
-                               value="{{ old('voucher_date', date('Y-m-d')) }}"
-                               class="block w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-primary-500 focus:border-primary-500 @error('voucher_date') border-red-300 @enderror"
-                               required>
+                        <div class="flex items-center">
+                            <input type="date"
+                                   name="voucher_date"
+                                   id="voucher_date"
+                                   value="{{ old('voucher_date', date('Y-m-d')) }}"
+                                   x-model="voucherDate"
+                                   @change="updateDayName()"
+                                   class="block w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-primary-500 focus:border-primary-500 @error('voucher_date') border-red-300 @enderror"
+                                   required>
+
+                        </div>
                         @error('voucher_date')
                             <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                         @enderror
@@ -267,11 +272,6 @@
 
         <!-- Inventory Items Section -->
         @include('tenant.accounting.invoices.partials.invoice-items')
-
-        <!-- Hidden VAT Inputs -->
-        <input type="hidden" name="vat_enabled" x-model="vatEnabled" value="0">
-        <input type="hidden" name="vat_amount" x-bind:value="vatAmount.toFixed(2)">
-        <input type="hidden" name="vat_applies_to" x-model="vatAppliesTo">
 
         <!-- Submit Buttons -->
         <div class="bg-white shadow-sm rounded-lg border border-gray-200">
@@ -1044,6 +1044,9 @@ window.invoiceItems = function() {
         },
 
         init() {
+            this.$watch('vatEnabled', () => this.debouncedUpdateTotals());
+            this.$watch('vatAppliesTo', () => this.debouncedUpdateTotals());
+
             console.log('✅ Invoice items component initialized');
         }
     }
@@ -1254,12 +1257,27 @@ function invoiceForm() {
         voucherTypes: @json($voucherTypes->keyBy('id')),
         totalAmount: 0,
         _eventListenersAdded: false,
+        voucherDate: '{{ old('voucher_date', date('Y-m-d')) }}',
+        dayName: '',
 
         init() {
             this.handleUrlParameters();
             this.updateVoucherType();
             this.setupEventListeners();
+            this.updateDayName(); // Set initial day name
             console.log('✅ Invoice form initialized');
+        },
+
+        updateDayName() {
+            if (this.voucherDate) {
+                const date = new Date(this.voucherDate);
+                // Adjust for timezone offset to prevent off-by-one day errors
+                const timezoneOffset = date.getTimezoneOffset() * 60000;
+                const adjustedDate = new Date(date.getTime() + timezoneOffset);
+                this.dayName = adjustedDate.toLocaleDateString('en-US', { weekday: 'long' });
+            } else {
+                this.dayName = '';
+            }
         },
 
         setupEventListeners() {

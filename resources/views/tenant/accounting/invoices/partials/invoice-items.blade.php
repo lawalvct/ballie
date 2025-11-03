@@ -289,10 +289,9 @@
                     <div class="border-t border-gray-200 pt-3 mt-3">
                         <div class="flex items-center justify-between mb-2">
                             <label class="flex items-center cursor-pointer">
-                                <input type="checkbox"
-                                       x-model="vatEnabled"
-                                       @change="updateTotals()"
-                                       class="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded">
+                                    <input type="checkbox"
+                                           x-model="vatEnabled"
+                                           class="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded">
                                 <span class="ml-2 text-xs md:text-sm font-medium text-gray-700">Add VAT (7.5%)</span>
                             </label>
                             <span x-show="vatEnabled" class="text-xs md:text-sm font-medium text-gray-900">
@@ -308,7 +307,6 @@
                                     <input type="radio"
                                            x-model="vatAppliesTo"
                                            value="items_only"
-                                           @change="updateTotals()"
                                            class="h-3 w-3 text-primary-600 focus:ring-primary-500 border-gray-300">
                                     <span class="ml-2 text-xs text-gray-700">Items only</span>
                                 </label>
@@ -316,7 +314,6 @@
                                     <input type="radio"
                                            x-model="vatAppliesTo"
                                            value="items_and_charges"
-                                           @change="updateTotals()"
                                            class="h-3 w-3 text-primary-600 focus:ring-primary-500 border-gray-300">
                                     <span class="ml-2 text-xs text-gray-700">Items + Additional Charges</span>
                                 </label>
@@ -357,6 +354,9 @@
             </div>
         </div>
     </div>
-</div>
 
-<!-- Invoice Items JavaScript is in the main create.blade.php file -->
+    <!-- Hidden VAT Inputs -->
+    <input type="hidden" name="vat_enabled" x-bind:value="vatEnabled ? 1 : 0">
+    <input type="hidden" name="vat_amount" x-bind:value="vatAmount.toFixed(2)">
+    <input type="hidden" name="vat_applies_to" x-bind:value="vatAppliesTo">
+</div>

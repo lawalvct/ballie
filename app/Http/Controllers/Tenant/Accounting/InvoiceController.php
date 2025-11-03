@@ -493,7 +493,7 @@ class InvoiceController extends Controller
             abort(404);
         }
 
-        $invoice->load(['voucherType', 'entries.ledgerAccount', 'createdBy', 'postedBy', 'items']);
+        $invoice->load(['voucherType', 'entries.ledgerAccount.accountGroup', 'createdBy', 'postedBy', 'items']);
 
         // Get bank accounts for receipt voucher posting
         $bankAccounts = LedgerAccount::where('tenant_id', $tenant->id)
@@ -527,6 +527,54 @@ class InvoiceController extends Controller
         $totalPaid = $payments->sum('total_amount');
         $balanceDue = $invoice->total_amount - $totalPaid;
 
+        // Determine Payment Status
+        $paymentStatus = '';
+        $paymentPercentage = 0;
+
+        if ($invoice->total_amount > 0) {
+            if ($balanceDue <= 0) {
+                $paymentStatus = 'Paid';
+                $paymentPercentage = 100;
+            } elseif ($totalPaid > 0) {
+                $paymentStatus = 'Partially Paid';
+                $paymentPercentage = ($totalPaid / $invoice->total_amount) * 100;
+            } else {
+                $paymentStatus = 'Unpaid';
+            }
+        } else {
+            $paymentStatus = 'Paid';
+            $paymentPercentage = 100;
+        }
+
+        // Get customer info
+        $customer = null;
+        $customerLedger = null;
+
+        // Find the ledger account associated with Accounts Receivable or Payable for this voucher
+        $partyEntry = $invoice->entries->first(function ($entry) {
+            return in_array($entry->ledgerAccount->accountGroup->code, ['AR', 'AP']);
+        });
+
+        if ($partyEntry) {
+            $customerLedger = $partyEntry->ledgerAccount;
+            // Determine if it's a customer or vendor and fetch the model
+            if ($partyEntry->ledgerAccount->accountGroup->code === 'AR') {
+                $customer = Customer::where('ledger_account_id', $customerLedger->id)->first();
+            } elseif ($partyEntry->ledgerAccount->accountGroup->code === 'AP') {
+                $customer = Vendor::where('ledger_account_id', $customerLedger->id)->first();
+            }
+
+            // Fallback if no model is found
+            if (!$customer) {
+                $customer = (object) [
+                    'display_name' => $customerLedger->name,
+                    'email' => $customerLedger->email,
+                    'phone' => $customerLedger->phone,
+                    'address_line1' => $customerLedger->address, // Assuming address is in a single field
+                ];
+            }
+        }
+
         Log::info('Found bank accounts and payments for invoice', [
             'tenant_id' => $tenant->id,
             'invoice_id' => $invoice->id,
@@ -537,7 +585,18 @@ class InvoiceController extends Controller
             'balance_due' => $balanceDue
         ]);
 
-        return view('tenant.accounting.invoices.show', compact('tenant', 'invoice', 'bankAccounts', 'payments', 'totalPaid', 'balanceDue'));
+        return view('tenant.accounting.invoices.show', compact(
+            'tenant', 
+            'invoice', 
+            'bankAccounts', 
+            'payments', 
+            'totalPaid', 
+            'balanceDue', 
+            'paymentStatus',
+            'paymentPercentage',
+            'customer',
+            'customerLedger'
+        ));
     }
 
     public function edit(Tenant $tenant, Voucher $invoice)
