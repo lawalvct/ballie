@@ -1,13 +1,13 @@
 @extends('layouts.tenant')
 
-@section('title', 'Invoice ' . $invoice->getDisplayNumber())
+@section('title', 'Invoice ' . ($invoice->voucherType->prefix ?? '') . $invoice->voucher_number)
 
 @php
     $partyType = ($invoice->voucherType->inventory_effect === 'increase') ? 'Vendor' : 'Customer';
 @endphp
 
 @section('page-title')
-    Invoice {{ $invoice->getDisplayNumber() }}
+    Invoice {{ $invoice->voucherType->prefix ?? '' }}{{ $invoice->voucher_number }}
 @endsection
 
 @section('page-description')
@@ -91,8 +91,63 @@
                             <td colspan="4" class="px-6 py-3 text-right text-sm font-medium text-gray-700">Subtotal:</td>
                             <td class="px-6 py-3 whitespace-nowrap text-sm font-semibold text-gray-900 text-right">₦{{ number_format($invoice->items->sum('amount'), 2) }}</td>
                         </tr>
-                        <!-- You can add rows for VAT, other charges here if they are in the entries -->
+
+                        @php
+                            // Get VAT and additional charges from voucher entries
+                            $vatEntries = $invoice->entries->filter(function($entry) {
+                                return str_contains(strtolower($entry->ledgerAccount->name ?? ''), 'vat') ||
+                                       in_array($entry->ledgerAccount->code ?? '', ['VAT-OUT-001', 'VAT-IN-001']);
+                            });
+
+                            $additionalEntries = $invoice->entries->filter(function($entry) use ($invoice) {
+                                // Exclude customer/vendor accounts (AR/AP) and product accounts and VAT accounts
+                                $excludeGroups = ['AR', 'AP'];
+                                $isVat = str_contains(strtolower($entry->ledgerAccount->name ?? ''), 'vat') ||
+                                        in_array($entry->ledgerAccount->code ?? '', ['VAT-OUT-001', 'VAT-IN-001']);
+
+                                return !in_array($entry->ledgerAccount->accountGroup->code ?? '', $excludeGroups) &&
+                                       !$isVat &&
+                                       ($entry->credit_amount > 0 && $invoice->voucherType->inventory_effect === 'decrease') || // Sales: credit entries are expenses/charges
+                                       ($entry->debit_amount > 0 && $invoice->voucherType->inventory_effect === 'increase'); // Purchase: debit entries are expenses/charges
+                            });
+
+                            // Filter out product/inventory accounts by checking if they have corresponding items
+                            $productAccountIds = $invoice->items->map(function($item) use ($invoice) {
+                                $product = \App\Models\Product::find($item->product_id);
+                                return $invoice->voucherType->inventory_effect === 'decrease' ?
+                                       $product?->sales_account_id : $product?->purchase_account_id;
+                            })->filter()->unique();
+
+                            $additionalEntries = $additionalEntries->filter(function($entry) use ($productAccountIds) {
+                                return !$productAccountIds->contains($entry->ledger_account_id);
+                            });
+                        @endphp
+
+                        @foreach($additionalEntries as $entry)
                         <tr>
+                            <td colspan="4" class="px-6 py-2 text-right text-sm text-gray-600">{{ $entry->ledgerAccount->name }}:</td>
+                            <td class="px-6 py-2 whitespace-nowrap text-sm text-gray-900 text-right">
+                                ₦{{ number_format($entry->credit_amount > 0 ? $entry->credit_amount : $entry->debit_amount, 2) }}
+                            </td>
+                        </tr>
+                        @endforeach
+
+                        @foreach($vatEntries as $entry)
+                        <tr>
+                            <td colspan="4" class="px-6 py-2 text-right text-sm text-gray-600">
+                                @if($entry->narration && str_contains($entry->narration, 'VAT'))
+                                    {{ $entry->narration }}
+                                @else
+                                    VAT (7.5%)
+                                @endif:
+                            </td>
+                            <td class="px-6 py-2 whitespace-nowrap text-sm text-gray-900 text-right">
+                                ₦{{ number_format($entry->credit_amount > 0 ? $entry->credit_amount : $entry->debit_amount, 2) }}
+                            </td>
+                        </tr>
+                        @endforeach
+
+                        <tr class="border-t border-gray-300">
                             <td colspan="4" class="px-6 py-4 text-right text-sm font-bold text-gray-900">Total:</td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm font-bold text-gray-900 text-right">₦{{ number_format($invoice->total_amount, 2) }}</td>
                         </tr>
@@ -163,7 +218,7 @@
 
     <!-- Right Column (Status & Actions) -->
     <div class="space-y-6 lg:sticky lg:top-6">
-        
+
         <!-- Payment Status Card -->
         <div class="bg-white rounded-lg shadow-sm border border-gray-200">
             <div class="px-6 py-4 border-b border-gray-200">
@@ -171,20 +226,22 @@
             </div>
             <div class="p-6 space-y-4">
                 @php
-                    $statusColor = 'gray';
-                    if ($paymentStatus === 'Paid') $statusColor = 'green';
-                    if ($paymentStatus === 'Partially Paid') $statusColor = 'yellow';
-                    if ($paymentStatus === 'Unpaid') $statusColor = 'red';
+                    $statusColors = match($paymentStatus) {
+                        'Paid' => ['bg' => 'bg-green-600', 'text' => 'text-green-600'],
+                        'Partially Paid' => ['bg' => 'bg-yellow-500', 'text' => 'text-yellow-600'],
+                        'Unpaid' => ['bg' => 'bg-red-600', 'text' => 'text-red-600'],
+                        default => ['bg' => 'bg-gray-600', 'text' => 'text-gray-600'],
+                    };
                 @endphp
                 <div class="text-center">
                     <div class="text-4xl font-bold text-gray-800">₦{{ number_format($balanceDue, 2) }}</div>
                     <div class="text-sm font-medium text-gray-500">Balance Due</div>
                 </div>
                 <div class="w-full bg-gray-200 rounded-full h-2.5">
-                    <div class="bg-{{$statusColor}}-600 h-2.5 rounded-full" style="width: {{ $paymentPercentage }}%"></div>
+                    <div class="{{ $statusColors['bg'] }} h-2.5 rounded-full" style="width: {{ $paymentPercentage }}%"></div>
                 </div>
                 <div class="flex justify-between text-sm font-medium">
-                    <span class="text-{{$statusColor}}-600">{{ $paymentStatus }}</span>
+                    <span class="{{ $statusColors['text'] }}">{{ $paymentStatus }}</span>
                     <span class="text-gray-500">₦{{ number_format($totalPaid, 2) }} of ₦{{ number_format($invoice->total_amount, 2) }}</span>
                 </div>
             </div>
@@ -207,7 +264,7 @@
                     <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
                     Email Invoice
                 </button>
-                
+
                 <div class="flex space-x-3">
                     <a href="{{ route('tenant.accounting.invoices.print', ['tenant' => $tenant->slug, 'invoice' => $invoice->id]) }}" target="_blank" class="flex-1 inline-flex items-center justify-center px-4 py-2 bg-gray-600 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500">
                         <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>
@@ -225,7 +282,7 @@
                             @csrf
                             <button type="submit" class="w-full inline-flex items-center justify-center px-4 py-2 bg-green-500 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white hover:bg-green-600">Post Invoice</button>
                         </form>
-                        <a href="#" class="mt-2 w-full text-center inline-block text-sm text-gray-600 hover:text-gray-900">Edit Invoice</a>
+                        <a href="{{ route('tenant.accounting.invoices.edit', ['tenant' => $tenant->slug, 'invoice' => $invoice->id]) }}" class="mt-2 w-full text-center inline-block text-sm text-gray-600 hover:text-gray-900">Edit Invoice</a>
                     @elseif ($invoice->status === 'posted')
                         <form action="{{ route('tenant.accounting.invoices.unpost', ['tenant' => $tenant->slug, 'invoice' => $invoice->id]) }}" method="POST" class="w-full">
                             @csrf
@@ -265,7 +322,14 @@
                  <div class="flex justify-between">
                     <dt class="text-sm font-medium text-gray-500">Status</dt>
                     <dd class="text-sm text-gray-900">
-                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-{{$statusColor}}-100 text-{{$statusColor}}-800">
+                        @php
+                            $invoiceStatusColors = match($invoice->status) {
+                                'posted' => ['bg' => 'bg-green-100', 'text' => 'text-green-800'],
+                                'draft' => ['bg' => 'bg-yellow-100', 'text' => 'text-yellow-800'],
+                                default => ['bg' => 'bg-gray-100', 'text' => 'text-gray-800'],
+                            };
+                        @endphp
+                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {{ $invoiceStatusColors['bg'] }} {{ $invoiceStatusColors['text'] }}">
                             {{ ucfirst($invoice->status) }}
                         </span>
                     </dd>
@@ -293,10 +357,10 @@ function invoiceShow() {
 
         emailForm: {
             to: '{{ $customer->email ?? "" }}',
-            subject: 'Invoice {{ $invoice->getDisplayNumber() }} from {{ $tenant->name }}',
+            subject: 'Invoice {{ ($invoice->voucherType->prefix ?? '') . $invoice->voucher_number }} from {{ $tenant->name }}',
             message: `Dear {{ $customer->display_name ?? 'Customer' }},
 
-Please find attached your invoice ({{ $invoice->getDisplayNumber() }}) for the amount of ₦{{ number_format($invoice->total_amount, 2) }}.
+Please find attached your invoice ({{ ($invoice->voucherType->prefix ?? '') . $invoice->voucher_number }}) for the amount of ₦{{ number_format($invoice->total_amount, 2) }}.
 
 Thank you for your business!
 
@@ -308,7 +372,7 @@ Best regards,
             amount: '{{ $balanceDue > 0 ? $balanceDue : "" }}',
             bank_account_id: '',
             reference: '',
-            notes: 'Payment for invoice {{ $invoice->getDisplayNumber() }}'
+            notes: 'Payment for invoice {{ ($invoice->voucherType->prefix ?? '') . $invoice->voucher_number }}'
         },
 
         openEmailModal() { this.showEmailModal = true; },
@@ -317,10 +381,49 @@ Best regards,
         closeReceiptModal() { this.showReceiptModal = false; },
 
         async sendEmail() {
-            // ... existing implementation ...
+            try {
+                const response = await fetch('{{ route("tenant.accounting.invoices.email", ["tenant" => $tenant->slug, "invoice" => $invoice->id]) }}', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                    },
+                    body: JSON.stringify(this.emailForm)
+                });
+
+                if (response.ok) {
+                    this.closeEmailModal();
+                    alert('Invoice sent successfully!');
+                } else {
+                    const error = await response.json();
+                    alert('Error sending email: ' + (error.message || 'Unknown error'));
+                }
+            } catch (error) {
+                alert('Error sending email: ' + error.message);
+            }
         },
+
         async recordPayment() {
-            // ... existing implementation ...
+            try {
+                const response = await fetch('{{ route("tenant.accounting.invoices.record-payment", ["tenant" => $tenant->slug, "invoice" => $invoice->id]) }}', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                    },
+                    body: JSON.stringify(this.receiptForm)
+                });
+
+                if (response.ok) {
+                    this.closeReceiptModal();
+                    location.reload(); // Reload to show the new payment
+                } else {
+                    const error = await response.json();
+                    alert('Error recording payment: ' + (error.message || 'Unknown error'));
+                }
+            } catch (error) {
+                alert('Error recording payment: ' + error.message);
+            }
         },
         downloadPDF() {
             window.open('{{ route("tenant.accounting.invoices.pdf", ["tenant" => $tenant->slug, "invoice" => $invoice->id]) }}', '_blank');

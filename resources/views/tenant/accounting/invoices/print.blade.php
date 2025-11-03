@@ -1,3 +1,89 @@
+@php
+// Number to words function for amount in words - must be defined before use
+if (!function_exists('numberToWords')) {
+    function numberToWords($number) {
+        $ones = array(
+            '', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine',
+            'ten', 'eleven', 'twelve', 'thirteen', 'fourteen', 'fifteen', 'sixteen',
+            'seventeen', 'eighteen', 'nineteen'
+        );
+
+        $tens = array(
+            '', '', 'twenty', 'thirty', 'forty', 'fifty', 'sixty', 'seventy', 'eighty', 'ninety'
+        );
+
+        $scales = array('', 'thousand', 'million', 'billion', 'trillion');
+
+        if ($number == 0) return 'zero';
+
+        $number = number_format($number, 2, '.', '');
+        list($integer, $fraction) = explode('.', $number);
+
+        $words = '';
+
+        if ($integer > 0) {
+            $words .= convertIntegerToWords($integer, $ones, $tens, $scales);
+        }
+
+        if ($fraction > 0) {
+            $words .= ' and ' . convertIntegerToWords($fraction, $ones, $tens, $scales) . ' kobo';
+        }
+
+        return $words;
+    }
+}
+
+if (!function_exists('convertIntegerToWords')) {
+    function convertIntegerToWords($integer, $ones, $tens, $scales) {
+        $words = '';
+        $scaleIndex = 0;
+
+        while ($integer > 0) {
+            $chunk = $integer % 1000;
+            if ($chunk > 0) {
+                $chunkWords = convertChunkToWords($chunk, $ones, $tens);
+                if ($scaleIndex > 0) {
+                    $chunkWords .= ' ' . $scales[$scaleIndex];
+                }
+                $words = $chunkWords . ' ' . $words;
+            }
+            $integer = intval($integer / 1000);
+            $scaleIndex++;
+        }
+
+        return trim($words);
+    }
+}
+
+if (!function_exists('convertChunkToWords')) {
+    function convertChunkToWords($chunk, $ones, $tens) {
+        $words = '';
+
+        $hundreds = intval($chunk / 100);
+        $remainder = $chunk % 100;
+
+        if ($hundreds > 0) {
+            $words .= $ones[$hundreds] . ' hundred';
+            if ($remainder > 0) {
+                $words .= ' ';
+            }
+        }
+
+        if ($remainder >= 20) {
+            $tensDigit = intval($remainder / 10);
+            $onesDigit = $remainder % 10;
+            $words .= $tens[$tensDigit];
+            if ($onesDigit > 0) {
+                $words .= '-' . $ones[$onesDigit];
+            }
+        } elseif ($remainder > 0) {
+            $words .= $ones[$remainder];
+        }
+
+        return $words;
+    }
+}
+@endphp
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -10,14 +96,14 @@
             padding: 0;
             box-sizing: border-box;
         }
-        
+
         body {
             font-family: 'Arial', sans-serif;
             line-height: 1.6;
             color: #333;
             background-color: #fff;
         }
-        
+
         .invoice-container {
             max-width: 210mm;
             margin: 0 auto;
@@ -25,7 +111,7 @@
             background: white;
             box-shadow: 0 0 20px rgba(0,0,0,0.1);
         }
-        
+
         /* Header Section */
         .invoice-header {
             display: flex;
@@ -35,17 +121,17 @@
             padding-bottom: 20px;
             border-bottom: 3px solid #2c5aa0;
         }
-        
+
         .company-info {
             flex: 1;
         }
-        
+
         .company-logo {
             max-width: 120px;
             max-height: 80px;
             margin-bottom: 15px;
         }
-        
+
         .company-name {
             font-size: 28px;
             font-weight: bold;
@@ -54,18 +140,18 @@
             text-transform: uppercase;
             letter-spacing: 1px;
         }
-        
+
         .company-details {
             font-size: 14px;
             color: #666;
             line-height: 1.5;
         }
-        
+
         .invoice-meta {
             text-align: right;
             flex: 0 0 300px;
         }
-        
+
         .invoice-title {
             font-size: 32px;
             font-weight: bold;
@@ -74,26 +160,26 @@
             text-transform: uppercase;
             letter-spacing: 2px;
         }
-        
+
         .invoice-number {
             font-size: 20px;
             font-weight: bold;
             color: #e74c3c;
             margin-bottom: 10px;
         }
-        
+
         .invoice-date {
             font-size: 14px;
             color: #666;
         }
-        
+
         /* Bill To Section */
         .billing-section {
             display: flex;
             justify-content: space-between;
             margin-bottom: 40px;
         }
-        
+
         .bill-to, .ship-to {
             flex: 1;
             margin-right: 30px;
@@ -102,11 +188,11 @@
             border-radius: 8px;
             border-left: 4px solid #2c5aa0;
         }
-        
+
         .bill-to:last-child, .ship-to:last-child {
             margin-right: 0;
         }
-        
+
         .section-title {
             font-size: 16px;
             font-weight: bold;
@@ -115,25 +201,25 @@
             text-transform: uppercase;
             letter-spacing: 0.5px;
         }
-        
+
         .customer-name {
             font-size: 18px;
             font-weight: bold;
             color: #333;
             margin-bottom: 8px;
         }
-        
+
         .customer-details {
             font-size: 14px;
             color: #666;
             line-height: 1.6;
         }
-        
+
         /* Items Table */
         .items-section {
             margin-bottom: 30px;
         }
-        
+
         .items-table {
             width: 100%;
             border-collapse: collapse;
@@ -142,12 +228,12 @@
             overflow: hidden;
             box-shadow: 0 2px 8px rgba(0,0,0,0.1);
         }
-        
+
         .items-table thead {
             background: linear-gradient(135deg, #2c5aa0 0%, #1e3d72 100%);
             color: white;
         }
-        
+
         .items-table th {
             padding: 15px 12px;
             text-align: left;
@@ -156,42 +242,42 @@
             text-transform: uppercase;
             letter-spacing: 0.5px;
         }
-        
+
         .items-table td {
             padding: 12px;
             border-bottom: 1px solid #eee;
             vertical-align: top;
         }
-        
+
         .items-table tbody tr:hover {
             background-color: #f8f9fa;
         }
-        
+
         .items-table tbody tr:last-child td {
             border-bottom: none;
         }
-        
+
         .text-right {
             text-align: right;
         }
-        
+
         .text-center {
             text-align: center;
         }
-        
+
         .sn-column {
             font-weight: bold;
             background: #f8f9fa;
             color: #2c5aa0;
         }
-        
+
         /* Summary Section */
         .summary-section {
             display: flex;
             justify-content: flex-end;
             margin-bottom: 30px;
         }
-        
+
         .summary-table {
             min-width: 350px;
             border-collapse: collapse;
@@ -200,35 +286,35 @@
             overflow: hidden;
             box-shadow: 0 2px 8px rgba(0,0,0,0.1);
         }
-        
+
         .summary-table td {
             padding: 12px 15px;
             border-bottom: 1px solid #eee;
         }
-        
+
         .summary-table .label {
             font-weight: 600;
             color: #555;
             background: #f8f9fa;
         }
-        
+
         .summary-table .amount {
             text-align: right;
             font-weight: bold;
             color: #333;
         }
-        
+
         .summary-table .total-row {
             background: linear-gradient(135deg, #2c5aa0 0%, #1e3d72 100%);
             color: white;
             font-size: 16px;
             font-weight: bold;
         }
-        
+
         .summary-table .total-row td {
             border-bottom: none;
         }
-        
+
         /* Amount in Words */
         .amount-words {
             background: #f8f9fa;
@@ -237,7 +323,7 @@
             border-left: 4px solid #27ae60;
             margin-bottom: 30px;
         }
-        
+
         .amount-words-title {
             font-size: 14px;
             font-weight: bold;
@@ -245,19 +331,19 @@
             margin-bottom: 8px;
             text-transform: uppercase;
         }
-        
+
         .amount-words-text {
             font-size: 16px;
             font-weight: bold;
             color: #333;
             font-style: italic;
         }
-        
+
         /* Notes Section */
         .notes-section {
             margin-bottom: 30px;
         }
-        
+
         .notes-title {
             font-size: 16px;
             font-weight: bold;
@@ -265,7 +351,7 @@
             margin-bottom: 10px;
             text-transform: uppercase;
         }
-        
+
         .notes-content {
             background: #f8f9fa;
             padding: 15px;
@@ -274,25 +360,25 @@
             font-size: 14px;
             color: #555;
         }
-        
+
         /* Footer */
         .invoice-footer {
             margin-top: 50px;
             padding-top: 30px;
             border-top: 2px solid #eee;
         }
-        
+
         .signature-section {
             display: flex;
             justify-content: space-between;
             margin-bottom: 30px;
         }
-        
+
         .signature-box {
             text-align: center;
             min-width: 200px;
         }
-        
+
         .signature-line {
             border-top: 2px solid #333;
             margin-top: 60px;
@@ -300,7 +386,7 @@
             font-weight: bold;
             color: #555;
         }
-        
+
         .footer-info {
             text-align: center;
             font-size: 12px;
@@ -308,7 +394,7 @@
             padding-top: 20px;
             border-top: 1px solid #eee;
         }
-        
+
         /* Status Badge */
         .status-badge {
             display: inline-block;
@@ -319,51 +405,51 @@
             text-transform: uppercase;
             letter-spacing: 0.5px;
         }
-        
+
         .status-posted {
             background: #d4edda;
             color: #155724;
             border: 1px solid #c3e6cb;
         }
-        
+
         .status-draft {
             background: #fff3cd;
             color: #856404;
             border: 1px solid #ffeaa7;
         }
-        
+
         /* Print Styles */
         @media print {
             body {
                 margin: 0;
                 background: white;
             }
-            
+
             .invoice-container {
                 box-shadow: none;
                 max-width: none;
                 margin: 0;
                 padding: 15px;
             }
-            
+
             .no-print {
                 display: none !important;
             }
-            
+
             .invoice-header {
                 border-bottom: 3px solid #2c5aa0;
             }
-            
+
             /* Ensure proper page breaks */
             .items-table {
                 page-break-inside: avoid;
             }
-            
+
             .summary-section {
                 page-break-inside: avoid;
             }
         }
-        
+
         /* Print Button */
         .print-buttons {
             position: fixed;
@@ -371,7 +457,7 @@
             right: 20px;
             z-index: 1000;
         }
-        
+
         .btn {
             padding: 12px 24px;
             margin-left: 10px;
@@ -383,22 +469,22 @@
             letter-spacing: 0.5px;
             transition: all 0.3s ease;
         }
-        
+
         .btn-primary {
             background: linear-gradient(135deg, #2c5aa0 0%, #1e3d72 100%);
             color: white;
         }
-        
+
         .btn-primary:hover {
             transform: translateY(-2px);
             box-shadow: 0 4px 12px rgba(44, 90, 160, 0.3);
         }
-        
+
         .btn-secondary {
             background: #6c757d;
             color: white;
         }
-        
+
         .btn-secondary:hover {
             background: #5a6268;
             transform: translateY(-2px);
@@ -442,7 +528,7 @@
                     @endif
                 </div>
             </div>
-            
+
             <div class="invoice-meta">
                 <div class="invoice-title">Invoice</div>
                 <div class="invoice-number"># {{ $invoice->voucherType->prefix }}{{ str_pad($invoice->voucher_number, 4, '0', STR_PAD_LEFT) }}</div>
@@ -499,7 +585,7 @@
                     <div class="customer-details">Cash Sale / Counter Sale</div>
                 @endif
             </div>
-            
+
             <div class="ship-to">
                 <div class="section-title">📦 Invoice Details</div>
                 <div class="customer-details">
@@ -578,24 +664,102 @@
                     <td class="label">Subtotal:</td>
                     <td class="amount">₦{{ number_format($subtotal ?? $inventoryItems->sum('amount'), 2) }}</td>
                 </tr>
-                @php 
-                    $taxAmount = 0; // Add tax calculation if needed
-                    $discountAmount = 0; // Add discount calculation if needed
-                    $totalAmount = ($subtotal ?? $inventoryItems->sum('amount')) - $discountAmount + $taxAmount;
+
+                @php
+                    // Get all voucher entries for this invoice
+                    $voucherEntries = $invoice->entries;
+
+                    // Filter VAT entries (checking account name contains 'vat' OR specific VAT account codes)
+                    $vatEntries = $voucherEntries->filter(function($entry) {
+                        $accountName = strtolower($entry->ledgerAccount->name ?? '');
+                        $accountCode = $entry->ledgerAccount->code ?? '';
+                        return str_contains($accountName, 'vat') ||
+                               in_array($accountCode, ['VAT-OUT-001', 'VAT-IN-001']);
+                    });
+
+                    // Get product accounts from inventory items to exclude from additional charges
+                    $productAccountIds = collect($inventoryItems)->map(function($item) use ($invoice) {
+                        if (isset($item['product_id'])) {
+                            $product = \App\Models\Product::find($item['product_id']);
+                            if ($product) {
+                                // Check if it's a sales or purchase invoice to get the right account
+                                if ($invoice->voucherType && str_contains(strtolower($invoice->voucherType->name ?? ''), 'purchase')) {
+                                    return $product->purchase_account_id;
+                                } else {
+                                    return $product->sales_account_id;
+                                }
+                            }
+                        }
+                        return null;
+                    })->filter()->toArray();
+
+                    // Filter additional charges (exclude customer/vendor accounts, VAT accounts, and product accounts)
+                    $additionalCharges = $voucherEntries->filter(function($entry) use ($vatEntries, $invoice, $productAccountIds) {
+                        // Skip if it's a VAT entry
+                        if ($vatEntries->contains('id', $entry->id)) {
+                            return false;
+                        }
+
+                        $account = $entry->ledgerAccount;
+                        if (!$account) return false;
+
+                        // Skip customer/vendor accounts (Receivables/Payables)
+                        if ($account->accountGroup && in_array($account->accountGroup->code, ['AR', 'AP'])) {
+                            return false;
+                        }
+
+                        // Skip product-specific accounts
+                        if (in_array($account->id, $productAccountIds)) {
+                            return false;
+                        }
+
+                        return true;
+                    });
+
+                    $totalAmount = ($subtotal ?? $inventoryItems->sum('amount'));
                 @endphp
-                @if($discountAmount > 0)
-                <tr>
-                    <td class="label">Discount:</td>
-                    <td class="amount">- ₦{{ number_format($discountAmount, 2) }}</td>
-                </tr>
+
+                @if($additionalCharges->count() > 0)
+                    @foreach($additionalCharges as $charge)
+                        @php
+                            $chargeAmount = $charge->credit_amount > 0 ? $charge->credit_amount : $charge->debit_amount;
+                        @endphp
+                        <tr>
+                            <td class="label">
+                                {{ $charge->ledgerAccount->name }}:
+                                @if($charge->narration && $charge->narration !== $charge->ledgerAccount->name)
+                                    <div style="font-size: 11px; color: #999; font-weight: normal;">
+                                        {{ $charge->narration }}
+                                    </div>
+                                @endif
+                            </td>
+                            <td class="amount">₦{{ number_format($chargeAmount, 2) }}</td>
+                        </tr>
+                        @php $totalAmount += $chargeAmount; @endphp
+                    @endforeach
                 @endif
-                @if($taxAmount > 0)
-                <tr>
-                    <td class="label">Tax:</td>
-                    <td class="amount">₦{{ number_format($taxAmount, 2) }}</td>
-                </tr>
+
+                @if($vatEntries->count() > 0)
+                    @foreach($vatEntries as $vatEntry)
+                        @php
+                            $vatAmount = $vatEntry->credit_amount > 0 ? $vatEntry->credit_amount : $vatEntry->debit_amount;
+                        @endphp
+                        <tr>
+                            <td class="label">
+                                {{ $vatEntry->ledgerAccount->name }}:
+                                @if($vatEntry->narration && $vatEntry->narration !== $vatEntry->ledgerAccount->name)
+                                    <div style="font-size: 11px; color: #999; font-weight: normal;">
+                                        {{ $vatEntry->narration }}
+                                    </div>
+                                @endif
+                            </td>
+                            <td class="amount">₦{{ number_format($vatAmount, 2) }}</td>
+                        </tr>
+                        @php $totalAmount += $vatAmount; @endphp
+                    @endforeach
                 @endif
-                <tr class="total-row">
+
+                <tr class="total-row" style="border-top: 2px solid #2c5aa0;">
                     <td>TOTAL AMOUNT:</td>
                     <td>₦{{ number_format($totalAmount, 2) }}</td>
                 </tr>
@@ -669,10 +833,10 @@
         function printInvoice() {
             // Hide print buttons
             document.querySelector('.print-buttons').style.display = 'none';
-            
+
             // Print the document
             window.print();
-            
+
             // Show print buttons again after print dialog closes
             setTimeout(() => {
                 document.querySelector('.print-buttons').style.display = 'block';
@@ -681,84 +845,3 @@
     </script>
 </body>
 </html>
-
-@php
-// Number to words function for amount in words
-function numberToWords($number) {
-    $ones = array(
-        '', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine',
-        'ten', 'eleven', 'twelve', 'thirteen', 'fourteen', 'fifteen', 'sixteen',
-        'seventeen', 'eighteen', 'nineteen'
-    );
-
-    $tens = array(
-        '', '', 'twenty', 'thirty', 'forty', 'fifty', 'sixty', 'seventy', 'eighty', 'ninety'
-    );
-
-    $scales = array('', 'thousand', 'million', 'billion', 'trillion');
-
-    if ($number == 0) return 'zero';
-
-    $number = number_format($number, 2, '.', '');
-    list($integer, $fraction) = explode('.', $number);
-
-    $words = '';
-
-    if ($integer > 0) {
-        $words .= convertIntegerToWords($integer, $ones, $tens, $scales);
-    }
-
-    if ($fraction > 0) {
-        $words .= ' and ' . convertIntegerToWords($fraction, $ones, $tens, $scales) . ' kobo';
-    }
-
-    return $words;
-}
-
-function convertIntegerToWords($integer, $ones, $tens, $scales) {
-    $words = '';
-    $scaleIndex = 0;
-
-    while ($integer > 0) {
-        $chunk = $integer % 1000;
-        if ($chunk > 0) {
-            $chunkWords = convertChunkToWords($chunk, $ones, $tens);
-            if ($scaleIndex > 0) {
-                $chunkWords .= ' ' . $scales[$scaleIndex];
-            }
-            $words = $chunkWords . ' ' . $words;
-        }
-        $integer = intval($integer / 1000);
-        $scaleIndex++;
-    }
-
-    return trim($words);
-}
-
-function convertChunkToWords($chunk, $ones, $tens) {
-    $words = '';
-
-    $hundreds = intval($chunk / 100);
-    $remainder = $chunk % 100;
-
-    if ($hundreds > 0) {
-        $words .= $ones[$hundreds] . ' hundred';
-        if ($remainder > 0) {
-            $words .= ' ';
-        }
-    }
-
-    if ($remainder >= 20) {
-        $tensDigit = intval($remainder / 10);
-        $onesDigit = $remainder % 10;
-        $words .= $tens[$tensDigit];
-        if ($onesDigit > 0) {
-            $words .= '-' . $ones[$onesDigit];
-        }
-    } elseif ($remainder > 0) {
-        $words .= $ones[$remainder];
-    }
-
-    return $words;
-}
-@endphp
