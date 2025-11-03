@@ -94,6 +94,12 @@ Route::bind('team', function ($value) {
     return \App\Models\Tenant\Team::where('tenant_id', tenant('id'))->findOrFail($value);
 });
 
+// Public routes (accessible without authentication)
+Route::prefix('public')->name('tenant.public.')->group(function () {
+    // Public invoice PDF download (accessible from email links)
+    Route::get('/invoices/{invoice}/pdf', [InvoiceController::class, 'pdf'])->name('invoices.pdf');
+});
+
 // Guest routes (login, register, etc.)
 Route::middleware(['guest'])->group(function () {
     Route::get('/login', [AuthController::class, 'showLoginForm'])->name('tenant.login');

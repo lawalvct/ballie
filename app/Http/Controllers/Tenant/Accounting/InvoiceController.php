@@ -1298,17 +1298,31 @@ class InvoiceController extends Controller
         }
 
         try {
-            $invoice->load(['voucherType', 'entries.ledgerAccount', 'createdBy', 'postedBy', 'items']);
+            $invoice->load(['voucherType', 'entries.ledgerAccount.accountGroup', 'createdBy', 'postedBy', 'items']);
             $customer = $invoice->entries->where('debit_amount', '>', 0)->first()?->ledgerAccount;
 
+            // Get inventory items from meta_data
+            $inventoryItems = collect();
+            if ($invoice->meta_data) {
+                $metaData = json_decode($invoice->meta_data, true);
+                $inventoryItems = collect($metaData['inventory_items'] ?? []);
+            }
+
             // Generate PDF
-            $pdf = Pdf::loadView('tenant.accounting.invoices.pdf', compact('tenant', 'invoice', 'customer'));
+            $pdf = Pdf::loadView('tenant.accounting.invoices.pdf', compact('tenant', 'invoice', 'customer', 'inventoryItems'));
+
+            // Generate download URL for the PDF (using public route)
+            $downloadUrl = route('tenant.public.invoices.pdf', [
+                'tenant' => $tenant->slug,
+                'invoice' => $invoice->id
+            ]);
 
             // Send email with PDF attachment
             Mail::send('emails.invoice', [
                 'invoice' => $invoice,
                 'tenant' => $tenant,
                 'emailMessage' => $request->message,
+                'downloadUrl' => $downloadUrl,
             ], function ($mail) use ($request, $invoice, $pdf) {
                 $mail->to($request->to)
                      ->subject($request->subject)
