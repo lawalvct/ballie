@@ -54,6 +54,7 @@ use App\Http\Controllers\Tenant\Api\GlobalSearchController;
 use App\Http\Controllers\Tenant\Reports\SalesReportsController;
 use App\Http\Controllers\Tenant\Reports\PurchaseReportsController;
 use App\Http\Controllers\Tenant\SubscriptionController;
+use App\Http\Controllers\Tenant\Audit\AuditController;
 
 /*
 |--------------------------------------------------------------------------
@@ -149,6 +150,13 @@ Route::middleware(['auth'])->group(function () {
 
         // Dashboard
         Route::get('/dashboard', [DashboardController::class, 'index'])->name('tenant.dashboard');
+
+        // Audit Trail Routes
+        Route::prefix('audit')->name('tenant.audit.')->group(function () {
+            Route::get('/', [AuditController::class, 'index'])->name('index');
+            Route::get('/{model}/{id}', [AuditController::class, 'show'])->name('show');
+            Route::get('/export', [AuditController::class, 'export'])->name('export');
+        });
 
         // User Profile Routes
         Route::prefix('profile')->name('tenant.profile.')->group(function () {

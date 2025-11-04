@@ -173,6 +173,90 @@ class User extends Authenticatable
                     ->withTimestamps();
     }
 
+    // Audit Trail Relationships - Records Created
+    public function createdCustomers()
+    {
+        return $this->hasMany(\App\Models\Customer::class, 'created_by');
+    }
+
+    public function createdVendors()
+    {
+        return $this->hasMany(\App\Models\Vendor::class, 'created_by');
+    }
+
+    public function createdProducts()
+    {
+        return $this->hasMany(\App\Models\Product::class, 'created_by');
+    }
+
+    public function createdVouchers()
+    {
+        return $this->hasMany(\App\Models\Voucher::class, 'created_by');
+    }
+
+    public function createdLedgerAccounts()
+    {
+        return $this->hasMany(\App\Models\LedgerAccount::class, 'created_by');
+    }
+
+    public function createdSales()
+    {
+        return $this->hasMany(\App\Models\Sale::class, 'created_by');
+    }
+
+    // Audit Trail Relationships - Records Updated
+    public function updatedCustomers()
+    {
+        return $this->hasMany(\App\Models\Customer::class, 'updated_by');
+    }
+
+    public function updatedVendors()
+    {
+        return $this->hasMany(\App\Models\Vendor::class, 'updated_by');
+    }
+
+    public function updatedProducts()
+    {
+        return $this->hasMany(\App\Models\Product::class, 'updated_by');
+    }
+
+    public function updatedVouchers()
+    {
+        return $this->hasMany(\App\Models\Voucher::class, 'updated_by');
+    }
+
+    public function updatedLedgerAccounts()
+    {
+        return $this->hasMany(\App\Models\LedgerAccount::class, 'updated_by');
+    }
+
+    public function updatedSales()
+    {
+        return $this->hasMany(\App\Models\Sale::class, 'updated_by');
+    }
+
+    // Audit Trail Relationships - Records Posted
+    public function postedVouchers()
+    {
+        return $this->hasMany(\App\Models\Voucher::class, 'posted_by');
+    }
+
+    public function postedStockJournals()
+    {
+        return $this->hasMany(\App\Models\StockJournalEntry::class, 'posted_by');
+    }
+
+    // Audit Trail Relationships - Records Deleted
+    public function deletedCustomers()
+    {
+        return $this->hasMany(\App\Models\Customer::class, 'deleted_by');
+    }
+
+    public function deletedVendors()
+    {
+        return $this->hasMany(\App\Models\Vendor::class, 'deleted_by');
+    }
+
     /**
      * Send the password reset notification.
      *
