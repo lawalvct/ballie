@@ -7,10 +7,12 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Str;
+use App\Traits\HasAudit;
+use App\Traits\HasPosting;
 
 class StockJournalEntry extends Model
 {
-    use HasFactory;
+    use HasFactory, HasAudit, HasPosting;
 
     protected $fillable = [
         'tenant_id',

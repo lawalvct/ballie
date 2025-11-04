@@ -9,10 +9,11 @@ use App\Models\LedgerAccount;
 use App\Models\AccountGroup;
 use App\Models\Voucher;
 use App\Models\VoucherEntry;
+use App\Traits\HasAudit;
 
 class Customer extends Model
 {
-    use HasFactory, SoftDeletes;
+    use HasFactory, SoftDeletes, HasAudit;
 
     /**
      * The attributes that are mass assignable.
@@ -44,6 +45,9 @@ class Customer extends Model
         'last_invoice_number',
         'notes',
         'status',
+        'created_by',
+        'updated_by',
+        'deleted_by',
     ];
 
     /**
@@ -128,7 +132,7 @@ class Customer extends Model
             });
     }
 
- 
+
     // Create ledger account for customer
     public function createLedgerAccount()
     {

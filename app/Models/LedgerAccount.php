@@ -4,10 +4,11 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use App\Traits\HasAudit;
 
 class LedgerAccount extends Model
 {
-    use HasFactory;
+    use HasFactory, HasAudit;
 
     protected $fillable = [
         'tenant_id',
@@ -29,6 +30,8 @@ class LedgerAccount extends Model
         'is_system_account',
         'is_opening_balance_account',
         'tags',
+        'created_by',
+        'updated_by',
     ];
 
     protected $casts = [

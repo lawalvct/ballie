@@ -7,10 +7,11 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use App\Traits\HasAudit;
 
 class ProductCategory extends Model
 {
-    use HasFactory, SoftDeletes;
+    use HasFactory, SoftDeletes, HasAudit;
 
     /**
      * The attributes that are mass assignable.
@@ -28,6 +29,8 @@ class ProductCategory extends Model
         'is_active',
         'meta_title',
         'meta_description',
+        'created_by',
+        'updated_by',
     ];
 
     /**

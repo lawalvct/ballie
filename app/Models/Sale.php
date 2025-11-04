@@ -7,10 +7,11 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use App\Traits\BelongsToTenant;
+use App\Traits\HasAudit;
 
 class Sale extends Model
 {
-    use HasFactory, BelongsToTenant;
+    use HasFactory, BelongsToTenant, HasAudit;
 
     protected $fillable = [
         'tenant_id',
@@ -28,6 +29,8 @@ class Sale extends Model
         'status',
         'sale_date',
         'notes',
+        'created_by',
+        'updated_by',
     ];
 
     protected $casts = [

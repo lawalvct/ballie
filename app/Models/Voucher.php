@@ -5,10 +5,12 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Carbon;
+use App\Traits\HasAudit;
+use App\Traits\HasPosting;
 
 class Voucher extends Model
 {
-    use HasFactory;
+    use HasFactory, HasAudit, HasPosting;
 
     protected $fillable = [
         'tenant_id',
@@ -20,6 +22,7 @@ class Voucher extends Model
         'total_amount',
         'status',
         'created_by',
+        'updated_by',
         'posted_at',
         'posted_by',
         'meta_data',

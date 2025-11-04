@@ -7,10 +7,11 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use App\Models\LedgerAccount;
 use App\Models\AccountGroup;
+use App\Traits\HasAudit;
 
 class Vendor extends Model
 {
-    use HasFactory, SoftDeletes;
+    use HasFactory, SoftDeletes, HasAudit;
 
     protected $fillable = [
         'tenant_id',
@@ -42,6 +43,9 @@ class Vendor extends Model
         'bank_account_name',
         'notes',
         'status',
+        'created_by',
+        'updated_by',
+        'deleted_by',
     ];
 
     protected $casts = [
