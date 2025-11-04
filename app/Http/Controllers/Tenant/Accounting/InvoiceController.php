@@ -297,14 +297,33 @@ class InvoiceController extends Controller
             }
 
             // Process VAT if enabled
+            Log::info('VAT Processing Check', [
+                'has_vat_enabled' => $request->has('vat_enabled'),
+                'vat_enabled_value' => $request->vat_enabled,
+                'vat_amount_value' => $request->vat_amount,
+                'vat_applies_to' => $request->vat_applies_to,
+            ]);
+
             if ($request->has('vat_enabled') && $request->vat_enabled == '1') {
                 $vatAmount = (float) $request->vat_amount;
                 $vatAppliesTo = $request->input('vat_applies_to', 'items_only');
+
+                Log::info('VAT Enabled - Processing', [
+                    'vat_amount' => $vatAmount,
+                    'vat_applies_to' => $vatAppliesTo,
+                    'voucher_type_code' => $voucherType->code,
+                    'inventory_effect' => $voucherType->inventory_effect,
+                ]);
 
                 if ($vatAmount > 0) {
                     // Determine VAT account based on invoice type
                     $isSales = $voucherType->inventory_effect === 'decrease';
                     $vatAccountCode = $isSales ? 'VAT-OUT-001' : 'VAT-IN-001';
+
+                    Log::info('VAT Account Selection', [
+                        'is_sales' => $isSales,
+                        'vat_account_code' => $vatAccountCode,
+                    ]);
 
                     // Get VAT ledger account
                     $vatAccount = LedgerAccount::where('tenant_id', $tenant->id)
@@ -325,21 +344,33 @@ class InvoiceController extends Controller
                             'narration' => $narration
                         ];
 
-                        Log::info('VAT Added', [
+                        Log::info('VAT Added Successfully', [
+                            'vat_account_id' => $vatAccount->id,
                             'vat_account' => $vatAccount->name,
                             'vat_account_code' => $vatAccountCode,
                             'vat_amount' => $vatAmount,
                             'vat_applies_to' => $vatAppliesTo,
                             'is_sales' => $isSales,
-                            'running_total' => $totalAmount
+                            'running_total' => $totalAmount,
+                            'additional_ledger_accounts_count' => count($additionalLedgerAccounts),
                         ]);
                     } else {
                         Log::warning('VAT Account Not Found', [
                             'vat_account_code' => $vatAccountCode,
-                            'tenant_id' => $tenant->id
+                            'tenant_id' => $tenant->id,
+                            'searched_for' => "LedgerAccount with code '{$vatAccountCode}' in tenant {$tenant->id}"
                         ]);
                     }
+                } else {
+                    Log::warning('VAT Amount is Zero or Negative', [
+                        'vat_amount' => $vatAmount,
+                    ]);
                 }
+            } else {
+                Log::info('VAT Not Enabled', [
+                    'has_vat_enabled' => $request->has('vat_enabled'),
+                    'vat_enabled_value' => $request->vat_enabled,
+                ]);
             }
 
             Log::info('All Items Processed', [
@@ -947,6 +978,7 @@ class InvoiceController extends Controller
                 return [
                     'id' => $customer->id,
                     'ledger_account_id' => $customer->ledgerAccount->id,
+                    'ledger_account_name' => $customer->ledgerAccount->name,
                     'display_name' => $customer->company_name ?: trim($customer->first_name . ' ' . $customer->last_name),
                     'email' => $customer->email
                 ];
@@ -1132,13 +1164,25 @@ class InvoiceController extends Controller
         }
 
         // Debit: Additional Ledger Accounts (VAT, Transport, etc.)
+        Log::info('Creating Purchase Additional Ledger Entries', [
+            'additional_ledger_accounts_count' => count($additionalLedgerAccounts),
+            'additional_ledger_accounts' => $additionalLedgerAccounts,
+        ]);
+
         foreach ($additionalLedgerAccounts as $additionalLedger) {
-            VoucherEntry::create([
+            $entry = VoucherEntry::create([
                 'voucher_id' => $voucher->id,
                 'ledger_account_id' => $additionalLedger['ledger_account_id'],
                 'debit_amount' => $additionalLedger['amount'],
                 'credit_amount' => 0,
                 'particulars' => $additionalLedger['narration'] ?: ('Additional charge - ' . $voucher->getDisplayNumber()),
+            ]);
+
+            Log::info('Purchase Additional Entry Created', [
+                'entry_id' => $entry->id,
+                'ledger_account_id' => $additionalLedger['ledger_account_id'],
+                'debit_amount' => $additionalLedger['amount'],
+                'narration' => $additionalLedger['narration'],
             ]);
         }
 

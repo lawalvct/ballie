@@ -6,7 +6,7 @@
 
 @section('content')
 <div class="space-y-6">
-    <form action="{{ route('tenant.invoices.update', ['tenant' => tenant()->slug, 'invoice' => $invoice->id]) }}" method="POST">
+    <form action="{{ route('tenant.accounting.invoices.update', ['tenant' => tenant()->slug, 'invoice' => $invoice->id]) }}" method="POST">
         @csrf
         @method('PUT')
 
@@ -18,18 +18,13 @@
 
                     <div class="space-y-4">
                         <div>
-                            <label for="invoice_number" class="block text-sm font-medium text-gray-700">Invoice Number</label>
-                            <input type="text" name="invoice_number" id="invoice_number" value="{{ $invoice->invoice_number }}" class="mt-1 focus:ring-blue-500 focus:border-blue-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md" readonly>
+                            <label for="voucher_number" class="block text-sm font-medium text-gray-700">Invoice Number</label>
+                            <input type="text" name="voucher_number" id="voucher_number" value="{{ $invoice->voucher_number }}" class="mt-1 focus:ring-blue-500 focus:border-blue-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md" readonly>
                         </div>
 
                         <div>
-                            <label for="issue_date" class="block text-sm font-medium text-gray-700">Issue Date</label>
-                            <input type="date" name="issue_date" id="issue_date" value="{{ $invoice->issue_date->format('Y-m-d') }}" class="mt-1 focus:ring-blue-500 focus:border-blue-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
-                        </div>
-
-                        <div>
-                            <label for="due_date" class="block text-sm font-medium text-gray-700">Due Date</label>
-                            <input type="date" name="due_date" id="due_date" value="{{ $invoice->due_date->format('Y-m-d') }}" class="mt-1 focus:ring-blue-500 focus:border-blue-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
+                            <label for="voucher_date" class="block text-sm font-medium text-gray-700">Invoice Date</label>
+                            <input type="date" name="voucher_date" id="voucher_date" value="{{ $invoice->voucher_date ? $invoice->voucher_date->format('Y-m-d') : '' }}" class="mt-1 focus:ring-blue-500 focus:border-blue-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
                         </div>
                     </div>
                 </div>
@@ -81,27 +76,27 @@
                         </tr>
                     </thead>
                     <tbody class="bg-white divide-y divide-gray-200" id="invoice-items-body">
-                        @foreach($invoice->items as $index => $item)
+                        @foreach($inventoryItems as $index => $item)
                             <tr class="invoice-item">
                                 <td class="px-6 py-4 whitespace-nowrap">
-                                    <select name="items[{{ $index }}][product_id]" class="product-select block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                                    <select name="inventory_items[{{ $index }}][product_id]" class="product-select block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
                                         <option value="">-- Select Product --</option>
                                         @foreach($products as $product)
-                                            <option value="{{ $product->id }}" data-price="{{ $product->price }}" data-description="{{ $product->description }}" {{ $item->product_id == $product->id ? 'selected' : '' }}>{{ $product->name }}</option>
+                                            <option value="{{ $product->id }}" data-price="{{ $product->price }}" data-description="{{ $product->description }}" {{ isset($item['product_id']) && $item['product_id'] == $product->id ? 'selected' : '' }}>{{ $product->name }}</option>
                                         @endforeach
                                     </select>
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap">
-                                    <input type="text" name="items[{{ $index }}][description]" class="item-description block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm" value="{{ $item->description }}">
+                                    <input type="text" name="inventory_items[{{ $index }}][description]" class="item-description block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm" value="{{ $item['description'] ?? '' }}">
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap">
-                                    <input type="number" name="items[{{ $index }}][quantity]" class="item-quantity block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm" value="{{ $item->quantity }}" min="1">
+                                    <input type="number" name="inventory_items[{{ $index }}][quantity]" class="item-quantity block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm" value="{{ $item['quantity'] ?? 0 }}" min="0.01" step="0.01">
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap">
-                                    <input type="number" name="items[{{ $index }}][unit_price]" class="item-price block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm" step="0.01" value="{{ $item->unit_price }}">
+                                    <input type="number" name="inventory_items[{{ $index }}][rate]" class="item-price block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm" step="0.01" value="{{ $item['rate'] ?? 0 }}">
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap">
-                                    <input type="number" name="items[{{ $index }}][total]" class="item-total block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm" readonly value="{{ $item->total }}">
+                                    <input type="number" name="inventory_items[{{ $index }}][total]" class="item-total block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm" readonly value="{{ isset($item['quantity']) && isset($item['rate']) ? ($item['quantity'] * $item['rate']) : 0 }}">
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap">
                                     <button type="button" class="remove-item text-red-600 hover:text-red-900">
@@ -142,20 +137,28 @@
                     <h3 class="text-lg font-medium text-gray-900 mb-4">Invoice Summary</h3>
 
                     <div class="bg-gray-50 p-4 rounded-lg">
+                        @php
+                            $subtotal = $inventoryItems->sum(function($item) {
+                                return ($item['quantity'] ?? 0) * ($item['rate'] ?? 0);
+                            });
+                            $tax = $subtotal * 0.075;
+                            $total = $subtotal + $tax;
+                        @endphp
+
                         <div class="flex justify-between py-2 border-b border-gray-200">
                             <span class="text-sm text-gray-500">Subtotal:</span>
-                            <span class="text-sm font-medium text-gray-900" id="subtotal">₦{{ number_format(array_sum(array_column((array)$invoice->items, 'total')), 2) }}</span>
+                            <span class="text-sm font-medium text-gray-900" id="subtotal">₦{{ number_format($subtotal, 2) }}</span>
                         </div>
 
                         <div class="flex justify-between py-2 border-b border-gray-200">
                             <span class="text-sm text-gray-500">Tax (7.5%):</span>
-                            <span class="text-sm font-medium text-gray-900" id="tax">₦{{ number_format(array_sum(array_column((array)$invoice->items, 'total')) * 0.075, 2) }}</span>
+                            <span class="text-sm font-medium text-gray-900" id="tax">₦{{ number_format($tax, 2) }}</span>
                         </div>
 
                         <div class="flex justify-between py-2 font-bold">
                             <span class="text-base text-gray-900">Total:</span>
-                            <span class="text-base text-blue-600" id="total">₦{{ number_format($invoice->total_amount, 2) }}</span>
-                            <input type="hidden" name="total_amount" id="total_amount" value="{{ $invoice->total_amount }}">
+                            <span class="text-base text-blue-600" id="total">₦{{ number_format($total, 2) }}</span>
+                            <input type="hidden" name="total_amount" id="total_amount" value="{{ $total }}">
                         </div>
                     </div>
 
@@ -177,7 +180,7 @@
 
         <!-- Form Actions -->
         <div class="flex justify-end space-x-3">
-            <a href="{{ route('tenant.invoices.show', ['tenant' => tenant()->slug, 'invoice' => $invoice->id]) }}" class="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+            <a href="{{ route('tenant.accounting.invoices.show', ['tenant' => tenant()->slug, 'invoice' => $invoice->id]) }}" class="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
                 Cancel
             </a>
 
@@ -191,7 +194,7 @@
 <script>
     document.addEventListener('DOMContentLoaded', function() {
         // Initialize variables
-        let itemCount = {{ count($invoice->items) }};
+        let itemCount = {{ $inventoryItems->count() }};
         const taxRate = 0.075; // 7.5%
 
         // Function to update item total

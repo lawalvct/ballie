@@ -166,7 +166,7 @@
                 </div>
 
                 <!-- Customer/Vendor Information -->
-                <div class="mt-6 grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="mt-6 grid grid-cols-1 gap-6">
                     <!-- Customer (for Sales transactions) -->
                     <div id="customerSection">
                         <label for="customer_search" class="block text-sm font-medium text-gray-700 mb-2">
@@ -179,8 +179,16 @@
                                        @input="searchCustomers()"
                                        @focus="showDropdown = true"
                                        placeholder="Type to search customers..."
-                                       class="w-full pl-3 pr-10 py-2 text-base border border-gray-300 focus:outline-none focus:ring-primary-500 focus:border-primary-500 rounded-lg">
+                                       class="w-full pl-3 pr-10 py-2 text-base border border-gray-300 focus:outline-none focus:ring-primary-500 focus:border-primary-500 rounded-lg"
+                                       :class="selectedCustomerId ? 'bg-green-50 border-green-300' : ''">
                                 <input type="hidden" name="customer_id" x-model="selectedCustomerId" required>
+                                
+                                <!-- Selected indicator -->
+                                <div x-show="selectedCustomerId" class="absolute right-3 top-2.5">
+                                    <svg class="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                    </svg>
+                                </div>
 
                                 <!-- Dropdown -->
                                 <div x-show="showDropdown && (customers.length > 0 || loading)"
@@ -188,23 +196,59 @@
                                      class="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto">
 
                                     <!-- Loading -->
-                                    <div x-show="loading" class="px-3 py-2 text-gray-500">
+                                    <div x-show="loading" class="px-3 py-2 text-gray-500 flex items-center">
+                                        <svg class="animate-spin h-4 w-4 mr-2 text-gray-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                        </svg>
                                         Searching...
                                     </div>
 
                                     <!-- Results -->
                                     <template x-for="customer in customers" :key="customer.id">
                                         <div @click="selectCustomer(customer)"
-                                             class="px-3 py-2 cursor-pointer hover:bg-gray-100 border-b border-gray-100 last:border-b-0">
-                                            <div class="font-medium text-gray-900" x-text="customer.display_name"></div>
-                                            <div class="text-sm text-gray-500" x-text="customer.email || 'No email'"></div>
+                                             class="px-3 py-2 cursor-pointer hover:bg-blue-50 border-b border-gray-100 last:border-b-0 transition-colors">
+                                            <div class="flex items-center justify-between">
+                                                <div class="flex-1">
+                                                    <div class="font-medium text-gray-900" x-text="customer.display_name"></div>
+                                                    <div class="text-xs text-gray-500 mt-0.5" x-text="customer.email || 'No email'"></div>
+                                                </div>
+                                                <div class="text-xs text-blue-600 font-medium" x-text="'Ledger: ' + customer.ledger_account_name"></div>
+                                            </div>
                                         </div>
                                     </template>
 
                                     <!-- No results -->
                                     <div x-show="!loading && customers.length === 0 && searchTerm.length >= 2"
-                                         class="px-3 py-2 text-gray-500">
+                                         class="px-3 py-2 text-gray-500 text-center">
+                                        <svg class="w-8 h-8 mx-auto mb-2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                                        </svg>
                                         No customers found
+                                    </div>
+                                </div>
+                                
+                                <!-- Selected customer display -->
+                                <div x-show="selectedCustomerId && selectedCustomerName" 
+                                     class="mt-2 p-2 bg-blue-50 border border-blue-200 rounded-lg">
+                                    <div class="flex items-center justify-between">
+                                        <div class="flex items-center">
+                                            <svg class="w-4 h-4 text-blue-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+                                            </svg>
+                                            <div>
+                                                <div class="text-sm font-medium text-gray-900" x-text="selectedCustomerName"></div>
+                                                <div class="text-xs text-gray-600" x-text="'Ledger: ' + selectedLedgerName"></div>
+                                            </div>
+                                        </div>
+                                        <button type="button" 
+                                                @click="clearSelection()"
+                                                class="text-gray-400 hover:text-red-600 transition-colors"
+                                                title="Clear selection">
+                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                                            </svg>
+                                        </button>
                                     </div>
                                 </div>
                             </div>
@@ -225,19 +269,23 @@
                             Vendor <span class="text-red-500">*</span>
                         </label>
                         <div class="flex gap-2">
-                            <select name="customer_id"
-                                    id="vendor_select"
-                                    disabled
-                                    class="flex-1 pl-3 pr-10 py-2 text-base border border-gray-300 focus:outline-none focus:ring-primary-500 focus:border-primary-500 rounded-lg">
-                                <option value="">Select Vendor</option>
-                                @if(isset($vendors))
-                                    @foreach($vendors as $vendor)
-                                        <option value="{{ $vendor->ledgerAccount->id }}" {{ old('customer_id') == $vendor->ledgerAccount->id ? 'selected' : '' }}>
-                                            {{ $vendor->display_name }}
-                                        </option>
-                                    @endforeach
-                                @endif
-                            </select>
+                            <div class="flex-1">
+                                <select name="customer_id"
+                                        id="vendor_select"
+                                        disabled
+                                        class="w-full pl-3 pr-10 py-2 text-base border border-gray-300 focus:outline-none focus:ring-primary-500 focus:border-primary-500 rounded-lg">
+                                    <option value="">Select Vendor</option>
+                                    @if(isset($vendors))
+                                        @foreach($vendors as $vendor)
+                                            <option value="{{ $vendor->ledgerAccount->id }}" 
+                                                    data-ledger-name="{{ $vendor->ledgerAccount->name }}"
+                                                    {{ old('customer_id') == $vendor->ledgerAccount->id ? 'selected' : '' }}>
+                                                {{ $vendor->display_name }} - Ledger: {{ $vendor->ledgerAccount->name }}
+                                            </option>
+                                        @endforeach
+                                    @endif
+                                </select>
+                            </div>
                             <button type="button"
                                     onclick="openQuickAddModal('vendor')"
                                     class="px-3 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition-colors"
@@ -1067,6 +1115,8 @@ function customerSearch() {
         searchTerm: '',
         customers: [],
         selectedCustomerId: '{{ old('customer_id') }}',
+        selectedCustomerName: '',
+        selectedLedgerName: '',
         showDropdown: false,
         loading: false,
         searchTimeout: null,
@@ -1103,8 +1153,17 @@ function customerSearch() {
         selectCustomer(customer) {
             this.searchTerm = customer.display_name;
             this.selectedCustomerId = customer.ledger_account_id;
+            this.selectedCustomerName = customer.display_name;
+            this.selectedLedgerName = customer.ledger_account_name || customer.display_name;
             this.showDropdown = false;
             this.customers = [];
+        },
+        
+        clearSelection() {
+            this.searchTerm = '';
+            this.selectedCustomerId = '';
+            this.selectedCustomerName = '';
+            this.selectedLedgerName = '';
         },
 
         init() {
@@ -1336,31 +1395,52 @@ function invoiceForm() {
         toggleCustomerVendorFields(voucherType) {
             const customerSection = document.getElementById('customerSection');
             const vendorSection = document.getElementById('vendorSection');
-            const customerSelect = document.getElementById('customer_id');
             const vendorSelect = document.getElementById('vendor_select');
 
-            if (!customerSection || !vendorSection || !customerSelect || !vendorSelect) return;
+            if (!customerSection || !vendorSection) return;
 
             const isPurchase = voucherType.code.includes('PUR') ||
                              voucherType.code.includes('PURCHASE') ||
                              voucherType.name.toLowerCase().includes('purchase');
 
             if (isPurchase) {
+                // Show vendor section, hide customer section
                 customerSection.classList.add('hidden');
                 vendorSection.classList.remove('hidden');
-                vendorSelect.removeAttribute('disabled');
-                vendorSelect.setAttribute('required', 'required');
-                customerSelect.setAttribute('disabled', 'disabled');
-                customerSelect.removeAttribute('required');
-                customerSelect.value = '';
+
+                if (vendorSelect) {
+                    vendorSelect.removeAttribute('disabled');
+                    vendorSelect.setAttribute('required', 'required');
+                }
+
+                // Reset customer search input
+                const customerSearchInput = customerSection.querySelector('input[type="text"]');
+                if (customerSearchInput) {
+                    customerSearchInput.value = '';
+                }
+
+                // Clear hidden customer_id in customer section
+                const customerHiddenInput = customerSection.querySelector('input[name="customer_id"]');
+                if (customerHiddenInput) {
+                    customerHiddenInput.removeAttribute('required');
+                    customerHiddenInput.value = '';
+                }
             } else {
+                // Show customer section, hide vendor section
                 customerSection.classList.remove('hidden');
                 vendorSection.classList.add('hidden');
-                customerSelect.removeAttribute('disabled');
-                customerSelect.setAttribute('required', 'required');
-                vendorSelect.setAttribute('disabled', 'disabled');
-                vendorSelect.removeAttribute('required');
-                vendorSelect.value = '';
+
+                if (vendorSelect) {
+                    vendorSelect.setAttribute('disabled', 'disabled');
+                    vendorSelect.removeAttribute('required');
+                    vendorSelect.value = '';
+                }
+
+                // Restore required on customer hidden input
+                const customerHiddenInput = customerSection.querySelector('input[name="customer_id"]');
+                if (customerHiddenInput) {
+                    customerHiddenInput.setAttribute('required', 'required');
+                }
             }
         },
 
