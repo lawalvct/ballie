@@ -645,29 +645,49 @@ class InvoiceController extends Controller
         }
 
         if ($invoice->status !== 'draft') {
-            return redirect()->back()
+            return redirect()->route('tenant.accounting.invoices.show', ['tenant' => $tenant->slug, 'invoice' => $invoice->id])
                 ->with('error', 'Only draft invoices can be edited.');
         }
 
-        // Get voucher types
+        $invoice->load(['items', 'entries.ledgerAccount.accountGroup']);
+
+        // Most of this is copied from the 'create' method to ensure the view has all necessary data
         $voucherTypes = VoucherType::where('tenant_id', $tenant->id)
             ->where('affects_inventory', true)
-            ->where('code', 'LIKE', '%SALES%')
-            ->orderBy('name')
+            ->orderBy('name', 'desc')
             ->get();
 
-        // Get products
         $products = Product::where('tenant_id', $tenant->id)
             ->where('is_active', true)
-            ->where('is_saleable', true)
             ->with(['primaryUnit'])
             ->orderBy('name')
             ->get();
 
-        // Get customers
-        $customers = collect();
+        $customers = Customer::with('ledgerAccount')->where('tenant_id', $tenant->id)->get();
+        $vendors = Vendor::with('ledgerAccount')->where('tenant_id', $tenant->id)->get();
 
-        // Get inventory items
+        $ledgerAccounts = LedgerAccount::where('tenant_id', $tenant->id)
+            ->whereHas('accountGroup', function($query) {
+                $query->whereIn('nature', ['expenses', 'income', 'liabilities', 'assets'])
+                    ->whereNotIn('code', ['AR', 'AP']);
+            })
+            ->where('is_active', true)
+            ->with('accountGroup')
+            ->orderBy('name')
+            ->get();
+
+        $units = Unit::where('tenant_id', $tenant->id)
+            ->where('is_active', true)
+            ->orderBy('name')
+            ->get();
+
+        // Get the party (customer/vendor) associated with the invoice
+        $partyEntry = $invoice->entries->first(function ($entry) {
+            return in_array($entry->ledgerAccount->accountGroup->code, ['AR', 'AP']);
+        });
+        $partyLedger = $partyEntry ? $partyEntry->ledgerAccount : null;
+
+        // Extract inventory items from meta_data
         $inventoryItems = collect();
         if ($invoice->meta_data) {
             $metaData = json_decode($invoice->meta_data, true);
@@ -682,6 +702,10 @@ class InvoiceController extends Controller
             'voucherTypes',
             'products',
             'customers',
+            'vendors',
+            'ledgerAccounts',
+            'units',
+            'partyLedger',
             'inventoryItems'
         ));
     }
