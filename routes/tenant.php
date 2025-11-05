@@ -605,6 +605,69 @@ Route::prefix('ledger-accounts')->name('ledger-accounts.')->group(function () {
                 Route::get('/employee-summary', [PayrollController::class, 'employeeSummary'])->name('employee-summary');
                 Route::get('/bank-schedule', [PayrollController::class, 'bankSchedule'])->name('bank-schedule');
             });
+
+            // Attendance & Leave Management
+            Route::prefix('attendance')->name('attendance.')->group(function () {
+                Route::get('/', [\App\Http\Controllers\Tenant\AttendanceController::class, 'index'])->name('index');
+                Route::get('/dashboard', [\App\Http\Controllers\Tenant\AttendanceController::class, 'dashboard'])->name('dashboard');
+                Route::post('/clock-in', [\App\Http\Controllers\Tenant\AttendanceController::class, 'clockIn'])->name('clock-in');
+                Route::post('/clock-out', [\App\Http\Controllers\Tenant\AttendanceController::class, 'clockOut'])->name('clock-out');
+                Route::post('/mark-absent', [\App\Http\Controllers\Tenant\AttendanceController::class, 'markAbsent'])->name('mark-absent');
+                Route::post('/mark-half-day', [\App\Http\Controllers\Tenant\AttendanceController::class, 'markHalfDay'])->name('mark-half-day');
+                Route::post('/{id}/approve', [\App\Http\Controllers\Tenant\AttendanceController::class, 'approve'])->name('approve');
+                Route::get('/employee/{employeeId}', [\App\Http\Controllers\Tenant\AttendanceController::class, 'employeeAttendance'])->name('employee');
+                Route::get('/monthly-report', [\App\Http\Controllers\Tenant\AttendanceController::class, 'monthlyReport'])->name('monthly-report');
+                Route::post('/bulk-clock-in', [\App\Http\Controllers\Tenant\AttendanceController::class, 'bulkClockIn'])->name('bulk-clock-in');
+            });
+
+            // Leave Management
+            Route::prefix('leaves')->name('leaves.')->group(function () {
+                Route::get('/', [\App\Http\Controllers\Tenant\LeaveController::class, 'index'])->name('index');
+                Route::get('/create', [\App\Http\Controllers\Tenant\LeaveController::class, 'create'])->name('create');
+                Route::post('/', [\App\Http\Controllers\Tenant\LeaveController::class, 'store'])->name('store');
+                Route::get('/{id}', [\App\Http\Controllers\Tenant\LeaveController::class, 'show'])->name('show');
+                Route::get('/{id}/edit', [\App\Http\Controllers\Tenant\LeaveController::class, 'edit'])->name('edit');
+                Route::put('/{id}', [\App\Http\Controllers\Tenant\LeaveController::class, 'update'])->name('update');
+                Route::post('/{id}/approve', [\App\Http\Controllers\Tenant\LeaveController::class, 'approve'])->name('approve');
+                Route::post('/{id}/reject', [\App\Http\Controllers\Tenant\LeaveController::class, 'reject'])->name('reject');
+                Route::post('/{id}/cancel', [\App\Http\Controllers\Tenant\LeaveController::class, 'cancel'])->name('cancel');
+                Route::get('/balances/view', [\App\Http\Controllers\Tenant\LeaveController::class, 'balances'])->name('balances');
+                Route::get('/balance-history/{employeeId}', [\App\Http\Controllers\Tenant\LeaveController::class, 'balanceHistory'])->name('balance-history');
+                Route::get('/my-leaves', [\App\Http\Controllers\Tenant\LeaveController::class, 'myLeaves'])->name('my-leaves');
+            });
+
+            // Overtime Management
+            Route::prefix('overtime')->name('overtime.')->group(function () {
+                Route::get('/', [\App\Http\Controllers\Tenant\OvertimeController::class, 'index'])->name('index');
+                Route::get('/create', [\App\Http\Controllers\Tenant\OvertimeController::class, 'create'])->name('create');
+                Route::post('/', [\App\Http\Controllers\Tenant\OvertimeController::class, 'store'])->name('store');
+                Route::get('/{id}', [\App\Http\Controllers\Tenant\OvertimeController::class, 'show'])->name('show');
+                Route::get('/{id}/edit', [\App\Http\Controllers\Tenant\OvertimeController::class, 'edit'])->name('edit');
+                Route::put('/{id}', [\App\Http\Controllers\Tenant\OvertimeController::class, 'update'])->name('update');
+                Route::post('/{id}/approve', [\App\Http\Controllers\Tenant\OvertimeController::class, 'approve'])->name('approve');
+                Route::post('/{id}/reject', [\App\Http\Controllers\Tenant\OvertimeController::class, 'reject'])->name('reject');
+                Route::post('/{id}/mark-paid', [\App\Http\Controllers\Tenant\OvertimeController::class, 'markPaid'])->name('mark-paid');
+                Route::post('/bulk-approve', [\App\Http\Controllers\Tenant\OvertimeController::class, 'bulkApprove'])->name('bulk-approve');
+                Route::get('/report/monthly', [\App\Http\Controllers\Tenant\OvertimeController::class, 'report'])->name('report');
+            });
+
+            // Shift Management
+            Route::prefix('shifts')->name('shifts.')->group(function () {
+                Route::get('/', [\App\Http\Controllers\Tenant\ShiftController::class, 'index'])->name('index');
+                Route::get('/create', [\App\Http\Controllers\Tenant\ShiftController::class, 'create'])->name('create');
+                Route::post('/', [\App\Http\Controllers\Tenant\ShiftController::class, 'store'])->name('store');
+                Route::get('/{id}', [\App\Http\Controllers\Tenant\ShiftController::class, 'show'])->name('show');
+                Route::get('/{id}/edit', [\App\Http\Controllers\Tenant\ShiftController::class, 'edit'])->name('edit');
+                Route::put('/{id}', [\App\Http\Controllers\Tenant\ShiftController::class, 'update'])->name('update');
+                Route::delete('/{id}', [\App\Http\Controllers\Tenant\ShiftController::class, 'destroy'])->name('destroy');
+
+                // Shift Assignments
+                Route::get('/assignments/list', [\App\Http\Controllers\Tenant\ShiftController::class, 'assignments'])->name('assignments');
+                Route::get('/assignments/create', [\App\Http\Controllers\Tenant\ShiftController::class, 'assignEmployees'])->name('assign-employees');
+                Route::post('/assignments', [\App\Http\Controllers\Tenant\ShiftController::class, 'storeAssignment'])->name('store-assignment');
+                Route::post('/assignments/{id}/end', [\App\Http\Controllers\Tenant\ShiftController::class, 'endAssignment'])->name('end-assignment');
+                Route::post('/assignments/bulk', [\App\Http\Controllers\Tenant\ShiftController::class, 'bulkAssign'])->name('bulk-assign');
+            });
         });
 
         // Admin Management Module

@@ -11,26 +11,33 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('business_types', function (Blueprint $table) {
-            $table->id();
-            $table->string('name');
-            $table->string('slug')->unique();
-            $table->string('category'); // Retail, Professional, Food, etc.
-            $table->string('icon')->nullable(); // Emoji or icon class
-            $table->text('description')->nullable();
-            $table->integer('sort_order')->default(0);
-            $table->boolean('is_active')->default(true);
-            $table->timestamps();
+        // Add missing columns to existing business_types table
+        Schema::table('business_types', function (Blueprint $table) {
+            if (!Schema::hasColumn('business_types', 'slug')) {
+                $table->string('slug')->unique()->after('name');
+            }
+            if (!Schema::hasColumn('business_types', 'category')) {
+                $table->string('category')->after('slug'); // Retail, Professional, Food, etc.
+            }
+            if (!Schema::hasColumn('business_types', 'icon')) {
+                $table->string('icon')->nullable()->after('category'); // Emoji or icon class
+            }
+            if (!Schema::hasColumn('business_types', 'sort_order')) {
+                $table->integer('sort_order')->default(0)->after('description');
+            }
 
-            $table->index('category');
-            $table->index('is_active');
+            if (!Schema::hasIndex('business_types', 'business_types_category_index')) {
+                $table->index('category');
+            }
         });
 
-        // Add business_type_id to tenants table (after business_structure column)
-        Schema::table('tenants', function (Blueprint $table) {
-            $table->foreignId('business_type_id')->nullable()->after('business_structure')->constrained('business_types')->nullOnDelete();
-            $table->index('business_type_id');
-        });
+        // Add business_type_id to tenants table (after business_type column)
+        if (!Schema::hasColumn('tenants', 'business_type_id')) {
+            Schema::table('tenants', function (Blueprint $table) {
+                $table->foreignId('business_type_id')->nullable()->after('business_type')->constrained('business_types')->nullOnDelete();
+                $table->index('business_type_id');
+            });
+        }
     }
 
     /**
@@ -40,9 +47,13 @@ return new class extends Migration
     {
         Schema::table('tenants', function (Blueprint $table) {
             $table->dropForeign(['business_type_id']);
+            $table->dropIndex(['business_type_id']);
             $table->dropColumn('business_type_id');
         });
 
-        Schema::dropIfExists('business_types');
+        Schema::table('business_types', function (Blueprint $table) {
+            $table->dropIndex(['category']);
+            $table->dropColumn(['slug', 'category', 'icon', 'sort_order']);
+        });
     }
 };

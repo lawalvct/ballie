@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::table('ledger_accounts', function (Blueprint $table) {
             // Add flag to identify the Opening Balance Equity account
-            $table->boolean('is_opening_balance_account')->default(false)->after('is_system_account');
+            $table->boolean('is_opening_balance_account')->default(false)->after('is_system_defined');
 
             // Add reference to the voucher that was created for this account's opening balance
             $table->unsignedBigInteger('opening_balance_voucher_id')->nullable()->after('opening_balance');

@@ -21,17 +21,17 @@ return new class extends Migration
         });
 
         // Tax rates table (shared across all tenants)
-        Schema::create('tax_rates', function (Blueprint $table) {
-            $table->id();
-            $table->string('country', 2);
-            $table->string('state')->nullable();
-            $table->string('tax_type'); // VAT, Sales Tax, etc.
-            $table->decimal('rate', 5, 2);
-            $table->date('effective_from');
-            $table->date('effective_to')->nullable();
-            $table->boolean('is_active')->default(true);
-            $table->timestamps();
-        });
+        // Schema::create('tax_rates', function (Blueprint $table) {
+        //     $table->id();
+        //     $table->string('country', 2);
+        //     $table->string('state')->nullable();
+        //     $table->string('tax_type'); // VAT, Sales Tax, etc.
+        //     $table->decimal('rate', 5, 2);
+        //     $table->date('effective_from');
+        //     $table->date('effective_to')->nullable();
+        //     $table->boolean('is_active')->default(true);
+        //     $table->timestamps();
+        // });
 
         // Nigerian states table (shared resource)
         Schema::create('nigerian_states', function (Blueprint $table) {

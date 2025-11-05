@@ -26,9 +26,9 @@ return new class extends Migration
             $table->foreignId('updated_by')->nullable()->constrained('users');
             $table->timestamps();
 
-            $table->index(['tenant_id', 'is_active']);
-            $table->index(['employee_id', 'effective_from', 'effective_to']);
-            $table->index('shift_id');
+            $table->index(['tenant_id', 'is_active'], 'emp_shift_assign_tenant_active');
+            $table->index(['employee_id', 'effective_from', 'effective_to'], 'emp_shift_assign_dates');
+            $table->index('shift_id', 'emp_shift_assign_shift');
         });
     }
 
