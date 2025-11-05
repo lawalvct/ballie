@@ -98,6 +98,12 @@
                                 </svg>
                             </button>
                         </div>
+
+                        {{-- Hidden inputs for receipt entry submission --}}
+                        <input type="hidden" :name="`entries[${index}][ledger_account_id]`" :value="entry.ledger_account_id">
+                        <input type="hidden" :name="`entries[${index}][particulars]`" :value="entry.particulars">
+                        <input type="hidden" :name="`entries[${index}][debit_amount]`" :value="entry.debit_amount">
+                        <input type="hidden" :name="`entries[${index}][credit_amount]`" value="0">
                     </div>
                 </template>
             </div>
@@ -176,6 +182,15 @@
                     <span class="px-3 py-1.5 bg-blue-600 text-white text-xs font-bold rounded-lg shadow-sm">Cr.</span>
                 </div>
             </div>
+
+            {{-- Hidden inputs for bank entry submission - use last index after receipt entries --}}
+            <template x-for="(entry, index) in receiptEntries" :key="`bank-${index}`" x-show="false">
+                <span></span>
+            </template>
+            <input type="hidden" :name="`entries[${receiptEntries.length}][ledger_account_id]`" :value="bankEntry.ledger_account_id">
+            <input type="hidden" :name="`entries[${receiptEntries.length}][particulars]`" :value="bankEntry.particulars">
+            <input type="hidden" :name="`entries[${receiptEntries.length}][debit_amount]`" value="0">
+            <input type="hidden" :name="`entries[${receiptEntries.length}][credit_amount]`" :value="totalReceiptAmount">
         </div>
 
         {{-- Totals Section --}}
@@ -230,12 +245,25 @@
             </a>
             <button
                 type="submit"
+                name="action"
+                value="save"
+                class="inline-flex items-center justify-center rounded-lg border-2 border-green-600 bg-white px-6 py-3 text-sm font-semibold text-green-600 shadow-sm hover:bg-green-50 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition-all"
+            >
+                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"></path>
+                </svg>
+                Save as Draft
+            </button>
+            <button
+                type="submit"
+                name="action"
+                value="save_and_post"
                 class="inline-flex items-center justify-center rounded-lg border border-transparent bg-gradient-to-r from-green-600 to-emerald-600 px-6 py-3 text-sm font-semibold text-white shadow-lg hover:from-green-700 hover:to-emerald-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 hover:shadow-xl transition-all transform hover:-translate-y-0.5"
             >
                 <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                 </svg>
-                Save Receipt Voucher
+                Save & Post
             </button>
         </div>
     </div>

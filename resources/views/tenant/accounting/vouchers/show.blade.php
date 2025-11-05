@@ -2,6 +2,10 @@
 
 @section('title', 'Voucher ' . $voucher->voucher_number . ' - ' . $tenant->name)
 
+@section('page-title', 'Voucher Details')
+
+@section('page-description', 'View detailed information about this voucher including entries, audit trail, and related information.')
+
 @section('content')
 <div class="space-y-6">
     <!-- Header -->

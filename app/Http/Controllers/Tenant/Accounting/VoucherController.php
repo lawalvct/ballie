@@ -262,7 +262,7 @@ class VoucherController extends Controller
             }
         }
 
-        DB::transaction(function () use ($request, $tenant) {
+        $voucher = DB::transaction(function () use ($request, $tenant) {
             $voucherType = VoucherType::findOrFail($request->voucher_type_id);
 
             // Generate voucher number
@@ -296,11 +296,32 @@ class VoucherController extends Controller
                     ]);
                 }
             }
+
+            return $voucher;
         });
+
+        // Check if user wants to save and post
+        if ($request->input('action') === 'save_and_post') {
+            // Post the voucher immediately
+            $voucher->update([
+                'status' => 'posted',
+                'posted_at' => now(),
+                'posted_by' => Auth::id(),
+            ]);
+
+            // Update account balances for each voucher entry
+            foreach ($voucher->entries as $entry) {
+                $entry->updateLedgerAccountBalance();
+            }
+
+            return redirect()
+                ->route('tenant.accounting.vouchers.show', ['tenant' => $tenant->slug, 'voucher' => $voucher->id])
+                ->with('success', 'Payment voucher created and posted successfully.');
+        }
 
         return redirect()
             ->route('tenant.accounting.vouchers.index', $tenant->slug)
-            ->with('success', 'Voucher created successfully.');
+            ->with('success', 'Payment voucher saved as draft successfully.');
     }
 
     /**
