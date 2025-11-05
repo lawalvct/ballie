@@ -2,6 +2,10 @@
 
 @section('title', $ledgerAccount->name . ' - Ledger Account Details')
 
+@section('page-title', 'Ledger Account Details')
+
+@section('page-description', 'View detailed information about this ledger account including balance, transactions, and account settings.')
+
 @section('content')
 <div class="max-w-6xl mx-auto space-y-6">
     <!-- Header -->
