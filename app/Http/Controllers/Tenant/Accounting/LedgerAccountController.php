@@ -982,6 +982,53 @@ public function show(Request $request, Tenant $tenant, LedgerAccount $ledgerAcco
     /**
      * Print ledger for specific account
      */
+    /**
+     * View account statement (similar to print but with better UI)
+     */
+    public function statement(Tenant $tenant, LedgerAccount $ledgerAccount)
+    {
+        $ledgerAccount->load(['accountGroup', 'parent']);
+
+        // Get all transactions for this account (only posted vouchers)
+        $transactions = $ledgerAccount->voucherEntries()
+            ->with(['voucher'])
+            ->whereHas('voucher', function ($query) {
+                $query->where('status', 'posted');
+            })
+            ->orderBy('created_at')
+            ->get();
+
+        // Calculate running balance for each transaction
+        $runningBalance = $ledgerAccount->opening_balance;
+        $transactionsWithBalance = [];
+
+        foreach ($transactions as $transaction) {
+            $runningBalance += ($transaction->debit_amount - $transaction->credit_amount);
+            $transactionsWithBalance[] = [
+                'transaction' => $transaction,
+                'running_balance' => $runningBalance
+            ];
+        }
+
+        // Get totals
+        $totalDebits = $transactions->sum('debit_amount');
+        $totalCredits = $transactions->sum('credit_amount');
+        $currentBalance = $ledgerAccount->getCurrentBalance();
+
+        return view('tenant.accounting.ledger-accounts.statement', compact(
+            'tenant',
+            'ledgerAccount',
+            'transactions',
+            'transactionsWithBalance',
+            'totalDebits',
+            'totalCredits',
+            'currentBalance'
+        ));
+    }
+
+    /**
+     * Print ledger account statement
+     */
     public function printLedger(Tenant $tenant, LedgerAccount $ledgerAccount)
     {
         $ledgerAccount->load(['accountGroup', 'parent']);
