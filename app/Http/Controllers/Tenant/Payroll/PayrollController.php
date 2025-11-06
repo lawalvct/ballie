@@ -179,6 +179,127 @@ class PayrollController extends Controller
         return view('tenant.payroll.employees.show', compact('tenant', 'employee'));
     }
 
+    public function editEmployee(Tenant $tenant, Employee $employee)
+    {
+        // Validate that the employee belongs to this tenant
+        if ($employee->tenant_id !== $tenant->id) {
+            abort(404);
+        }
+
+        $employee->load([
+            'department',
+            'position',
+            'currentSalary.salaryComponents.salaryComponent'
+        ]);
+
+        $departments = Department::where('tenant_id', $tenant->id)->active()->get();
+        $positions = \App\Models\Position::where('tenant_id', $tenant->id)->active()->orderBy('name')->get();
+        $salaryComponents = SalaryComponent::where('tenant_id', $tenant->id)->active()->get();
+
+        return view('tenant.payroll.employees.edit', compact(
+            'tenant', 'employee', 'departments', 'positions', 'salaryComponents'
+        ));
+    }
+
+    public function updateEmployee(Request $request, Tenant $tenant, Employee $employee)
+    {
+        // Validate that the employee belongs to this tenant
+        if ($employee->tenant_id !== $tenant->id) {
+            abort(404);
+        }
+
+        return DB::transaction(function () use ($request, $tenant, $employee) {
+            $validated = $request->validate([
+                'first_name' => 'required|string|max:255',
+                'last_name' => 'required|string|max:255',
+                'email' => 'required|email|unique:employees,email,' . $employee->id,
+                'phone' => 'nullable|string|max:20',
+                'department_id' => 'required|exists:departments,id',
+                'position_id' => 'nullable|exists:positions,id',
+                'job_title' => 'required|string|max:255',
+                'hire_date' => 'required|date',
+                'date_of_birth' => 'nullable|date',
+                'gender' => 'nullable|in:male,female,other',
+                'address' => 'nullable|string',
+                'city' => 'nullable|string|max:255',
+                'state' => 'nullable|string|max:255',
+                'postal_code' => 'nullable|string|max:20',
+                'country' => 'nullable|string|max:255',
+                'employment_type' => 'required|in:full_time,contract,casual,intern,part_time',
+                'pay_frequency' => 'required|in:monthly,weekly,contract',
+                'basic_salary' => 'required|numeric|min:0',
+                'bank_name' => 'nullable|string|max:255',
+                'account_number' => 'nullable|string|max:20',
+                'account_name' => 'nullable|string|max:255',
+                'tin' => 'nullable|string|max:20',
+                'pension_pin' => 'nullable|string|max:20',
+                'components' => 'nullable|array',
+                'components.*.id' => 'exists:salary_components,id',
+                'components.*.amount' => 'nullable|numeric|min:0',
+                'components.*.percentage' => 'nullable|numeric|min:0|max:100',
+            ]);
+
+            // Update employee
+            $employee->update($validated);
+
+            // Check if salary has changed
+            $currentSalary = $employee->currentSalary;
+            if (!$currentSalary || $currentSalary->basic_salary != $validated['basic_salary']) {
+                // Mark old salary as not current
+                if ($currentSalary) {
+                    $currentSalary->update(['is_current' => false]);
+                }
+
+                // Create new salary structure
+                $salary = EmployeeSalary::create([
+                    'employee_id' => $employee->id,
+                    'basic_salary' => $validated['basic_salary'],
+                    'effective_date' => now(),
+                    'is_current' => true,
+                    'created_by' => Auth::id(),
+                ]);
+
+                // Add salary components
+                if (!empty($validated['components'])) {
+                    foreach ($validated['components'] as $component) {
+                        if (!empty($component['amount']) || !empty($component['percentage'])) {
+                            EmployeeSalaryComponent::create([
+                                'employee_salary_id' => $salary->id,
+                                'salary_component_id' => $component['id'],
+                                'amount' => $component['amount'] ?? null,
+                                'percentage' => $component['percentage'] ?? null,
+                                'is_active' => true,
+                            ]);
+                        }
+                    }
+                }
+            } else {
+                // Update existing salary components only
+                if ($currentSalary && !empty($validated['components'])) {
+                    // Delete old components
+                    $currentSalary->salaryComponents()->delete();
+
+                    // Add new components
+                    foreach ($validated['components'] as $component) {
+                        if (!empty($component['amount']) || !empty($component['percentage'])) {
+                            EmployeeSalaryComponent::create([
+                                'employee_salary_id' => $currentSalary->id,
+                                'salary_component_id' => $component['id'],
+                                'amount' => $component['amount'] ?? null,
+                                'percentage' => $component['percentage'] ?? null,
+                                'is_active' => true,
+                            ]);
+                        }
+                    }
+                }
+            }
+
+            return redirect()
+                ->route('tenant.payroll.employees.show', [$tenant, $employee])
+                ->with('success', 'Employee updated successfully.');
+        });
+    }
+
     /**
      * Departments Management
      */

@@ -225,10 +225,12 @@
                     <h3 class="text-lg font-bold text-gray-900 mb-4">Quick Actions</h3>
 
                     <div class="space-y-3">
-                        <a href="#" class="block w-full bg-blue-600 hover:bg-blue-700 text-white px-4 py-3 rounded-lg font-medium transition-colors duration-300 text-center">
+                        <a href="{{ route('tenant.payroll.employees.edit', ['tenant' => $tenant->slug, 'employee' => $employee->id]) }}"
+                           class="block w-full bg-blue-600 hover:bg-blue-700 text-white px-4 py-3 rounded-lg font-medium transition-colors duration-300 text-center">
                             <i class="fas fa-edit mr-2"></i>Edit Employee
                         </a>
-                        <a href="#" class="block w-full bg-green-600 hover:bg-green-700 text-white px-4 py-3 rounded-lg font-medium transition-colors duration-300 text-center">
+                        <a href="{{ route('tenant.payroll.employees.payslip', ['tenant' => $tenant->slug, 'employee' => $employee->id]) }}"
+                           class="block w-full bg-green-600 hover:bg-green-700 text-white px-4 py-3 rounded-lg font-medium transition-colors duration-300 text-center">
                             <i class="fas fa-money-check-alt mr-2"></i>Generate Payslip
                         </a>
                         <a href="#" class="block w-full bg-purple-600 hover:bg-purple-700 text-white px-4 py-3 rounded-lg font-medium transition-colors duration-300 text-center">

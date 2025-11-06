@@ -89,6 +89,23 @@
                 <p class="text-xs text-purple-200">Organize employees into departments and teams.</p>
             </a>
 
+            <!-- Position Management Card -->
+            <a href="{{ route('tenant.payroll.positions.index', ['tenant' => $tenant->slug]) }}"
+               class="action-card bg-gradient-to-br from-indigo-600 to-indigo-800 hover:from-indigo-500 hover:to-indigo-700 border border-indigo-500 rounded-xl p-4 transition-all duration-300 hover:shadow-lg hover:scale-105 group">
+                <div class="flex items-center mb-3">
+                    <div class="w-10 h-10 bg-indigo-500 bg-opacity-30 rounded-lg flex items-center justify-center mr-3 group-hover:scale-110 transition-transform duration-300">
+                        <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
+                        </svg>
+                    </div>
+                    <div>
+                        <h5 class="font-semibold text-white group-hover:text-indigo-200 transition-colors duration-300">Positions</h5>
+                        <p class="text-xs text-indigo-200">Manage positions</p>
+                    </div>
+                </div>
+                <p class="text-xs text-indigo-200">Define job positions and hierarchies.</p>
+            </a>
+
             <!-- Salary Components Card -->
             <a href="{{ route('tenant.payroll.components.index', ['tenant' => $tenant->slug]) }}"
                class="action-card bg-gradient-to-br from-pink-600 to-pink-800 hover:from-pink-500 hover:to-pink-700 border border-pink-500 rounded-xl p-4 transition-all duration-300 hover:shadow-lg hover:scale-105 group">
@@ -270,98 +287,4 @@
             </a>
         </div>
     </div>
-
-    <!-- Quick Actions Section -->
-    <div>
-        <h4 class="text-xl font-semibold text-white mb-6 flex items-center">
-            <div class="w-8 h-8 bg-gray-600 rounded-lg flex items-center justify-center mr-3">
-                <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
-                </svg>
-            </div>
-            Quick Actions
-        </h4>
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            <!-- Backup Data Card -->
-            <button onclick="backupPayrollData()"
-                    class="action-card bg-gradient-to-br from-gray-600 to-gray-800 hover:from-gray-500 hover:to-gray-700 border border-gray-500 rounded-xl p-4 transition-all duration-300 hover:shadow-lg hover:scale-105 group text-left">
-                <div class="flex items-center mb-3">
-                    <div class="w-10 h-10 bg-gray-500 bg-opacity-30 rounded-lg flex items-center justify-center mr-3 group-hover:scale-110 transition-transform duration-300">
-                        <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 19l3 3m0 0l3-3m-3 3V10"></path>
-                        </svg>
-                    </div>
-                    <div>
-                        <h5 class="font-semibold text-white group-hover:text-gray-200 transition-colors duration-300">Backup Data</h5>
-                        <p class="text-xs text-gray-200">Export records</p>
-                    </div>
-                </div>
-                <p class="text-xs text-gray-200">Create backup of your payroll data.</p>
-            </button>
-
-            <!-- Import Data Card -->
-            <button onclick="importPayrollData()"
-                    class="action-card bg-gradient-to-br from-slate-600 to-slate-800 hover:from-slate-500 hover:to-slate-700 border border-slate-500 rounded-xl p-4 transition-all duration-300 hover:shadow-lg hover:scale-105 group text-left">
-                <div class="flex items-center mb-3">
-                    <div class="w-10 h-10 bg-slate-500 bg-opacity-30 rounded-lg flex items-center justify-center mr-3 group-hover:scale-110 transition-transform duration-300">
-                        <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path>
-                        </svg>
-                    </div>
-                    <div>
-                        <h5 class="font-semibold text-white group-hover:text-slate-200 transition-colors duration-300">Import Data</h5>
-                        <p class="text-xs text-slate-200">Upload records</p>
-                    </div>
-                </div>
-                <p class="text-xs text-slate-200">Import employee and payroll data from external sources.</p>
-            </button>
-
-            <!-- Settings Card -->
-            <a href="#"
-               class="action-card bg-gradient-to-br from-stone-600 to-stone-800 hover:from-stone-500 hover:to-stone-700 border border-stone-500 rounded-xl p-4 transition-all duration-300 hover:shadow-lg hover:scale-105 group">
-                <div class="flex items-center mb-3">
-                    <div class="w-10 h-10 bg-stone-500 bg-opacity-30 rounded-lg flex items-center justify-center mr-3 group-hover:scale-110 transition-transform duration-300">
-                        <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path>
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
-                        </svg>
-                    </div>
-                    <div>
-                        <h5 class="font-semibold text-white group-hover:text-stone-200 transition-colors duration-300">Settings</h5>
-                        <p class="text-xs text-stone-200">Configuration</p>
-                    </div>
-                </div>
-                <p class="text-xs text-stone-200">Configure payroll preferences and settings.</p>
-            </a>
-
-            <!-- Help & Support Card -->
-            <a href="#"
-               class="action-card bg-gradient-to-br from-amber-600 to-amber-800 hover:from-amber-500 hover:to-amber-700 border border-amber-500 rounded-xl p-4 transition-all duration-300 hover:shadow-lg hover:scale-105 group">
-                <div class="flex items-center mb-3">
-                    <div class="w-10 h-10 bg-amber-500 bg-opacity-30 rounded-lg flex items-center justify-center mr-3 group-hover:scale-110 transition-transform duration-300">
-                        <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                        </svg>
-                    </div>
-                    <div>
-                        <h5 class="font-semibold text-white group-hover:text-amber-200 transition-colors duration-300">Help & Support</h5>
-                        <p class="text-xs text-amber-200">Get assistance</p>
-                    </div>
-                </div>
-                <p class="text-xs text-amber-200">Access payroll help documentation and support.</p>
-            </a>
-        </div>
-    </div>
 </div>
-
-<script>
-function backupPayrollData() {
-    // Add your backup functionality here
-    alert('Payroll backup functionality will be implemented here');
-}
-
-function importPayrollData() {
-    // Add your import functionality here
-    alert('Payroll import functionality will be implemented here');
-}
-</script>
