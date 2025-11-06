@@ -425,6 +425,14 @@ class PayrollController extends Controller
             ->with('success', 'Payroll period created successfully.');
     }
 
+    /**
+     * Process payroll (alias for storePayroll)
+     */
+    public function processPayroll(Request $request, Tenant $tenant)
+    {
+        return $this->storePayroll($request, $tenant);
+    }
+
     public function showPayroll(Tenant $tenant, PayrollPeriod $period)
     {
         $period->load([
@@ -434,6 +442,14 @@ class PayrollController extends Controller
         ]);
 
         return view('tenant.payroll.processing.show', compact('tenant', 'period'));
+    }
+
+    /**
+     * Show payroll period (alias for showPayroll)
+     */
+    public function showPayrollPeriod(Tenant $tenant, PayrollPeriod $period)
+    {
+        return $this->showPayroll($tenant, $period);
     }
 
     public function generatePayroll(Request $request, Tenant $tenant, PayrollPeriod $period)

@@ -596,7 +596,7 @@ Route::prefix('ledger-accounts')->name('ledger-accounts.')->group(function () {
             Route::prefix('processing')->name('processing.')->group(function () {
                 Route::get('/', [PayrollController::class, 'processing'])->name('index');
                 Route::get('/create', [PayrollController::class, 'createPayroll'])->name('create');
-                Route::post('/', [PayrollController::class, 'processPayroll'])->name('process');
+                Route::post('/', [PayrollController::class, 'processPayroll'])->name('store');
                 Route::get('/{period}', [PayrollController::class, 'showPayrollPeriod'])->name('show');
                 Route::get('/{period}/edit', [PayrollController::class, 'editPayrollPeriod'])->name('edit');
                 Route::put('/{period}', [PayrollController::class, 'updatePayrollPeriod'])->name('update');
