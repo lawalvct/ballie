@@ -115,7 +115,8 @@ class PayrollController extends Controller
                 'position_id' => 'nullable|exists:positions,id',
                 'job_title' => 'required|string|max:255',
                 'hire_date' => 'required|date',
-                'employment_type' => 'required|in:permanent,contract,casual',
+
+                 'employment_type' => 'required|in:full_time,contract,casual,intern,part_time',
                 'pay_frequency' => 'required|in:monthly,weekly,contract',
                 'basic_salary' => 'required|numeric|min:0',
                 'bank_name' => 'nullable|string|max:255',
@@ -540,5 +541,46 @@ class PayrollController extends Controller
         return view('tenant.payroll.employees.payslip', compact(
             'tenant', 'employee', 'payrollRun', 'year', 'month'
         ));
+    }
+
+    /**
+     * Toggle employee status
+     */
+    public function toggleStatus(Tenant $tenant, Employee $employee)
+    {
+        // Validate that the employee belongs to this tenant
+        if ($employee->tenant_id !== $tenant->id) {
+            abort(404);
+        }
+
+        // Toggle status between active and inactive
+        $newStatus = $employee->status === 'active' ? 'inactive' : 'active';
+        $employee->update(['status' => $newStatus]);
+
+        $statusText = $newStatus === 'active' ? 'activated' : 'deactivated';
+
+        return redirect()->back()
+            ->with('success', "Employee {$statusText} successfully.");
+    }
+
+    /**
+     * Reset employee portal link
+     */
+    public function resetPortalLink(Tenant $tenant, Employee $employee)
+    {
+        // Validate that the employee belongs to this tenant
+        if ($employee->tenant_id !== $tenant->id) {
+            abort(404);
+        }
+
+        // Generate new portal token
+        $employee->portal_token = Str::random(64);
+        $employee->save();
+
+        // You could send an email here with the new link
+        // Mail::to($employee->email)->send(new PortalAccessMail($employee));
+
+        return redirect()->back()
+            ->with('success', 'Portal link has been reset successfully. New link has been generated.');
     }
 }

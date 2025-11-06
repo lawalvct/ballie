@@ -29,7 +29,7 @@
                             {{ $employee->status === 'active' ? 'bg-green-400' : 'bg-red-400' }}"></span>
                         {{ ucfirst($employee->status) }}
                     </span>
-                    <a href="{{ route('tenant.payroll.employees', $tenant) }}"
+                    <a href="{{ route('tenant.payroll.employees.index', ['tenant' => $tenant->slug]) }}"
                        class="bg-white/20 backdrop-blur-sm hover:bg-white/30 text-white px-6 py-3 rounded-xl font-medium transition-all duration-300 shadow-lg hover:shadow-xl border border-white/20">
                         <i class="fas fa-arrow-left mr-2"></i>Back to Employees
                     </a>

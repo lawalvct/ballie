@@ -277,6 +277,7 @@
                             <option value="part_time" {{ old('employment_type') === 'part_time' ? 'selected' : '' }}>Part Time</option>
                             <option value="contract" {{ old('employment_type') === 'contract' ? 'selected' : '' }}>Contract</option>
                             <option value="intern" {{ old('employment_type') === 'intern' ? 'selected' : '' }}>Intern</option>
+                            <option value="casual" {{ old('employment_type') === 'casual' ? 'selected' : '' }}>Casual</option>
                         </select>
                         @error('employment_type')
                             <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
@@ -323,12 +324,17 @@
                             Base Salary <span class="text-red-500">*</span>
                         </label>
                         <div class="relative">
-                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                <span class="text-gray-500 sm:text-sm">₦</span>
-                            </div>
+                          
                             <input type="number" name="basic_salary" id="basic_salary" step="0.01" min="0" required
                                 class="mt-1 focus:ring-blue-500 focus:border-blue-500 block w-full pl-7 shadow-sm sm:text-sm rounded-md {{ $errors->has('basic_salary') ? 'border-red-300' : 'border-gray-300' }}"
                                 value="{{ old('basic_salary') }}" placeholder="0.00">
+                            <div class="mt-1 text-sm text-gray-600" id="basic_salary_formatted">
+                                @if(old('basic_salary'))
+                                    ₦{{ number_format(old('basic_salary'), 2, '.', ',') }}
+                                @else
+                                    ₦0.00
+                                @endif
+                            </div>
                         </div>
                         @error('basic_salary')
                             <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
@@ -735,16 +741,38 @@ document.addEventListener('DOMContentLoaded', function() {
     const form = document.getElementById('employeeForm');
     form.addEventListener('submit', function(e) {
         let isValid = true;
-        const requiredFields = document.querySelectorAll('input[required], select[required]');
+        const requiredFields = document.querySelectorAll('#employeeForm input[required], #employeeForm select[required]');
+        const sectionsWithErrors = new Set();
+        const errorMessages = [];
 
         requiredFields.forEach(field => {
+            // Skip fields in hidden modals
+            const inModal = field.closest('#departmentModal, #positionModal');
+            if (inModal) {
+                return; // Skip modal fields
+            }
+
             const errorDiv = document.getElementById(field.id + '-error');
-            if (field.value.trim() === '') {
+            const fieldLabel = field.closest('.form-group')?.querySelector('label')?.textContent.replace('*', '').trim() || field.name;
+
+            // Check if field is empty
+            const isEmpty = field.value.trim() === '';
+
+            if (isEmpty) {
                 field.classList.add('error');
                 if (errorDiv) {
                     errorDiv.textContent = 'This field is required';
                     errorDiv.classList.remove('hidden');
                 }
+
+                // Find which section this field belongs to
+                const section = field.closest('[id$="-section"]');
+                if (section && section.classList.contains('hidden')) {
+                    sectionsWithErrors.add(section.id);
+                }
+
+                errorMessages.push(fieldLabel);
+                console.log('Missing field:', field.id, 'Label:', fieldLabel, 'Value:', field.value);
                 isValid = false;
             } else {
                 field.classList.remove('error');
@@ -752,9 +780,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     errorDiv.classList.add('hidden');
                 }
             }
-        });
-
-        // Email validation
+        });        // Email validation
         const emailField = document.getElementById('email');
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
         if (emailField.value && !emailRegex.test(emailField.value)) {
@@ -764,16 +790,37 @@ document.addEventListener('DOMContentLoaded', function() {
                 errorDiv.textContent = 'Please enter a valid email address';
                 errorDiv.classList.remove('hidden');
             }
+            errorMessages.push('Email Address (invalid format)');
             isValid = false;
         }
 
         if (!isValid) {
             e.preventDefault();
+
+            // Expand all sections with errors
+            sectionsWithErrors.forEach(sectionId => {
+                const section = document.getElementById(sectionId);
+                const toggle = document.querySelector(`[data-target="${sectionId}"]`);
+                if (section && toggle) {
+                    section.classList.remove('hidden');
+                    const arrow = toggle.querySelector('svg');
+                    if (arrow) {
+                        arrow.style.transform = 'rotate(180deg)';
+                    }
+                    toggle.setAttribute('aria-expanded', 'true');
+                }
+            });
+
             // Scroll to first error
             const firstError = document.querySelector('.error');
             if (firstError) {
                 firstError.scrollIntoView({ behavior: 'smooth', block: 'center' });
             }
+
+            // Show alert with specific field names
+            const errorCount = errorMessages.length;
+            const fieldList = errorMessages.join('\n• ');
+            alert(`Please fill in all required fields (${errorCount} field(s) need attention):\n\n• ${fieldList}`);
         }
     });
 
@@ -1009,5 +1056,19 @@ function showNotification(message, type = 'success') {
         notification.remove();
     }, 3000);
 }
+
+// Format salary input with thousand separators
+document.getElementById('basic_salary').addEventListener('input', function() {
+    const value = this.value;
+    const formatted = new Intl.NumberFormat('en-NG').format(value || 0);
+    document.getElementById('basic_salary_formatted').textContent = '₦' + formatted;
+});
+
+// Initialize formatted display on page load
+document.addEventListener('DOMContentLoaded', function() {
+    const salaryInput = document.getElementById('basic_salary');
+    const formatted = new Intl.NumberFormat('en-NG').format(salaryInput.value || 0);
+    document.getElementById('basic_salary_formatted').textContent = '₦' + formatted;
+});
 </script>
 @endsection
