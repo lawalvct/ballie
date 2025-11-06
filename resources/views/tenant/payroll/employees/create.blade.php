@@ -851,68 +851,163 @@ function closePositionModal() {
 }
 
 // Handle department creation
-document.getElementById('departmentForm').addEventListener('submit', function(e) {
+document.getElementById('departmentForm').addEventListener('submit', async function(e) {
     e.preventDefault();
 
     const name = document.getElementById('dept_name').value;
     const code = document.getElementById('dept_code').value;
+    const description = document.getElementById('dept_description').value;
 
-    if (name && code) {
-        // Add to dropdown immediately
-        const select = document.getElementById('department_id');
-        const tempId = 'temp_' + Date.now();
-        const option = new Option(name, tempId);
-        select.add(option);
-        select.value = tempId;
+    if (!name || !code) {
+        alert('Please fill in all required fields');
+        return;
+    }
 
-        // Store for later submission
-        const hiddenInput = document.createElement('input');
-        hiddenInput.type = 'hidden';
-        hiddenInput.name = 'new_department';
-        hiddenInput.value = JSON.stringify({name, code, description: document.getElementById('dept_description').value});
-        document.getElementById('employeeForm').appendChild(hiddenInput);
+    try {
+        // Show loading state
+        const submitBtn = this.querySelector('button[type="submit"]');
+        const originalText = submitBtn.textContent;
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'Creating...';
 
-        closeDepartmentModal();
-        if (typeof updateProgress === 'function') updateProgress();
+        // Send AJAX request
+        const response = await fetch('{{ route("tenant.payroll.departments.store", $tenant) }}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || '{{ csrf_token() }}',
+                'Accept': 'application/json',
+            },
+            body: JSON.stringify({
+                name: name,
+                code: code,
+                description: description
+            })
+        });
+
+        if (response.ok) {
+            const data = await response.json();
+
+            // Add the new department to dropdown
+            const select = document.getElementById('department_id');
+            const option = new Option(name, data.id || data.department?.id);
+            select.add(option);
+            select.value = data.id || data.department?.id;
+
+            // Trigger change event to update position filter
+            select.dispatchEvent(new Event('change'));
+
+            closeDepartmentModal();
+            if (typeof updateProgress === 'function') updateProgress();
+
+            // Show success message
+            showNotification('Department created successfully!', 'success');
+        } else {
+            const errorData = await response.json();
+            const errorMessage = errorData.message || 'Failed to create department';
+            throw new Error(errorMessage);
+        }
+
+        submitBtn.disabled = false;
+        submitBtn.textContent = originalText;
+    } catch (error) {
+        console.error('Error creating department:', error);
+        alert('Error: ' + error.message);
+
+        // Restore button state
+        const submitBtn = this.querySelector('button[type="submit"]');
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Create';
     }
 });
 
 // Handle position creation
-document.getElementById('positionForm').addEventListener('submit', function(e) {
+document.getElementById('positionForm').addEventListener('submit', async function(e) {
     e.preventDefault();
 
     const name = document.getElementById('pos_name').value;
     const code = document.getElementById('pos_code').value;
     const level = document.getElementById('pos_level').value;
+    const deptId = document.getElementById('pos_department_id').value;
+    const description = document.getElementById('pos_description').value;
 
-    if (name && code) {
-        // Add to dropdown immediately
-        const select = document.getElementById('position_id');
-        const tempId = 'temp_' + Date.now();
-        const option = new Option(`${name} (${code})`, tempId);
-        const deptId = document.getElementById('pos_department_id').value;
-        if (deptId) {
-            option.setAttribute('data-department', deptId);
-        }
-        select.add(option);
-        select.value = tempId;
+    if (!name || !code) {
+        alert('Please fill in all required fields');
+        return;
+    }
 
-        // Store for later submission
-        const hiddenInput = document.createElement('input');
-        hiddenInput.type = 'hidden';
-        hiddenInput.name = 'new_position';
-        hiddenInput.value = JSON.stringify({
-            name,
-            code,
-            level: level || 3,
-            department_id: deptId,
-            description: document.getElementById('pos_description').value
+    try {
+        // Show loading state
+        const submitBtn = this.querySelector('button[type="submit"]');
+        const originalText = submitBtn.textContent;
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'Creating...';
+
+        // Send AJAX request
+        const response = await fetch('{{ route("tenant.payroll.positions.store", $tenant) }}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || '{{ csrf_token() }}',
+                'Accept': 'application/json',
+            },
+            body: JSON.stringify({
+                name: name,
+                code: code,
+                level: level || 3,
+                department_id: deptId || null,
+                description: description
+            })
         });
-        document.getElementById('employeeForm').appendChild(hiddenInput);
 
-        closePositionModal();
-        if (typeof updateProgress === 'function') updateProgress();
+        if (response.ok) {
+            const data = await response.json();
+
+            // Add the new position to dropdown
+            const select = document.getElementById('position_id');
+            const option = new Option(`${name} (${code})`, data.id || data.position?.id);
+            if (deptId) {
+                option.setAttribute('data-department', deptId);
+            }
+            select.add(option);
+            select.value = data.id || data.position?.id;
+
+            closePositionModal();
+            if (typeof updateProgress === 'function') updateProgress();
+
+            // Show success message
+            showNotification('Position created successfully!', 'success');
+        } else {
+            const errorData = await response.json();
+            const errorMessage = errorData.message || 'Failed to create position';
+            throw new Error(errorMessage);
+        }
+
+        submitBtn.disabled = false;
+        submitBtn.textContent = originalText;
+    } catch (error) {
+        console.error('Error creating position:', error);
+        alert('Error: ' + error.message);
+
+        // Restore button state
+        const submitBtn = this.querySelector('button[type="submit"]');
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Create';
     }
 });
+
+// Helper function to show notifications
+function showNotification(message, type = 'success') {
+    const notification = document.createElement('div');
+    notification.className = `fixed top-4 right-4 z-50 px-6 py-3 rounded-lg shadow-lg ${
+        type === 'success' ? 'bg-green-500' : 'bg-red-500'
+    } text-white`;
+    notification.textContent = message;
+    document.body.appendChild(notification);
+
+    setTimeout(() => {
+        notification.remove();
+    }, 3000);
+}
 </script>
 @endsection

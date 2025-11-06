@@ -70,6 +70,15 @@ class PositionController extends Controller
         ]);
 
         if ($validator->fails()) {
+            // Return JSON for AJAX requests
+            if ($request->wantsJson() || $request->ajax()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Validation failed',
+                    'errors' => $validator->errors()
+                ], 422);
+            }
+
             return redirect()->back()
                 ->withErrors($validator)
                 ->withInput();
@@ -77,9 +86,19 @@ class PositionController extends Controller
 
         $data = $validator->validated();
         $data['tenant_id'] = $tenant->id;
-        $data['is_active'] = $request->has('is_active');
+        $data['is_active'] = $request->has('is_active') ? true : ($request->input('is_active') ?? true);
 
-        Position::create($data);
+        $position = Position::create($data);
+
+        // Return JSON for AJAX requests
+        if ($request->wantsJson() || $request->ajax()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Position created successfully.',
+                'id' => $position->id,
+                'position' => $position
+            ]);
+        }
 
         return redirect()->route('tenant.payroll.positions.index', $tenant)
             ->with('success', 'Position created successfully.');

@@ -106,47 +106,6 @@ class PayrollController extends Controller
     public function storeEmployee(Request $request, Tenant $tenant)
     {
         return DB::transaction(function () use ($request, $tenant) {
-            // Handle new department creation
-            if ($request->has('new_department') && $request->new_department) {
-                try {
-                    $deptData = json_decode($request->new_department, true);
-                    if ($deptData && isset($deptData['name']) && isset($deptData['code'])) {
-                        $department = Department::create([
-                            'name' => $deptData['name'],
-                            'code' => $deptData['code'],
-                            'description' => $deptData['description'] ?? null,
-                            'tenant_id' => $tenant->id,
-                            'is_active' => true
-                        ]);
-                        $request->merge(['department_id' => $department->id]);
-                    }
-                } catch (\Exception $e) {
-                    \Log::error('Failed to create department from quick add: ' . $e->getMessage());
-                }
-            }
-
-            // Handle new position creation
-            if ($request->has('new_position') && $request->new_position) {
-                try {
-                    $posData = json_decode($request->new_position, true);
-                    if ($posData && isset($posData['name']) && isset($posData['code'])) {
-                        $deptId = !empty($posData['department_id']) ? $posData['department_id'] : ($request->department_id ?? null);
-                        $position = \App\Models\Position::create([
-                            'name' => $posData['name'],
-                            'code' => $posData['code'],
-                            'department_id' => $deptId,
-                            'description' => $posData['description'] ?? null,
-                            'level' => $posData['level'] ?? 3, // Default to Mid-Level if not specified
-                            'tenant_id' => $tenant->id,
-                            'is_active' => true
-                        ]);
-                        $request->merge(['position_id' => $position->id]);
-                    }
-                } catch (\Exception $e) {
-                    \Log::error('Failed to create position from quick add: ' . $e->getMessage());
-                }
-            }
-
             $validated = $request->validate([
                 'first_name' => 'required|string|max:255',
                 'last_name' => 'required|string|max:255',
@@ -240,10 +199,20 @@ class PayrollController extends Controller
             'description' => 'nullable|string',
         ]);
 
-        Department::create(array_merge($validated, [
+        $department = Department::create(array_merge($validated, [
             'tenant_id' => $tenant->id,
             'is_active' => true
         ]));
+
+        // Return JSON for AJAX requests
+        if ($request->wantsJson() || $request->ajax()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Department created successfully.',
+                'id' => $department->id,
+                'department' => $department
+            ]);
+        }
 
         return redirect()
             ->route('tenant.payroll.departments.index', $tenant)
