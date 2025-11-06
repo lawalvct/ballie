@@ -14,7 +14,7 @@ class Employee extends Model
     use SoftDeletes;
 
     protected $fillable = [
-        'tenant_id', 'department_id', 'employee_number', 'unique_link_token',
+        'tenant_id', 'department_id', 'position_id', 'employee_number', 'unique_link_token',
         'first_name', 'last_name', 'email', 'phone', 'date_of_birth', 'gender',
         'marital_status', 'address', 'state_of_origin', 'job_title', 'hire_date',
         'confirmation_date', 'employment_type', 'pay_frequency', 'status',
@@ -52,6 +52,11 @@ class Employee extends Model
     public function department(): BelongsTo
     {
         return $this->belongsTo(Department::class);
+    }
+
+    public function position(): BelongsTo
+    {
+        return $this->belongsTo(Position::class);
     }
 
     public function currentSalary(): HasOne

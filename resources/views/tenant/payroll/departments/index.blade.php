@@ -69,7 +69,7 @@
                             <i class="fas fa-users mr-2 text-blue-500"></i>
                             <span>{{ $department->employees_count }} {{ Str::plural('employee', $department->employees_count) }}</span>
                         </div>
-                        <a href="{{ route('tenant.payroll.employees', ['tenant' => $tenant, 'department' => $department->id]) }}"
+                        <a href="{{ route('tenant.payroll.employees.index', ['tenant' => $tenant, 'department' => $department->id]) }}"
                            class="text-blue-600 hover:text-blue-700 text-sm font-medium">
                             View Employees →
                         </a>

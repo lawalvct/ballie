@@ -88,6 +88,21 @@
                             <p class="text-gray-900">{{ $employee->department->name ?? 'Not assigned' }}</p>
                         </div>
                         <div>
+                            <label class="block text-sm font-medium text-gray-500 mb-1">Position</label>
+                            <p class="text-gray-900">
+                                @if($employee->position)
+                                    {{ $employee->position->name }}
+                                    <span class="text-gray-500 text-sm">({{ $employee->position->code }})</span>
+                                @else
+                                    Not assigned
+                                @endif
+                            </p>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-500 mb-1">Job Title</label>
+                            <p class="text-gray-900">{{ $employee->job_title ?? 'Not specified' }}</p>
+                        </div>
+                        <div>
                             <label class="block text-sm font-medium text-gray-500 mb-1">Employment Type</label>
                             <p class="text-gray-900">{{ $employee->employment_type ? ucfirst($employee->employment_type) : 'Not specified' }}</p>
                         </div>

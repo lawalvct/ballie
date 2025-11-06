@@ -235,7 +235,12 @@
                                     {{ $employee->department->name ?? 'No Department' }}
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                    {{ $employee->position ?? 'N/A' }}
+                                    @if($employee->position)
+                                        {{ $employee->position->name }}
+                                        <span class="text-xs text-gray-500">({{ $employee->position->code }})</span>
+                                    @else
+                                        <span class="text-gray-400">Not assigned</span>
+                                    @endif
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                                     {{ $employee->hire_date ? $employee->hire_date->format('M d, Y') : 'N/A' }}

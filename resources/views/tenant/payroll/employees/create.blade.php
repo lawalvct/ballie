@@ -5,6 +5,7 @@
 @section('page-description', 'Create a new employee record in your database.')
 
 @section('content')
+<meta name="csrf-token" content="{{ csrf_token() }}">
 <div class="space-y-6">
     <!-- Header with Back Button -->
     <div class="flex items-center justify-between">
@@ -120,7 +121,7 @@
                     </label>
                     <input type="text" name="last_name" id="last_name" required
                         class="mt-1 focus:ring-blue-500 focus:border-blue-500 block w-full shadow-sm sm:text-sm rounded-md {{ $errors->has('last_name') ? 'border-red-300' : 'border-gray-300' }}"
-                        value="{{ old('last_name') }}" placeholder="Doe">
+                        value="{{ old('last_name') }}" placeholder="Lawal">
                     @error('last_name')
                         <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                     @enderror
@@ -200,15 +201,23 @@
                         <label for="department_id" class="block text-sm font-medium text-gray-700 mb-1">
                             Department <span class="text-red-500">*</span>
                         </label>
-                        <select name="department_id" id="department_id" required
-                            class="mt-1 focus:ring-blue-500 focus:border-blue-500 block w-full shadow-sm sm:text-sm rounded-md {{ $errors->has('department_id') ? 'border-red-300' : 'border-gray-300' }}">
-                            <option value="">Select Department</option>
-                            @foreach($departments as $department)
-                                <option value="{{ $department->id }}" {{ old('department_id') == $department->id ? 'selected' : '' }}>
-                                    {{ $department->name }}
-                                </option>
-                            @endforeach
-                        </select>
+                        <div class="flex space-x-2">
+                            <select name="department_id" id="department_id" required
+                                class="mt-1 focus:ring-blue-500 focus:border-blue-500 block w-full shadow-sm sm:text-sm rounded-md {{ $errors->has('department_id') ? 'border-red-300' : 'border-gray-300' }}">
+                                <option value="">Select Department</option>
+                                @foreach($departments as $department)
+                                    <option value="{{ $department->id }}" {{ old('department_id') == $department->id ? 'selected' : '' }}>
+                                        {{ $department->name }}
+                                    </option>
+                                @endforeach
+                            </select>
+                            <button type="button" onclick="openDepartmentModal()"
+                                class="mt-1 inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                                </svg>
+                            </button>
+                        </div>
                         @error('department_id')
                             <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                         @enderror
@@ -216,16 +225,45 @@
                     </div>
 
                     <div class="form-group">
-                        <label for="position" class="block text-sm font-medium text-gray-700 mb-1">
-                            Position <span class="text-red-500">*</span>
+                        <label for="position_id" class="block text-sm font-medium text-gray-700 mb-1">
+                            Position
                         </label>
-                        <input type="text" name="position" id="position" required
-                            class="mt-1 focus:ring-blue-500 focus:border-blue-500 block w-full shadow-sm sm:text-sm rounded-md {{ $errors->has('position') ? 'border-red-300' : 'border-gray-300' }}"
-                            value="{{ old('position') }}" placeholder="Software Engineer">
-                        @error('position')
+                        <div class="flex space-x-2">
+                            <select name="position_id" id="position_id"
+                                class="mt-1 focus:ring-blue-500 focus:border-blue-500 block w-full shadow-sm sm:text-sm rounded-md {{ $errors->has('position_id') ? 'border-red-300' : 'border-gray-300' }}">
+                                <option value="">Select Position</option>
+                                @foreach($positions as $position)
+                                    <option value="{{ $position->id }}"
+                                        data-department="{{ $position->department_id }}"
+                                        {{ old('position_id') == $position->id ? 'selected' : '' }}>
+                                        {{ $position->name }} ({{ $position->code }})
+                                    </option>
+                                @endforeach
+                            </select>
+                            <button type="button" onclick="openPositionModal()"
+                                class="mt-1 inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                                </svg>
+                            </button>
+                        </div>
+                        @error('position_id')
                             <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                         @enderror
-                        <div class="hidden text-sm text-red-600 mt-1 field-error" id="position-error"></div>
+                        <div class="hidden text-sm text-red-600 mt-1 field-error" id="position_id-error"></div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="job_title" class="block text-sm font-medium text-gray-700 mb-1">
+                            Job Title <span class="text-red-500">*</span>
+                        </label>
+                        <input type="text" name="job_title" id="job_title" required
+                            class="mt-1 focus:ring-blue-500 focus:border-blue-500 block w-full shadow-sm sm:text-sm rounded-md {{ $errors->has('job_title') ? 'border-red-300' : 'border-gray-300' }}"
+                            value="{{ old('job_title') }}" placeholder="Software Engineer">
+                        @error('job_title')
+                            <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                        @enderror
+                        <div class="hidden text-sm text-red-600 mt-1 field-error" id="job_title-error"></div>
                     </div>
 
                     <div class="form-group">
@@ -281,21 +319,21 @@
             <div id="salary-section" class="hidden p-6 transition-all duration-300">
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div class="form-group">
-                        <label for="base_salary" class="block text-sm font-medium text-gray-700 mb-1">
+                        <label for="basic_salary" class="block text-sm font-medium text-gray-700 mb-1">
                             Base Salary <span class="text-red-500">*</span>
                         </label>
                         <div class="relative">
                             <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                                 <span class="text-gray-500 sm:text-sm">₦</span>
                             </div>
-                            <input type="number" name="base_salary" id="base_salary" step="0.01" min="0" required
-                                class="mt-1 focus:ring-blue-500 focus:border-blue-500 block w-full pl-7 shadow-sm sm:text-sm rounded-md {{ $errors->has('base_salary') ? 'border-red-300' : 'border-gray-300' }}"
-                                value="{{ old('base_salary') }}" placeholder="0.00">
+                            <input type="number" name="basic_salary" id="basic_salary" step="0.01" min="0" required
+                                class="mt-1 focus:ring-blue-500 focus:border-blue-500 block w-full pl-7 shadow-sm sm:text-sm rounded-md {{ $errors->has('basic_salary') ? 'border-red-300' : 'border-gray-300' }}"
+                                value="{{ old('basic_salary') }}" placeholder="0.00">
                         </div>
-                        @error('base_salary')
+                        @error('basic_salary')
                             <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                         @enderror
-                        <div class="hidden text-sm text-red-600 mt-1 field-error" id="base_salary-error"></div>
+                        <div class="hidden text-sm text-red-600 mt-1 field-error" id="basic_salary-error"></div>
                     </div>
 
                     <div class="form-group">
@@ -524,6 +562,90 @@
     </form>
 </div>
 
+<!-- Quick Create Department Modal -->
+<div id="departmentModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-white rounded-lg shadow-xl max-w-md w-full">
+        <div class="p-6 border-b border-gray-200">
+            <h3 class="text-lg font-medium text-gray-900">Quick Create Department</h3>
+        </div>
+        <form id="departmentForm">
+            @csrf
+            <div class="p-6 space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Name <span class="text-red-500">*</span></label>
+                    <input type="text" id="dept_name" required class="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-blue-500 focus:border-blue-500">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Code <span class="text-red-500">*</span></label>
+                    <input type="text" id="dept_code" required maxlength="10" class="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-blue-500 focus:border-blue-500">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Description</label>
+                    <textarea id="dept_description" rows="2" class="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-blue-500 focus:border-blue-500"></textarea>
+                </div>
+            </div>
+            <div class="flex justify-end space-x-3 p-6 border-t border-gray-200">
+                <button type="button" onclick="closeDepartmentModal()" class="px-4 py-2 text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200">Cancel</button>
+                <button type="submit" class="px-4 py-2 text-white bg-blue-600 rounded-md hover:bg-blue-700">Create</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Quick Create Position Modal -->
+<div id="positionModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-white rounded-lg shadow-xl max-w-md w-full">
+        <div class="p-6 border-b border-gray-200">
+            <h3 class="text-lg font-medium text-gray-900">Quick Create Position</h3>
+        </div>
+        <form id="positionForm">
+            @csrf
+            <div class="p-6 space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Name <span class="text-red-500">*</span></label>
+                    <input type="text" id="pos_name" required class="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-blue-500 focus:border-blue-500">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Code <span class="text-red-500">*</span></label>
+                    <input type="text" id="pos_code" required maxlength="10" class="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-blue-500 focus:border-blue-500">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Department</label>
+                    <select id="pos_department_id" class="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-blue-500 focus:border-blue-500">
+                        <option value="">Select Department</option>
+                        @foreach($departments as $department)
+                            <option value="{{ $department->id }}">{{ $department->name }}</option>
+                        @endforeach
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Level</label>
+                    <select id="pos_level" class="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-blue-500 focus:border-blue-500">
+                        <option value="1">1 - Entry Level</option>
+                        <option value="2">2 - Junior</option>
+                        <option value="3" selected>3 - Mid-Level</option>
+                        <option value="4">4 - Senior</option>
+                        <option value="5">5 - Lead</option>
+                        <option value="6">6 - Manager</option>
+                        <option value="7">7 - Senior Manager</option>
+                        <option value="8">8 - Director</option>
+                        <option value="9">9 - Senior Director</option>
+                        <option value="10">10 - Executive</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Description</label>
+                    <textarea id="pos_description" rows="2" class="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-blue-500 focus:border-blue-500"></textarea>
+                </div>
+            </div>
+            <div class="flex justify-end space-x-3 p-6 border-t border-gray-200">
+                <button type="button" onclick="closePositionModal()" class="px-4 py-2 text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200">Cancel</button>
+                <button type="submit" class="px-4 py-2 text-white bg-blue-600 rounded-md hover:bg-blue-700">Create</button>
+            </div>
+        </form>
+    </div>
+</div>
+
 <style>
 .section-toggle:hover .transform {
     transform: rotate(180deg);
@@ -666,8 +788,131 @@ document.addEventListener('DOMContentLoaded', function() {
         form.submit();
     });
 
+    // Position filtering by department
+    const departmentSelect = document.getElementById('department_id');
+    const positionSelect = document.getElementById('position_id');
+    const allPositionOptions = Array.from(positionSelect.options);
+
+    function filterPositions() {
+        const selectedDepartmentId = departmentSelect.value;
+
+        // Clear current options except the first one
+        positionSelect.innerHTML = '<option value="">Select Position</option>';
+
+        // Filter and add relevant positions
+        allPositionOptions.slice(1).forEach(option => {
+            const positionDepartmentId = option.getAttribute('data-department');
+
+            // Show position if:
+            // 1. No department selected (show all)
+            // 2. Position has no department (available for all)
+            // 3. Position belongs to selected department
+            if (!selectedDepartmentId || !positionDepartmentId || positionDepartmentId === selectedDepartmentId) {
+                positionSelect.appendChild(option.cloneNode(true));
+            }
+        });
+    }
+
+    // Filter positions when department changes
+    if (departmentSelect && positionSelect) {
+        departmentSelect.addEventListener('change', filterPositions);
+
+        // Initial filter on page load
+        if (departmentSelect.value) {
+            filterPositions();
+        }
+    }
+
     // Initialize progress on page load
     updateProgress();
+});
+
+// Quick create functions
+function openDepartmentModal() {
+    document.getElementById('departmentModal').classList.remove('hidden');
+}
+
+function closeDepartmentModal() {
+    document.getElementById('departmentModal').classList.add('hidden');
+    document.getElementById('departmentForm').reset();
+}
+
+function openPositionModal() {
+    const selectedDept = document.getElementById('department_id').value;
+    if (selectedDept) {
+        document.getElementById('pos_department_id').value = selectedDept;
+    }
+    document.getElementById('positionModal').classList.remove('hidden');
+}
+
+function closePositionModal() {
+    document.getElementById('positionModal').classList.add('hidden');
+    document.getElementById('positionForm').reset();
+}
+
+// Handle department creation
+document.getElementById('departmentForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+
+    const name = document.getElementById('dept_name').value;
+    const code = document.getElementById('dept_code').value;
+
+    if (name && code) {
+        // Add to dropdown immediately
+        const select = document.getElementById('department_id');
+        const tempId = 'temp_' + Date.now();
+        const option = new Option(name, tempId);
+        select.add(option);
+        select.value = tempId;
+
+        // Store for later submission
+        const hiddenInput = document.createElement('input');
+        hiddenInput.type = 'hidden';
+        hiddenInput.name = 'new_department';
+        hiddenInput.value = JSON.stringify({name, code, description: document.getElementById('dept_description').value});
+        document.getElementById('employeeForm').appendChild(hiddenInput);
+
+        closeDepartmentModal();
+        if (typeof updateProgress === 'function') updateProgress();
+    }
+});
+
+// Handle position creation
+document.getElementById('positionForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+
+    const name = document.getElementById('pos_name').value;
+    const code = document.getElementById('pos_code').value;
+    const level = document.getElementById('pos_level').value;
+
+    if (name && code) {
+        // Add to dropdown immediately
+        const select = document.getElementById('position_id');
+        const tempId = 'temp_' + Date.now();
+        const option = new Option(`${name} (${code})`, tempId);
+        const deptId = document.getElementById('pos_department_id').value;
+        if (deptId) {
+            option.setAttribute('data-department', deptId);
+        }
+        select.add(option);
+        select.value = tempId;
+
+        // Store for later submission
+        const hiddenInput = document.createElement('input');
+        hiddenInput.type = 'hidden';
+        hiddenInput.name = 'new_position';
+        hiddenInput.value = JSON.stringify({
+            name,
+            code,
+            level: level || 3,
+            department_id: deptId,
+            description: document.getElementById('pos_description').value
+        });
+        document.getElementById('employeeForm').appendChild(hiddenInput);
+
+        closePositionModal();
+        if (typeof updateProgress === 'function') updateProgress();
+    }
 });
 </script>
 @endsection

@@ -95,38 +95,80 @@ class PayrollController extends Controller
     public function createEmployee(Tenant $tenant)
     {
         $departments = Department::where('tenant_id', $tenant->id)->active()->get();
+        $positions = \App\Models\Position::where('tenant_id', $tenant->id)->active()->orderBy('name')->get();
         $salaryComponents = SalaryComponent::where('tenant_id', $tenant->id)->active()->get();
 
         return view('tenant.payroll.employees.create', compact(
-            'tenant', 'departments', 'salaryComponents'
+            'tenant', 'departments', 'positions', 'salaryComponents'
         ));
     }
 
     public function storeEmployee(Request $request, Tenant $tenant)
     {
-        $validated = $request->validate([
-            'first_name' => 'required|string|max:255',
-            'last_name' => 'required|string|max:255',
-            'email' => 'required|email|unique:employees,email',
-            'phone' => 'nullable|string|max:20',
-            'department_id' => 'required|exists:departments,id',
-            'job_title' => 'required|string|max:255',
-            'hire_date' => 'required|date',
-            'employment_type' => 'required|in:permanent,contract,casual',
-            'pay_frequency' => 'required|in:monthly,weekly,contract',
-            'basic_salary' => 'required|numeric|min:0',
-            'bank_name' => 'nullable|string|max:255',
-            'account_number' => 'nullable|string|max:20',
-            'account_name' => 'nullable|string|max:255',
-            'tin' => 'nullable|string|max:20',
-            'pension_pin' => 'nullable|string|max:20',
-            'components' => 'nullable|array',
-            'components.*.id' => 'exists:salary_components,id',
-            'components.*.amount' => 'nullable|numeric|min:0',
-            'components.*.percentage' => 'nullable|numeric|min:0|max:100',
-        ]);
+        return DB::transaction(function () use ($request, $tenant) {
+            // Handle new department creation
+            if ($request->has('new_department') && $request->new_department) {
+                try {
+                    $deptData = json_decode($request->new_department, true);
+                    if ($deptData && isset($deptData['name']) && isset($deptData['code'])) {
+                        $department = Department::create([
+                            'name' => $deptData['name'],
+                            'code' => $deptData['code'],
+                            'description' => $deptData['description'] ?? null,
+                            'tenant_id' => $tenant->id,
+                            'is_active' => true
+                        ]);
+                        $request->merge(['department_id' => $department->id]);
+                    }
+                } catch (\Exception $e) {
+                    \Log::error('Failed to create department from quick add: ' . $e->getMessage());
+                }
+            }
 
-        return DB::transaction(function () use ($validated, $tenant) {
+            // Handle new position creation
+            if ($request->has('new_position') && $request->new_position) {
+                try {
+                    $posData = json_decode($request->new_position, true);
+                    if ($posData && isset($posData['name']) && isset($posData['code'])) {
+                        $deptId = !empty($posData['department_id']) ? $posData['department_id'] : ($request->department_id ?? null);
+                        $position = \App\Models\Position::create([
+                            'name' => $posData['name'],
+                            'code' => $posData['code'],
+                            'department_id' => $deptId,
+                            'description' => $posData['description'] ?? null,
+                            'level' => $posData['level'] ?? 3, // Default to Mid-Level if not specified
+                            'tenant_id' => $tenant->id,
+                            'is_active' => true
+                        ]);
+                        $request->merge(['position_id' => $position->id]);
+                    }
+                } catch (\Exception $e) {
+                    \Log::error('Failed to create position from quick add: ' . $e->getMessage());
+                }
+            }
+
+            $validated = $request->validate([
+                'first_name' => 'required|string|max:255',
+                'last_name' => 'required|string|max:255',
+                'email' => 'required|email|unique:employees,email',
+                'phone' => 'nullable|string|max:20',
+                'department_id' => 'required|exists:departments,id',
+                'position_id' => 'nullable|exists:positions,id',
+                'job_title' => 'required|string|max:255',
+                'hire_date' => 'required|date',
+                'employment_type' => 'required|in:permanent,contract,casual',
+                'pay_frequency' => 'required|in:monthly,weekly,contract',
+                'basic_salary' => 'required|numeric|min:0',
+                'bank_name' => 'nullable|string|max:255',
+                'account_number' => 'nullable|string|max:20',
+                'account_name' => 'nullable|string|max:255',
+                'tin' => 'nullable|string|max:20',
+                'pension_pin' => 'nullable|string|max:20',
+                'components' => 'nullable|array',
+                'components.*.id' => 'exists:salary_components,id',
+                'components.*.amount' => 'nullable|numeric|min:0',
+                'components.*.percentage' => 'nullable|numeric|min:0|max:100',
+            ]);
             // Create employee
             $employee = Employee::create(array_merge($validated, [
                 'tenant_id' => $tenant->id,

@@ -21,6 +21,7 @@ use App\Http\Controllers\Tenant\Inventory\InventoryController;
 use App\Http\Controllers\Tenant\Crm\CrmController;
 use App\Http\Controllers\Tenant\Pos\PosController;
 use App\Http\Controllers\Tenant\Payroll\PayrollController;
+use App\Http\Controllers\Tenant\PositionController;
 use App\Http\Controllers\Tenant\Reports\ReportsController;
 use App\Http\Controllers\Tenant\Documents\DocumentsController;
 use App\Http\Controllers\Tenant\Activity\ActivityController;
@@ -533,6 +534,9 @@ Route::prefix('ledger-accounts')->name('ledger-accounts.')->group(function () {
         Route::prefix('payroll')->name('tenant.payroll.')->group(function () {
             Route::get('/', [PayrollController::class, 'index'])->name('index');
 
+            // Employees route (accessible directly)
+            Route::get('/employees', [PayrollController::class, 'employees'])->name('employees');
+
             // Employees Management
             Route::prefix('employees')->name('employees.')->group(function () {
                 Route::get('/', [PayrollController::class, 'employees'])->name('index');
@@ -559,6 +563,19 @@ Route::prefix('ledger-accounts')->name('ledger-accounts.')->group(function () {
                 Route::get('/{department}/edit', [PayrollController::class, 'editDepartment'])->name('edit');
                 Route::put('/{department}', [PayrollController::class, 'updateDepartment'])->name('update');
                 Route::delete('/{department}', [PayrollController::class, 'destroyDepartment'])->name('destroy');
+            });
+
+            // Positions
+            Route::prefix('positions')->name('positions.')->group(function () {
+                Route::get('/', [PositionController::class, 'index'])->name('index');
+                Route::get('/create', [PositionController::class, 'create'])->name('create');
+                Route::post('/', [PositionController::class, 'store'])->name('store');
+                Route::get('/{position}', [PositionController::class, 'show'])->name('show');
+                Route::get('/{position}/edit', [PositionController::class, 'edit'])->name('edit');
+                Route::put('/{position}', [PositionController::class, 'update'])->name('update');
+                Route::delete('/{position}', [PositionController::class, 'destroy'])->name('destroy');
+                Route::post('/{position}/toggle-status', [PositionController::class, 'toggleStatus'])->name('toggle-status');
+                Route::get('/by-department', [PositionController::class, 'byDepartment'])->name('by-department');
             });
 
             // Salary Components
