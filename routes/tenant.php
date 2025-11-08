@@ -600,8 +600,11 @@ Route::prefix('ledger-accounts')->name('ledger-accounts.')->group(function () {
                 Route::get('/{period}', [PayrollController::class, 'showPayrollPeriod'])->name('show');
                 Route::get('/{period}/edit', [PayrollController::class, 'editPayrollPeriod'])->name('edit');
                 Route::put('/{period}', [PayrollController::class, 'updatePayrollPeriod'])->name('update');
+                Route::post('/{period}/generate', [PayrollController::class, 'generatePayroll'])->name('generate');
+                Route::post('/{period}/approve', [PayrollController::class, 'approvePayroll'])->name('approve');
                 Route::post('/{period}/finalize', [PayrollController::class, 'finalizePayroll'])->name('finalize');
                 Route::get('/{period}/export-tax-file', [PayrollController::class, 'exportTaxFile'])->name('export-tax-file');
+                Route::get('/{period}/export-bank-file', [PayrollController::class, 'exportBankFile'])->name('export-bank-file');
             });
 
             // Loans Management
@@ -624,6 +627,13 @@ Route::prefix('ledger-accounts')->name('ledger-accounts.')->group(function () {
                 Route::get('/tax-summary', [PayrollController::class, 'taxSummary'])->name('tax-summary');
                 Route::get('/employee-summary', [PayrollController::class, 'employeeSummary'])->name('employee-summary');
                 Route::get('/bank-schedule', [PayrollController::class, 'bankSchedule'])->name('bank-schedule');
+            });
+
+            // Payslips Management
+            Route::prefix('payslips')->name('payslips.')->group(function () {
+                Route::get('/{payrollRun}', [PayrollController::class, 'viewPayslip'])->name('view');
+                Route::get('/{payrollRun}/download', [PayrollController::class, 'downloadPayslip'])->name('download');
+                Route::post('/{payrollRun}/email', [PayrollController::class, 'emailPayslip'])->name('email');
             });
 
             // Attendance & Leave Management

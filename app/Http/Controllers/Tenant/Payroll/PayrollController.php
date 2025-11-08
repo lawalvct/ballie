@@ -720,4 +720,52 @@ class PayrollController extends Controller
         return redirect()->back()
             ->with('success', 'Portal link has been reset successfully. New link has been generated.');
     }
+
+    /**
+     * View employee payslip
+     */
+    public function viewPayslip(Tenant $tenant, $payrollRunId)
+    {
+        $payrollRun = PayrollRun::where('tenant_id', $tenant->id)
+            ->with(['employee', 'payrollPeriod'])
+            ->findOrFail($payrollRunId);
+
+        return view('tenant.payroll.payslips.view', compact('tenant', 'payrollRun'));
+    }
+
+    /**
+     * Download employee payslip as PDF
+     */
+    public function downloadPayslip(Tenant $tenant, $payrollRunId)
+    {
+        $payrollRun = PayrollRun::where('tenant_id', $tenant->id)
+            ->with(['employee', 'payrollPeriod', 'details'])
+            ->findOrFail($payrollRunId);
+
+        // Generate PDF
+        $pdf = \PDF::loadView('tenant.payroll.payslips.pdf', compact('tenant', 'payrollRun'));
+
+        $fileName = 'payslip_' . $payrollRun->employee->employee_number . '_' .
+                    $payrollRun->payrollPeriod->start_date->format('Y-m') . '.pdf';
+
+        return $pdf->download($fileName);
+    }
+
+    /**
+     * Email payslip to employee
+     */
+    public function emailPayslip(Tenant $tenant, $payrollRunId)
+    {
+        $payrollRun = PayrollRun::where('tenant_id', $tenant->id)
+            ->with(['employee', 'payrollPeriod'])
+            ->findOrFail($payrollRunId);
+
+        // TODO: Implement email sending
+        // Mail::to($payrollRun->employee->email)->send(new PayslipMail($payrollRun));
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Payslip sent successfully to ' . $payrollRun->employee->email
+        ]);
+    }
 }

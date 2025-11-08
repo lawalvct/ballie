@@ -279,7 +279,7 @@ function generatePayroll() {
     if (confirm('Are you sure you want to generate payroll for this period? This will calculate salaries for all active employees.')) {
         const form = document.createElement('form');
         form.method = 'POST';
-        form.action = `/tenant/{{ $tenant->id }}/payroll/processing/{{ $period->id }}/generate`;
+        form.action = '{{ route('tenant.payroll.processing.generate', [$tenant, $period]) }}';
 
         const csrfToken = document.createElement('input');
         csrfToken.type = 'hidden';
@@ -296,7 +296,7 @@ function approvePayroll() {
     if (confirm('Are you sure you want to approve this payroll? This will create accounting entries and finalize the payroll.')) {
         const form = document.createElement('form');
         form.method = 'POST';
-        form.action = `/tenant/{{ $tenant->id }}/payroll/processing/{{ $period->id }}/approve`;
+        form.action = '{{ route('tenant.payroll.processing.approve', [$tenant, $period]) }}';
 
         const csrfToken = document.createElement('input');
         csrfToken.type = 'hidden';
@@ -311,17 +311,17 @@ function approvePayroll() {
 
 function viewPayslip(runId) {
     // Implement payslip view modal or redirect
-    window.open(`/tenant/{{ $tenant->id }}/payroll/payslips/${runId}`, '_blank');
+    window.open('{{ route('tenant.payroll.payslips.view', [$tenant, '__RUN_ID__']) }}'.replace('__RUN_ID__', runId), '_blank');
 }
 
 function downloadPayslip(runId) {
-    window.open(`/tenant/{{ $tenant->id }}/payroll/payslips/${runId}/download`, '_blank');
+    window.open('{{ route('tenant.payroll.payslips.download', [$tenant, '__RUN_ID__']) }}'.replace('__RUN_ID__', runId), '_blank');
 }
 
 function emailPayslip(runId) {
     if (confirm('Send payslip to employee via email?')) {
         // Implement email functionality
-        fetch(`/tenant/{{ $tenant->id }}/payroll/payslips/${runId}/email`, {
+        fetch('{{ route('tenant.payroll.payslips.email', [$tenant, '__RUN_ID__']) }}'.replace('__RUN_ID__', runId), {
             method: 'POST',
             headers: {
                 'X-CSRF-TOKEN': '{{ csrf_token() }}',
