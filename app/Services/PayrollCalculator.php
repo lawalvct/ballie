@@ -42,16 +42,31 @@ class PayrollCalculator
     {
         $salary = $this->employee->currentSalary;
         $this->calculations['basic_salary'] = $salary->basic_salary;
+        $this->calculations['earnings'] = []; // Store individual earnings for details
 
         $allowances = 0;
         foreach ($salary->salaryComponents as $component) {
-            if ($component->salaryComponent->type === 'allowance' && $component->is_active) {
+            // Use 'earning' instead of 'allowance' as per database schema
+            if ($component->salaryComponent->type === 'earning' && $component->is_active) {
                 if ($component->salaryComponent->calculation_type === 'percentage') {
                     $amount = ($this->calculations['basic_salary'] * $component->percentage) / 100;
-                } else {
+                } elseif ($component->salaryComponent->calculation_type === 'fixed') {
                     $amount = $component->amount;
+                } else {
+                    // For 'variable' or 'computed', use the amount as-is
+                    $amount = $component->amount ?? 0;
                 }
+
                 $allowances += $amount;
+
+                // Store for PayrollRunDetail
+                $this->calculations['earnings'][] = [
+                    'salary_component_id' => $component->salary_component_id,
+                    'component_name' => $component->salaryComponent->name,
+                    'component_type' => 'earning',
+                    'amount' => $amount,
+                    'is_taxable' => $component->salaryComponent->is_taxable,
+                ];
             }
         }
 
@@ -128,16 +143,30 @@ class PayrollCalculator
     {
         $salary = $this->employee->currentSalary;
         $otherDeductions = 0;
+        $this->calculations['deductions'] = []; // Store individual deductions for details
 
-        // Regular deductions (union dues, etc.)
+        // Regular deductions (union dues, pension, etc.)
         foreach ($salary->salaryComponents as $component) {
             if ($component->salaryComponent->type === 'deduction' && $component->is_active) {
                 if ($component->salaryComponent->calculation_type === 'percentage') {
                     $amount = ($this->calculations['basic_salary'] * $component->percentage) / 100;
-                } else {
+                } elseif ($component->salaryComponent->calculation_type === 'fixed') {
                     $amount = $component->amount;
+                } else {
+                    // For 'variable' or 'computed', use the amount as-is
+                    $amount = $component->amount ?? 0;
                 }
+
                 $otherDeductions += $amount;
+
+                // Store for PayrollRunDetail
+                $this->calculations['deductions'][] = [
+                    'salary_component_id' => $component->salary_component_id,
+                    'component_name' => $component->salaryComponent->name,
+                    'component_type' => 'deduction',
+                    'amount' => $amount,
+                    'is_taxable' => false, // Deductions are not taxable
+                ];
             }
         }
 
@@ -172,6 +201,17 @@ class PayrollCalculator
             'total_deductions' => $this->calculations['total_deductions'],
             'net_salary' => $this->calculations['net_salary'],
             'payment_status' => 'pending',
+        ];
+    }
+
+    /**
+     * Get detailed breakdown of earnings and deductions
+     */
+    public function getComponentDetails(): array
+    {
+        return [
+            'earnings' => $this->calculations['earnings'] ?? [],
+            'deductions' => $this->calculations['deductions'] ?? [],
         ];
     }
 }

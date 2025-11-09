@@ -13,7 +13,7 @@ return new class extends Migration
             $table->foreignId('payroll_run_id')->constrained()->onDelete('cascade');
             $table->foreignId('salary_component_id')->constrained()->onDelete('cascade');
             $table->string('component_name'); // Snapshot of name at time of calculation
-            $table->enum('component_type', ['allowance', 'deduction']);
+            $table->enum('component_type', ['earning', 'deduction', 'employer_contribution']);
             $table->decimal('amount', 15, 2);
             $table->boolean('is_taxable');
             $table->timestamps();

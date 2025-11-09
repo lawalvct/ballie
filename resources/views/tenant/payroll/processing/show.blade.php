@@ -79,7 +79,7 @@
                                 <i class="fas fa-money-bill-wave text-green-500 text-2xl mr-3"></i>
                                 <div>
                                     <p class="text-sm font-medium text-green-600">Gross Salary</p>
-                                    <p class="text-xl font-bold text-green-900">₦{{ number_format($period->total_gross_salary ?? 0, 2) }}</p>
+                                    <p class="text-xl font-bold text-green-900">₦{{ number_format($period->total_gross ?? 0, 2) }}</p>
                                 </div>
                             </div>
                         </div>
@@ -99,7 +99,7 @@
                                 <i class="fas fa-hand-holding-usd text-purple-500 text-2xl mr-3"></i>
                                 <div>
                                     <p class="text-sm font-medium text-purple-600">Net Salary</p>
-                                    <p class="text-xl font-bold text-purple-900">₦{{ number_format($period->total_net_salary ?? 0, 2) }}</p>
+                                    <p class="text-xl font-bold text-purple-900">₦{{ number_format($period->total_net ?? 0, 2) }}</p>
                                 </div>
                             </div>
                         </div>

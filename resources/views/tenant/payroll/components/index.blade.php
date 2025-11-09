@@ -34,11 +34,12 @@
         <div class="bg-white rounded-2xl shadow-lg border border-gray-100 mb-8">
             <div class="border-b border-gray-200">
                 <nav class="flex space-x-8 px-6" aria-label="Tabs">
-                    <button onclick="showTab('allowances')"
-                            class="tab-button border-b-2 border-transparent py-4 px-1 text-sm font-medium text-gray-500 hover:text-gray-700 hover:border-gray-300 transition-colors duration-200"
-                            id="allowances-tab">
-                        <i class="fas fa-plus-circle mr-2 text-green-500"></i>
-                        Allowances
+                                        <button onclick="showTab('earnings')"
+                            class="tab-button px-8 py-4 rounded-t-lg font-semibold text-gray-600 border-b-2 border-transparent transition-all duration-300 hover:text-indigo-600 hover:border-indigo-600"
+                            id="earnings-tab">
+                        <i class="fas fa-plus-circle mr-2"></i>
+                        Earnings
+                        <span class="ml-2 bg-green-100 text-green-800 text-sm px-3 py-1 rounded-full">{{ $components->where('type', 'earning')->count() }}</span>
                     </button>
                     <button onclick="showTab('deductions')"
                             class="tab-button border-b-2 border-transparent py-4 px-1 text-sm font-medium text-gray-500 hover:text-gray-700 hover:border-gray-300 transition-colors duration-200"
@@ -49,10 +50,10 @@
                 </nav>
             </div>
 
-            <!-- Allowances Tab Content -->
-            <div id="allowances-content" class="tab-content p-6">
-                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    @foreach($components->where('type', 'allowance') as $component)
+            <!-- Earnings Tab Content -->
+            <div id="earnings-content" class="tab-content p-6">
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    @foreach($components->where('type', 'earning') as $component)
                         <div class="bg-gradient-to-br from-green-50 to-emerald-50 rounded-xl border border-green-200 p-6 hover:shadow-lg transition-all duration-300">
                             <div class="flex items-start justify-between mb-4">
                                 <div class="flex-1">
@@ -108,15 +109,19 @@
                     @endforeach
 
                     @if($components->where('type', 'allowance')->count() === 0)
-                        <div class="col-span-full text-center py-12">
-                            <i class="fas fa-plus-circle text-6xl text-green-300 mb-4"></i>
-                            <h3 class="text-xl font-medium text-gray-900 mb-2">No allowances found</h3>
-                            <p class="text-gray-500 mb-6">Create your first allowance component.</p>
-                            <button onclick="openCreateModal('allowance')"
-                                    class="bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-lg font-medium transition-colors duration-300">
-                                <i class="fas fa-plus mr-2"></i>Add Allowance
+                                            @if($components->where('type', 'earning')->count() === 0)
+                        <div class="col-span-2 flex flex-col items-center justify-center py-16">
+                            <div class="text-gray-400 mb-4">
+                                <i class="fas fa-coins text-6xl"></i>
+                            </div>
+                            <h3 class="text-xl font-medium text-gray-900 mb-2">No earnings found</h3>
+                            <p class="text-gray-500 mb-6">Create your first earning component.</p>
+                            <button onclick="openCreateModal('earning')"
+                                class="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-3 rounded-lg font-medium transition-colors duration-300">
+                                <i class="fas fa-plus mr-2"></i>Add Earning
                             </button>
                         </div>
+                    @endif
                     @endif
                 </div>
             </div>
@@ -232,8 +237,9 @@
                         <label class="block text-sm font-medium text-gray-700 mb-2">Type <span class="text-red-500">*</span></label>
                         <select id="componentType" name="type" required
                                 class="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
-                            <option value="allowance">Allowance</option>
+                            <option value="earning">Earning/Allowance</option>
                             <option value="deduction">Deduction</option>
+                            <option value="employer_contribution">Employer Contribution</option>
                         </select>
                     </div>
 
@@ -243,6 +249,8 @@
                                 class="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
                             <option value="fixed">Fixed Amount</option>
                             <option value="percentage">Percentage</option>
+                            <option value="variable">Variable</option>
+                            <option value="computed">Computed</option>
                         </select>
                     </div>
                 </div>
@@ -305,12 +313,12 @@ function showTab(tabName) {
     activeTab.classList.remove('border-transparent', 'text-gray-500');
 }
 
-// Initialize with allowances tab active
-document.addEventListener('DOMContentLoaded', function() {
-    showTab('allowances');
+// Initialize with earnings tab active
+document.addEventListener('DOMContentLoaded', () => {
+    showTab('earnings');
 });
 
-function openCreateModal(type = 'allowance') {
+function openCreateModal(type = 'earning') {
     document.getElementById('modalTitle').textContent = 'Add Component';
     document.getElementById('submitText').textContent = 'Create Component';
     document.getElementById('componentForm').action = "{{ route('tenant.payroll.components.store', $tenant) }}";

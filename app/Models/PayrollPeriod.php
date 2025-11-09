@@ -83,13 +83,29 @@ class PayrollPeriod extends Model
         $calculator = new \App\Services\PayrollCalculator($employee, $this);
         $payrollData = $calculator->calculate();
 
-        PayrollRun::updateOrCreate(
+        $payrollRun = PayrollRun::updateOrCreate(
             [
                 'payroll_period_id' => $this->id,
                 'employee_id' => $employee->id
             ],
             $payrollData
         );
+
+        // Save detailed component breakdown
+        $componentDetails = $calculator->getComponentDetails();
+
+        // Delete existing details to avoid duplicates
+        $payrollRun->details()->delete();
+
+        // Save earnings details
+        foreach ($componentDetails['earnings'] as $earning) {
+            $payrollRun->details()->create($earning);
+        }
+
+        // Save deductions details
+        foreach ($componentDetails['deductions'] as $deduction) {
+            $payrollRun->details()->create($deduction);
+        }
     }
 
     public function updateTotals(): void

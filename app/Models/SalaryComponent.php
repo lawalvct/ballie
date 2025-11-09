@@ -46,13 +46,18 @@ class SalaryComponent extends Model
         return $query->where('is_active', true);
     }
 
-    public function scopeAllowances($query)
+    public function scopeEarnings($query)
     {
-        return $query->where('type', 'allowance');
+        return $query->where('type', 'earning');
     }
 
     public function scopeDeductions($query)
     {
         return $query->where('type', 'deduction');
+    }
+
+    public function scopeEmployerContributions($query)
+    {
+        return $query->where('type', 'employer_contribution');
     }
 }

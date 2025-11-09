@@ -46,14 +46,18 @@ class EmployeeSalary extends Model
     {
         return $this->salaryComponents()
             ->whereHas('salaryComponent', function($q) {
-                $q->where('type', 'allowance')->where('is_active', true);
+                $q->where('type', 'earning')->where('is_active', true);
             })
             ->get()
             ->sum(function($component) {
                 if ($component->salaryComponent->calculation_type === 'percentage') {
                     return ($this->basic_salary * $component->percentage) / 100;
+                } elseif ($component->salaryComponent->calculation_type === 'fixed') {
+                    return $component->amount ?? 0;
+                } else {
+                    // For 'variable' or 'computed'
+                    return $component->amount ?? 0;
                 }
-                return $component->amount ?? 0;
             });
     }
 
@@ -67,8 +71,12 @@ class EmployeeSalary extends Model
             ->sum(function($component) {
                 if ($component->salaryComponent->calculation_type === 'percentage') {
                     return ($this->basic_salary * $component->percentage) / 100;
+                } elseif ($component->salaryComponent->calculation_type === 'fixed') {
+                    return $component->amount ?? 0;
+                } else {
+                    // For 'variable' or 'computed'
+                    return $component->amount ?? 0;
                 }
-                return $component->amount ?? 0;
             });
     }
 

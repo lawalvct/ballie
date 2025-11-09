@@ -20,6 +20,48 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
 use Carbon\Carbon;
 
+/**
+ * PayrollController
+ *
+ * Handles all payroll operations including employee management, salary components,
+ * payroll processing, and payslip generation.
+ *
+ * SALARY COMPONENT SYSTEM:
+ * -----------------------
+ * The payroll system uses a flexible salary component architecture:
+ *
+ * 1. Component Types:
+ *    - 'earning': Income components (e.g., Housing Allowance, Transport Allowance, Bonus)
+ *    - 'deduction': Deduction components (e.g., Pension, Union Dues, Loan Repayment)
+ *    - 'employer_contribution': Employer-paid items (e.g., NSITF, Pension Employer Share)
+ *
+ * 2. Calculation Types:
+ *    - 'fixed': Fixed amount per period (e.g., ₦50,000 housing allowance)
+ *    - 'percentage': Percentage of basic salary (e.g., 10% transport = 10% of basic)
+ *    - 'variable': Amount can change each period (manually entered)
+ *    - 'computed': Calculated by system logic (e.g., overtime, bonuses)
+ *
+ * 3. Component Properties:
+ *    - is_taxable: Whether the component affects PAYE tax calculation
+ *    - is_pensionable: Whether the component is included in pension calculation
+ *    - is_active: Whether the component is currently in use
+ *
+ * 4. Payroll Calculation Flow:
+ *    a) Basic Salary + Earnings (earning components) = Gross Salary
+ *    b) Calculate PAYE Tax on taxable income
+ *    c) Subtract Deductions (deduction components)
+ *    d) Gross Salary - Total Deductions = Net Salary
+ *
+ * 5. Database Structure:
+ *    - salary_components: Master list of all component types
+ *    - employee_salary_components: Employee-specific component assignments
+ *    - payroll_run_details: Snapshot of component amounts per payroll period
+ *
+ * 6. Usage Example:
+ *    - Create component: "Housing Allowance", type='earning', calculation='percentage', 20%
+ *    - Assign to employee: Employee gets 20% of their basic salary as housing
+ *    - On payroll run: If basic=₦100,000, housing=₦20,000, gross=₦120,000
+ */
 class PayrollController extends Controller
 {
     /**
@@ -360,8 +402,8 @@ class PayrollController extends Controller
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'code' => 'required|string|max:10|unique:salary_components,code',
-            'type' => 'required|in:allowance,deduction',
-            'calculation_type' => 'required|in:fixed,percentage',
+            'type' => 'required|in:earning,deduction,employer_contribution',
+            'calculation_type' => 'required|in:fixed,percentage,variable,computed',
             'is_taxable' => 'boolean',
             'is_pensionable' => 'boolean',
             'description' => 'nullable|string',
@@ -1042,7 +1084,9 @@ class PayrollController extends Controller
      */
     public function viewPayslip(Tenant $tenant, $payrollRunId)
     {
-        $payrollRun = PayrollRun::where('tenant_id', $tenant->id)
+        $payrollRun = PayrollRun::whereHas('payrollPeriod', function($query) use ($tenant) {
+                $query->where('tenant_id', $tenant->id);
+            })
             ->with(['employee', 'payrollPeriod'])
             ->findOrFail($payrollRunId);
 
@@ -1054,7 +1098,9 @@ class PayrollController extends Controller
      */
     public function downloadPayslip(Tenant $tenant, $payrollRunId)
     {
-        $payrollRun = PayrollRun::where('tenant_id', $tenant->id)
+        $payrollRun = PayrollRun::whereHas('payrollPeriod', function($query) use ($tenant) {
+                $query->where('tenant_id', $tenant->id);
+            })
             ->with(['employee', 'payrollPeriod', 'details'])
             ->findOrFail($payrollRunId);
 
@@ -1072,7 +1118,9 @@ class PayrollController extends Controller
      */
     public function emailPayslip(Tenant $tenant, $payrollRunId)
     {
-        $payrollRun = PayrollRun::where('tenant_id', $tenant->id)
+        $payrollRun = PayrollRun::whereHas('payrollPeriod', function($query) use ($tenant) {
+                $query->where('tenant_id', $tenant->id);
+            })
             ->with(['employee', 'payrollPeriod'])
             ->findOrFail($payrollRunId);
 
