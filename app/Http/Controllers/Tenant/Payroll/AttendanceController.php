@@ -1,0 +1,377 @@
+<?php
+
+namespace App\Http\Controllers\Tenant\Payroll;
+
+use App\Http\Controllers\Controller;
+use App\Models\Tenant;
+use App\Models\Employee;
+use App\Models\AttendanceRecord;
+use App\Models\ShiftSchedule;
+use App\Models\Department;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
+use Carbon\Carbon;
+
+class AttendanceController extends Controller
+{
+    /**
+     * Display attendance dashboard
+     */
+    public function index(Request $request, Tenant $tenant)
+    {
+        $date = $request->get('date', now()->format('Y-m-d'));
+        $selectedDate = Carbon::parse($date);
+
+        $query = AttendanceRecord::where('tenant_id', $tenant->id)
+            ->with(['employee.department', 'shift', 'approver'])
+            ->whereDate('attendance_date', $selectedDate);
+
+        // Filters
+        if ($request->filled('department')) {
+            $query->whereHas('employee', function($q) use ($request) {
+                $q->where('department_id', $request->department);
+            });
+        }
+
+        if ($request->filled('status')) {
+            $query->where('status', $request->status);
+        }
+
+        if ($request->filled('employee')) {
+            $query->where('employee_id', $request->employee);
+        }
+
+        $attendanceRecords = $query->orderBy('clock_in')->get();
+
+        // Get all active employees for the day
+        $employees = Employee::where('tenant_id', $tenant->id)
+            ->where('status', 'active')
+            ->with('department')
+            ->get();
+
+        // Create attendance records for employees without records
+        foreach ($employees as $employee) {
+            if (!$attendanceRecords->where('employee_id', $employee->id)->count()) {
+                $record = AttendanceRecord::create([
+                    'tenant_id' => $tenant->id,
+                    'employee_id' => $employee->id,
+                    'attendance_date' => $selectedDate,
+                    'status' => 'absent',
+                    'created_by' => Auth::id(),
+                ]);
+
+                $attendanceRecords->push($record->load(['employee.department']));
+            }
+        }
+
+        // Statistics
+        $stats = [
+            'total' => $attendanceRecords->count(),
+            'present' => $attendanceRecords->where('status', 'present')->count(),
+            'late' => $attendanceRecords->where('status', 'late')->count(),
+            'absent' => $attendanceRecords->where('status', 'absent')->count(),
+            'on_leave' => $attendanceRecords->where('status', 'on_leave')->count(),
+            'half_day' => $attendanceRecords->where('status', 'half_day')->count(),
+        ];
+
+        $departments = Department::where('tenant_id', $tenant->id)->active()->get();
+
+        return view('tenant.payroll.attendance.index', compact(
+            'tenant', 'attendanceRecords', 'selectedDate', 'stats', 'departments', 'employees'
+        ));
+    }
+
+    /**
+     * Employee clock in
+     */
+    public function clockIn(Request $request, Tenant $tenant)
+    {
+        $validated = $request->validate([
+            'employee_id' => 'required|exists:employees,id',
+            'notes' => 'nullable|string|max:500',
+        ]);
+
+        $employee = Employee::findOrFail($validated['employee_id']);
+
+        // Check if employee belongs to tenant
+        if ($employee->tenant_id !== $tenant->id) {
+            return response()->json(['error' => 'Invalid employee'], 403);
+        }
+
+        $today = now()->format('Y-m-d');
+
+        // Check if already clocked in today
+        $existingRecord = AttendanceRecord::where('employee_id', $employee->id)
+            ->whereDate('attendance_date', $today)
+            ->first();
+
+        if ($existingRecord && $existingRecord->clock_in) {
+            return response()->json([
+                'error' => 'Already clocked in today',
+                'clock_in_time' => $existingRecord->clock_in->format('h:i A')
+            ], 400);
+        }
+
+        // Get employee's shift schedule
+        $shift = $employee->currentShift;
+
+        $attendance = $existingRecord ?? new AttendanceRecord();
+        $attendance->tenant_id = $tenant->id;
+        $attendance->employee_id = $employee->id;
+        $attendance->attendance_date = $today;
+        $attendance->shift_id = $shift?->id;
+        $attendance->scheduled_in = $shift ? Carbon::parse($today . ' ' . $shift->start_time) : null;
+        $attendance->scheduled_out = $shift ? Carbon::parse($today . ' ' . $shift->end_time) : null;
+
+        $attendance->clockIn(
+            $request->header('X-Forwarded-For') ?? $request->ip(),
+            $request->header('User-Agent'),
+            $validated['notes'] ?? null
+        );
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Clocked in successfully',
+            'clock_in_time' => $attendance->clock_in->format('h:i A'),
+            'status' => $attendance->status,
+            'late_minutes' => $attendance->late_minutes,
+        ]);
+    }
+
+    /**
+     * Employee clock out
+     */
+    public function clockOut(Request $request, Tenant $tenant)
+    {
+        $validated = $request->validate([
+            'employee_id' => 'required|exists:employees,id',
+            'notes' => 'nullable|string|max:500',
+        ]);
+
+        $employee = Employee::findOrFail($validated['employee_id']);
+
+        if ($employee->tenant_id !== $tenant->id) {
+            return response()->json(['error' => 'Invalid employee'], 403);
+        }
+
+        $today = now()->format('Y-m-d');
+
+        $attendance = AttendanceRecord::where('employee_id', $employee->id)
+            ->whereDate('attendance_date', $today)
+            ->first();
+
+        if (!$attendance || !$attendance->clock_in) {
+            return response()->json([
+                'error' => 'Must clock in before clocking out'
+            ], 400);
+        }
+
+        if ($attendance->clock_out) {
+            return response()->json([
+                'error' => 'Already clocked out',
+                'clock_out_time' => $attendance->clock_out->format('h:i A')
+            ], 400);
+        }
+
+        $attendance->clockOut(
+            $request->header('X-Forwarded-For') ?? $request->ip(),
+            $request->header('User-Agent'),
+            $validated['notes'] ?? null
+        );
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Clocked out successfully',
+            'clock_out_time' => $attendance->clock_out->format('h:i A'),
+            'work_hours' => $attendance->calculateWorkHours(),
+            'overtime_hours' => $attendance->calculateOvertimeHours(),
+        ]);
+    }
+
+    /**
+     * Mark employee as absent
+     */
+    public function markAbsent(Request $request, Tenant $tenant)
+    {
+        $validated = $request->validate([
+            'employee_id' => 'required|exists:employees,id',
+            'date' => 'required|date',
+            'reason' => 'required|string|max:500',
+        ]);
+
+        $attendance = AttendanceRecord::where('tenant_id', $tenant->id)
+            ->where('employee_id', $validated['employee_id'])
+            ->whereDate('attendance_date', $validated['date'])
+            ->first();
+
+        if (!$attendance) {
+            $attendance = AttendanceRecord::create([
+                'tenant_id' => $tenant->id,
+                'employee_id' => $validated['employee_id'],
+                'attendance_date' => $validated['date'],
+                'created_by' => Auth::id(),
+            ]);
+        }
+
+        $attendance->markAbsent($validated['reason']);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Employee marked as absent',
+        ]);
+    }
+
+    /**
+     * Mark employee as half day
+     */
+    public function markHalfDay(Request $request, Tenant $tenant, AttendanceRecord $attendance)
+    {
+        if ($attendance->tenant_id !== $tenant->id) {
+            return response()->json(['error' => 'Unauthorized'], 403);
+        }
+
+        $attendance->markHalfDay();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Marked as half day',
+        ]);
+    }
+
+    /**
+     * Approve attendance record
+     */
+    public function approve(Request $request, Tenant $tenant, AttendanceRecord $attendance)
+    {
+        if ($attendance->tenant_id !== $tenant->id) {
+            return redirect()->back()->with('error', 'Unauthorized');
+        }
+
+        $attendance->approve(Auth::id());
+
+        return redirect()->back()->with('success', 'Attendance approved');
+    }
+
+    /**
+     * Bulk approve attendance
+     */
+    public function bulkApprove(Request $request, Tenant $tenant)
+    {
+        $validated = $request->validate([
+            'attendance_ids' => 'required|array',
+            'attendance_ids.*' => 'exists:attendance_records,id',
+        ]);
+
+        $count = AttendanceRecord::where('tenant_id', $tenant->id)
+            ->whereIn('id', $validated['attendance_ids'])
+            ->update([
+                'is_approved' => true,
+                'approved_by' => Auth::id(),
+                'approved_at' => now(),
+            ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => "{$count} attendance records approved",
+        ]);
+    }
+
+    /**
+     * View monthly attendance report
+     */
+    public function monthlyReport(Request $request, Tenant $tenant)
+    {
+        $year = $request->get('year', now()->year);
+        $month = $request->get('month', now()->month);
+
+        $startDate = Carbon::create($year, $month, 1);
+        $endDate = $startDate->copy()->endOfMonth();
+
+        $employees = Employee::where('tenant_id', $tenant->id)
+            ->where('status', 'active')
+            ->with(['department', 'attendanceRecords' => function($q) use ($startDate, $endDate) {
+                $q->whereBetween('attendance_date', [$startDate, $endDate]);
+            }])
+            ->get();
+
+        // Calculate summary for each employee
+        $employees->each(function($employee) {
+            $records = $employee->attendanceRecords;
+            $employee->attendance_summary = [
+                'total_days' => $records->count(),
+                'present' => $records->where('status', 'present')->count(),
+                'late' => $records->where('status', 'late')->count(),
+                'absent' => $records->where('status', 'absent')->count(),
+                'on_leave' => $records->where('status', 'on_leave')->count(),
+                'half_day' => $records->where('status', 'half_day')->count(),
+                'total_hours' => $records->sum('work_hours_minutes') / 60,
+                'total_overtime' => $records->sum('overtime_minutes') / 60,
+            ];
+        });
+
+        return view('tenant.payroll.attendance.monthly-report', compact(
+            'tenant', 'employees', 'year', 'month', 'startDate', 'endDate'
+        ));
+    }
+
+    /**
+     * Employee attendance history
+     */
+    public function employeeAttendance(Request $request, Tenant $tenant, Employee $employee)
+    {
+        if ($employee->tenant_id !== $tenant->id) {
+            abort(403);
+        }
+
+        $year = $request->get('year', now()->year);
+        $month = $request->get('month', now()->month);
+
+        $startDate = Carbon::create($year, $month, 1);
+        $endDate = $startDate->copy()->endOfMonth();
+
+        $attendanceRecords = AttendanceRecord::where('employee_id', $employee->id)
+            ->whereBetween('attendance_date', [$startDate, $endDate])
+            ->orderBy('attendance_date')
+            ->get();
+
+        $summary = [
+            'total_days' => $attendanceRecords->count(),
+            'present' => $attendanceRecords->where('status', 'present')->count(),
+            'late' => $attendanceRecords->where('status', 'late')->count(),
+            'absent' => $attendanceRecords->where('status', 'absent')->count(),
+            'on_leave' => $attendanceRecords->where('status', 'on_leave')->count(),
+            'half_day' => $attendanceRecords->where('status', 'half_day')->count(),
+            'total_hours' => round($attendanceRecords->sum('work_hours_minutes') / 60, 2),
+            'total_overtime' => round($attendanceRecords->sum('overtime_minutes') / 60, 2),
+        ];
+
+        return view('tenant.payroll.attendance.employee', compact(
+            'tenant', 'employee', 'attendanceRecords', 'summary', 'year', 'month', 'startDate', 'endDate'
+        ));
+    }
+
+    /**
+     * Update attendance record
+     */
+    public function update(Request $request, Tenant $tenant, AttendanceRecord $attendance)
+    {
+        if ($attendance->tenant_id !== $tenant->id) {
+            return redirect()->back()->with('error', 'Unauthorized');
+        }
+
+        $validated = $request->validate([
+            'clock_in' => 'nullable|date_format:Y-m-d H:i',
+            'clock_out' => 'nullable|date_format:Y-m-d H:i',
+            'status' => 'required|in:present,absent,late,half_day,on_leave,weekend,holiday',
+            'absence_reason' => 'nullable|string',
+            'admin_notes' => 'nullable|string',
+        ]);
+
+        $attendance->update(array_merge($validated, [
+            'updated_by' => Auth::id(),
+        ]));
+
+        return redirect()->back()->with('success', 'Attendance updated successfully');
+    }
+}

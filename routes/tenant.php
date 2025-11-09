@@ -645,16 +645,17 @@ Route::prefix('ledger-accounts')->name('ledger-accounts.')->group(function () {
 
             // Attendance & Leave Management
             Route::prefix('attendance')->name('attendance.')->group(function () {
-                Route::get('/', [\App\Http\Controllers\Tenant\AttendanceController::class, 'index'])->name('index');
-                Route::get('/dashboard', [\App\Http\Controllers\Tenant\AttendanceController::class, 'dashboard'])->name('dashboard');
-                Route::post('/clock-in', [\App\Http\Controllers\Tenant\AttendanceController::class, 'clockIn'])->name('clock-in');
-                Route::post('/clock-out', [\App\Http\Controllers\Tenant\AttendanceController::class, 'clockOut'])->name('clock-out');
-                Route::post('/mark-absent', [\App\Http\Controllers\Tenant\AttendanceController::class, 'markAbsent'])->name('mark-absent');
-                Route::post('/mark-half-day', [\App\Http\Controllers\Tenant\AttendanceController::class, 'markHalfDay'])->name('mark-half-day');
-                Route::post('/{id}/approve', [\App\Http\Controllers\Tenant\AttendanceController::class, 'approve'])->name('approve');
-                Route::get('/employee/{employeeId}', [\App\Http\Controllers\Tenant\AttendanceController::class, 'employeeAttendance'])->name('employee');
-                Route::get('/monthly-report', [\App\Http\Controllers\Tenant\AttendanceController::class, 'monthlyReport'])->name('monthly-report');
-                Route::post('/bulk-clock-in', [\App\Http\Controllers\Tenant\AttendanceController::class, 'bulkClockIn'])->name('bulk-clock-in');
+                Route::get('/', [\App\Http\Controllers\Tenant\Payroll\AttendanceController::class, 'index'])->name('index');
+                Route::get('/monthly-report', [\App\Http\Controllers\Tenant\Payroll\AttendanceController::class, 'monthlyReport'])->name('monthly-report');
+                Route::get('/employee/{employee}', [\App\Http\Controllers\Tenant\Payroll\AttendanceController::class, 'employeeAttendance'])->name('employee');
+
+                Route::post('/clock-in', [\App\Http\Controllers\Tenant\Payroll\AttendanceController::class, 'clockIn'])->name('clock-in');
+                Route::post('/clock-out', [\App\Http\Controllers\Tenant\Payroll\AttendanceController::class, 'clockOut'])->name('clock-out');
+                Route::post('/mark-absent', [\App\Http\Controllers\Tenant\Payroll\AttendanceController::class, 'markAbsent'])->name('mark-absent');
+                Route::post('/{attendance}/mark-half-day', [\App\Http\Controllers\Tenant\Payroll\AttendanceController::class, 'markHalfDay'])->name('mark-half-day');
+                Route::post('/{attendance}/approve', [\App\Http\Controllers\Tenant\Payroll\AttendanceController::class, 'approve'])->name('approve');
+                Route::post('/bulk-approve', [\App\Http\Controllers\Tenant\Payroll\AttendanceController::class, 'bulkApprove'])->name('bulk-approve');
+                Route::put('/{attendance}', [\App\Http\Controllers\Tenant\Payroll\AttendanceController::class, 'update'])->name('update');
             });
 
             // Leave Management
