@@ -1,0 +1,501 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Salary Components Quick Guide</title>
+        <style>
+            * {
+                margin: 0;
+                padding: 0;
+                box-sizing: border-box;
+            }
+            body {
+                font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                padding: 20px;
+                min-height: 100vh;
+            }
+            .container {
+                max-width: 1200px;
+                margin: 0 auto;
+                background: white;
+                border-radius: 20px;
+                box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+                overflow: hidden;
+            }
+            .header {
+                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                color: white;
+                padding: 40px;
+                text-align: center;
+            }
+            .header h1 {
+                font-size: 2.5em;
+                margin-bottom: 10px;
+            }
+            .header p {
+                font-size: 1.2em;
+                opacity: 0.9;
+            }
+            .content {
+                padding: 40px;
+            }
+            .steps {
+                display: grid;
+                grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+                gap: 30px;
+                margin-top: 30px;
+            }
+            .step {
+                background: #f8f9fa;
+                border-radius: 15px;
+                padding: 30px;
+                border-left: 5px solid #667eea;
+                transition: transform 0.3s, box-shadow 0.3s;
+            }
+            .step:hover {
+                transform: translateY(-5px);
+                box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            }
+            .step-number {
+                display: inline-block;
+                width: 40px;
+                height: 40px;
+                background: #667eea;
+                color: white;
+                border-radius: 50%;
+                text-align: center;
+                line-height: 40px;
+                font-weight: bold;
+                font-size: 1.2em;
+                margin-bottom: 15px;
+            }
+            .step h3 {
+                color: #333;
+                margin-bottom: 15px;
+                font-size: 1.3em;
+            }
+            .step ul {
+                list-style: none;
+                margin-left: 0;
+            }
+            .step li {
+                padding: 8px 0;
+                color: #666;
+                line-height: 1.6;
+            }
+            .step li:before {
+                content: "✓ ";
+                color: #28a745;
+                font-weight: bold;
+                margin-right: 8px;
+            }
+            .highlight {
+                background: #fff3cd;
+                border-left: 4px solid #ffc107;
+                padding: 20px;
+                border-radius: 10px;
+                margin: 30px 0;
+            }
+            .highlight h3 {
+                color: #856404;
+                margin-bottom: 10px;
+            }
+            .highlight p {
+                color: #856404;
+                line-height: 1.6;
+            }
+            .example {
+                background: #d1ecf1;
+                border-left: 4px solid #17a2b8;
+                padding: 20px;
+                border-radius: 10px;
+                margin: 20px 0;
+            }
+            .example h4 {
+                color: #0c5460;
+                margin-bottom: 10px;
+                font-size: 1.1em;
+            }
+            .example pre {
+                background: white;
+                padding: 15px;
+                border-radius: 8px;
+                overflow-x: auto;
+                margin-top: 10px;
+                color: #333;
+            }
+            .payslip-preview {
+                background: white;
+                border: 2px solid #e9ecef;
+                border-radius: 15px;
+                padding: 30px;
+                margin: 30px 0;
+                box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+            }
+            .payslip-header {
+                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                color: white;
+                padding: 20px;
+                border-radius: 10px;
+                margin-bottom: 20px;
+                text-align: center;
+            }
+            .payslip-section {
+                margin: 20px 0;
+            }
+            .payslip-section h4 {
+                color: #333;
+                border-bottom: 2px solid #667eea;
+                padding-bottom: 10px;
+                margin-bottom: 15px;
+            }
+            .payslip-row {
+                display: flex;
+                justify-content: space-between;
+                padding: 10px 0;
+                border-bottom: 1px solid #e9ecef;
+            }
+            .payslip-row.total {
+                background: #f8f9fa;
+                padding: 15px;
+                margin-top: 10px;
+                border-radius: 8px;
+                font-weight: bold;
+                border: 2px solid #667eea;
+            }
+            .payslip-row .label {
+                color: #666;
+            }
+            .payslip-row .amount {
+                font-weight: 600;
+                color: #333;
+            }
+            .payslip-row.earning .amount {
+                color: #28a745;
+            }
+            .payslip-row.deduction .amount {
+                color: #dc3545;
+            }
+            .net-pay {
+                background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+                color: white;
+                padding: 20px;
+                border-radius: 10px;
+                text-align: center;
+                margin-top: 20px;
+            }
+            .net-pay h3 {
+                font-size: 0.9em;
+                opacity: 0.9;
+                margin-bottom: 5px;
+            }
+            .net-pay .amount {
+                font-size: 2.5em;
+                font-weight: bold;
+            }
+            .badge {
+                display: inline-block;
+                padding: 5px 15px;
+                border-radius: 20px;
+                font-size: 0.85em;
+                font-weight: 600;
+                margin-left: 10px;
+            }
+            .badge.earning {
+                background: #d4edda;
+                color: #155724;
+            }
+            .badge.deduction {
+                background: #f8d7da;
+                color: #721c24;
+            }
+            .footer {
+                background: #f8f9fa;
+                padding: 30px;
+                text-align: center;
+                color: #666;
+                border-top: 1px solid #e9ecef;
+            }
+            @media print {
+                body {
+                    background: white;
+                    padding: 0;
+                }
+                .container {
+                    box-shadow: none;
+                }
+            }
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <div class="header">
+                <h1>💰 Salary Components Guide</h1>
+                <p>Quick Reference: Where Your Components Appear</p>
+            </div>
+
+            <div class="content">
+                <div class="highlight">
+                    <h3>🎯 Quick Answer: Where Are Salary Components Used?</h3>
+                    <p>
+                        <strong
+                            >Components appear on employee payslips AFTER you
+                            generate payroll.</strong
+                        >
+                        They show as individual line items in the Earnings and
+                        Deductions sections, with calculated amounts based on
+                        the employee's basic salary.
+                    </p>
+                </div>
+
+                <h2 style="margin: 40px 0 20px; color: #333">
+                    📋 5-Step Process
+                </h2>
+
+                <div class="steps">
+                    <div class="step">
+                        <div class="step-number">1</div>
+                        <h3>Create Components</h3>
+                        <ul>
+                            <li>Go to: Payroll → Salary Components</li>
+                            <li>Click "Earnings" tab</li>
+                            <li>Add: Housing, Transport, Bonus</li>
+                            <li>Click "Deductions" tab</li>
+                            <li>Add: Pension, Loan, Union Dues</li>
+                        </ul>
+                    </div>
+
+                    <div class="step">
+                        <div class="step-number">2</div>
+                        <h3>Assign to Employees</h3>
+                        <ul>
+                            <li>Go to: Payroll → Employees</li>
+                            <li>Click "Edit" on employee</li>
+                            <li>Scroll to "Salary Components"</li>
+                            <li>Check components for this employee</li>
+                            <li>Save changes</li>
+                        </ul>
+                    </div>
+
+                    <div class="step">
+                        <div class="step-number">3</div>
+                        <h3>Create Period</h3>
+                        <ul>
+                            <li>Go to: Payroll → Payroll Processing</li>
+                            <li>Click "New Payroll Period"</li>
+                            <li>Enter period dates</li>
+                            <li>Save period</li>
+                        </ul>
+                    </div>
+
+                    <div class="step">
+                        <div class="step-number">4</div>
+                        <h3>Generate Payroll</h3>
+                        <ul>
+                            <li>Open the period you created</li>
+                            <li>Click "Generate Payroll" button</li>
+                            <li>System calculates all components</li>
+                            <li>Wait for completion</li>
+                        </ul>
+                    </div>
+
+                    <div class="step">
+                        <div class="step-number">5</div>
+                        <h3>View Payslips</h3>
+                        <ul>
+                            <li>Click 👁️ icon next to employee</li>
+                            <li>See all components listed</li>
+                            <li>Download PDF if needed</li>
+                            <li>Email to employee</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <h2 style="margin: 40px 0 20px; color: #333">
+                    📄 Example Payslip
+                </h2>
+
+                <div class="payslip-preview">
+                    <div class="payslip-header">
+                        <h2>Employee Payslip</h2>
+                        <p>November 2025 - John Doe</p>
+                    </div>
+
+                    <div class="payslip-section">
+                        <h4>
+                            💚 Earnings
+                            <span class="badge earning"
+                                >Components from your setup</span
+                            >
+                        </h4>
+
+                        <div class="payslip-row">
+                            <span class="label">Basic Salary</span>
+                            <span class="amount">₦200,000.00</span>
+                        </div>
+                        <div class="payslip-row earning">
+                            <span class="label">🏠 Housing Allowance</span>
+                            <span class="amount">₦50,000.00</span>
+                        </div>
+                        <div class="payslip-row earning">
+                            <span class="label">🚗 Transport Allowance</span>
+                            <span class="amount">₦30,000.00</span>
+                        </div>
+                        <div class="payslip-row earning">
+                            <span class="label">🍽️ Meal Allowance</span>
+                            <span class="amount">₦20,000.00</span>
+                        </div>
+                        <div class="payslip-row earning">
+                            <span class="label">💼 Performance Bonus</span>
+                            <span class="amount">₦10,000.00</span>
+                        </div>
+
+                        <div class="payslip-row total">
+                            <span class="label">Gross Salary</span>
+                            <span class="amount">₦310,000.00</span>
+                        </div>
+                    </div>
+
+                    <div class="payslip-section">
+                        <h4>
+                            ❌ Deductions
+                            <span class="badge deduction"
+                                >Components from your setup</span
+                            >
+                        </h4>
+
+                        <div class="payslip-row deduction">
+                            <span class="label">PAYE Tax</span>
+                            <span class="amount">₦18,000.00</span>
+                        </div>
+                        <div class="payslip-row deduction">
+                            <span class="label">💳 Pension (8%)</span>
+                            <span class="amount">₦16,000.00</span>
+                        </div>
+                        <div class="payslip-row deduction">
+                            <span class="label">💰 Loan Repayment</span>
+                            <span class="amount">₦20,000.00</span>
+                        </div>
+                        <div class="payslip-row deduction">
+                            <span class="label">👥 Union Dues</span>
+                            <span class="amount">₦5,000.00</span>
+                        </div>
+
+                        <div class="payslip-row total">
+                            <span class="label">Total Deductions</span>
+                            <span class="amount">₦59,000.00</span>
+                        </div>
+                    </div>
+
+                    <div class="net-pay">
+                        <h3>NET PAY</h3>
+                        <div class="amount">₦251,000.00</div>
+                    </div>
+                </div>
+
+                <div class="example">
+                    <h4>🔍 Behind the Scenes: Database Storage</h4>
+                    <p>
+                        After generating payroll, each component creates a
+                        record in <code>payroll_run_details</code> table:
+                    </p>
+                    <pre>
+payroll_run_id | component_name      | component_type | amount
+-----------------------------------------------------------------------------
+101            | Housing Allowance   | earning        | 50000.00
+101            | Transport Allowance | earning        | 30000.00
+101            | Meal Allowance      | earning        | 20000.00
+101            | Performance Bonus   | earning        | 10000.00
+101            | Pension (8%)        | deduction      | 16000.00
+101            | Loan Repayment      | deduction      | 20000.00
+101            | Union Dues          | deduction      | 5000.00
+                </pre
+                    >
+                </div>
+
+                <div class="highlight">
+                    <h3>⚡ Key Points to Remember</h3>
+                    <p>
+                        1.
+                        <strong
+                            >Components show ONLY AFTER generating
+                            payroll</strong
+                        >
+                        - not before<br />
+                        2.
+                        <strong
+                            >Each employee sees ONLY their assigned
+                            components</strong
+                        >
+                        - not all components<br />
+                        3.
+                        <strong>Amounts are calculated automatically</strong> -
+                        fixed amounts or percentages<br />
+                        4. <strong>Historical data preserved</strong> - old
+                        payslips don't change if you update components
+                    </p>
+                </div>
+
+                <h2 style="margin: 40px 0 20px; color: #333">
+                    🎯 Where to Click
+                </h2>
+
+                <div class="example">
+                    <h4>📍 Navigation Path</h4>
+                    <pre>
+Sidebar → Payroll Icon (💰)
+  ├── Dashboard (Overview)
+  ├── Employees (Manage & Assign Components)
+  ├── Salary Components (Create Earnings/Deductions) ⭐
+  ├── Payroll Processing (Generate & View) ⭐
+  │     └── Period Details
+  │           └── Employee List
+  │                 ├── 👁️ View Payslip (See Components!) ⭐⭐⭐
+  │                 ├── ⬇️ Download PDF
+  │                 └── ✉️ Email Payslip
+  └── Reports
+                </pre
+                    >
+                </div>
+
+                <div class="steps">
+                    <div class="step">
+                        <h3>✅ To Create Components</h3>
+                        <p style="color: #666; margin-top: 10px">
+                            <strong>Click:</strong> Payroll → Salary Components
+                            → "Add Earning" or "Add Deduction"
+                        </p>
+                    </div>
+
+                    <div class="step">
+                        <h3>✅ To Assign Components</h3>
+                        <p style="color: #666; margin-top: 10px">
+                            <strong>Click:</strong> Payroll → Employees → Edit →
+                            Scroll to "Salary Components" section
+                        </p>
+                    </div>
+
+                    <div class="step">
+                        <h3>✅ To View Components</h3>
+                        <p style="color: #666; margin-top: 10px">
+                            <strong>Click:</strong> Payroll → Processing →
+                            Period → 👁️ Eye icon (View Payslip)
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="footer">
+                <p>
+                    <strong>📚 For detailed instructions, see:</strong>
+                    SALARY_COMPONENTS_GUIDE.md
+                </p>
+                <p style="margin-top: 10px; font-size: 0.9em">
+                    Ballie Payroll Management System • November 2025
+                </p>
+            </div>
+        </div>
+    </body>
+</html>
