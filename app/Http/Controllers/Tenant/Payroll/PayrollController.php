@@ -391,6 +391,70 @@ class PayrollController extends Controller
         return view('tenant.payroll.processing.index', compact('tenant', 'payrollPeriods'));
     }
 
+    /**
+     * Export payroll processing summary
+     */
+    public function exportProcessingSummary(Request $request, Tenant $tenant)
+    {
+        $payrollPeriods = PayrollPeriod::where('tenant_id', $tenant->id)
+            ->with(['createdBy', 'approvedBy'])
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        $filename = 'payroll_processing_summary_' . now()->format('Y-m-d') . '.csv';
+
+        $headers = [
+            'Content-Type' => 'text/csv',
+            'Content-Disposition' => 'attachment; filename="' . $filename . '"',
+        ];
+
+        $callback = function() use ($payrollPeriods) {
+            $file = fopen('php://output', 'w');
+
+            // Add CSV headers
+            fputcsv($file, [
+                'Period Name',
+                'Type',
+                'Start Date',
+                'End Date',
+                'Pay Date',
+                'Status',
+                'Total Employees',
+                'Gross Pay',
+                'Total Deductions',
+                'Net Pay',
+                'Created By',
+                'Created At',
+                'Approved By',
+                'Approved At',
+            ]);
+
+            // Add data rows
+            foreach ($payrollPeriods as $period) {
+                fputcsv($file, [
+                    $period->name,
+                    ucfirst($period->type),
+                    $period->start_date,
+                    $period->end_date,
+                    $period->pay_date,
+                    ucfirst($period->status),
+                    $period->total_employees ?? 0,
+                    number_format($period->total_gross_pay ?? 0, 2),
+                    number_format($period->total_deductions ?? 0, 2),
+                    number_format($period->total_net_pay ?? 0, 2),
+                    $period->createdBy->name ?? '',
+                    $period->created_at->format('Y-m-d H:i:s'),
+                    $period->approvedBy->name ?? '',
+                    $period->approved_at ? $period->approved_at->format('Y-m-d H:i:s') : '',
+                ]);
+            }
+
+            fclose($file);
+        };
+
+        return response()->stream($callback, 200, $headers);
+    }
+
     public function createPayroll(Tenant $tenant)
     {
         // Suggest next month's payroll period
@@ -399,8 +463,13 @@ class PayrollController extends Controller
         $endDate = $nextMonth->endOfMonth();
         $payDate = $endDate->copy()->addDays(2); // Pay 2 days after month end
 
+        // Get active employees count
+        $activeEmployees = Employee::where('tenant_id', $tenant->id)
+            ->where('status', 'active')
+            ->count();
+
         return view('tenant.payroll.processing.create', compact(
-            'tenant', 'startDate', 'endDate', 'payDate'
+            'tenant', 'startDate', 'endDate', 'payDate', 'activeEmployees'
         ));
     }
 
@@ -645,6 +714,253 @@ class PayrollController extends Controller
         };
 
         return response()->stream($callback, 200, $headers);
+    }
+
+    /**
+     * Download employee import template
+     */
+    public function downloadEmployeeTemplate(Tenant $tenant)
+    {
+        $filename = 'employees_template_' . now()->format('Y-m-d') . '.csv';
+
+        $headers = [
+            'Content-Type' => 'text/csv',
+            'Content-Disposition' => 'attachment; filename="' . $filename . '"',
+        ];
+
+        $callback = function() {
+            $file = fopen('php://output', 'w');
+
+            // Add CSV headers
+            fputcsv($file, [
+                'First Name *',
+                'Last Name *',
+                'Email *',
+                'Phone',
+                'Department',
+                'Position',
+                'Job Title',
+                'Employment Type',
+                'Pay Frequency',
+                'Hire Date (YYYY-MM-DD)',
+                'Confirmation Date (YYYY-MM-DD)',
+                'Gender',
+                'Marital Status',
+                'Date of Birth (YYYY-MM-DD)',
+                'Address',
+                'State of Origin',
+                'Basic Salary',
+                'Bank Name',
+                'Bank Code',
+                'Account Number',
+                'Account Name',
+                'TIN',
+                'Pension PIN',
+                'PFA Name',
+            ]);
+
+            // Add example row
+            fputcsv($file, [
+                'John',
+                'Doe',
+                'john.doe@example.com',
+                '08012345678',
+                'IT',
+                'Senior Developer',
+                'Senior Developer',
+                'permanent',
+                'monthly',
+                '2024-01-15',
+                '2024-03-15',
+                'male',
+                'married',
+                '1990-05-20',
+                '123 Main Street',
+                'Lagos',
+                '500000',
+                'First Bank',
+                '011',
+                '0123456789',
+                'JOHN DOE',
+                '12345-6789',
+                'A123456789',
+                'AIICO Pension Managers',
+            ]);
+
+            fclose($file);
+        };
+
+        return response()->stream($callback, 200, $headers);
+    }
+
+    /**
+     * Import employees from CSV file
+     */
+    public function importEmployees(Request $request, Tenant $tenant)
+    {
+        $request->validate([
+            'file' => 'required|file|mimes:csv,xlsx|max:2048',
+        ]);
+
+        $file = $request->file('file');
+        $imported = 0;
+        $errors = 0;
+        $errorDetails = [];
+
+        try {
+            $handle = fopen($file->getRealPath(), 'r');
+            $headers = fgetcsv($handle); // Skip header row
+
+            $rowNumber = 2;
+            while (($row = fgetcsv($handle)) !== false) {
+                try {
+                    // Map CSV columns to array
+                    $data = [
+                        'first_name' => $row[0] ?? null,
+                        'last_name' => $row[1] ?? null,
+                        'email' => $row[2] ?? null,
+                        'phone' => $row[3] ?? null,
+                        'department_name' => $row[4] ?? null,
+                        'position_name' => $row[5] ?? null,
+                        'job_title' => $row[6] ?? null,
+                        'employment_type' => $row[7] ?? 'permanent',
+                        'pay_frequency' => $row[8] ?? 'monthly',
+                        'hire_date' => $row[9] ?? null,
+                        'confirmation_date' => $row[10] ?? null,
+                        'gender' => $row[11] ?? null,
+                        'marital_status' => $row[12] ?? null,
+                        'date_of_birth' => $row[13] ?? null,
+                        'address' => $row[14] ?? null,
+                        'state_of_origin' => $row[15] ?? null,
+                        'basic_salary' => $row[16] ?? 0,
+                        'bank_name' => $row[17] ?? null,
+                        'bank_code' => $row[18] ?? null,
+                        'account_number' => $row[19] ?? null,
+                        'account_name' => $row[20] ?? null,
+                        'tin' => $row[21] ?? null,
+                        'pension_pin' => $row[22] ?? null,
+                        'pfa_name' => $row[23] ?? null,
+                    ];
+
+                    // Validate required fields
+                    if (!$data['first_name'] || !$data['last_name'] || !$data['email']) {
+                        $errors++;
+                        $errorDetails[] = "Row {$rowNumber}: Missing required fields (First Name, Last Name, or Email)";
+                        $rowNumber++;
+                        continue;
+                    }
+
+                    // Check if employee exists
+                    $existingEmployee = Employee::where('email', $data['email'])
+                        ->where('tenant_id', $tenant->id)
+                        ->first();
+
+                    if ($existingEmployee) {
+                        $errors++;
+                        $errorDetails[] = "Row {$rowNumber}: Employee with email {$data['email']} already exists";
+                        $rowNumber++;
+                        continue;
+                    }
+
+                    // Handle department
+                    $department = null;
+                    if ($data['department_name']) {
+                        $department = Department::where('tenant_id', $tenant->id)
+                            ->where('name', $data['department_name'])
+                            ->first();
+
+                        if (!$department) {
+                            // Create department if it doesn't exist
+                            $department = Department::create([
+                                'tenant_id' => $tenant->id,
+                                'name' => $data['department_name'],
+                                'code' => strtoupper(substr($data['department_name'], 0, 3)),
+                                'is_active' => true,
+                            ]);
+                        }
+                    }
+
+                    // Handle position
+                    $position = null;
+                    if ($data['position_name'] && $department) {
+                        $position = \App\Models\Position::where('tenant_id', $tenant->id)
+                            ->where('name', $data['position_name'])
+                            ->where('department_id', $department->id)
+                            ->first();
+                    }
+
+                    // Create employee
+                    $employee = Employee::create([
+                        'tenant_id' => $tenant->id,
+                        'department_id' => $department?->id,
+                        'position_id' => $position?->id,
+                        'first_name' => $data['first_name'],
+                        'last_name' => $data['last_name'],
+                        'email' => $data['email'],
+                        'phone' => $data['phone'],
+                        'job_title' => $data['job_title'] ?? $data['position_name'],
+                        'employment_type' => $data['employment_type'],
+                        'pay_frequency' => $data['pay_frequency'],
+                        'hire_date' => $data['hire_date'] ? Carbon::createFromFormat('Y-m-d', $data['hire_date']) : now(),
+                        'confirmation_date' => $data['confirmation_date'] ? Carbon::createFromFormat('Y-m-d', $data['confirmation_date']) : null,
+                        'gender' => $data['gender'],
+                        'marital_status' => $data['marital_status'] ?? 'single',
+                        'date_of_birth' => $data['date_of_birth'] ? Carbon::createFromFormat('Y-m-d', $data['date_of_birth']) : null,
+                        'address' => $data['address'],
+                        'state_of_origin' => $data['state_of_origin'],
+                        'bank_name' => $data['bank_name'],
+                        'bank_code' => $data['bank_code'],
+                        'account_number' => $data['account_number'],
+                        'account_name' => $data['account_name'],
+                        'tin' => $data['tin'],
+                        'pension_pin' => $data['pension_pin'],
+                        'pfa_name' => $data['pfa_name'],
+                        'status' => 'active',
+                    ]);
+
+                    // Create salary record if basic salary provided
+                    if ($data['basic_salary']) {
+                        EmployeeSalary::create([
+                            'employee_id' => $employee->id,
+                            'basic_salary' => $data['basic_salary'],
+                            'effective_date' => now(),
+                            'is_current' => true,
+                        ]);
+                    }
+
+                    $imported++;
+                } catch (\Exception $e) {
+                    $errors++;
+                    $errorDetails[] = "Row {$rowNumber}: " . $e->getMessage();
+                }
+
+                $rowNumber++;
+            }
+
+            fclose($handle);
+
+            if ($request->wantsJson() || $request->ajax()) {
+                return response()->json([
+                    'imported' => $imported,
+                    'errors' => $errors,
+                    'message' => "Import completed: {$imported} employees imported, {$errors} errors",
+                    'error_details' => array_slice($errorDetails, 0, 10),
+                ], $errors > 0 && $imported === 0 ? 422 : 200);
+            }
+
+            return redirect()->route('tenant.payroll.employees.index', $tenant)
+                ->with('success', "Import completed: {$imported} employees imported, {$errors} errors");
+
+        } catch (\Exception $e) {
+            if ($request->wantsJson() || $request->ajax()) {
+                return response()->json([
+                    'message' => 'Error processing file: ' . $e->getMessage(),
+                ], 422);
+            }
+
+            return redirect()->back()
+                ->with('error', 'Error processing file: ' . $e->getMessage());
+        }
     }
 
     /**

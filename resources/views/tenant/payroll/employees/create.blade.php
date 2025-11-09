@@ -324,7 +324,7 @@
                             Base Salary <span class="text-red-500">*</span>
                         </label>
                         <div class="relative">
-                          
+
                             <input type="number" name="basic_salary" id="basic_salary" step="0.01" min="0" required
                                 class="mt-1 focus:ring-blue-500 focus:border-blue-500 block w-full pl-7 shadow-sm sm:text-sm rounded-md {{ $errors->has('basic_salary') ? 'border-red-300' : 'border-gray-300' }}"
                                 value="{{ old('basic_salary') }}" placeholder="0.00">
@@ -521,7 +521,7 @@
                         </label>
                         <input type="text" name="account_name" id="account_name"
                             class="mt-1 focus:ring-blue-500 focus:border-blue-500 block w-full shadow-sm sm:text-sm rounded-md border-gray-300"
-                            value="{{ old('account_name') }}" placeholder="John Doe">
+                            value="{{ old('account_name') }}" placeholder="John Lawal">
                         @error('account_name')
                             <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                         @enderror

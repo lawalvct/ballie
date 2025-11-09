@@ -541,6 +541,14 @@ Route::prefix('ledger-accounts')->name('ledger-accounts.')->group(function () {
             Route::prefix('employees')->name('employees.')->group(function () {
                 Route::get('/', [PayrollController::class, 'employees'])->name('index');
                 Route::get('/create', [PayrollController::class, 'createEmployee'])->name('create');
+
+                // Non-parameterized routes MUST come before /{employee} routes
+                Route::get('/export', [PayrollController::class, 'exportEmployees'])->name('export-all');
+                Route::get('/template', [PayrollController::class, 'downloadEmployeeTemplate'])->name('template');
+                Route::post('/import', [PayrollController::class, 'importEmployees'])->name('import');
+                Route::post('/bulk-action', [PayrollController::class, 'bulkEmployeeAction'])->name('bulk-action');
+
+                // Parameterized routes come last
                 Route::post('/', [PayrollController::class, 'storeEmployee'])->name('store');
                 Route::get('/{employee}', [PayrollController::class, 'showEmployee'])->name('show');
                 Route::get('/{employee}/edit', [PayrollController::class, 'editEmployee'])->name('edit');
@@ -552,8 +560,6 @@ Route::prefix('ledger-accounts')->name('ledger-accounts.')->group(function () {
                 Route::get('/{employee}/salary-history', [PayrollController::class, 'salaryHistory'])->name('salary-history');
                 Route::post('/{employee}/update-salary', [PayrollController::class, 'updateSalary'])->name('update-salary');
                 Route::get('/{employee}/export', [PayrollController::class, 'exportEmployee'])->name('export');
-                Route::get('/export', [PayrollController::class, 'exportEmployees'])->name('export-all');
-                Route::post('/bulk-action', [PayrollController::class, 'bulkEmployeeAction'])->name('bulk-action');
                 Route::get('/{employee}/payslip', [PayrollController::class, 'generatePayslip'])->name('payslip');
             });
 
@@ -596,6 +602,7 @@ Route::prefix('ledger-accounts')->name('ledger-accounts.')->group(function () {
             Route::prefix('processing')->name('processing.')->group(function () {
                 Route::get('/', [PayrollController::class, 'processing'])->name('index');
                 Route::get('/create', [PayrollController::class, 'createPayroll'])->name('create');
+                Route::get('/export-summary', [PayrollController::class, 'exportProcessingSummary'])->name('export-summary');
                 Route::post('/', [PayrollController::class, 'processPayroll'])->name('store');
                 Route::get('/{period}', [PayrollController::class, 'showPayrollPeriod'])->name('show');
                 Route::get('/{period}/edit', [PayrollController::class, 'editPayrollPeriod'])->name('edit');

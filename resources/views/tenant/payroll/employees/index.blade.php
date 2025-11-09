@@ -27,6 +27,13 @@
                 </svg>
                 Export
             </a>
+            <button type="button" onclick="openImportModal()"
+               class="inline-flex items-center px-4 py-2 bg-indigo-600 border border-transparent rounded-lg font-semibold text-xs text-white uppercase tracking-widest hover:bg-indigo-700 focus:bg-indigo-700 active:bg-indigo-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition ease-in-out duration-150">
+                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-4-4m4 4l4-4m6-2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                </svg>
+                Import
+            </button>
         </div>
     </div>
 
@@ -403,5 +410,270 @@
     </div>
 </div>
 
+<!-- Import Employees Modal -->
+<div id="importModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 items-center justify-center p-4">
+    <div class="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+        <!-- Modal Header -->
+        <div class="sticky top-0 bg-gradient-to-r from-indigo-600 to-indigo-700 px-6 py-4 flex items-center justify-between">
+            <h3 class="text-lg font-semibold text-white">Import Employees</h3>
+            <button type="button" onclick="closeImportModal()" class="text-white hover:text-gray-200">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                </svg>
+            </button>
+        </div>
+
+        <!-- Modal Body -->
+        <div class="p-6">
+            <!-- Instructions -->
+            <div class="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                <h4 class="font-medium text-blue-900 mb-2">Import Instructions:</h4>
+                <ul class="text-sm text-blue-800 space-y-1">
+                    <li>✓ Download the template below to see the required format</li>
+                    <li>✓ Fill in employee data in the template</li>
+                    <li>✓ Save as CSV file</li>
+                    <li>✓ Upload the file to import all employees at once</li>
+                </ul>
+            </div>
+
+            <!-- Download Template Button -->
+            <div class="mb-6">
+                <a href="{{ route('tenant.payroll.employees.template', ['tenant' => $tenant->slug]) }}"
+                   class="inline-flex items-center px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded-lg font-medium text-sm transition-colors duration-200">
+                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-4-4m4 4l4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
+                    Download CSV Template
+                </a>
+            </div>
+
+            <!-- File Upload Form -->
+            <form id="importForm" enctype="multipart/form-data">
+                @csrf
+                <div class="mb-6">
+                    <label for="importFile" class="block text-sm font-medium text-gray-700 mb-2">Select CSV File</label>
+                    <div class="relative border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-indigo-500 transition-colors duration-200">
+                        <input type="file"
+                               id="importFile"
+                               name="file"
+                               accept=".csv,.xlsx"
+                               class="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                               onchange="handleFileSelect(event)">
+                        <div class="pointer-events-none">
+                            <svg class="w-12 h-12 text-gray-400 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path>
+                            </svg>
+                            <p class="text-gray-600">Drag and drop your file here, or click to select</p>
+                            <p class="text-xs text-gray-500 mt-1">CSV or Excel files only</p>
+                        </div>
+                    </div>
+                    <p id="fileName" class="mt-2 text-sm text-gray-600"></p>
+                </div>
+
+                <!-- Preview Section -->
+                <div id="previewSection" class="mb-6 hidden">
+                    <h4 class="font-medium text-gray-900 mb-2">Preview (First 5 rows)</h4>
+                    <div class="overflow-x-auto bg-gray-50 rounded-lg border border-gray-200">
+                        <table class="w-full text-sm">
+                            <thead class="bg-gray-100 border-b">
+                                <tr id="previewHeader"></tr>
+                            </thead>
+                            <tbody id="previewBody"></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Import Statistics -->
+                <div id="statsSection" class="mb-6 hidden p-4 bg-gray-50 rounded-lg">
+                    <p class="text-sm text-gray-700">
+                        <span class="font-medium" id="rowCount">0</span> employees ready to import
+                    </p>
+                </div>
+
+                <!-- Modal Footer -->
+                <div class="flex items-center justify-end space-x-3 pt-4 border-t">
+                    <button type="button"
+                            onclick="closeImportModal()"
+                            class="px-4 py-2 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg font-medium transition-colors duration-200">
+                        Cancel
+                    </button>
+                    <button type="submit"
+                            id="importSubmitBtn"
+                            disabled
+                            class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 disabled:bg-gray-400 text-white rounded-lg font-medium transition-colors duration-200">
+                        <svg class="w-4 h-4 mr-2 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path>
+                        </svg>
+                        Import Employees
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
 <script src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
+
+<script>
+// Import Modal Functions
+function openImportModal() {
+    const modal = document.getElementById('importModal');
+    modal.classList.remove('hidden');
+    modal.classList.add('flex');
+}
+
+function closeImportModal() {
+    const modal = document.getElementById('importModal');
+    modal.classList.add('hidden');
+    modal.classList.remove('flex');
+    document.getElementById('importForm').reset();
+    document.getElementById('previewSection').classList.add('hidden');
+    document.getElementById('statsSection').classList.add('hidden');
+    document.getElementById('fileName').textContent = '';
+    document.getElementById('importSubmitBtn').disabled = true;
+}
+
+function handleFileSelect(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    // Show file name
+    document.getElementById('fileName').textContent = `Selected: ${file.name}`;
+
+    // Read and parse CSV
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        const text = e.target.result;
+        const rows = text.trim().split('\n');
+
+        if (rows.length < 2) {
+            alert('CSV file must contain at least a header and one data row');
+            return;
+        }
+
+        // Parse header
+        const headers = rows[0].split(',').map(h => h.trim());
+
+        // Parse first 5 data rows for preview
+        const previewHeader = document.getElementById('previewHeader');
+        const previewBody = document.getElementById('previewBody');
+        previewHeader.innerHTML = '';
+        previewBody.innerHTML = '';
+
+        headers.forEach(header => {
+            const th = document.createElement('th');
+            th.className = 'px-4 py-2 text-left text-gray-700 font-medium';
+            th.textContent = header;
+            previewHeader.appendChild(th);
+        });
+
+        for (let i = 1; i < Math.min(6, rows.length); i++) {
+            const cells = rows[i].split(',');
+            const tr = document.createElement('tr');
+            tr.className = 'border-b hover:bg-gray-100';
+
+            cells.forEach(cell => {
+                const td = document.createElement('td');
+                td.className = 'px-4 py-2 text-gray-600';
+                td.textContent = cell.trim();
+                tr.appendChild(td);
+            });
+            previewBody.appendChild(tr);
+        }
+
+        // Show preview and stats
+        document.getElementById('previewSection').classList.remove('hidden');
+        document.getElementById('statsSection').classList.remove('hidden');
+        document.getElementById('rowCount').textContent = rows.length - 1;
+        document.getElementById('importSubmitBtn').disabled = false;
+    };
+
+    reader.readAsText(file);
+}
+
+// Handle form submission - wait for DOM to be ready
+document.addEventListener('DOMContentLoaded', function() {
+    const importForm = document.getElementById('importForm');
+    if (!importForm) {
+        console.error('Import form not found');
+        return;
+    }
+
+    importForm.addEventListener('submit', async function(e) {
+        e.preventDefault();
+
+        const fileInput = document.getElementById('importFile');
+        const file = fileInput.files[0];
+
+        if (!file) {
+            alert('Please select a file to import');
+            return;
+        }
+
+        const formData = new FormData();
+        formData.append('file', file);
+
+        // Get CSRF token
+        const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content ||
+                         document.querySelector('input[name="_token"]')?.value;
+
+        if (!csrfToken) {
+            alert('CSRF token not found. Please refresh the page and try again.');
+            console.error('CSRF token missing');
+            return;
+        }
+
+        formData.append('_token', csrfToken);
+
+        const submitBtn = document.getElementById('importSubmitBtn');
+        const originalText = submitBtn.textContent;
+
+        try {
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Importing...';
+
+            const response = await fetch('{{ route('tenant.payroll.employees.import', ['tenant' => $tenant->slug]) }}', {
+                method: 'POST',
+                headers: {
+                    'X-CSRF-TOKEN': csrfToken,
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'Accept': 'application/json',
+                },
+                body: formData,
+                credentials: 'same-origin'
+            });
+
+            // Check if response is JSON
+            const contentType = response.headers.get('content-type');
+            if (!contentType || !contentType.includes('application/json')) {
+                const text = await response.text();
+                console.error('Non-JSON response:', text);
+                throw new Error('Server returned an error. Please check if you are logged in and try again.');
+            }
+
+            const data = await response.json();
+
+            if (response.ok) {
+                alert(`Import successful!\n✓ ${data.imported} employees imported\n✗ ${data.errors} errors`);
+                closeImportModal();
+                location.reload();
+            } else {
+                let errorMsg = data.message || 'Unknown error';
+                if (data.error_details && data.error_details.length > 0) {
+                    errorMsg += '\n\nFirst few errors:\n' + data.error_details.join('\n');
+                }
+                alert(`Import failed: ${errorMsg}`);
+            }
+        } catch (error) {
+            console.error('Upload error:', error);
+            alert('Error uploading file: ' + error.message);
+        } finally {
+            submitBtn.disabled = false;
+            submitBtn.textContent = originalText;
+        }
+    });
+});
+</script>
 @endsection
+
+```
