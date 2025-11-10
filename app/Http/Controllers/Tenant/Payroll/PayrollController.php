@@ -1227,4 +1227,63 @@ class PayrollController extends Controller
             'message' => 'Payslip sent successfully to ' . $payrollRun->employee->email
         ]);
     }
+
+    /**
+     * Bank Schedule Report - Shows approved payrolls ready for bank payment
+     */
+    public function bankSchedule(Request $request, Tenant $tenant)
+    {
+        $year = $request->get('year', now()->year);
+        $month = $request->get('month', now()->month);
+        $status = $request->get('status', 'approved'); // approved, paid
+
+        // Get payroll periods based on filters
+        $query = PayrollPeriod::where('tenant_id', $tenant->id)
+            ->with(['payrollRuns.employee.department', 'createdBy', 'approvedBy']);
+
+        // Filter by status
+        if ($status) {
+            $query->where('status', $status);
+        }
+
+        // Filter by year/month
+        if ($year && $month) {
+            $query->whereYear('pay_date', $year)
+                  ->whereMonth('pay_date', $month);
+        } elseif ($year) {
+            $query->whereYear('pay_date', $year);
+        }
+
+        $payrollPeriods = $query->orderBy('pay_date', 'desc')->get();
+
+        // Calculate totals
+        $totalEmployees = 0;
+        $totalGross = 0;
+        $totalDeductions = 0;
+        $totalNet = 0;
+
+        foreach ($payrollPeriods as $period) {
+            $totalEmployees += $period->payrollRuns->count();
+            $totalGross += $period->total_gross ?? 0;
+            $totalDeductions += $period->total_deductions ?? 0;
+            $totalNet += $period->total_net ?? 0;
+        }
+
+        $summary = [
+            'total_periods' => $payrollPeriods->count(),
+            'total_employees' => $totalEmployees,
+            'total_gross' => $totalGross,
+            'total_deductions' => $totalDeductions,
+            'total_net' => $totalNet,
+        ];
+
+        return view('tenant.payroll.reports.bank-schedule', compact(
+            'tenant',
+            'payrollPeriods',
+            'summary',
+            'year',
+            'month',
+            'status'
+        ));
+    }
 }
