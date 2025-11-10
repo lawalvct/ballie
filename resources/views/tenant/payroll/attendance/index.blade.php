@@ -2,8 +2,27 @@
 
 @section('title', 'Attendance Management')
 
+@push('styles')
+<style>
+    /* Fallback icon styles if FontAwesome fails to load */
+    .fas, .fa {
+        font-family: 'Font Awesome 6 Free', 'Font Awesome 5 Free', sans-serif;
+        font-weight: 900;
+    }
+
+    /* Ensure modals appear above everything */
+    [x-show] {
+        transition: opacity 0.3s ease;
+    }
+
+    /* Debug: Force modal visibility for testing */
+    /* Remove this after testing */
+    /*.fixed.inset-0.z-50 { display: block !important; opacity: 1 !important; }*/
+</style>
+@endpush
+
 @section('content')
-<div x-data="attendanceManager()" class="bg-gray-50 min-h-screen">
+<div class="bg-gray-50 min-h-screen">
     <!-- Header -->
     <div class="bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 shadow-xl">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -17,11 +36,11 @@
                            value="{{ $selectedDate->format('Y-m-d') }}"
                            onchange="window.location.href = '{{ route('tenant.payroll.attendance.index', $tenant) }}?date=' + this.value"
                            class="px-4 py-2 bg-white/20 backdrop-blur-sm border border-white/30 rounded-lg text-white placeholder-white/70 focus:outline-none focus:ring-2 focus:ring-white/50">
-                    <button @click="showManualEntryModal = true"
+                    <button onclick="openManualEntryModal()"
                             class="bg-green-500/90 backdrop-blur-sm hover:bg-green-600 text-white px-6 py-3 rounded-xl font-medium transition-all duration-300 shadow-lg hover:shadow-xl border border-white/20">
                         <i class="fas fa-clock mr-2"></i>Manual Entry
                     </button>
-                    <button @click="showLeaveModal = true"
+                    <button onclick="openLeaveModal()"
                             class="bg-purple-500/90 backdrop-blur-sm hover:bg-purple-600 text-white px-6 py-3 rounded-xl font-medium transition-all duration-300 shadow-lg hover:shadow-xl border border-white/20">
                         <i class="fas fa-umbrella-beach mr-2"></i>Mark Leave
                     </button>
@@ -167,7 +186,7 @@
                     <p class="text-gray-600 mt-1">{{ $selectedDate->format('l') }}</p>
                 </div>
                 <div class="flex items-center space-x-3">
-                    <button @click="bulkApprove" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-medium transition-colors duration-300">
+                    <button onclick="bulkApprove()" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-medium transition-colors duration-300">
                         <i class="fas fa-check-double mr-2"></i>Bulk Approve
                     </button>
                     <button onclick="window.print()" class="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg font-medium transition-colors duration-300">
@@ -181,7 +200,7 @@
                     <thead class="bg-gray-50">
                         <tr>
                             <th class="px-6 py-4 text-left">
-                                <input type="checkbox" @change="toggleAll($event)" class="rounded border-gray-300 text-blue-600 focus:ring-blue-500">
+                                <input type="checkbox" onchange="toggleAll(event)" class="rounded border-gray-300 text-blue-600 focus:ring-blue-500">
                             </th>
                             <th class="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Employee</th>
                             <th class="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Department</th>
@@ -324,146 +343,172 @@
 
 @push('scripts')
 <script>
-function attendanceManager() {
-    return {
-        selectedRecords: [],
-        showManualEntryModal: false,
-        showLeaveModal: false,
-        manualEntry: {
-            employee_id: '',
-            date: '{{ $selectedDate->format("Y-m-d") }}',
-            clock_in_time: '',
-            clock_out_time: '',
-            break_minutes: 60,
-            notes: ''
-        },
-        leaveData: {
-            employee_id: '',
-            date: '{{ $selectedDate->format("Y-m-d") }}',
-            leave_type: '',
-            reason: ''
-        },
+// Vanilla JavaScript for modal handling
+function openManualEntryModal() {
+    document.getElementById('manualEntryModal').classList.remove('hidden');
+}
 
-        toggleAll(event) {
-            if (event.target.checked) {
-                this.selectedRecords = Array.from(document.querySelectorAll('tbody input[type="checkbox"]')).map(cb => cb.value);
-            } else {
-                this.selectedRecords = [];
-            }
-        },
+function closeManualEntryModal() {
+    document.getElementById('manualEntryModal').classList.add('hidden');
+    document.getElementById('manualEntryForm').reset();
+    document.getElementById('workHoursPreview').style.display = 'none';
+}
 
-        calculateWorkHoursPreview() {
-            if (!this.manualEntry.clock_in_time || !this.manualEntry.clock_out_time) {
-                return '';
-            }
+function openLeaveModal() {
+    document.getElementById('leaveModal').classList.remove('hidden');
+}
 
-            const clockIn = new Date('2000-01-01 ' + this.manualEntry.clock_in_time);
-            const clockOut = new Date('2000-01-01 ' + this.manualEntry.clock_out_time);
-            const breakMinutes = parseInt(this.manualEntry.break_minutes) || 0;
+function closeLeaveModal() {
+    document.getElementById('leaveModal').classList.add('hidden');
+    document.getElementById('leaveForm').reset();
+}
 
-            const totalMinutes = (clockOut - clockIn) / (1000 * 60);
-            const workMinutes = totalMinutes - breakMinutes;
-            const workHours = (workMinutes / 60).toFixed(2);
+function calculateWorkHoursPreview() {
+    const clockInTime = document.getElementById('manual_clock_in_time').value;
+    const clockOutTime = document.getElementById('manual_clock_out_time').value;
+    const breakMinutes = parseInt(document.getElementById('manual_break_minutes').value) || 0;
 
-            return `Total work hours: ${workHours} hours (${Math.floor(workMinutes / 60)}h ${workMinutes % 60}m)`;
-        },
-
-        submitManualEntry() {
-            if (!this.manualEntry.employee_id || !this.manualEntry.date || !this.manualEntry.clock_in_time) {
-                alert('Please fill in all required fields');
-                return;
-            }
-
-            fetch('{{ route('tenant.payroll.attendance.manual-entry', $tenant) }}', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': '{{ csrf_token() }}'
-                },
-                body: JSON.stringify(this.manualEntry)
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    alert(data.message + '\n\nClock In: ' + data.data.clock_in +
-                          (data.data.clock_out ? '\nClock Out: ' + data.data.clock_out : '') +
-                          '\nWork Hours: ' + data.data.work_hours + ' hrs' +
-                          (data.data.overtime_hours > 0 ? '\nOvertime: ' + data.data.overtime_hours + ' hrs' : ''));
-                    window.location.reload();
-                } else {
-                    alert('Error: ' + (data.error || data.message || 'Failed to record attendance'));
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                alert('An error occurred while recording attendance');
-            });
-        },
-
-        submitLeave() {
-            if (!this.leaveData.employee_id || !this.leaveData.date || !this.leaveData.leave_type) {
-                alert('Please fill in all required fields');
-                return;
-            }
-
-            fetch('{{ route('tenant.payroll.attendance.mark-leave', $tenant) }}', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': '{{ csrf_token() }}'
-                },
-                body: JSON.stringify(this.leaveData)
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    alert(data.message);
-                    window.location.reload();
-                } else {
-                    alert('Error: ' + (data.error || data.message || 'Failed to mark leave'));
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                alert('An error occurred while marking leave');
-            });
-        },
-
-        bulkApprove() {
-            if (this.selectedRecords.length === 0) {
-                alert('Please select at least one record to approve');
-                return;
-            }
-
-            if (!confirm(`Approve ${this.selectedRecords.length} attendance record(s)?`)) {
-                return;
-            }
-
-            fetch('{{ route('tenant.payroll.attendance.bulk-approve', $tenant) }}', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': '{{ csrf_token() }}'
-                },
-                body: JSON.stringify({
-                    attendance_ids: this.selectedRecords
-                })
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    alert(data.message);
-                    window.location.reload();
-                } else {
-                    alert('Error: ' + (data.message || 'Failed to approve records'));
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                alert('An error occurred while approving records');
-            });
-        }
+    if (!clockInTime || !clockOutTime) {
+        document.getElementById('workHoursPreview').style.display = 'none';
+        return;
     }
+
+    const clockIn = new Date('2000-01-01 ' + clockInTime);
+    const clockOut = new Date('2000-01-01 ' + clockOutTime);
+
+    const totalMinutes = (clockOut - clockIn) / (1000 * 60);
+    const workMinutes = totalMinutes - breakMinutes;
+    const workHours = (workMinutes / 60).toFixed(2);
+    const hours = Math.floor(workMinutes / 60);
+    const minutes = workMinutes % 60;
+
+    document.getElementById('workHoursText').textContent =
+        `Total work hours: ${workHours} hours (${hours}h ${minutes}m)`;
+    document.getElementById('workHoursPreview').style.display = 'block';
+}
+
+function submitManualEntry(event) {
+    event.preventDefault();
+
+    const formData = new FormData(event.target);
+    const data = Object.fromEntries(formData);
+
+    if (!data.employee_id || !data.date || !data.clock_in_time) {
+        alert('Please fill in all required fields');
+        return;
+    }
+
+    fetch('{{ route('tenant.payroll.attendance.manual-entry', $tenant) }}', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': '{{ csrf_token() }}'
+        },
+        body: JSON.stringify(data)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert(data.message + '\n\nClock In: ' + data.data.clock_in +
+                  (data.data.clock_out ? '\nClock Out: ' + data.data.clock_out : '') +
+                  '\nWork Hours: ' + data.data.work_hours + ' hrs' +
+                  (data.data.overtime_hours > 0 ? '\nOvertime: ' + data.data.overtime_hours + ' hrs' : ''));
+            window.location.reload();
+        } else {
+            alert('Error: ' + (data.error || data.message || 'Failed to record attendance'));
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('An error occurred while recording attendance');
+    });
+}
+
+function submitLeave(event) {
+    event.preventDefault();
+
+    const formData = new FormData(event.target);
+    const data = Object.fromEntries(formData);
+
+    if (!data.employee_id || !data.date || !data.leave_type) {
+        alert('Please fill in all required fields');
+        return;
+    }
+
+    fetch('{{ route('tenant.payroll.attendance.mark-leave', $tenant) }}', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': '{{ csrf_token() }}'
+        },
+        body: JSON.stringify(data)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert(data.message);
+            window.location.reload();
+        } else {
+            alert('Error: ' + (data.error || data.message || 'Failed to mark leave'));
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('An error occurred while marking leave');
+    });
+}
+
+// Bulk selection and approval
+let selectedRecords = [];
+
+function toggleAll(event) {
+    const checkboxes = document.querySelectorAll('tbody input[type="checkbox"]');
+    selectedRecords = [];
+
+    checkboxes.forEach(cb => {
+        cb.checked = event.target.checked;
+        if (event.target.checked) {
+            selectedRecords.push(cb.value);
+        }
+    });
+}
+
+function bulkApprove() {
+    const checkboxes = document.querySelectorAll('tbody input[type="checkbox"]:checked');
+    selectedRecords = Array.from(checkboxes).map(cb => cb.value);
+
+    if (selectedRecords.length === 0) {
+        alert('Please select at least one record to approve');
+        return;
+    }
+
+    if (!confirm(`Approve ${selectedRecords.length} attendance record(s)?`)) {
+        return;
+    }
+
+    fetch('{{ route('tenant.payroll.attendance.bulk-approve', $tenant) }}', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': '{{ csrf_token() }}'
+        },
+        body: JSON.stringify({
+            attendance_ids: selectedRecords
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert(data.message);
+            window.location.reload();
+        } else {
+            alert('Error: ' + (data.message || 'Failed to approve records'));
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('An error occurred while approving records');
+    });
 }
 
 function clockIn(employeeId) {

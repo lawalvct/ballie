@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Alpine Test</title>
+        <script
+            defer
+            src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"
+        ></script>
+        <style>
+            [x-cloak] {
+                display: none !important;
+            }
+            .modal {
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background: rgba(0, 0, 0, 0.5);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+            }
+            .modal-content {
+                background: white;
+                padding: 20px;
+                border-radius: 8px;
+            }
+        </style>
+    </head>
+    <body>
+        <div x-data="testModal()">
+            <h1>Alpine.js Test</h1>
+            <button @click="showModal = true">Open Modal</button>
+            <p>Modal state: <span x-text="showModal"></span></p>
+
+            <div
+                x-show="showModal"
+                x-cloak
+                class="modal"
+                @click="showModal = false"
+            >
+                <div class="modal-content" @click.stop>
+                    <h2>Test Modal</h2>
+                    <p>This modal is working!</p>
+                    <button @click="showModal = false">Close</button>
+                </div>
+            </div>
+        </div>
+
+        <script>
+            function testModal() {
+                return {
+                    showModal: false,
+                    init() {
+                        console.log("Alpine initialized");
+                    },
+                };
+            }
+        </script>
+    </body>
+</html>
