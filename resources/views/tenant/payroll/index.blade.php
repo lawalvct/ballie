@@ -256,29 +256,278 @@
     </div>
 
     <!-- Monthly Chart -->
-    <div class="bg-white rounded-2xl p-6 shadow-lg">
-        <div class="flex items-center justify-between mb-6">
-            <h3 class="text-xl font-bold text-gray-900">Monthly Payroll Overview</h3>
-            <div class="flex space-x-2">
-                <button class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors duration-200">6M</button>
-                <button class="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors duration-200">1Y</button>
+    <div class="bg-white rounded-2xl p-6 shadow-lg" x-data="payrollChart()">
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6 gap-4">
+            <div>
+                <h3 class="text-xl font-bold text-gray-900">Monthly Payroll Overview</h3>
+                <p class="text-sm text-gray-500 mt-1">Last 12 months payroll trends</p>
+            </div>
+            <div class="flex items-center space-x-3">
+                <!-- Legend -->
+                <div class="flex items-center space-x-4 text-sm">
+                    <div class="flex items-center">
+                        <div class="w-3 h-3 bg-blue-500 rounded-full mr-2"></div>
+                        <span class="text-gray-600">Gross Pay</span>
+                    </div>
+                    <div class="flex items-center">
+                        <div class="w-3 h-3 bg-green-500 rounded-full mr-2"></div>
+                        <span class="text-gray-600">Net Pay</span>
+                    </div>
+                </div>
+                <!-- View Toggle -->
+                <div class="flex space-x-2 bg-gray-100 rounded-lg p-1">
+                    <button @click="showGross = true; showNet = true"
+                            :class="showGross && showNet ? 'bg-white shadow-sm' : 'text-gray-600'"
+                            class="px-3 py-1.5 text-xs font-medium rounded-md transition-all duration-200">Both</button>
+                    <button @click="showGross = true; showNet = false"
+                            :class="showGross && !showNet ? 'bg-white shadow-sm' : 'text-gray-600'"
+                            class="px-3 py-1.5 text-xs font-medium rounded-md transition-all duration-200">Gross</button>
+                    <button @click="showGross = false; showNet = true"
+                            :class="!showGross && showNet ? 'bg-white shadow-sm' : 'text-gray-600'"
+                            class="px-3 py-1.5 text-xs font-medium rounded-md transition-all duration-200">Net</button>
+                </div>
             </div>
         </div>
-        <div class="h-64 flex items-center justify-center bg-gray-50 rounded-xl">
+
+        <!-- Chart Canvas -->
+        <div class="relative" style="height: 320px;">
+            <canvas id="payrollChart"></canvas>
+        </div>
+
+        <!-- Summary Stats Below Chart -->
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-6 pt-6 border-t border-gray-100">
             <div class="text-center">
-                <div class="w-16 h-16 bg-gray-200 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <svg class="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
-                    </svg>
-                </div>
-                <p class="text-gray-500 mb-2">Payroll Chart</p>
-                <p class="text-sm text-gray-400">Chart integration coming soon</p>
+                <p class="text-sm text-gray-500 mb-1">Average Monthly Gross</p>
+                <p class="text-lg font-bold text-gray-900" x-text="averageGross"></p>
+            </div>
+            <div class="text-center">
+                <p class="text-sm text-gray-500 mb-1">Average Monthly Net</p>
+                <p class="text-lg font-bold text-gray-900" x-text="averageNet"></p>
+            </div>
+            <div class="text-center">
+                <p class="text-sm text-gray-500 mb-1">Total Year to Date</p>
+                <p class="text-lg font-bold text-gray-900" x-text="totalYTD"></p>
             </div>
         </div>
     </div>
 </div>
 
+<!-- Chart.js CDN -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <script src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
+
+<script>
+// Alpine.js component for payroll chart
+function payrollChart() {
+    return {
+        showGross: true,
+        showNet: true,
+        chart: null,
+        chartData: @json($monthlyPayrollData ?? []),
+        averageGross: '₦0.00',
+        averageNet: '₦0.00',
+        totalYTD: '₦0.00',
+
+        init() {
+            this.calculateStats();
+            this.initChart();
+
+            // Watch for changes to update chart
+            this.$watch('showGross', () => this.updateChart());
+            this.$watch('showNet', () => this.updateChart());
+        },
+
+        calculateStats() {
+            if (!this.chartData || this.chartData.length === 0) {
+                return;
+            }
+
+            const totalGross = this.chartData.reduce((sum, item) => sum + item.gross, 0);
+            const totalNet = this.chartData.reduce((sum, item) => sum + item.net, 0);
+            const count = this.chartData.length;
+
+            this.averageGross = '₦' + this.formatNumber(totalGross / count);
+            this.averageNet = '₦' + this.formatNumber(totalNet / count);
+            this.totalYTD = '₦' + this.formatNumber(totalGross);
+        },
+
+        formatNumber(num) {
+            return new Intl.NumberFormat('en-NG', {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2
+            }).format(num);
+        },
+
+        initChart() {
+            const ctx = document.getElementById('payrollChart');
+            if (!ctx) return;
+
+            const labels = this.chartData.map(item => item.month_short);
+            const grossData = this.chartData.map(item => item.gross);
+            const netData = this.chartData.map(item => item.net);
+
+            const datasets = [];
+
+            if (this.showGross) {
+                datasets.push({
+                    label: 'Gross Pay',
+                    data: grossData,
+                    borderColor: 'rgb(59, 130, 246)',
+                    backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                    borderWidth: 2,
+                    fill: true,
+                    tension: 0.4,
+                    pointRadius: 4,
+                    pointHoverRadius: 6,
+                    pointBackgroundColor: 'rgb(59, 130, 246)',
+                    pointBorderColor: '#fff',
+                    pointBorderWidth: 2,
+                });
+            }
+
+            if (this.showNet) {
+                datasets.push({
+                    label: 'Net Pay',
+                    data: netData,
+                    borderColor: 'rgb(34, 197, 94)',
+                    backgroundColor: 'rgba(34, 197, 94, 0.1)',
+                    borderWidth: 2,
+                    fill: true,
+                    tension: 0.4,
+                    pointRadius: 4,
+                    pointHoverRadius: 6,
+                    pointBackgroundColor: 'rgb(34, 197, 94)',
+                    pointBorderColor: '#fff',
+                    pointBorderWidth: 2,
+                });
+            }
+
+            this.chart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: datasets
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    interaction: {
+                        mode: 'index',
+                        intersect: false,
+                    },
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        tooltip: {
+                            backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                            padding: 12,
+                            titleColor: '#fff',
+                            bodyColor: '#fff',
+                            borderColor: 'rgba(255, 255, 255, 0.1)',
+                            borderWidth: 1,
+                            displayColors: true,
+                            callbacks: {
+                                label: (context) => {
+                                    let label = context.dataset.label || '';
+                                    if (label) {
+                                        label += ': ';
+                                    }
+                                    label += '₦' + this.formatNumber(context.parsed.y);
+                                    return label;
+                                },
+                                footer: (tooltipItems) => {
+                                    const dataIndex = tooltipItems[0].dataIndex;
+                                    const employees = this.chartData[dataIndex].employees;
+                                    return employees > 0 ? `${employees} employees` : '';
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            grid: {
+                                color: 'rgba(0, 0, 0, 0.05)',
+                                drawBorder: false,
+                            },
+                            ticks: {
+                                callback: (value) => {
+                                    return '₦' + (value >= 1000000 ?
+                                        (value / 1000000).toFixed(1) + 'M' :
+                                        (value >= 1000 ? (value / 1000).toFixed(0) + 'K' : value));
+                                },
+                                color: '#6B7280',
+                                font: {
+                                    size: 11
+                                }
+                            }
+                        },
+                        x: {
+                            grid: {
+                                display: false,
+                                drawBorder: false,
+                            },
+                            ticks: {
+                                color: '#6B7280',
+                                font: {
+                                    size: 11
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        },
+
+        updateChart() {
+            if (!this.chart) return;
+
+            const grossData = this.chartData.map(item => item.gross);
+            const netData = this.chartData.map(item => item.net);
+
+            const datasets = [];
+
+            if (this.showGross) {
+                datasets.push({
+                    label: 'Gross Pay',
+                    data: grossData,
+                    borderColor: 'rgb(59, 130, 246)',
+                    backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                    borderWidth: 2,
+                    fill: true,
+                    tension: 0.4,
+                    pointRadius: 4,
+                    pointHoverRadius: 6,
+                    pointBackgroundColor: 'rgb(59, 130, 246)',
+                    pointBorderColor: '#fff',
+                    pointBorderWidth: 2,
+                });
+            }
+
+            if (this.showNet) {
+                datasets.push({
+                    label: 'Net Pay',
+                    data: netData,
+                    borderColor: 'rgb(34, 197, 94)',
+                    backgroundColor: 'rgba(34, 197, 94, 0.1)',
+                    borderWidth: 2,
+                    fill: true,
+                    tension: 0.4,
+                    pointRadius: 4,
+                    pointHoverRadius: 6,
+                    pointBackgroundColor: 'rgb(34, 197, 94)',
+                    pointBorderColor: '#fff',
+                    pointBorderWidth: 2,
+                });
+            }
+
+            this.chart.data.datasets = datasets;
+            this.chart.update('active');
+        }
+    };
+}
+</script>
 
 <style>
 .quick-action-btn {

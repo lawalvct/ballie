@@ -134,13 +134,60 @@ class PayrollController extends Controller
                 ];
             });
 
-        return view('tenant.payroll.index', compact(
+        // Get monthly payroll data for the last 12 months
+        $monthlyPayrollData = [];
+        $startDate = now()->subMonths(11)->startOfMonth();
+
+        for ($i = 0; $i < 12; $i++) {
+            $month = $startDate->copy()->addMonths($i);
+
+            // Query payroll periods for this month using start_date, end_date, or pay_date
+            $periodData = PayrollPeriod::where('tenant_id', $tenant->id)
+                ->where(function($query) use ($month) {
+                    $query->where(function($q) use ($month) {
+                        // Check if start_date is in this month
+                        $q->whereYear('start_date', $month->year)
+                          ->whereMonth('start_date', $month->month);
+                    })
+                    ->orWhere(function($q) use ($month) {
+                        // Or if end_date is in this month
+                        $q->whereYear('end_date', $month->year)
+                          ->whereMonth('end_date', $month->month);
+                    })
+                    ->orWhere(function($q) use ($month) {
+                        // Or if pay_date is in this month
+                        $q->whereYear('pay_date', $month->year)
+                          ->whereMonth('pay_date', $month->month);
+                    });
+                })
+                ->get();
+
+            $grossTotal = 0;
+            $netTotal = 0;
+            $employeeCount = 0;
+
+            foreach ($periodData as $period) {
+                $runs = $period->payrollRuns()->get();
+                $grossTotal += $runs->sum('gross_salary');
+                $netTotal += $runs->sum('net_salary');
+                $employeeCount += $runs->count();
+            }
+
+            $monthlyPayrollData[] = [
+                'month' => $month->format('M Y'),
+                'month_short' => $month->format('M'),
+                'gross' => $grossTotal,
+                'net' => $netTotal,
+                'employees' => $employeeCount,
+            ];
+        }        return view('tenant.payroll.index', compact(
             'tenant',
             'totalEmployees',
             'monthlyPayrollCost',
             'pendingPayrolls',
             'recentPayrolls',
-            'departmentSummary'
+            'departmentSummary',
+            'monthlyPayrollData'
         ));
     }
 
