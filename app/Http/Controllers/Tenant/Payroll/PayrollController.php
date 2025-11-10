@@ -1365,6 +1365,58 @@ class PayrollController extends Controller
     }
 
     /**
+     * Display all employee loans and advances
+     */
+    public function loans(Request $request, Tenant $tenant)
+    {
+        $query = EmployeeLoan::with(['employee.department', 'approvedBy'])
+            ->whereHas('employee', function($q) use ($tenant) {
+                $q->where('tenant_id', $tenant->id);
+            });
+
+        // Filter by status
+        if ($request->filled('status')) {
+            $query->where('status', $request->status);
+        }
+
+        // Filter by employee
+        if ($request->filled('employee_id')) {
+            $query->where('employee_id', $request->employee_id);
+        }
+
+        // Search by loan number
+        if ($request->filled('search')) {
+            $query->where('loan_number', 'like', '%' . $request->search . '%');
+        }
+
+        $loans = $query->orderBy('created_at', 'desc')->paginate(20);
+
+        // Get all employees for filter
+        $employees = Employee::where('tenant_id', $tenant->id)
+            ->where('status', 'active')
+            ->orderBy('first_name')
+            ->get();
+
+        // Calculate summary stats
+        $stats = [
+            'total_loans' => EmployeeLoan::whereHas('employee', function($q) use ($tenant) {
+                $q->where('tenant_id', $tenant->id);
+            })->count(),
+            'active_loans' => EmployeeLoan::whereHas('employee', function($q) use ($tenant) {
+                $q->where('tenant_id', $tenant->id);
+            })->where('status', 'active')->count(),
+            'total_amount' => EmployeeLoan::whereHas('employee', function($q) use ($tenant) {
+                $q->where('tenant_id', $tenant->id);
+            })->sum('loan_amount'),
+            'total_outstanding' => EmployeeLoan::whereHas('employee', function($q) use ($tenant) {
+                $q->where('tenant_id', $tenant->id);
+            })->where('status', 'active')->sum('balance'),
+        ];
+
+        return view('tenant.payroll.loans.index', compact('tenant', 'loans', 'employees', 'stats'));
+    }
+
+    /**
      * Show form to create salary advance voucher
      */
     public function createSalaryAdvance(Request $request, Tenant $tenant)
