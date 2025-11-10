@@ -44,6 +44,8 @@
 
             <!-- Calculator Popup -->
             <div x-show="isOpen"
+                 x-cloak
+                 style="display: none;"
                  x-transition:enter="transition ease-out duration-300"
                  x-transition:enter-start="opacity-0 scale-90 transform translate-y-4"
                  x-transition:enter-end="opacity-100 scale-100 transform translate-y-0"
