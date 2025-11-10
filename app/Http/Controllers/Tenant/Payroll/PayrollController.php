@@ -664,14 +664,40 @@ class PayrollController extends Controller
             return redirect()->back()->with('error', 'Payroll cannot be processed in current status.');
         }
 
+        // Validate the options
+        $validated = $request->validate([
+            'apply_paye_tax' => 'required|boolean',
+            'apply_nsitf' => 'required|boolean',
+            'paye_tax_rate' => 'nullable|numeric|min:0|max:100',
+            'nsitf_rate' => 'nullable|numeric|min:0|max:100',
+            'tax_exemption_reason' => 'nullable|string|max:500',
+        ]);
+
         try {
-            DB::transaction(function () use ($period) {
+            DB::transaction(function () use ($period, $validated) {
+                // Update period with tax and NSITF preferences
+                $period->update([
+                    'apply_paye_tax' => $validated['apply_paye_tax'],
+                    'apply_nsitf' => $validated['apply_nsitf'],
+                    'paye_tax_rate' => $validated['paye_tax_rate'] ?? null,
+                    'nsitf_rate' => $validated['nsitf_rate'] ?? null,
+                    'tax_exemption_reason' => $validated['tax_exemption_reason'] ?? null,
+                ]);
+
                 $period->generatePayrollForAllEmployees();
             });
 
+            $message = 'Payroll generated successfully.';
+            if (!$validated['apply_paye_tax']) {
+                $message .= ' PAYE tax was not applied as requested.';
+            }
+            if (!$validated['apply_nsitf']) {
+                $message .= ' NSITF contribution was not applied as requested.';
+            }
+
             return redirect()
                 ->route('tenant.payroll.processing.show', [$tenant, $period])
-                ->with('success', 'Payroll generated successfully.');
+                ->with('success', $message);
         } catch (\Exception $e) {
             return redirect()->back()->with('error', 'Error generating payroll: ' . $e->getMessage());
         }

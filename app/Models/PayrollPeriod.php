@@ -11,7 +11,8 @@ class PayrollPeriod extends Model
     protected $fillable = [
         'tenant_id', 'name', 'start_date', 'end_date', 'pay_date', 'type',
         'status', 'total_gross', 'total_deductions', 'total_net', 'total_tax',
-        'total_nsitf', 'created_by', 'approved_by', 'approved_at'
+        'total_nsitf', 'created_by', 'approved_by', 'approved_at',
+        'apply_paye_tax', 'apply_nsitf', 'paye_tax_rate', 'nsitf_rate', 'tax_exemption_reason'
     ];
 
     protected $casts = [
@@ -24,6 +25,10 @@ class PayrollPeriod extends Model
         'total_net' => 'decimal:2',
         'total_tax' => 'decimal:2',
         'total_nsitf' => 'decimal:2',
+        'apply_paye_tax' => 'boolean',
+        'apply_nsitf' => 'boolean',
+        'paye_tax_rate' => 'decimal:2',
+        'nsitf_rate' => 'decimal:2',
     ];
 
     // Relationships
@@ -105,6 +110,22 @@ class PayrollPeriod extends Model
         // Save deductions details
         foreach ($componentDetails['deductions'] as $deduction) {
             $payrollRun->details()->create($deduction);
+        }
+
+        // Add PAYE tax deduction if applied and amount > 0
+        if ($this->apply_paye_tax && $payrollData['monthly_tax'] > 0) {
+            $payrollRun->details()->create([
+                'salary_component_id' => null,
+                'component_name' => 'PAYE Tax',
+                'component_type' => 'deduction',
+                'amount' => $payrollData['monthly_tax'],
+                'is_taxable' => false,
+                'metadata' => [
+                    'annual_gross' => $payrollData['annual_gross'],
+                    'taxable_income' => $payrollData['taxable_income'],
+                    'consolidated_relief' => $payrollData['consolidated_relief'],
+                ],
+            ]);
         }
     }
 

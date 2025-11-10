@@ -28,11 +28,24 @@ class PayrollCalculator
         // Step 2: Calculate attendance-based adjustments (overtime & absent deductions)
         $this->calculateAttendanceAdjustments();
 
-        // Step 3: Calculate PAYE tax
-        $this->calculatePAYE();
+        // Step 3: Calculate PAYE tax (only if enabled for this period)
+        if ($this->period->apply_paye_tax) {
+            $this->calculatePAYE();
+        } else {
+            // Set tax values to zero if not applied
+            $this->calculations['annual_gross'] = $this->calculations['gross_salary'] * 12;
+            $this->calculations['consolidated_relief'] = 0;
+            $this->calculations['taxable_income'] = 0;
+            $this->calculations['annual_tax'] = 0;
+            $this->calculations['monthly_tax'] = 0;
+        }
 
-        // Step 4: Calculate NSITF
-        $this->calculateNSITF();
+        // Step 4: Calculate NSITF (only if enabled for this period)
+        if ($this->period->apply_nsitf) {
+            $this->calculateNSITF();
+        } else {
+            $this->calculations['nsitf_contribution'] = 0;
+        }
 
         // Step 5: Calculate other deductions
         $this->calculateOtherDeductions();
@@ -317,7 +330,10 @@ class PayrollCalculator
         $otherDeductions += $absentDeduction;
 
         $this->calculations['other_deductions'] = $otherDeductions;
-        $this->calculations['total_deductions'] = $this->calculations['monthly_tax'] + $otherDeductions;
+
+        // Only add tax to total deductions if it's being applied
+        $taxAmount = $this->period->apply_paye_tax ? $this->calculations['monthly_tax'] : 0;
+        $this->calculations['total_deductions'] = $taxAmount + $otherDeductions;
     }
 
     private function calculateNetSalary(): void

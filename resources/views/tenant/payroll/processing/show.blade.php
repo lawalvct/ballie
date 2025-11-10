@@ -291,23 +291,205 @@
     </div>
 </div>
 
+<!-- Payroll Generation Options Modal -->
+<div id="generatePayrollModal" class="fixed inset-0 z-50 hidden overflow-y-auto bg-gray-900 bg-opacity-50">
+    <div class="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
+        <div class="inline-block w-full max-w-2xl p-6 my-8 overflow-hidden text-left align-middle transition-all transform bg-white shadow-xl rounded-2xl">
+            <div class="flex items-center justify-between mb-6">
+                <h3 class="text-2xl font-bold text-gray-900">
+                    <i class="fas fa-cog mr-2 text-blue-600"></i>
+                    Payroll Generation Options
+                </h3>
+                <button onclick="closeGenerateModal()" class="text-gray-400 hover:text-gray-600">
+                    <i class="fas fa-times text-xl"></i>
+                </button>
+            </div>
+
+            <form id="generatePayrollForm" action="{{ route('tenant.payroll.processing.generate', [$tenant, $period]) }}" method="POST">
+                @csrf
+
+                <div class="space-y-6">
+                    <!-- Info Alert -->
+                    <div class="bg-blue-50 border-l-4 border-blue-500 p-4 rounded-md">
+                        <div class="flex">
+                            <div class="flex-shrink-0">
+                                <i class="fas fa-info-circle text-blue-500"></i>
+                            </div>
+                            <div class="ml-3">
+                                <p class="text-sm text-blue-700">
+                                    Configure how payroll should be calculated for this period. You can optionally disable PAYE tax and NSITF if your company handles these payments separately.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- PAYE Tax Option -->
+                    <div class="bg-white border border-gray-200 rounded-lg p-4">
+                        <div class="flex items-start">
+                            <div class="flex items-center h-5">
+                                <!-- Hidden field ensures a value is always sent, even when unchecked -->
+                                <input type="hidden" name="apply_paye_tax" value="0">
+                                <input type="checkbox"
+                                       id="apply_paye_tax"
+                                       name="apply_paye_tax"
+                                       value="1"
+                                       checked
+                                       onchange="toggleTaxFields()"
+                                       class="w-5 h-5 text-blue-600 border-gray-300 rounded focus:ring-blue-500">
+                            </div>
+                            <div class="ml-3 text-sm flex-1">
+                                <label for="apply_paye_tax" class="font-medium text-gray-900 cursor-pointer">
+                                    Apply PAYE Tax (Pay As You Earn)
+                                </label>
+                                <p class="text-gray-500 mt-1">
+                                    Automatically calculate and deduct monthly PAYE tax from employee salaries based on Nigerian tax brackets.
+                                </p>
+
+                                <!-- Tax Exemption Reason (shown when unchecked) -->
+                                <div id="tax_exemption_div" class="mt-3 hidden">
+                                    <label for="tax_exemption_reason" class="block text-sm font-medium text-gray-700 mb-1">
+                                        Reason for Tax Exemption
+                                    </label>
+                                    <textarea id="tax_exemption_reason"
+                                              name="tax_exemption_reason"
+                                              rows="2"
+                                              placeholder="e.g., Company pays PAYE directly to FIRS, or employees are tax-exempt"
+                                              class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"></textarea>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- NSITF Option -->
+                    <div class="bg-white border border-gray-200 rounded-lg p-4">
+                        <div class="flex items-start">
+                            <div class="flex items-center h-5">
+                                <!-- Hidden field ensures a value is always sent, even when unchecked -->
+                                <input type="hidden" name="apply_nsitf" value="0">
+                                <input type="checkbox"
+                                       id="apply_nsitf"
+                                       name="apply_nsitf"
+                                       value="1"
+                                       checked
+                                       class="w-5 h-5 text-blue-600 border-gray-300 rounded focus:ring-blue-500">
+                            </div>
+                            <div class="ml-3 text-sm flex-1">
+                                <label for="apply_nsitf" class="font-medium text-gray-900 cursor-pointer">
+                                    Apply NSITF Contribution (1% of Annual Gross)
+                                </label>
+                                <p class="text-gray-500 mt-1">
+                                    Nigeria Social Insurance Trust Fund - Employer contribution typically 1% of annual gross salary.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Warning when both are disabled -->
+                    <div id="warning_all_disabled" class="hidden bg-yellow-50 border-l-4 border-yellow-500 p-4 rounded-md">
+                        <div class="flex">
+                            <div class="flex-shrink-0">
+                                <i class="fas fa-exclamation-triangle text-yellow-500"></i>
+                            </div>
+                            <div class="ml-3">
+                                <p class="text-sm text-yellow-700">
+                                    <strong>Warning:</strong> Both PAYE tax and NSITF are disabled. Please ensure your company is handling these statutory obligations separately.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Summary -->
+                    <div class="bg-gray-50 rounded-lg p-4 border border-gray-200">
+                        <h4 class="font-medium text-gray-900 mb-2">
+                            <i class="fas fa-check-circle text-green-500 mr-2"></i>
+                            What will be calculated:
+                        </h4>
+                        <ul class="space-y-1 text-sm text-gray-700">
+                            <li class="flex items-center">
+                                <i class="fas fa-check text-green-500 mr-2 text-xs"></i>
+                                Basic Salary + Allowances = Gross Salary
+                            </li>
+                            <li class="flex items-center">
+                                <i class="fas fa-check text-green-500 mr-2 text-xs"></i>
+                                Attendance Adjustments (Overtime & Absent Deductions)
+                            </li>
+                            <li class="flex items-center" id="paye_summary">
+                                <i class="fas fa-check text-green-500 mr-2 text-xs"></i>
+                                PAYE Tax Deduction
+                            </li>
+                            <li class="flex items-center" id="nsitf_summary">
+                                <i class="fas fa-check text-green-500 mr-2 text-xs"></i>
+                                NSITF Contribution
+                            </li>
+                            <li class="flex items-center">
+                                <i class="fas fa-check text-green-500 mr-2 text-xs"></i>
+                                Other Deductions (Loans, Pension, etc.)
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="flex justify-end space-x-3 mt-6 pt-6 border-t border-gray-200">
+                    <button type="button"
+                            onclick="closeGenerateModal()"
+                            class="px-6 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors duration-200">
+                        Cancel
+                    </button>
+                    <button type="submit"
+                            class="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors duration-200">
+                        <i class="fas fa-play mr-2"></i>
+                        Generate Payroll
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
 <script>
 function generatePayroll() {
-    if (confirm('Are you sure you want to generate payroll for this period? This will calculate salaries for all active employees.')) {
-        const form = document.createElement('form');
-        form.method = 'POST';
-        form.action = '{{ route('tenant.payroll.processing.generate', [$tenant, $period]) }}';
+    document.getElementById('generatePayrollModal').classList.remove('hidden');
+}
 
-        const csrfToken = document.createElement('input');
-        csrfToken.type = 'hidden';
-        csrfToken.name = '_token';
-        csrfToken.value = '{{ csrf_token() }}';
+function closeGenerateModal() {
+    document.getElementById('generatePayrollModal').classList.add('hidden');
+}
 
-        form.appendChild(csrfToken);
-        document.body.appendChild(form);
-        form.submit();
+function toggleTaxFields() {
+    const applyTax = document.getElementById('apply_paye_tax').checked;
+    const applyNsitf = document.getElementById('apply_nsitf').checked;
+    const taxExemptionDiv = document.getElementById('tax_exemption_div');
+    const warningDiv = document.getElementById('warning_all_disabled');
+    const payeSummary = document.getElementById('paye_summary');
+    const nsitfSummary = document.getElementById('nsitf_summary');
+
+    // Show/hide tax exemption reason field
+    if (!applyTax) {
+        taxExemptionDiv.classList.remove('hidden');
+        payeSummary.classList.add('opacity-50', 'line-through');
+    } else {
+        taxExemptionDiv.classList.add('hidden');
+        payeSummary.classList.remove('opacity-50', 'line-through');
+    }
+
+    // Update NSITF summary
+    if (!applyNsitf) {
+        nsitfSummary.classList.add('opacity-50', 'line-through');
+    } else {
+        nsitfSummary.classList.remove('opacity-50', 'line-through');
+    }
+
+    // Show warning if both are disabled
+    if (!applyTax && !applyNsitf) {
+        warningDiv.classList.remove('hidden');
+    } else {
+        warningDiv.classList.add('hidden');
     }
 }
+
+// Add change listener for NSITF checkbox
+document.getElementById('apply_nsitf')?.addEventListener('change', toggleTaxFields);
 
 function resetPayroll() {
     if (confirm('⚠️ WARNING: This will delete all generated payroll data for this period.\n\nUse this if you need to make corrections to attendance or salary data before regenerating.\n\nAre you sure you want to continue?')) {
