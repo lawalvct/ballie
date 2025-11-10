@@ -12,17 +12,27 @@
             <h2 class="text-2xl font-bold text-gray-900">Salary Advance / IOU</h2>
             <p class="mt-1 text-sm text-gray-600">Issue salary advance to employees with automatic payroll deduction</p>
         </div>
-        <a href="{{ route('tenant.payroll.loans.index', $tenant) }}"
-           class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-lg shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50">
-            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
-            </svg>
-            View All Loans
-        </a>
+        <div class="flex items-center space-x-3">
+            <button type="button" @click="showInfo = !showInfo" :aria-expanded="showInfo.toString()"
+                    class="inline-flex items-center px-3 py-2 border border-gray-300 rounded-lg shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50">
+                <svg :class="{'transform rotate-180': showInfo}" class="w-4 h-4 mr-2 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                </svg>
+                Instructions
+            </button>
+
+            <a href="{{ route('tenant.payroll.loans.index', $tenant) }}"
+               class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-lg shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50">
+                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
+                </svg>
+                View All Loans
+            </a>
+        </div>
     </div>
 
-    <!-- Info Banner -->
-    <div class="bg-blue-50 border-l-4 border-blue-400 p-4">
+    <!-- Info Banner (collapsible) -->
+    <div x-show="showInfo" x-cloak x-transition class="bg-blue-50 border-l-4 border-blue-400 p-4">
         <div class="flex">
             <div class="flex-shrink-0">
                 <svg class="h-5 w-5 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -295,6 +305,8 @@ function salaryAdvanceForm() {
         amount: {{ old('amount', 0) }},
         durationMonths: {{ old('duration_months', 0) }},
         monthlyDeduction: 0,
+        // controls visibility of the instructions/info banner (collapsed by default)
+        showInfo: false,
         selectedEmployee: {
             name: '',
             number: '',

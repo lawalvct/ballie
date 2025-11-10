@@ -749,6 +749,111 @@ class PayrollController extends Controller
     }
 
     /**
+     * Payroll summary report - overview of all payroll periods
+     */
+    public function payrollSummary(Request $request, Tenant $tenant)
+    {
+        $year = $request->get('year', now()->year);
+        $month = $request->get('month');
+        $status = $request->get('status');
+
+        // Get payroll periods based on filters
+        $query = PayrollPeriod::where('tenant_id', $tenant->id)
+            ->with(['payrollRuns.employee.department', 'createdBy', 'approvedBy']);
+
+        // Filter by year
+        $query->whereYear('pay_date', $year);
+
+        // Filter by month if provided
+        if ($month) {
+            $query->whereMonth('pay_date', $month);
+        }
+
+        // Filter by status if provided
+        if ($status) {
+            $query->where('status', $status);
+        }
+
+        $payrollPeriods = $query->orderBy('pay_date', 'desc')->get();
+
+        // Calculate summary statistics
+        $totalPeriods = $payrollPeriods->count();
+        $totalEmployees = 0;
+        $totalGross = 0;
+        $totalDeductions = 0;
+        $totalNet = 0;
+        $totalTax = 0;
+
+        foreach ($payrollPeriods as $period) {
+            $runs = $period->payrollRuns;
+            $totalEmployees += $runs->count();
+            $totalGross += $runs->sum('gross_salary');
+            $totalDeductions += $runs->sum('total_deductions');
+            $totalNet += $runs->sum('net_salary');
+            $totalTax += $runs->sum('monthly_tax');
+        }
+
+        // Calculate monthly breakdown
+        $monthlyData = $payrollPeriods->groupBy(function($period) {
+            return $period->pay_date->format('Y-m');
+        })->map(function($periods, $monthKey) {
+            $runs = $periods->flatMap->payrollRuns;
+            return [
+                'month' => $monthKey,
+                'periods' => $periods->count(),
+                'employees' => $runs->count(),
+                'gross' => $runs->sum('gross_salary'),
+                'deductions' => $runs->sum('total_deductions'),
+                'net' => $runs->sum('net_salary'),
+                'tax' => $runs->sum('monthly_tax'),
+            ];
+        })->sortByDesc('month');
+
+        // Department breakdown
+        $departmentData = collect();
+        foreach ($payrollPeriods as $period) {
+            foreach ($period->payrollRuns as $run) {
+                $deptName = $run->employee->department->name ?? 'No Department';
+                if (!$departmentData->has($deptName)) {
+                    $departmentData->put($deptName, [
+                        'employees' => 0,
+                        'gross' => 0,
+                        'deductions' => 0,
+                        'net' => 0,
+                    ]);
+                }
+                $deptData = $departmentData->get($deptName);
+                $deptData['employees']++;
+                $deptData['gross'] += $run->gross_salary;
+                $deptData['deductions'] += $run->total_deductions;
+                $deptData['net'] += $run->net_salary;
+                $departmentData->put($deptName, $deptData);
+            }
+        }
+
+        $summary = [
+            'total_periods' => $totalPeriods,
+            'total_employees' => $totalEmployees,
+            'total_gross' => $totalGross,
+            'total_deductions' => $totalDeductions,
+            'total_net' => $totalNet,
+            'total_tax' => $totalTax,
+            'average_per_employee' => $totalEmployees > 0 ? $totalNet / $totalEmployees : 0,
+        ];
+
+        return view('tenant.payroll.reports.summary', compact(
+            'tenant',
+            'payrollPeriods',
+            'summary',
+            'monthlyData',
+            'departmentData',
+            'year',
+            'month',
+            'status'
+        ));
+    }
+
+    /**
      * Tax report
      */
     public function taxReport(Request $request, Tenant $tenant)
