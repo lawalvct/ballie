@@ -886,6 +886,199 @@ class PayrollController extends Controller
     }
 
     /**
+     * Tax summary report - aggregated tax information
+     */
+    public function taxSummary(Request $request, Tenant $tenant)
+    {
+        $year = $request->get('year', now()->year);
+        $month = $request->get('month');
+
+        $query = PayrollRun::whereHas('payrollPeriod', function($q) use ($tenant, $year, $month) {
+            $q->where('tenant_id', $tenant->id)
+              ->whereYear('pay_date', $year);
+
+            if ($month) {
+                $q->whereMonth('pay_date', $month);
+            }
+        })->with(['employee.department', 'payrollPeriod']);
+
+        $payrollRuns = $query->get();
+
+        // Calculate summary statistics
+        $totalTax = $payrollRuns->sum('monthly_tax');
+        $totalGross = $payrollRuns->sum('gross_salary');
+        $totalEmployees = $payrollRuns->groupBy('employee_id')->count();
+        $averageTaxRate = $totalGross > 0 ? ($totalTax / $totalGross) * 100 : 0;
+
+        // Monthly breakdown
+        $monthlyData = $payrollRuns->groupBy(function($run) {
+            return $run->payrollPeriod->pay_date->format('Y-m');
+        })->map(function($runs, $monthKey) {
+            return [
+                'month' => $monthKey,
+                'employees' => $runs->groupBy('employee_id')->count(),
+                'gross' => $runs->sum('gross_salary'),
+                'tax' => $runs->sum('monthly_tax'),
+                'net' => $runs->sum('net_salary'),
+            ];
+        })->sortByDesc('month');
+
+        // Department breakdown
+        $departmentData = collect();
+        foreach ($payrollRuns as $run) {
+            $deptName = $run->employee->department->name ?? 'No Department';
+            if (!$departmentData->has($deptName)) {
+                $departmentData->put($deptName, [
+                    'employees' => collect(),
+                    'gross' => 0,
+                    'tax' => 0,
+                ]);
+            }
+            $deptData = $departmentData->get($deptName);
+            $deptData['employees']->push($run->employee_id);
+            $deptData['gross'] += $run->gross_salary;
+            $deptData['tax'] += $run->monthly_tax;
+            $departmentData->put($deptName, $deptData);
+        }
+
+        // Calculate unique employees per department
+        $departmentData = $departmentData->map(function($data) {
+            $data['employees'] = $data['employees']->unique()->count();
+            return $data;
+        });
+
+        $summary = [
+            'total_tax' => $totalTax,
+            'total_gross' => $totalGross,
+            'total_employees' => $totalEmployees,
+            'average_tax_rate' => $averageTaxRate,
+        ];
+
+        return view('tenant.payroll.reports.tax-summary', compact(
+            'tenant',
+            'summary',
+            'monthlyData',
+            'departmentData',
+            'year',
+            'month'
+        ));
+    }
+
+    /**
+     * Employee summary report - detailed employee payroll statistics
+     */
+    public function employeeSummary(Request $request, Tenant $tenant)
+    {
+        $year = $request->get('year', now()->year);
+        $departmentId = $request->get('department_id');
+
+        $query = Employee::where('tenant_id', $tenant->id)
+            ->with(['department', 'currentSalary']);
+
+        if ($departmentId) {
+            $query->where('department_id', $departmentId);
+        }
+
+        $employees = $query->orderBy('first_name')->get();
+
+        // Get departments for filter
+        $departments = \App\Models\Department::where('tenant_id', $tenant->id)
+            ->orderBy('name')
+            ->get();
+
+        // Calculate payroll statistics for each employee
+        $employeeData = $employees->map(function($employee) use ($year) {
+            $runs = PayrollRun::where('employee_id', $employee->id)
+                ->whereHas('payrollPeriod', function($q) use ($year) {
+                    $q->whereYear('pay_date', $year);
+                })
+                ->get();
+
+            return [
+                'employee' => $employee,
+                'payroll_count' => $runs->count(),
+                'total_gross' => $runs->sum('gross_salary'),
+                'total_deductions' => $runs->sum('total_deductions'),
+                'total_tax' => $runs->sum('monthly_tax'),
+                'total_net' => $runs->sum('net_salary'),
+                'average_gross' => $runs->count() > 0 ? $runs->avg('gross_salary') : 0,
+                'average_net' => $runs->count() > 0 ? $runs->avg('net_salary') : 0,
+            ];
+        });
+
+        // Summary statistics
+        $summary = [
+            'total_employees' => $employeeData->count(),
+            'total_gross' => $employeeData->sum('total_gross'),
+            'total_deductions' => $employeeData->sum('total_deductions'),
+            'total_tax' => $employeeData->sum('total_tax'),
+            'total_net' => $employeeData->sum('total_net'),
+        ];
+
+        return view('tenant.payroll.reports.employee-summary', compact(
+            'tenant',
+            'employeeData',
+            'summary',
+            'departments',
+            'year',
+            'departmentId'
+        ));
+    }
+
+    /**
+     * Detailed payroll report - comprehensive breakdown
+     */
+    public function detailedReport(Request $request, Tenant $tenant)
+    {
+        $year = $request->get('year', now()->year);
+        $month = $request->get('month');
+        $departmentId = $request->get('department_id');
+
+        $query = PayrollRun::whereHas('payrollPeriod', function($q) use ($tenant, $year, $month) {
+            $q->where('tenant_id', $tenant->id)
+              ->whereYear('pay_date', $year);
+
+            if ($month) {
+                $q->whereMonth('pay_date', $month);
+            }
+        })->with(['employee.department', 'payrollPeriod']);
+
+        if ($departmentId) {
+            $query->whereHas('employee', function($q) use ($departmentId) {
+                $q->where('department_id', $departmentId);
+            });
+        }
+
+        $payrollRuns = $query->orderBy('created_at', 'desc')->get();
+
+        // Get departments for filter
+        $departments = \App\Models\Department::where('tenant_id', $tenant->id)
+            ->orderBy('name')
+            ->get();
+
+        // Calculate totals
+        $totals = [
+            'employees' => $payrollRuns->groupBy('employee_id')->count(),
+            'gross' => $payrollRuns->sum('gross_salary'),
+            'basic' => $payrollRuns->sum('basic_salary'),
+            'allowances' => $payrollRuns->sum('total_allowances'),
+            'deductions' => $payrollRuns->sum('total_deductions'),
+            'tax' => $payrollRuns->sum('monthly_tax'),
+            'net' => $payrollRuns->sum('net_salary'),
+        ];
+
+        return view('tenant.payroll.reports.detailed', compact(
+            'tenant',
+            'payrollRuns',
+            'totals',
+            'departments',
+            'year',
+            'month',
+            'departmentId'
+        ));
+    }
+
+    /**
      * Export employees data to CSV
      */
     public function exportEmployees(Request $request, Tenant $tenant)

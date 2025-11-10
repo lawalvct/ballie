@@ -121,10 +121,10 @@
                 </div>
             </div>
             <div class="space-y-2">
-                <a href="#" class="block text-sm text-blue-600 hover:text-blue-800">• Payroll Summary</a>
-                <a href="#" class="block text-sm text-blue-600 hover:text-blue-800">• Tax Report</a>
-                <a href="#" class="block text-sm text-blue-600 hover:text-blue-800">• Department Analysis</a>
-                <a href="#" class="block text-sm text-blue-600 hover:text-blue-800">• Bank Schedule</a>
+                <a href="{{ route('tenant.payroll.reports.summary', $tenant->slug) }}" class="block text-sm text-blue-600 hover:text-blue-800 hover:underline">• Payroll Summary</a>
+                <a href="{{ route('tenant.payroll.reports.tax-report', $tenant->slug) }}" class="block text-sm text-blue-600 hover:text-blue-800 hover:underline">• Tax Report</a>
+                <a href="{{ route('tenant.payroll.reports.employee-summary', $tenant->slug) }}" class="block text-sm text-blue-600 hover:text-blue-800 hover:underline">• Employee Summary</a>
+                <a href="{{ route('tenant.payroll.reports.bank-schedule', $tenant->slug) }}" class="block text-sm text-blue-600 hover:text-blue-800 hover:underline">• Bank Schedule</a>
             </div>
         </div>
 
