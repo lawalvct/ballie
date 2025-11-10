@@ -77,11 +77,11 @@ class OvertimeController extends Controller
                 ->sum('total_amount'),
             'approved_unpaid_count' => OvertimeRecord::where('tenant_id', $tenantId)
                 ->where('status', 'approved')
-                ->where('payment_status', 'pending')
+                ->where('is_paid', false)
                 ->count(),
             'approved_unpaid_amount' => OvertimeRecord::where('tenant_id', $tenantId)
                 ->where('status', 'approved')
-                ->where('payment_status', 'pending')
+                ->where('is_paid', false)
                 ->sum('total_amount'),
         ];
 

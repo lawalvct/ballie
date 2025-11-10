@@ -2,182 +2,178 @@
 
 @section('title', 'Employees - ' . $tenant->name)
 
+@section('page-title', 'Employees')
+@section('page-description', 'Manage your workforce and employee records')
+
+@section('action-buttons')
+<a href="{{ route('tenant.payroll.employees.create', ['tenant' => $tenant->slug]) }}"
+   class="inline-flex items-center px-4 py-2 ml-5 bg-primary-600 border border-transparent rounded-lg font-semibold text-xs text-white uppercase tracking-widest hover:bg-primary-700 focus:bg-primary-700 active:bg-primary-900 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 transition ease-in-out duration-150">
+    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+    </svg>
+    Add Employee
+</a>
+<a href="{{ route('tenant.payroll.employees.export-all', ['tenant' => $tenant->slug]) }}"
+   class="inline-flex items-center px-4 py-2  ml-5 bg-gray-600 border border-transparent rounded-lg font-semibold text-xs text-white uppercase tracking-widest hover:bg-gray-700 focus:bg-gray-700 active:bg-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 transition ease-in-out duration-150">
+    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-4-4m4 4l4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+    </svg>
+    Export
+</a>
+<button type="button" onclick="openImportModal()"
+   class="inline-flex items-center px-4 py-2  ml-5 bg-indigo-600 border border-transparent rounded-lg font-semibold text-xs text-white uppercase tracking-widest hover:bg-indigo-700 focus:bg-indigo-700 active:bg-indigo-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition ease-in-out duration-150">
+    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-4-4m4 4l4-4m6-2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+    </svg>
+    Import
+</button>
+@endsection
+
 @section('content')
 <div class="space-y-6">
-    <!-- Header -->
-    <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between">
-        <div>
-            <h1 class="text-2xl font-bold text-gray-900">Employees</h1>
-            <p class="mt-1 text-sm text-gray-500">
-                Manage your workforce and employee records
-            </p>
-        </div>
-        <div class="mt-4 lg:mt-0 flex items-center space-x-3">
-            <a href="{{ route('tenant.payroll.employees.create', ['tenant' => $tenant->slug]) }}"
-               class="inline-flex items-center px-4 py-2 bg-primary-600 border border-transparent rounded-lg font-semibold text-xs text-white uppercase tracking-widest hover:bg-primary-700 focus:bg-primary-700 active:bg-primary-900 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 transition ease-in-out duration-150">
-                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
-                </svg>
-                Add Employee
-            </a>
-            <a href="{{ route('tenant.payroll.employees.export-all', ['tenant' => $tenant->slug]) }}"
-               class="inline-flex items-center px-4 py-2 bg-gray-600 border border-transparent rounded-lg font-semibold text-xs text-white uppercase tracking-widest hover:bg-gray-700 focus:bg-gray-700 active:bg-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 transition ease-in-out duration-150">
-                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-4-4m4 4l4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                </svg>
-                Export
-            </a>
-            <button type="button" onclick="openImportModal()"
-               class="inline-flex items-center px-4 py-2 bg-indigo-600 border border-transparent rounded-lg font-semibold text-xs text-white uppercase tracking-widest hover:bg-indigo-700 focus:bg-indigo-700 active:bg-indigo-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition ease-in-out duration-150">
-                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-4-4m4 4l4-4m6-2a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                </svg>
-                Import
-            </button>
-        </div>
+    <div class="flex justify-end">
+        @yield('action-buttons')
     </div>
 
     <!-- Filters -->
-    <div class="bg-white shadow-sm rounded-lg border border-gray-200">
-        <div class="p-6">
-            <form method="GET" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
-                <!-- Search -->
-                <div>
-                    <label for="search" class="block text-sm font-medium text-gray-700 mb-1">Search</label>
-                    <input type="text"
-                           name="search"
-                           id="search"
-                           value="{{ request('search') }}"
-                           placeholder="Employee name, ID, email..."
-                           class="block w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-primary-500 focus:border-primary-500 text-sm">
-                </div>
+    <div class="bg-white shadow rounded-lg p-4 mb-8">
+        <form method="GET" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 items-end">
+            <!-- Search -->
+            <div>
+                <label for="search" class="block text-sm font-medium text-gray-700">Search</label>
+                <input type="text"
+                       name="search"
+                       id="search"
+                       value="{{ request('search') }}"
+                       placeholder="Employee name, ID, email..."
+                       class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+            </div>
 
-                <!-- Department -->
-                <div>
-                    <label for="department" class="block text-sm font-medium text-gray-700 mb-1">Department</label>
-                    <select name="department"
-                            id="department"
-                            class="block w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-primary-500 focus:border-primary-500 text-sm">
-                        <option value="">All Departments</option>
-                        @foreach($departments as $department)
-                            <option value="{{ $department->id }}" {{ request('department') == $department->id ? 'selected' : '' }}>
-                                {{ $department->name }}
-                            </option>
-                        @endforeach
-                    </select>
-                </div>
+            <!-- Department -->
+            <div>
+                <label for="department" class="block text-sm font-medium text-gray-700">Department</label>
+                <select name="department"
+                        id="department"
+                        class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md">
+                    <option value="">All Departments</option>
+                    @foreach($departments as $department)
+                        <option value="{{ $department->id }}" {{ request('department') == $department->id ? 'selected' : '' }}>
+                            {{ $department->name }}
+                        </option>
+                    @endforeach
+                </select>
+            </div>
 
-                <!-- Status -->
-                <div>
-                    <label for="status" class="block text-sm font-medium text-gray-700 mb-1">Status</label>
-                    <select name="status"
-                            id="status"
-                            class="block w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-primary-500 focus:border-primary-500 text-sm">
-                        <option value="">All Statuses</option>
-                        <option value="active" {{ request('status') === 'active' ? 'selected' : '' }}>Active</option>
-                        <option value="inactive" {{ request('status') === 'inactive' ? 'selected' : '' }}>Inactive</option>
-                        <option value="terminated" {{ request('status') === 'terminated' ? 'selected' : '' }}>Terminated</option>
-                    </select>
-                </div>
+            <!-- Status -->
+            <div>
+                <label for="status" class="block text-sm font-medium text-gray-700">Status</label>
+                <select name="status"
+                        id="status"
+                        class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md">
+                    <option value="">All Statuses</option>
+                    <option value="active" {{ request('status') === 'active' ? 'selected' : '' }}>Active</option>
+                    <option value="inactive" {{ request('status') === 'inactive' ? 'selected' : '' }}>Inactive</option>
+                    <option value="terminated" {{ request('status') === 'terminated' ? 'selected' : '' }}>Terminated</option>
+                </select>
+            </div>
 
-                <!-- Position -->
-                <div>
-                    <label for="position" class="block text-sm font-medium text-gray-700 mb-1">Position</label>
-                    <input type="text"
-                           name="position"
-                           id="position"
-                           value="{{ request('position') }}"
-                           placeholder="Job position..."
-                           class="block w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-primary-500 focus:border-primary-500 text-sm">
-                </div>
+            <!-- Position -->
+            <div>
+                <label for="position" class="block text-sm font-medium text-gray-700">Position</label>
+                <input type="text"
+                       name="position"
+                       id="position"
+                       value="{{ request('position') }}"
+                       placeholder="Job position..."
+                       class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+            </div>
 
-                <!-- Filter Buttons -->
-                <div class="flex items-end space-x-2">
-                    <button type="submit"
-                            class="inline-flex items-center px-4 py-2 bg-primary-600 border border-transparent rounded-lg font-semibold text-xs text-white uppercase tracking-widest hover:bg-primary-700 focus:bg-primary-700 active:bg-primary-900 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 transition ease-in-out duration-150">
-                        <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.207A1 1 0 013 6.5V4z"></path>
-                        </svg>
-                        Filter
-                    </button>
-                    <a href="{{ route('tenant.payroll.employees.index', ['tenant' => $tenant->slug]) }}"
-                       class="inline-flex items-center px-4 py-2 bg-gray-300 border border-transparent rounded-lg font-semibold text-xs text-gray-700 uppercase tracking-widest hover:bg-gray-400 focus:bg-gray-400 active:bg-gray-500 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 transition ease-in-out duration-150">
-                        Clear
-                    </a>
-                </div>
-            </form>
-        </div>
+            <!-- Filter Buttons -->
+            <div class="flex items-end space-x-2">
+                <button type="submit"
+                        class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                    <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.207A1 1 0 013 6.5V4z"></path>
+                    </svg>
+                    Filter
+                </button>
+                <a href="{{ route('tenant.payroll.employees.index', ['tenant' => $tenant->slug]) }}"
+                   class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                    Clear
+                </a>
+            </div>
+        </form>
     </div>
 
     <!-- Summary Cards -->
-    <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <div class="bg-white rounded-lg p-6 shadow-sm border border-gray-200">
-            <div class="flex items-center">
-                <div class="flex-shrink-0">
-                    <div class="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
-                        <svg class="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z"></path>
-                        </svg>
+    <div class="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4 mb-8">
+        <div class="bg-white overflow-hidden shadow rounded-lg">
+            <div class="p-5">
+                <div class="flex items-center">
+                    <div class="flex-shrink-0">
+                        <i class="fas fa-users fa-2x text-gray-400"></i>
                     </div>
-                </div>
-                <div class="ml-4">
-                    <p class="text-sm font-medium text-gray-500">Total Employees</p>
-                    <p class="text-2xl font-semibold text-gray-900">{{ $employees->total() }}</p>
+                    <div class="ml-5 w-0 flex-1">
+                        <dl>
+                            <dt class="text-sm font-medium text-gray-500 truncate">Total Employees</dt>
+                            <dd class="text-3xl font-bold text-gray-900">{{ $employees->total() }}</dd>
+                        </dl>
+                    </div>
                 </div>
             </div>
         </div>
 
-        <div class="bg-white rounded-lg p-6 shadow-sm border border-gray-200">
-            <div class="flex items-center">
-                <div class="flex-shrink-0">
-                    <div class="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
-                        <svg class="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                        </svg>
+        <div class="bg-white overflow-hidden shadow rounded-lg">
+            <div class="p-5">
+                <div class="flex items-center">
+                    <div class="flex-shrink-0">
+                        <i class="fas fa-check-circle fa-2x text-green-500"></i>
                     </div>
-                </div>
-                <div class="ml-4">
-                    <p class="text-sm font-medium text-gray-500">Active</p>
-                    <p class="text-2xl font-semibold text-gray-900">{{ $employees->where('status', 'active')->count() }}</p>
+                    <div class="ml-5 w-0 flex-1">
+                        <dl>
+                            <dt class="text-sm font-medium text-gray-500 truncate">Active</dt>
+                            <dd class="text-3xl font-bold text-green-600">{{ $employees->where('status', 'active')->count() }}</dd>
+                        </dl>
+                    </div>
                 </div>
             </div>
         </div>
 
-        <div class="bg-white rounded-lg p-6 shadow-sm border border-gray-200">
-            <div class="flex items-center">
-                <div class="flex-shrink-0">
-                    <div class="w-8 h-8 bg-yellow-100 rounded-full flex items-center justify-center">
-                        <svg class="w-4 h-4 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                        </svg>
+        <div class="bg-white overflow-hidden shadow rounded-lg">
+            <div class="p-5">
+                <div class="flex items-center">
+                    <div class="flex-shrink-0">
+                        <i class="fas fa-clock fa-2x text-yellow-500"></i>
                     </div>
-                </div>
-                <div class="ml-4">
-                    <p class="text-sm font-medium text-gray-500">Inactive</p>
-                    <p class="text-2xl font-semibold text-gray-900">{{ $employees->where('status', 'inactive')->count() }}</p>
+                    <div class="ml-5 w-0 flex-1">
+                        <dl>
+                            <dt class="text-sm font-medium text-gray-500 truncate">Inactive</dt>
+                            <dd class="text-3xl font-bold text-yellow-600">{{ $employees->where('status', 'inactive')->count() }}</dd>
+                        </dl>
+                    </div>
                 </div>
             </div>
         </div>
 
-        <div class="bg-white rounded-lg p-6 shadow-sm border border-gray-200">
-            <div class="flex items-center">
-                <div class="flex-shrink-0">
-                    <div class="w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center">
-                        <svg class="w-4 h-4 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"></path>
-                        </svg>
+        <div class="bg-white overflow-hidden shadow rounded-lg">
+            <div class="p-5">
+                <div class="flex items-center">
+                    <div class="flex-shrink-0">
+                        <i class="fas fa-money-bill-wave fa-2x text-purple-500"></i>
                     </div>
-                </div>
-                <div class="ml-4">
-                    <p class="text-sm font-medium text-gray-500">Total Payroll</p>
-                    <p class="text-2xl font-semibold text-gray-900">₦{{ number_format($employees->sum(function($employee) { return $employee->currentSalary->base_salary ?? 0; }), 2) }}</p>
+                    <div class="ml-5 w-0 flex-1">
+                        <dl>
+                            <dt class="text-sm font-medium text-gray-500 truncate">Total Payroll</dt>
+                            <dd class="text-3xl font-bold text-purple-600">₦{{ number_format($employees->sum(function($employee) { return $employee->currentSalary->basic_salary ?? 0; }), 2) }}</dd>
+                        </dl>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Employees Table -->
-    <div class="bg-white shadow-sm rounded-lg border border-gray-200">
+<!-- Employees Table -->
+    <div class="bg-white shadow rounded-lg overflow-hidden">
         <div class="px-6 py-4 border-b border-gray-200">
             <h3 class="text-lg font-medium text-gray-900">Employees</h3>
         </div>
@@ -219,8 +215,8 @@
                                 <td class="px-6 py-4 whitespace-nowrap">
                                     <div class="flex items-center">
                                         <div class="flex-shrink-0 h-10 w-10">
-                                            <div class="h-10 w-10 rounded-full bg-primary-100 flex items-center justify-center">
-                                                <span class="text-sm font-medium text-primary-600">
+                                            <div class="h-10 w-10 rounded-full bg-gray-200 flex items-center justify-center">
+                                                <span class="text-sm font-medium text-gray-600">
                                                     {{ strtoupper(substr($employee->first_name, 0, 1) . substr($employee->last_name, 0, 1)) }}
                                                 </span>
                                             </div>
@@ -253,7 +249,7 @@
                                     {{ $employee->hire_date ? $employee->hire_date->format('M d, Y') : 'N/A' }}
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right font-medium">
-                                    ₦{{ number_format($employee->currentSalary->base_salary ?? 0, 2) }}
+                                    ₦{{ number_format($employee->currentSalary->basic_salary ?? 0, 2) }}
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-center">
                                     <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full
@@ -269,28 +265,21 @@
                                         <a href="{{ route('tenant.payroll.employees.show', ['tenant' => $tenant->slug, 'employee' => $employee->id]) }}"
                                            class="text-blue-600 hover:text-blue-900 p-1 rounded hover:bg-blue-50"
                                            title="View Employee">
-                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
-                                            </svg>
+                                            <i class="fas fa-eye"></i>
                                         </a>
 
                                         <!-- Edit -->
                                         <a href="{{ route('tenant.payroll.employees.edit', ['tenant' => $tenant->slug, 'employee' => $employee->id]) }}"
                                            class="text-indigo-600 hover:text-indigo-900 p-1 rounded hover:bg-indigo-50"
                                            title="Edit Employee">
-                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
-                                            </svg>
+                                            <i class="fas fa-edit"></i>
                                         </a>
 
                                         <!-- Payslip -->
                                         <a href="{{ route('tenant.payroll.employees.payslip', ['tenant' => $tenant->slug, 'employee' => $employee->id]) }}"
                                            class="text-green-600 hover:text-green-900 p-1 rounded hover:bg-green-50"
                                            title="Generate Payslip">
-                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-                                            </svg>
+                                            <i class="fas fa-file-invoice-dollar"></i>
                                         </a>
 
                                         <!-- More Actions Dropdown -->
@@ -298,9 +287,7 @@
                                             <button @click="open = !open"
                                                     class="text-gray-400 hover:text-gray-600 p-1 rounded hover:bg-gray-50"
                                                     title="More Actions">
-                                                <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                                                    <path d="M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z"></path>
-                                                </svg>
+                                                <i class="fas fa-ellipsis-v"></i>
                                             </button>
 
                                             <div x-show="open"
@@ -313,15 +300,6 @@
                                                  x-transition:leave-end="transform opacity-0 scale-95"
                                                  class="origin-top-right absolute right-0 mt-2 w-48 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 z-10">
                                                 <div class="py-1">
-                                                    <!-- Edit Employee -->
-                                                    <a href="{{ route('tenant.payroll.employees.edit', ['tenant' => $tenant->slug, 'employee' => $employee->id]) }}"
-                                                       class="flex items-center px-4 py-2 text-sm text-blue-700 hover:bg-blue-50">
-                                                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
-                                                        </svg>
-                                                        Edit Employee
-                                                    </a>
-
                                                     <!-- Toggle Status -->
                                                     <form method="POST" action="{{ route('tenant.payroll.employees.toggle-status', ['tenant' => $tenant->slug, 'employee' => $employee->id]) }}" class="block">
                                                         @csrf
@@ -329,13 +307,7 @@
                                                         <button type="submit"
                                                                 onclick="return confirm('Are you sure you want to {{ $employee->status === 'active' ? 'deactivate' : 'activate' }} this employee?')"
                                                                 class="w-full text-left px-4 py-2 text-sm text-{{ $employee->status === 'active' ? 'yellow' : 'green' }}-700 hover:bg-{{ $employee->status === 'active' ? 'yellow' : 'green' }}-50 flex items-center">
-                                                            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                                @if($employee->status === 'active')
-                                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                                                                @else
-                                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                                                                @endif
-                                                            </svg>
+                                                            <i class="fas {{ $employee->status === 'active' ? 'fa-user-slash' : 'fa-user-check' }} w-4 h-4 mr-2"></i>
                                                             {{ $employee->status === 'active' ? 'Deactivate' : 'Activate' }} Employee
                                                         </button>
                                                     </form>
@@ -346,9 +318,7 @@
                                                         <button type="submit"
                                                                 onclick="return confirm('Are you sure you want to reset the portal link for this employee?')"
                                                                 class="w-full text-left px-4 py-2 text-sm text-blue-700 hover:bg-blue-50 flex items-center">
-                                                            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
-                                                            </svg>
+                                                            <i class="fas fa-link w-4 h-4 mr-2"></i>
                                                             Reset Portal Link
                                                         </button>
                                                     </form>
@@ -361,9 +331,7 @@
                                                             <button type="submit"
                                                                     onclick="return confirm('Are you sure you want to delete this employee? This action cannot be undone.')"
                                                                     class="w-full text-left px-4 py-2 text-sm text-red-700 hover:bg-red-50 flex items-center">
-                                                                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
-                                                                </svg>
+                                                                <i class="fas fa-trash-alt w-4 h-4 mr-2"></i>
                                                                 Delete Employee
                                                             </button>
                                                         </form>
@@ -386,9 +354,7 @@
         @else
             <div class="text-center py-12">
                 <div class="w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <svg class="w-12 h-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z"></path>
-                    </svg>
+                    <i class="fas fa-users text-4xl text-gray-400"></i>
                 </div>
                 <h3 class="text-lg font-medium text-gray-900 mb-2">No employees found</h3>
                 <p class="text-gray-500 mb-6">
@@ -399,10 +365,8 @@
                     @endif
                 </p>
                 <a href="{{ route('tenant.payroll.employees.create', ['tenant' => $tenant->slug]) }}"
-                   class="inline-flex items-center px-4 py-2 bg-primary-600 border border-transparent rounded-lg font-semibold text-xs text-white uppercase tracking-widest hover:bg-primary-700 focus:bg-primary-700 active:bg-primary-900 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 transition ease-in-out duration-150">
-                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
-                    </svg>
+                   class="inline-flex items-center px-4 py-2 bg-blue-600 border border-transparent rounded-lg font-semibold text-xs text-white uppercase tracking-widest hover:bg-blue-700 focus:bg-blue-700 active:bg-blue-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition ease-in-out duration-150">
+                    <i class="fas fa-plus mr-2"></i>
                     Add Your First Employee
                 </a>
             </div>
@@ -411,15 +375,13 @@
 </div>
 
 <!-- Import Employees Modal -->
-<div id="importModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 items-center justify-center p-4">
+<div id="importModal" class="hidden fixed inset-0 bg-gray-900 bg-opacity-50 z-50 flex items-center justify-center p-4">
     <div class="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
         <!-- Modal Header -->
-        <div class="sticky top-0 bg-gradient-to-r from-indigo-600 to-indigo-700 px-6 py-4 flex items-center justify-between">
+        <div class="sticky top-0 bg-indigo-600 px-6 py-4 flex items-center justify-between rounded-t-lg">
             <h3 class="text-lg font-semibold text-white">Import Employees</h3>
             <button type="button" onclick="closeImportModal()" class="text-white hover:text-gray-200">
-                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-                </svg>
+                <i class="fas fa-times"></i>
             </button>
         </div>
 
@@ -428,21 +390,19 @@
             <!-- Instructions -->
             <div class="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
                 <h4 class="font-medium text-blue-900 mb-2">Import Instructions:</h4>
-                <ul class="text-sm text-blue-800 space-y-1">
-                    <li>✓ Download the template below to see the required format</li>
-                    <li>✓ Fill in employee data in the template</li>
-                    <li>✓ Save as CSV file</li>
-                    <li>✓ Upload the file to import all employees at once</li>
+                <ul class="text-sm text-blue-800 space-y-1 list-disc list-inside">
+                    <li>Download the template below to see the required format</li>
+                    <li>Fill in employee data in the template</li>
+                    <li>Save as CSV file</li>
+                    <li>Upload the file to import all employees at once</li>
                 </ul>
             </div>
 
             <!-- Download Template Button -->
             <div class="mb-6">
                 <a href="{{ route('tenant.payroll.employees.template', ['tenant' => $tenant->slug]) }}"
-                   class="inline-flex items-center px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded-lg font-medium text-sm transition-colors duration-200">
-                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-4-4m4 4l4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                    </svg>
+                   class="inline-flex items-center px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded-md font-medium text-sm transition-colors duration-200">
+                    <i class="fas fa-download mr-2"></i>
                     Download CSV Template
                 </a>
             </div>
@@ -460,9 +420,7 @@
                                class="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
                                onchange="handleFileSelect(event)">
                         <div class="pointer-events-none">
-                            <svg class="w-12 h-12 text-gray-400 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path>
-                            </svg>
+                            <i class="fas fa-cloud-upload-alt text-4xl text-gray-400 mx-auto mb-2"></i>
                             <p class="text-gray-600">Drag and drop your file here, or click to select</p>
                             <p class="text-xs text-gray-500 mt-1">CSV or Excel files only</p>
                         </div>
@@ -494,16 +452,14 @@
                 <div class="flex items-center justify-end space-x-3 pt-4 border-t">
                     <button type="button"
                             onclick="closeImportModal()"
-                            class="px-4 py-2 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg font-medium transition-colors duration-200">
+                            class="px-4 py-2 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-md font-medium transition-colors duration-200">
                         Cancel
                     </button>
                     <button type="submit"
                             id="importSubmitBtn"
                             disabled
-                            class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 disabled:bg-gray-400 text-white rounded-lg font-medium transition-colors duration-200">
-                        <svg class="w-4 h-4 mr-2 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path>
-                        </svg>
+                            class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-md font-medium transition-colors duration-200">
+                        <i class="fas fa-file-import mr-2 inline"></i>
                         Import Employees
                     </button>
                 </div>
@@ -675,5 +631,3 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 </script>
 @endsection
-
-```
