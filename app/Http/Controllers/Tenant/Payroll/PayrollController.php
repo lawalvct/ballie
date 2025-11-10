@@ -89,14 +89,58 @@ class PayrollController extends Controller
             ->with(['createdBy', 'approvedBy'])
             ->orderBy('created_at', 'desc')
             ->limit(5)
-            ->get();
+            ->get()
+            ->map(function($period) {
+                // Calculate employee count and totals for each payroll period
+                $payrollRuns = $period->payrollRuns()->get();
+
+                return (object)[
+                    'id' => $period->id,
+                    'name' => $period->name,
+                    'type' => $period->type,
+                    'status' => $period->status,
+                    'start_date' => $period->start_date,
+                    'end_date' => $period->end_date,
+                    'pay_date' => $period->pay_date,
+                    'total_gross' => $payrollRuns->sum('gross_salary'),
+                    'total_deductions' => $payrollRuns->sum(function($run) {
+                        return $run->monthly_tax + $run->other_deductions;
+                    }),
+                    'total_net' => $payrollRuns->sum('net_salary'),
+                    'employee_count' => $payrollRuns->count(),
+                    'created_at' => $period->created_at,
+                    'created_by' => $period->createdBy,
+                    'approved_by' => $period->approvedBy,
+                    'approved_at' => $period->approved_at,
+                ];
+            });
+
+        // Get department summary
+        $departmentSummary = Department::where('tenant_id', $tenant->id)
+            ->with(['employees' => function($query) {
+                $query->where('status', 'active');
+            }, 'employees.currentSalary'])
+            ->get()
+            ->map(function($department) {
+                $employees = $department->employees;
+                $monthlyCost = $employees->sum(function($employee) {
+                    return $employee->currentSalary ? $employee->currentSalary->basic_salary : 0;
+                });
+
+                return (object)[
+                    'name' => $department->name,
+                    'employee_count' => $employees->count(),
+                    'monthly_cost' => $monthlyCost,
+                ];
+            });
 
         return view('tenant.payroll.index', compact(
             'tenant',
             'totalEmployees',
             'monthlyPayrollCost',
             'pendingPayrolls',
-            'recentPayrolls'
+            'recentPayrolls',
+            'departmentSummary'
         ));
     }
 

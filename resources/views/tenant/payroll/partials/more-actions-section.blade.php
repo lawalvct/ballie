@@ -172,7 +172,7 @@
             </a>
 
             <!-- Attendance Card -->
-            <a href="#"
+            <a href="{{ route('tenant.payroll.attendance.index', ['tenant' => $tenant->slug]) }}"
                class="action-card bg-gradient-to-br from-indigo-600 to-indigo-800 hover:from-indigo-500 hover:to-indigo-700 border border-indigo-500 rounded-xl p-4 transition-all duration-300 hover:shadow-lg hover:scale-105 group">
                 <div class="flex items-center mb-3">
                     <div class="w-10 h-10 bg-indigo-500 bg-opacity-30 rounded-lg flex items-center justify-center mr-3 group-hover:scale-110 transition-transform duration-300">
@@ -189,7 +189,7 @@
             </a>
 
             <!-- Overtime Card -->
-            <a href="#"
+            <a href="{{ route('tenant.payroll.overtime.index', ['tenant' => $tenant->slug]) }}"
                class="action-card bg-gradient-to-br from-cyan-600 to-cyan-800 hover:from-cyan-500 hover:to-cyan-700 border border-cyan-500 rounded-xl p-4 transition-all duration-300 hover:shadow-lg hover:scale-105 group">
                 <div class="flex items-center mb-3">
                     <div class="w-10 h-10 bg-cyan-500 bg-opacity-30 rounded-lg flex items-center justify-center mr-3 group-hover:scale-110 transition-transform duration-300">
@@ -236,7 +236,7 @@
             </a>
 
             <!-- Payslips Card -->
-            <a href="#"
+            <a href="{{ route('tenant.payroll.processing.index', ['tenant' => $tenant->slug]) }}"
                class="action-card bg-gradient-to-br from-red-600 to-red-800 hover:from-red-500 hover:to-red-700 border border-red-500 rounded-xl p-4 transition-all duration-300 hover:shadow-lg hover:scale-105 group">
                 <div class="flex items-center mb-3">
                     <div class="w-10 h-10 bg-red-500 bg-opacity-30 rounded-lg flex items-center justify-center mr-3 group-hover:scale-110 transition-transform duration-300">
@@ -253,7 +253,7 @@
             </a>
 
             <!-- Bank Files Card -->
-            <a href="#"
+            <a href="{{ route('tenant.payroll.reports.bank-schedule', ['tenant' => $tenant->slug]) }}"
                class="action-card bg-gradient-to-br from-emerald-600 to-emerald-800 hover:from-emerald-500 hover:to-emerald-700 border border-emerald-500 rounded-xl p-4 transition-all duration-300 hover:shadow-lg hover:scale-105 group">
                 <div class="flex items-center mb-3">
                     <div class="w-10 h-10 bg-emerald-500 bg-opacity-30 rounded-lg flex items-center justify-center mr-3 group-hover:scale-110 transition-transform duration-300">
@@ -270,7 +270,7 @@
             </a>
 
             <!-- Analytics Card -->
-            <a href="#"
+            <a href="{{ route('tenant.payroll.reports.summary', ['tenant' => $tenant->slug]) }}"
                class="action-card bg-gradient-to-br from-violet-600 to-violet-800 hover:from-violet-500 hover:to-violet-700 border border-violet-500 rounded-xl p-4 transition-all duration-300 hover:shadow-lg hover:scale-105 group">
                 <div class="flex items-center mb-3">
                     <div class="w-10 h-10 bg-violet-500 bg-opacity-30 rounded-lg flex items-center justify-center mr-3 group-hover:scale-110 transition-transform duration-300">
