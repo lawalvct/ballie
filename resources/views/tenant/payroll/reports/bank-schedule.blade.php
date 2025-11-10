@@ -235,20 +235,27 @@
         </div>
 
         <!-- Help Box -->
-        <div class="mt-8 bg-blue-50 border border-blue-200 rounded-2xl p-6">
-            <div class="flex">
-                <div class="flex-shrink-0">
-                    <i class="fas fa-info-circle text-blue-600 text-2xl"></i>
-                </div>
-                <div class="ml-4">
-                    <h3 class="text-lg font-medium text-blue-900 mb-2">About Bank Payment Schedule</h3>
-                    <div class="text-sm text-blue-800 space-y-2">
-                        <p><strong>Purpose:</strong> This report shows all approved payrolls that are ready for bank transfer.</p>
-                        <p><strong>Bank File:</strong> Click the download icon to export a CSV file formatted for your bank's bulk payment system.</p>
-                        <p><strong>Payment Process:</strong> After downloading the bank file, upload it to your bank's internet banking platform to process the payments.</p>
-                        <p><strong>Mark as Paid:</strong> After successfully processing the payment through your bank, click the check icon to mark the payroll as paid.</p>
-                        <p><strong>Status:</strong> Payrolls shown as "Approved" are ready for payment. Once marked as paid, employee payslips will show as "Paid".</p>
+        <div class="mt-8 bg-blue-50 border border-blue-200 rounded-2xl p-6" x-data="{ showInstructions: false }">
+            <div class="flex items-center justify-between cursor-pointer" @click="showInstructions = !showInstructions">
+                <div class="flex items-center">
+                    <div class="flex-shrink-0">
+                        <i class="fas fa-info-circle text-blue-600 text-2xl"></i>
                     </div>
+                    <div class="ml-4">
+                        <h3 class="text-lg font-medium text-blue-900">About Bank Payment Schedule</h3>
+                    </div>
+                </div>
+                <button type="button" class="text-blue-600 hover:text-blue-800 transition-transform duration-300" :class="{'rotate-180': showInstructions}">
+                    <i class="fas fa-chevron-down text-xl"></i>
+                </button>
+            </div>
+            <div x-show="showInstructions" x-collapse class="mt-4 ml-12">
+                <div class="text-sm text-blue-800 space-y-2">
+                    <p><strong>Purpose:</strong> This report shows all approved payrolls that are ready for bank transfer.</p>
+                    <p><strong>Bank File:</strong> Click the download icon to export a CSV file formatted for your bank's bulk payment system.</p>
+                    <p><strong>Payment Process:</strong> After downloading the bank file, upload it to your bank's internet banking platform to process the payments.</p>
+                    <p><strong>Mark as Paid:</strong> After successfully processing the payment through your bank, click the check icon to mark the payroll as paid.</p>
+                    <p><strong>Status:</strong> Payrolls shown as "Approved" are ready for payment. Once marked as paid, employee payslips will show as "Paid".</p>
                 </div>
             </div>
         </div>
