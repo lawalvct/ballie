@@ -223,6 +223,150 @@ class AttendanceController extends Controller
     }
 
     /**
+     * Mark employee as on leave
+     */
+    public function markLeave(Request $request, Tenant $tenant)
+    {
+        $validated = $request->validate([
+            'employee_id' => 'required|exists:employees,id',
+            'date' => 'required|date',
+            'leave_type' => 'required|string|in:sick_leave,annual_leave,unpaid_leave,maternity_leave,paternity_leave,compassionate_leave',
+            'reason' => 'nullable|string|max:500',
+        ]);
+
+        $attendance = AttendanceRecord::where('tenant_id', $tenant->id)
+            ->where('employee_id', $validated['employee_id'])
+            ->whereDate('attendance_date', $validated['date'])
+            ->first();
+
+        if (!$attendance) {
+            $attendance = AttendanceRecord::create([
+                'tenant_id' => $tenant->id,
+                'employee_id' => $validated['employee_id'],
+                'attendance_date' => $validated['date'],
+                'created_by' => Auth::id(),
+            ]);
+        }
+
+        $attendance->update([
+            'status' => 'on_leave',
+            'absence_reason' => $validated['leave_type'] . ($validated['reason'] ? ': ' . $validated['reason'] : ''),
+            'admin_notes' => 'Leave type: ' . str_replace('_', ' ', ucwords($validated['leave_type'])),
+            'updated_by' => Auth::id(),
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Employee marked as on leave',
+        ]);
+    }
+
+    /**
+     * Manual attendance entry with custom times
+     */
+    public function manualEntry(Request $request, Tenant $tenant)
+    {
+        $validated = $request->validate([
+            'employee_id' => 'required|exists:employees,id',
+            'date' => 'required|date',
+            'clock_in_time' => 'required|date_format:H:i',
+            'clock_out_time' => 'nullable|date_format:H:i|after:clock_in_time',
+            'break_minutes' => 'nullable|integer|min:0|max:480',
+            'notes' => 'nullable|string|max:500',
+        ]);
+
+        $employee = Employee::findOrFail($validated['employee_id']);
+
+        if ($employee->tenant_id !== $tenant->id) {
+            return response()->json(['error' => 'Invalid employee'], 403);
+        }
+
+        // Check if attendance exists for this date
+        $attendance = AttendanceRecord::where('tenant_id', $tenant->id)
+            ->where('employee_id', $validated['employee_id'])
+            ->whereDate('attendance_date', $validated['date'])
+            ->first();
+
+        if ($attendance) {
+            return response()->json([
+                'error' => 'Attendance record already exists for this date. Please edit instead.',
+            ], 400);
+        }
+
+        // Get employee's shift schedule
+        $shift = $employee->currentShift;
+
+        // Create datetime objects
+        $clockIn = Carbon::parse($validated['date'] . ' ' . $validated['clock_in_time']);
+        $clockOut = $validated['clock_out_time']
+            ? Carbon::parse($validated['date'] . ' ' . $validated['clock_out_time'])
+            : null;
+
+        // Calculate scheduled times from shift
+        $scheduledIn = $shift ? Carbon::parse($validated['date'] . ' ' . $shift->start_time) : null;
+        $scheduledOut = $shift ? Carbon::parse($validated['date'] . ' ' . $shift->end_time) : null;
+
+        // Calculate late minutes
+        $lateMinutes = 0;
+        $status = 'present';
+        if ($scheduledIn && $clockIn->gt($scheduledIn)) {
+            $lateMinutes = $scheduledIn->diffInMinutes($clockIn);
+            $status = 'late';
+        }
+
+        // Calculate work hours and overtime
+        $workHoursMinutes = 0;
+        $overtimeMinutes = 0;
+        $earlyOutMinutes = 0;
+
+        if ($clockOut) {
+            $totalMinutes = $clockIn->diffInMinutes($clockOut);
+            $breakMinutes = $validated['break_minutes'] ?? 0;
+            $workHoursMinutes = $totalMinutes - $breakMinutes;
+
+            // Calculate early out
+            if ($scheduledOut && $clockOut->lt($scheduledOut)) {
+                $earlyOutMinutes = $clockOut->diffInMinutes($scheduledOut);
+            }
+
+            // Calculate overtime
+            if ($scheduledOut && $clockOut->gt($scheduledOut)) {
+                $overtimeMinutes = $scheduledOut->diffInMinutes($clockOut);
+            }
+        }
+
+        $attendance = AttendanceRecord::create([
+            'tenant_id' => $tenant->id,
+            'employee_id' => $validated['employee_id'],
+            'attendance_date' => $validated['date'],
+            'clock_in' => $clockIn,
+            'clock_out' => $clockOut,
+            'scheduled_in' => $scheduledIn,
+            'scheduled_out' => $scheduledOut,
+            'late_minutes' => $lateMinutes,
+            'early_out_minutes' => $earlyOutMinutes,
+            'work_hours_minutes' => $workHoursMinutes,
+            'break_minutes' => $validated['break_minutes'] ?? 0,
+            'overtime_minutes' => $overtimeMinutes,
+            'status' => $status,
+            'admin_notes' => 'Manual entry: ' . ($validated['notes'] ?? 'No notes'),
+            'created_by' => Auth::id(),
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Attendance recorded successfully',
+            'data' => [
+                'clock_in' => $clockIn->format('h:i A'),
+                'clock_out' => $clockOut ? $clockOut->format('h:i A') : null,
+                'work_hours' => round($workHoursMinutes / 60, 2),
+                'overtime_hours' => round($overtimeMinutes / 60, 2),
+                'status' => $status,
+            ],
+        ]);
+    }
+
+    /**
      * Mark employee as half day
      */
     public function markHalfDay(Request $request, Tenant $tenant, AttendanceRecord $attendance)

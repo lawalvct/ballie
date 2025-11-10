@@ -19,6 +19,11 @@
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 
     <style>
+        /* Alpine.js x-cloak directive styling */
+        [x-cloak] {
+            display: none !important;
+        }
+
         :root {
             --color-gold: #d1b05e;
             --color-blue: #2b6399;

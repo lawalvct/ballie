@@ -651,7 +651,9 @@ Route::prefix('ledger-accounts')->name('ledger-accounts.')->group(function () {
 
                 Route::post('/clock-in', [\App\Http\Controllers\Tenant\Payroll\AttendanceController::class, 'clockIn'])->name('clock-in');
                 Route::post('/clock-out', [\App\Http\Controllers\Tenant\Payroll\AttendanceController::class, 'clockOut'])->name('clock-out');
+                Route::post('/manual-entry', [\App\Http\Controllers\Tenant\Payroll\AttendanceController::class, 'manualEntry'])->name('manual-entry');
                 Route::post('/mark-absent', [\App\Http\Controllers\Tenant\Payroll\AttendanceController::class, 'markAbsent'])->name('mark-absent');
+                Route::post('/mark-leave', [\App\Http\Controllers\Tenant\Payroll\AttendanceController::class, 'markLeave'])->name('mark-leave');
                 Route::post('/{attendance}/mark-half-day', [\App\Http\Controllers\Tenant\Payroll\AttendanceController::class, 'markHalfDay'])->name('mark-half-day');
                 Route::post('/{attendance}/approve', [\App\Http\Controllers\Tenant\Payroll\AttendanceController::class, 'approve'])->name('approve');
                 Route::post('/bulk-approve', [\App\Http\Controllers\Tenant\Payroll\AttendanceController::class, 'bulkApprove'])->name('bulk-approve');

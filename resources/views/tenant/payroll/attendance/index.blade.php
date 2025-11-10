@@ -17,6 +17,14 @@
                            value="{{ $selectedDate->format('Y-m-d') }}"
                            onchange="window.location.href = '{{ route('tenant.payroll.attendance.index', $tenant) }}?date=' + this.value"
                            class="px-4 py-2 bg-white/20 backdrop-blur-sm border border-white/30 rounded-lg text-white placeholder-white/70 focus:outline-none focus:ring-2 focus:ring-white/50">
+                    <button @click="showManualEntryModal = true"
+                            class="bg-green-500/90 backdrop-blur-sm hover:bg-green-600 text-white px-6 py-3 rounded-xl font-medium transition-all duration-300 shadow-lg hover:shadow-xl border border-white/20">
+                        <i class="fas fa-clock mr-2"></i>Manual Entry
+                    </button>
+                    <button @click="showLeaveModal = true"
+                            class="bg-purple-500/90 backdrop-blur-sm hover:bg-purple-600 text-white px-6 py-3 rounded-xl font-medium transition-all duration-300 shadow-lg hover:shadow-xl border border-white/20">
+                        <i class="fas fa-umbrella-beach mr-2"></i>Mark Leave
+                    </button>
                     <a href="{{ route('tenant.payroll.attendance.monthly-report', $tenant) }}"
                        class="bg-white/20 backdrop-blur-sm hover:bg-white/30 text-white px-6 py-3 rounded-xl font-medium transition-all duration-300 shadow-lg hover:shadow-xl border border-white/20">
                         <i class="fas fa-calendar-alt mr-2"></i>Monthly Report
@@ -310,11 +318,31 @@
     </div>
 </div>
 
+<!-- Include Modals -->
+@include('tenant.payroll.attendance.partials.manual-entry-modal')
+@include('tenant.payroll.attendance.partials.leave-modal')
+
 @push('scripts')
 <script>
 function attendanceManager() {
     return {
         selectedRecords: [],
+        showManualEntryModal: false,
+        showLeaveModal: false,
+        manualEntry: {
+            employee_id: '',
+            date: '{{ $selectedDate->format("Y-m-d") }}',
+            clock_in_time: '',
+            clock_out_time: '',
+            break_minutes: 60,
+            notes: ''
+        },
+        leaveData: {
+            employee_id: '',
+            date: '{{ $selectedDate->format("Y-m-d") }}',
+            leave_type: '',
+            reason: ''
+        },
 
         toggleAll(event) {
             if (event.target.checked) {
@@ -322,6 +350,83 @@ function attendanceManager() {
             } else {
                 this.selectedRecords = [];
             }
+        },
+
+        calculateWorkHoursPreview() {
+            if (!this.manualEntry.clock_in_time || !this.manualEntry.clock_out_time) {
+                return '';
+            }
+
+            const clockIn = new Date('2000-01-01 ' + this.manualEntry.clock_in_time);
+            const clockOut = new Date('2000-01-01 ' + this.manualEntry.clock_out_time);
+            const breakMinutes = parseInt(this.manualEntry.break_minutes) || 0;
+
+            const totalMinutes = (clockOut - clockIn) / (1000 * 60);
+            const workMinutes = totalMinutes - breakMinutes;
+            const workHours = (workMinutes / 60).toFixed(2);
+
+            return `Total work hours: ${workHours} hours (${Math.floor(workMinutes / 60)}h ${workMinutes % 60}m)`;
+        },
+
+        submitManualEntry() {
+            if (!this.manualEntry.employee_id || !this.manualEntry.date || !this.manualEntry.clock_in_time) {
+                alert('Please fill in all required fields');
+                return;
+            }
+
+            fetch('{{ route('tenant.payroll.attendance.manual-entry', $tenant) }}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                },
+                body: JSON.stringify(this.manualEntry)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert(data.message + '\n\nClock In: ' + data.data.clock_in +
+                          (data.data.clock_out ? '\nClock Out: ' + data.data.clock_out : '') +
+                          '\nWork Hours: ' + data.data.work_hours + ' hrs' +
+                          (data.data.overtime_hours > 0 ? '\nOvertime: ' + data.data.overtime_hours + ' hrs' : ''));
+                    window.location.reload();
+                } else {
+                    alert('Error: ' + (data.error || data.message || 'Failed to record attendance'));
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('An error occurred while recording attendance');
+            });
+        },
+
+        submitLeave() {
+            if (!this.leaveData.employee_id || !this.leaveData.date || !this.leaveData.leave_type) {
+                alert('Please fill in all required fields');
+                return;
+            }
+
+            fetch('{{ route('tenant.payroll.attendance.mark-leave', $tenant) }}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                },
+                body: JSON.stringify(this.leaveData)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert(data.message);
+                    window.location.reload();
+                } else {
+                    alert('Error: ' + (data.error || data.message || 'Failed to mark leave'));
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('An error occurred while marking leave');
+            });
         },
 
         bulkApprove() {
@@ -375,13 +480,23 @@ function clockIn(employeeId) {
             notes: notes
         })
     })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            alert(`Clocked in at ${data.clock_in_time}`);
+    .then(response => {
+        return response.json().then(data => {
+            return { ok: response.ok, status: response.status, data: data };
+        });
+    })
+    .then(({ ok, status, data }) => {
+        if (ok && data.success) {
+            alert(`Clocked in successfully at ${data.clock_in_time}` +
+                  (data.late_minutes > 0 ? `\n⚠️ Late by ${data.late_minutes} minutes` : ''));
             window.location.reload();
         } else {
-            alert('Error: ' + (data.error || 'Failed to clock in'));
+            // Handle 400 status - already clocked in
+            if (status === 400 && data.clock_in_time) {
+                alert(`Already clocked in today at ${data.clock_in_time}`);
+            } else {
+                alert('Error: ' + (data.error || data.message || 'Failed to clock in'));
+            }
         }
     })
     .catch(error => {
@@ -404,13 +519,30 @@ function clockOut(employeeId) {
             notes: notes
         })
     })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            alert(`Clocked out at ${data.clock_out_time}\nWork hours: ${data.work_hours} hrs`);
+    .then(response => {
+        return response.json().then(data => {
+            return { ok: response.ok, status: response.status, data: data };
+        });
+    })
+    .then(({ ok, status, data }) => {
+        if (ok && data.success) {
+            let message = `Clocked out successfully at ${data.clock_out_time}\nWork hours: ${data.work_hours} hrs`;
+            if (data.overtime_hours > 0) {
+                message += `\n⭐ Overtime: ${data.overtime_hours} hrs`;
+            }
+            alert(message);
             window.location.reload();
         } else {
-            alert('Error: ' + (data.error || 'Failed to clock out'));
+            // Handle 400 status - not clocked in yet or already clocked out
+            if (status === 400) {
+                if (data.clock_out_time) {
+                    alert(`Already clocked out today at ${data.clock_out_time}`);
+                } else {
+                    alert('Error: ' + (data.error || 'Must clock in before clocking out'));
+                }
+            } else {
+                alert('Error: ' + (data.error || data.message || 'Failed to clock out'));
+            }
         }
     })
     .catch(error => {
