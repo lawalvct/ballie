@@ -5,6 +5,8 @@ namespace App\Services;
 use App\Models\Employee;
 use App\Models\PayrollPeriod;
 use App\Models\TaxBracket;
+use App\Models\AttendanceRecord;
+use Carbon\Carbon;
 
 class PayrollCalculator
 {
@@ -23,16 +25,19 @@ class PayrollCalculator
         // Step 1: Calculate basic salary and allowances
         $this->calculateGrossSalary();
 
-        // Step 2: Calculate PAYE tax
+        // Step 2: Calculate attendance-based adjustments (overtime & absent deductions)
+        $this->calculateAttendanceAdjustments();
+
+        // Step 3: Calculate PAYE tax
         $this->calculatePAYE();
 
-        // Step 3: Calculate NSITF
+        // Step 4: Calculate NSITF
         $this->calculateNSITF();
 
-        // Step 4: Calculate other deductions
+        // Step 5: Calculate other deductions
         $this->calculateOtherDeductions();
 
-        // Step 5: Calculate net salary
+        // Step 6: Calculate net salary
         $this->calculateNetSalary();
 
         return $this->preparePayrollData();
@@ -72,6 +77,97 @@ class PayrollCalculator
 
         $this->calculations['total_allowances'] = $allowances;
         $this->calculations['gross_salary'] = $this->calculations['basic_salary'] + $allowances;
+    }
+
+    private function calculateAttendanceAdjustments(): void
+    {
+        // Get attendance records for this payroll period
+        $startDate = Carbon::parse($this->period->start_date);
+        $endDate = Carbon::parse($this->period->end_date);
+
+        $attendanceRecords = AttendanceRecord::where('employee_id', $this->employee->id)
+            ->whereBetween('attendance_date', [$startDate, $endDate])
+            ->get();
+
+        // Calculate working days in the period (excluding weekends)
+        $workingDays = 0;
+        $currentDate = $startDate->copy();
+        while ($currentDate <= $endDate) {
+            if (!$currentDate->isWeekend()) {
+                $workingDays++;
+            }
+            $currentDate->addDay();
+        }
+
+        // Count absent days
+        $absentDays = $attendanceRecords->whereIn('status', ['absent'])->count();
+
+        // Calculate daily salary rate
+        $dailySalaryRate = $workingDays > 0 ? $this->calculations['basic_salary'] / $workingDays : 0;
+
+        // Calculate absent deduction
+        $absentDeduction = $absentDays * $dailySalaryRate;
+
+        // Store absent deduction
+        if ($absentDeduction > 0) {
+            $this->calculations['deductions'][] = [
+                'salary_component_id' => null,
+                'component_name' => 'Absent Days Deduction',
+                'component_type' => 'deduction',
+                'amount' => round($absentDeduction, 2),
+                'is_taxable' => false,
+                'metadata' => [
+                    'absent_days' => $absentDays,
+                    'daily_rate' => round($dailySalaryRate, 2),
+                ],
+            ];
+        }
+
+        // Calculate overtime pay
+        $totalOvertimeMinutes = $attendanceRecords->sum('overtime_minutes');
+        $totalOvertimeHours = $totalOvertimeMinutes / 60;
+
+        if ($totalOvertimeHours > 0) {
+            // Calculate hourly rate (assuming 8 hours per day)
+            $hourlyRate = $dailySalaryRate / 8;
+
+            // Overtime multiplier (1.5x for regular overtime)
+            $overtimeMultiplier = 1.5;
+
+            $overtimePay = $totalOvertimeHours * $hourlyRate * $overtimeMultiplier;
+
+            // Store overtime as earning
+            $this->calculations['earnings'][] = [
+                'salary_component_id' => null,
+                'component_name' => 'Overtime Pay',
+                'component_type' => 'earning',
+                'amount' => round($overtimePay, 2),
+                'is_taxable' => true,
+                'metadata' => [
+                    'overtime_hours' => round($totalOvertimeHours, 2),
+                    'hourly_rate' => round($hourlyRate, 2),
+                    'multiplier' => $overtimeMultiplier,
+                ],
+            ];
+
+            // Add overtime to gross salary
+            $this->calculations['gross_salary'] += $overtimePay;
+        }
+
+        // Store attendance summary
+        $this->calculations['attendance_summary'] = [
+            'working_days' => $workingDays,
+            'total_days' => $attendanceRecords->count(),
+            'present_days' => $attendanceRecords->whereIn('status', ['present', 'late'])->count(),
+            'absent_days' => $absentDays,
+            'late_days' => $attendanceRecords->where('status', 'late')->count(),
+            'half_days' => $attendanceRecords->where('status', 'half_day')->count(),
+            'leave_days' => $attendanceRecords->where('status', 'on_leave')->count(),
+            'total_hours' => round($attendanceRecords->sum('work_hours_minutes') / 60, 2),
+            'overtime_hours' => round($totalOvertimeHours, 2),
+            'absent_deduction' => round($absentDeduction, 2),
+            'overtime_pay' => round($overtimePay ?? 0, 2),
+        ];
     }
 
     private function calculatePAYE(): void
@@ -143,7 +239,11 @@ class PayrollCalculator
     {
         $salary = $this->employee->currentSalary;
         $otherDeductions = 0;
-        $this->calculations['deductions'] = []; // Store individual deductions for details
+
+        // Initialize deductions array if not already set (from attendance)
+        if (!isset($this->calculations['deductions'])) {
+            $this->calculations['deductions'] = [];
+        }
 
         // Regular deductions (union dues, pension, etc.)
         foreach ($salary->salaryComponents as $component) {
@@ -173,6 +273,12 @@ class PayrollCalculator
         // Loan deductions
         $loanDeductions = $this->employee->activeLoans->sum('monthly_deduction');
         $otherDeductions += $loanDeductions;
+
+        // Add absent deduction if exists
+        $absentDeduction = collect($this->calculations['deductions'])
+            ->where('component_name', 'Absent Days Deduction')
+            ->sum('amount');
+        $otherDeductions += $absentDeduction;
 
         $this->calculations['other_deductions'] = $otherDeductions;
         $this->calculations['total_deductions'] = $this->calculations['monthly_tax'] + $otherDeductions;
