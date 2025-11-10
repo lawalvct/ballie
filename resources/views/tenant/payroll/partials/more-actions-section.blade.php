@@ -204,6 +204,23 @@
                 </div>
                 <p class="text-xs text-cyan-200">Manage overtime hours and calculations.</p>
             </a>
+
+            <!-- Salary Advance Card (NEW) -->
+            <a href="{{ route('tenant.payroll.salary-advance.create', ['tenant' => $tenant->slug]) }}"
+               class="action-card bg-gradient-to-br from-rose-600 to-rose-800 hover:from-rose-500 hover:to-rose-700 border border-rose-500 rounded-xl p-4 transition-all duration-300 hover:shadow-lg hover:scale-105 group">
+                <div class="flex items-center mb-3">
+                    <div class="w-10 h-10 bg-rose-500 bg-opacity-30 rounded-lg flex items-center justify-center mr-3 group-hover:scale-110 transition-transform duration-300">
+                        <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"></path>
+                        </svg>
+                    </div>
+                    <div>
+                        <h5 class="font-semibold text-white group-hover:text-rose-200 transition-colors duration-300">Salary Advance</h5>
+                        <p class="text-xs text-rose-200">IOU / Staff Loans</p>
+                    </div>
+                </div>
+                <p class="text-xs text-rose-200">Issue salary advances and manage loan repayments.</p>
+            </a>
         </div>
     </div>
 

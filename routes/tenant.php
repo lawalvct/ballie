@@ -626,6 +626,10 @@ Route::prefix('ledger-accounts')->name('ledger-accounts.')->group(function () {
                 Route::post('/{loan}/approve', [PayrollController::class, 'approveLoan'])->name('approve');
             });
 
+            // Salary Advance / IOU Management
+            Route::get('/salary-advance/create', [PayrollController::class, 'createSalaryAdvance'])->name('salary-advance.create');
+            Route::post('/salary-advance/store', [PayrollController::class, 'storeSalaryAdvance'])->name('salary-advance.store');
+
             // Payroll Reports
             Route::prefix('reports')->name('reports.')->group(function () {
                 Route::get('/summary', [PayrollController::class, 'payrollSummary'])->name('summary');

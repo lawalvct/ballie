@@ -1363,4 +1363,185 @@ class PayrollController extends Controller
             return redirect()->back()->with('error', 'Error marking payslip as paid: ' . $e->getMessage());
         }
     }
+
+    /**
+     * Show form to create salary advance voucher
+     */
+    public function createSalaryAdvance(Request $request, Tenant $tenant)
+    {
+        // Get all active employees
+        $employees = Employee::where('tenant_id', $tenant->id)
+            ->where('status', 'active')
+            ->with(['department', 'currentSalary'])
+            ->orderBy('first_name')
+            ->get();
+
+        // Get or create Salary Advance voucher type
+        $salaryAdvanceVoucherType = \App\Models\VoucherType::firstOrCreate(
+            [
+                'tenant_id' => $tenant->id,
+                'code' => 'SA'
+            ],
+            [
+                'name' => 'Salary Advance',
+                'abbreviation' => 'SA',
+                'description' => 'Salary advance (IOU) payments to employees',
+                'numbering_method' => 'auto',
+                'prefix' => 'SA-',
+                'starting_number' => 1,
+                'current_number' => 0,
+                'has_reference' => true,
+                'affects_inventory' => false,
+                'affects_cashbank' => true,
+                'is_system_defined' => true,
+                'is_active' => true,
+            ]
+        );
+
+        // Get common ledger accounts for salary advance
+        $cashAccount = \App\Models\LedgerAccount::where('tenant_id', $tenant->id)
+            ->where('name', 'Cash in Hand')
+            ->first();
+
+        $advanceAccount = \App\Models\LedgerAccount::firstOrCreate(
+            [
+                'tenant_id' => $tenant->id,
+                'code' => '1130'
+            ],
+            [
+                'name' => 'Employee Advances',
+                'account_type' => 'asset',
+                'account_group_id' => \App\Models\AccountGroup::where('tenant_id', $tenant->id)
+                    ->where('code', 'CA')
+                    ->first()->id ?? null,
+                'is_active' => true,
+                'description' => 'Salary advances given to employees'
+            ]
+        );
+
+        return view('tenant.payroll.salary-advance.create', compact(
+            'tenant',
+            'employees',
+            'salaryAdvanceVoucherType',
+            'cashAccount',
+            'advanceAccount'
+        ));
+    }
+
+    /**
+     * Store salary advance voucher and create employee loan
+     */
+    public function storeSalaryAdvance(Request $request, Tenant $tenant)
+    {
+        $validated = $request->validate([
+            'employee_id' => 'required|exists:employees,id',
+            'amount' => 'required|numeric|min:1',
+            'duration_months' => 'required|integer|min:1|max:12',
+            'purpose' => 'nullable|string|max:500',
+            'voucher_date' => 'required|date',
+            'payment_method' => 'required|in:cash,bank',
+            'reference' => 'nullable|string|max:255',
+        ]);
+
+        try {
+            DB::transaction(function () use ($request, $tenant, $validated) {
+                $employee = Employee::findOrFail($validated['employee_id']);
+
+                // Calculate monthly deduction
+                $monthlyDeduction = $validated['amount'] / $validated['duration_months'];
+
+                // Create Employee Loan record
+                $loan = EmployeeLoan::create([
+                    'employee_id' => $employee->id,
+                    'loan_amount' => $validated['amount'],
+                    'monthly_deduction' => $monthlyDeduction,
+                    'duration_months' => $validated['duration_months'],
+                    'start_date' => now(),
+                    'purpose' => $validated['purpose'] ?? 'Salary Advance',
+                    'status' => 'active',
+                    'approved_by' => Auth::id(),
+                ]);
+
+                // Get or create necessary accounts
+                $advanceAccount = \App\Models\LedgerAccount::firstOrCreate(
+                    [
+                        'tenant_id' => $tenant->id,
+                        'code' => '1130'
+                    ],
+                    [
+                        'name' => 'Employee Advances',
+                        'account_type' => 'asset',
+                        'account_group_id' => \App\Models\AccountGroup::where('tenant_id', $tenant->id)
+                            ->where('code', 'CA')
+                            ->first()->id ?? null,
+                        'is_active' => true,
+                    ]
+                );
+
+                $cashOrBankAccount = null;
+                if ($validated['payment_method'] === 'cash') {
+                    $cashOrBankAccount = \App\Models\LedgerAccount::where('tenant_id', $tenant->id)
+                        ->where('name', 'Cash in Hand')
+                        ->first();
+                } else {
+                    // Get primary bank account
+                    $cashOrBankAccount = \App\Models\LedgerAccount::where('tenant_id', $tenant->id)
+                        ->where('account_type', 'asset')
+                        ->where('name', 'like', '%Bank%')
+                        ->first();
+                }
+
+                // Get or create Salary Advance voucher type
+                $voucherType = \App\Models\VoucherType::where('tenant_id', $tenant->id)
+                    ->where('code', 'SA')
+                    ->first();
+
+                // Create Voucher
+                $voucher = \App\Models\Voucher::create([
+                    'tenant_id' => $tenant->id,
+                    'voucher_type_id' => $voucherType->id,
+                    'voucher_number' => $voucherType->getNextVoucherNumber(),
+                    'voucher_date' => $validated['voucher_date'],
+                    'reference_number' => $validated['reference'] ?? $loan->loan_number,
+                    'total_amount' => $validated['amount'],
+                    'narration' => "Salary advance issued to {$employee->full_name} - {$loan->loan_number}",
+                    'status' => 'posted', // Post immediately
+                    'created_by' => Auth::id(),
+                    'posted_by' => Auth::id(),
+                    'posted_at' => now(),
+                ]);
+
+                // Create voucher entries (Debit: Employee Advances, Credit: Cash/Bank)
+                \App\Models\VoucherEntry::create([
+                    'voucher_id' => $voucher->id,
+                    'ledger_account_id' => $advanceAccount->id,
+                    'debit_amount' => $validated['amount'],
+                    'credit_amount' => 0,
+                    'particulars' => "Salary advance to {$employee->full_name} ({$employee->employee_number})",
+                ]);
+
+                \App\Models\VoucherEntry::create([
+                    'voucher_id' => $voucher->id,
+                    'ledger_account_id' => $cashOrBankAccount->id,
+                    'debit_amount' => 0,
+                    'credit_amount' => $validated['amount'],
+                    'particulars' => "Payment for salary advance - {$loan->loan_number}",
+                ]);
+
+                // Update voucher type current number
+                $voucherType->increment('current_number');
+
+                return $voucher;
+            });
+
+            return redirect()
+                ->route('tenant.payroll.loans.index', $tenant)
+                ->with('success', 'Salary advance voucher created successfully. The loan will be deducted from employee payroll automatically.');
+        } catch (\Exception $e) {
+            return redirect()
+                ->back()
+                ->withInput()
+                ->with('error', 'Error creating salary advance: ' . $e->getMessage());
+        }
+    }
 }
