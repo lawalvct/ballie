@@ -17,7 +17,7 @@ class OvertimeController extends Controller
     {
         $tenantId = $tenant->id;
 
-        $query = OvertimeRecord::with(['employee.department', 'approvedBy'])
+        $query = OvertimeRecord::with(['employee.department', 'approver'])
             ->where('tenant_id', $tenantId);
 
         // Filters
@@ -156,7 +156,7 @@ class OvertimeController extends Controller
             DB::commit();
 
             return redirect()
-                ->route('tenant.overtime.show', ['tenant' => $tenant->id, 'overtime' => $overtime->id])
+                ->route('tenant.payroll.overtime.show', ['tenant' => $tenant->id, 'id' => $overtime->id])
                 ->with('success', 'Overtime record created successfully.');
         } catch (\Exception $e) {
             DB::rollBack();
@@ -170,8 +170,8 @@ class OvertimeController extends Controller
 
         $overtime = OvertimeRecord::with([
             'employee.department',
-            'approvedBy',
-            'rejectedBy',
+            'approver',
+            'rejector',
             'payrollRun'
         ])
             ->where('id', $id)
@@ -245,7 +245,7 @@ class OvertimeController extends Controller
             DB::commit();
 
             return redirect()
-                ->route('tenant.overtime.show', ['tenant' => $tenant->id, 'overtime' => $overtime->id])
+                ->route('tenant.payroll.overtime.show', ['tenant' => $tenant->id, 'id' => $overtime->id])
                 ->with('success', 'Overtime record updated successfully.');
         } catch (\Exception $e) {
             DB::rollBack();
@@ -370,6 +370,28 @@ class OvertimeController extends Controller
         } catch (\Exception $e) {
             DB::rollBack();
             return back()->with('error', 'Failed to approve overtime records: ' . $e->getMessage());
+        }
+    }
+
+    public function destroy(Tenant $tenant, $id)
+    {
+        $tenantId = $tenant->id;
+
+        $overtime = OvertimeRecord::where('id', $id)
+            ->where('tenant_id', $tenantId)
+            ->firstOrFail();
+
+        DB::beginTransaction();
+        try {
+            $overtime->delete();
+            DB::commit();
+
+            return redirect()
+                ->route('tenant.payroll.overtime.index', ['tenant' => $tenant->id])
+                ->with('success', 'Overtime record deleted successfully.');
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return back()->with('error', 'Failed to delete overtime: ' . $e->getMessage());
         }
     }
 

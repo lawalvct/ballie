@@ -442,25 +442,27 @@ function approvePayroll(periodId) {
 }
 
 function deletePeriod(periodId) {
-    if (confirm('Are you sure you want to delete this payroll period? This action cannot be undone.')) {
-        const form = document.createElement('form');
-        form.method = 'POST';
-        form.action = `/tenant/{{ $tenant->id }}/payroll/processing/${periodId}`;
+    if (confirm('⚠️ WARNING: This will permanently delete this payroll period and all associated payroll runs.\n\nThis action CANNOT be undone!\n\nAre you sure you want to continue?')) {
+        if (confirm('Final confirmation: Delete this payroll period?')) {
+            const form = document.createElement('form');
+            form.method = 'POST';
+            form.action = `/tenant/{{ $tenant->id }}/payroll/processing/${periodId}`;
 
-        const csrfToken = document.createElement('input');
-        csrfToken.type = 'hidden';
-        csrfToken.name = '_token';
-        csrfToken.value = '{{ csrf_token() }}';
+            const csrfToken = document.createElement('input');
+            csrfToken.type = 'hidden';
+            csrfToken.name = '_token';
+            csrfToken.value = '{{ csrf_token() }}';
 
-        const methodInput = document.createElement('input');
-        methodInput.type = 'hidden';
-        methodInput.name = '_method';
-        methodInput.value = 'DELETE';
+            const methodInput = document.createElement('input');
+            methodInput.type = 'hidden';
+            methodInput.name = '_method';
+            methodInput.value = 'DELETE';
 
-        form.appendChild(csrfToken);
-        form.appendChild(methodInput);
-        document.body.appendChild(form);
-        form.submit();
+            form.appendChild(csrfToken);
+            form.appendChild(methodInput);
+            document.body.appendChild(form);
+            form.submit();
+        }
     }
 }
 </script>

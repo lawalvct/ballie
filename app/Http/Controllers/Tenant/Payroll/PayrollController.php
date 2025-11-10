@@ -1894,4 +1894,110 @@ class PayrollController extends Controller
                 ->with('error', 'Error creating salary advance: ' . $e->getMessage());
         }
     }
+
+    /**
+     * Delete a payroll period and all associated data
+     * This allows admins to roll back payroll for corrections
+     */
+    public function deletePayrollPeriod(Tenant $tenant, PayrollPeriod $period)
+    {
+        // Validate that the period belongs to this tenant
+        if ($period->tenant_id !== $tenant->id) {
+            abort(403, 'Unauthorized access.');
+        }
+
+        // Only allow deletion if not yet paid
+        if ($period->status === 'paid') {
+            return redirect()
+                ->back()
+                ->with('error', 'Cannot delete a paid payroll period. Please contact support for assistance.');
+        }
+
+        // If approved, warn about accounting entries
+        if ($period->status === 'approved') {
+            return redirect()
+                ->back()
+                ->with('error', 'This payroll has been approved and may have accounting entries. Please use the "Reset Generation" option or contact support.');
+        }
+
+        try {
+            DB::beginTransaction();
+
+            // Delete all payroll runs and their details
+            foreach ($period->payrollRuns as $run) {
+                // Delete payroll run details
+                $run->details()->delete();
+
+                // Delete the payroll run
+                $run->delete();
+            }
+
+            // Delete the payroll period
+            $period->delete();
+
+            DB::commit();
+
+            return redirect()
+                ->route('tenant.payroll.processing.index', $tenant)
+                ->with('success', 'Payroll period deleted successfully. You can now make corrections and recreate it.');
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return redirect()
+                ->back()
+                ->with('error', 'Failed to delete payroll period: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Reset payroll generation (delete all payroll runs but keep the period)
+     * Useful when you need to regenerate payroll with corrected data
+     */
+    public function resetPayrollGeneration(Request $request, Tenant $tenant, PayrollPeriod $period)
+    {
+        // Validate that the period belongs to this tenant
+        if ($period->tenant_id !== $tenant->id) {
+            abort(403, 'Unauthorized access.');
+        }
+
+        // Only allow reset if not yet approved or paid
+        if (in_array($period->status, ['approved', 'paid'])) {
+            return redirect()
+                ->back()
+                ->with('error', 'Cannot reset an approved or paid payroll. Please contact support for assistance.');
+        }
+
+        try {
+            DB::beginTransaction();
+
+            // Delete all payroll runs and their details
+            foreach ($period->payrollRuns as $run) {
+                // Delete payroll run details
+                $run->details()->delete();
+
+                // Delete the payroll run
+                $run->delete();
+            }
+
+            // Reset period status and totals
+            $period->update([
+                'status' => 'draft',
+                'total_gross' => 0,
+                'total_deductions' => 0,
+                'total_net' => 0,
+                'total_tax' => 0,
+                'total_nsitf' => 0,
+            ]);
+
+            DB::commit();
+
+            return redirect()
+                ->back()
+                ->with('success', 'Payroll generation reset successfully. You can now regenerate payroll with updated attendance or salary data.');
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return redirect()
+                ->back()
+                ->with('error', 'Failed to reset payroll generation: ' . $e->getMessage());
+        }
+    }
 }

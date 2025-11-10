@@ -244,6 +244,15 @@
                             </button>
                         @endif
 
+                        @if(in_array($period->status, ['draft', 'processing']))
+                            @if($period->payrollRuns && $period->payrollRuns->count() > 0)
+                                <button onclick="resetPayroll()"
+                                        class="block w-full bg-yellow-600 hover:bg-yellow-700 text-white px-4 py-3 rounded-lg font-medium transition-colors duration-300 text-center">
+                                    <i class="fas fa-redo mr-2"></i>Reset & Regenerate
+                                </button>
+                            @endif
+                        @endif
+
                         @if(method_exists($period, 'canBeApproved') ? $period->canBeApproved() : ($period->status === 'completed'))
                             <button onclick="approvePayroll()"
                                     class="block w-full bg-green-600 hover:bg-green-700 text-white px-4 py-3 rounded-lg font-medium transition-colors duration-300 text-center">
@@ -267,6 +276,14 @@
                                 class="block w-full bg-gray-600 hover:bg-gray-700 text-white px-4 py-3 rounded-lg font-medium transition-colors duration-300 text-center">
                             <i class="fas fa-print mr-2"></i>Print Summary
                         </button>
+
+                        @if(in_array($period->status, ['draft', 'processing']))
+                            <hr class="my-4 border-gray-200">
+                            <button onclick="deletePayroll()"
+                                    class="block w-full bg-red-600 hover:bg-red-700 text-white px-4 py-3 rounded-lg font-medium transition-colors duration-300 text-center">
+                                <i class="fas fa-trash mr-2"></i>Delete Payroll Period
+                            </button>
+                        @endif
                     </div>
                 </div>
             </div>
@@ -289,6 +306,54 @@ function generatePayroll() {
         form.appendChild(csrfToken);
         document.body.appendChild(form);
         form.submit();
+    }
+}
+
+function resetPayroll() {
+    if (confirm('⚠️ WARNING: This will delete all generated payroll data for this period.\n\nUse this if you need to make corrections to attendance or salary data before regenerating.\n\nAre you sure you want to continue?')) {
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = '{{ route('tenant.payroll.processing.reset', [$tenant, $period]) }}';
+
+        const csrfToken = document.createElement('input');
+        csrfToken.type = 'hidden';
+        csrfToken.name = '_token';
+        csrfToken.value = '{{ csrf_token() }}';
+
+        const methodField = document.createElement('input');
+        methodField.type = 'hidden';
+        methodField.name = '_method';
+        methodField.value = 'DELETE';
+
+        form.appendChild(csrfToken);
+        form.appendChild(methodField);
+        document.body.appendChild(form);
+        form.submit();
+    }
+}
+
+function deletePayroll() {
+    if (confirm('⚠️ DANGER: This will permanently delete this entire payroll period and all associated data.\n\nThis action CANNOT be undone!\n\nAre you absolutely sure?')) {
+        if (confirm('Final confirmation: Delete payroll period "{{ $period->name }}"?')) {
+            const form = document.createElement('form');
+            form.method = 'POST';
+            form.action = '{{ route('tenant.payroll.processing.destroy', [$tenant, $period]) }}';
+
+            const csrfToken = document.createElement('input');
+            csrfToken.type = 'hidden';
+            csrfToken.name = '_token';
+            csrfToken.value = '{{ csrf_token() }}';
+
+            const methodField = document.createElement('input');
+            methodField.type = 'hidden';
+            methodField.name = '_method';
+            methodField.value = 'DELETE';
+
+            form.appendChild(csrfToken);
+            form.appendChild(methodField);
+            document.body.appendChild(form);
+            form.submit();
+        }
     }
 }
 

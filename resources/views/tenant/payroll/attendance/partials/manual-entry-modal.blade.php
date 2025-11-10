@@ -14,7 +14,7 @@
                 </button>
             </div>
 
-            <form id="manualEntryForm" onsubmit="submitManualEntry(event)">
+            <form id="manualEntryForm" action="{{ route('tenant.payroll.attendance.manual-entry', $tenant) }}" onsubmit="submitManualEntry(event)">
                 <div class="space-y-4">
                     <!-- Employee Selection -->
                     <div>

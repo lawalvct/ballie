@@ -14,7 +14,7 @@
                 </button>
             </div>
 
-            <form id="leaveForm" onsubmit="submitLeave(event)">
+            <form id="leaveForm" action="{{ route('tenant.payroll.attendance.mark-leave', $tenant) }}" onsubmit="submitLeave(event)">
                 <div class="space-y-4">
                     <!-- Employee Selection -->
                     <div>

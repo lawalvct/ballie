@@ -607,9 +607,11 @@ Route::prefix('ledger-accounts')->name('ledger-accounts.')->group(function () {
                 Route::get('/{period}', [PayrollController::class, 'showPayrollPeriod'])->name('show');
                 Route::get('/{period}/edit', [PayrollController::class, 'editPayrollPeriod'])->name('edit');
                 Route::put('/{period}', [PayrollController::class, 'updatePayrollPeriod'])->name('update');
+                Route::delete('/{period}', [PayrollController::class, 'deletePayrollPeriod'])->name('destroy');
                 Route::post('/{period}/generate', [PayrollController::class, 'generatePayroll'])->name('generate');
                 Route::post('/{period}/approve', [PayrollController::class, 'approvePayroll'])->name('approve');
                 Route::post('/{period}/finalize', [PayrollController::class, 'finalizePayroll'])->name('finalize');
+                Route::delete('/{period}/reset', [PayrollController::class, 'resetPayrollGeneration'])->name('reset');
                 Route::get('/{period}/export-tax-file', [PayrollController::class, 'exportTaxFile'])->name('export-tax-file');
                 Route::get('/{period}/export-bank-file', [PayrollController::class, 'exportBankFile'])->name('export-bank-file');
             });
@@ -692,6 +694,7 @@ Route::prefix('ledger-accounts')->name('ledger-accounts.')->group(function () {
                 Route::get('/{id}', [\App\Http\Controllers\Tenant\OvertimeController::class, 'show'])->name('show');
                 Route::get('/{id}/edit', [\App\Http\Controllers\Tenant\OvertimeController::class, 'edit'])->name('edit');
                 Route::put('/{id}', [\App\Http\Controllers\Tenant\OvertimeController::class, 'update'])->name('update');
+                Route::delete('/{id}', [\App\Http\Controllers\Tenant\OvertimeController::class, 'destroy'])->name('destroy');
                 Route::post('/{id}/approve', [\App\Http\Controllers\Tenant\OvertimeController::class, 'approve'])->name('approve');
                 Route::post('/{id}/reject', [\App\Http\Controllers\Tenant\OvertimeController::class, 'reject'])->name('reject');
                 Route::post('/{id}/mark-paid', [\App\Http\Controllers\Tenant\OvertimeController::class, 'markPaid'])->name('mark-paid');
