@@ -299,6 +299,43 @@
                         @enderror
                     </div>
 
+                    <!-- Attendance Deduction Exemption -->
+                    <div class="form-group md:col-span-2">
+                        <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                            <label class="flex items-start cursor-pointer">
+                                <input type="checkbox" name="attendance_deduction_exempt" id="attendance_deduction_exempt"
+                                       value="1"
+                                       {{ old('attendance_deduction_exempt', $employee->attendance_deduction_exempt) ? 'checked' : '' }}
+                                       onchange="toggleAttendanceExemptionReason()"
+                                       class="mt-1 w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500">
+                                <span class="ml-3">
+                                    <span class="text-sm font-medium text-gray-900">
+                                        <i class="fas fa-shield-alt text-blue-600 mr-1"></i>
+                                        Exempt from Attendance Deductions
+                                    </span>
+                                    <p class="text-xs text-gray-600 mt-1">
+                                        When enabled, this employee will NOT have salary deductions for absent days or receive overtime pay.
+                                        Their attendance will still be tracked for reporting purposes only.
+                                        <br>
+                                        <strong>Use for:</strong> Contractors with flat rates, remote workers with flexible schedules, or executives with special compensation agreements.
+                                    </p>
+                                </span>
+                            </label>
+
+                            <div id="attendance_exemption_reason_container" class="mt-3 {{ old('attendance_deduction_exempt', $employee->attendance_deduction_exempt) ? '' : 'hidden' }}">
+                                <label for="attendance_exemption_reason" class="block text-sm font-medium text-gray-700 mb-2">
+                                    Exemption Reason / Notes
+                                </label>
+                                <textarea name="attendance_exemption_reason" id="attendance_exemption_reason" rows="2"
+                                          class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                                          placeholder="e.g., Contract worker - flat monthly rate, Remote worker - flexible hours, Executive - special agreement">{{ old('attendance_exemption_reason', $employee->attendance_exemption_reason) }}</textarea>
+                                <p class="text-xs text-gray-500 mt-1">
+                                    <i class="fas fa-info-circle"></i> Optional: Document why this employee is exempt (for audit and reference purposes)
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
                     <div class="form-group">
                         <label for="tin" class="block text-sm font-medium text-gray-700 mb-2">
                             Tax Identification Number (TIN)
@@ -971,6 +1008,19 @@ function showNotification(message, type = 'success') {
     setTimeout(() => {
         notification.remove();
     }, 3000);
+}
+
+// Toggle attendance exemption reason field
+function toggleAttendanceExemptionReason() {
+    const checkbox = document.getElementById('attendance_deduction_exempt');
+    const container = document.getElementById('attendance_exemption_reason_container');
+
+    if (checkbox.checked) {
+        container.classList.remove('hidden');
+    } else {
+        container.classList.add('hidden');
+        document.getElementById('attendance_exemption_reason').value = '';
+    }
 }
 </script>
 @endsection

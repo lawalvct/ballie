@@ -18,6 +18,7 @@ class Employee extends Model
         'first_name', 'last_name', 'email', 'phone', 'date_of_birth', 'gender',
         'marital_status', 'address', 'state_of_origin', 'job_title', 'hire_date',
         'confirmation_date', 'employment_type', 'pay_frequency', 'status',
+        'attendance_deduction_exempt', 'attendance_exemption_reason',
         'bank_name', 'bank_code', 'account_number', 'account_name',
         'tin', 'annual_relief', 'pension_pin', 'pfa_name', 'avatar'
     ];
@@ -27,6 +28,7 @@ class Employee extends Model
         'hire_date' => 'date',
         'confirmation_date' => 'date',
         'annual_relief' => 'decimal:2',
+        'attendance_deduction_exempt' => 'boolean',
     ];
 
     protected static function boot()

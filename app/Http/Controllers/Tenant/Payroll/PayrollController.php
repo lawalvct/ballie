@@ -251,6 +251,8 @@ class PayrollController extends Controller
 
                  'employment_type' => 'required|in:full_time,contract,casual,intern,part_time',
                 'pay_frequency' => 'required|in:monthly,weekly,contract',
+                'attendance_deduction_exempt' => 'nullable|boolean',
+                'attendance_exemption_reason' => 'nullable|string|max:500',
                 'basic_salary' => 'required|numeric|min:0',
                 'bank_name' => 'nullable|string|max:255',
                 'account_number' => 'nullable|string|max:20',
@@ -360,6 +362,8 @@ class PayrollController extends Controller
                 'country' => 'nullable|string|max:255',
                 'employment_type' => 'required|in:full_time,contract,casual,intern,part_time',
                 'pay_frequency' => 'required|in:monthly,weekly,contract',
+                'attendance_deduction_exempt' => 'nullable|boolean',
+                'attendance_exemption_reason' => 'nullable|string|max:500',
                 'basic_salary' => 'required|numeric|min:0',
                 'bank_name' => 'nullable|string|max:255',
                 'account_number' => 'nullable|string|max:20',

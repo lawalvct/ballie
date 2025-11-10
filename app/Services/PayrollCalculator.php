@@ -81,6 +81,42 @@ class PayrollCalculator
 
     private function calculateAttendanceAdjustments(): void
     {
+        // Check if employee is exempt from attendance-based deductions
+        if ($this->employee->attendance_deduction_exempt) {
+            // Still track attendance summary but don't apply deductions/overtime
+            $startDate = Carbon::parse($this->period->start_date);
+            $endDate = Carbon::parse($this->period->end_date);
+
+            $attendanceRecords = AttendanceRecord::where('employee_id', $this->employee->id)
+                ->whereBetween('attendance_date', [$startDate, $endDate])
+                ->get();
+
+            // Calculate working days
+            $workingDays = 0;
+            $currentDate = $startDate->copy();
+            while ($currentDate <= $endDate) {
+                if (!$currentDate->isWeekend()) {
+                    $workingDays++;
+                }
+                $currentDate->addDay();
+            }
+
+            // Store attendance summary only (no financial impact)
+            $this->calculations['attendance_summary'] = [
+                'working_days' => $workingDays,
+                'total_days' => $attendanceRecords->count(),
+                'present_days' => $attendanceRecords->whereIn('status', ['present', 'late'])->count(),
+                'absent_days' => $attendanceRecords->whereIn('status', ['absent'])->count(),
+                'late_days' => $attendanceRecords->where('status', 'late')->count(),
+                'half_days' => $attendanceRecords->where('status', 'half_day')->count(),
+                'overtime_hours' => round($attendanceRecords->sum('overtime_minutes') / 60, 2),
+                'exempt_from_deductions' => true,
+                'exemption_reason' => $this->employee->attendance_exemption_reason,
+            ];
+
+            return; // Exit early - no financial adjustments
+        }
+
         // Get attendance records for this payroll period
         $startDate = Carbon::parse($this->period->start_date);
         $endDate = Carbon::parse($this->period->end_date);
