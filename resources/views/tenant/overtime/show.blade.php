@@ -14,7 +14,7 @@
         </div>
         <div class="flex items-center space-x-3">
             @if($overtime->status === 'pending')
-                <a href="{{ route('tenant.overtime.edit', [$tenant, $overtime->id]) }}"
+                <a href="{{ route('tenant.payroll.overtime.edit', [$tenant, $overtime->id]) }}"
                    class="inline-flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg">
                     <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
@@ -22,7 +22,7 @@
                     Edit
                 </a>
             @endif
-            <a href="{{ route('tenant.overtime.index', $tenant) }}"
+            <a href="{{ route('tenant.payroll.overtime.index', $tenant) }}"
                class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50">
                 <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
@@ -54,7 +54,7 @@
 
             @if($overtime->status === 'pending')
                 <div class="flex items-center space-x-2">
-                    <form action="{{ route('tenant.overtime.approve', [$tenant, $overtime->id]) }}" method="POST" class="inline">
+                    <form action="{{ route('tenant.payroll.overtime.approve', [$tenant, $overtime->id]) }}" method="POST" class="inline">
                         @csrf
                         <button type="submit"
                                 onclick="return confirm('Approve this overtime record?')"
@@ -259,7 +259,7 @@
             <h3 class="text-lg font-bold text-gray-900 text-center mt-4">Reject Overtime</h3>
             <p class="text-sm text-gray-500 text-center mt-2">Please provide a reason for rejecting this overtime record.</p>
 
-            <form action="{{ route('tenant.overtime.reject', [$tenant, $overtime->id]) }}" method="POST" class="mt-6">
+            <form action="{{ route('tenant.payroll.overtime.reject', [$tenant, $overtime->id]) }}" method="POST" class="mt-6">
                 @csrf
                 <div>
                     <label for="rejection_reason" class="block text-sm font-medium text-gray-700 mb-2">

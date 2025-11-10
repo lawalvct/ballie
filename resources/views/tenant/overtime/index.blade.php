@@ -13,7 +13,7 @@
             <p class="mt-1 text-sm text-gray-600">Manage employee overtime hours and payments</p>
         </div>
         <div class="flex items-center space-x-3">
-            <a href="{{ route('tenant.overtime.create', $tenant) }}"
+            <a href="{{ route('tenant.payroll.overtime.create', $tenant) }}"
                class="inline-flex items-center px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-medium rounded-lg shadow-lg transition-colors">
                 <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
@@ -95,7 +95,7 @@
     <!-- Filters -->
     <div class="bg-white shadow-sm rounded-lg border border-gray-200">
         <div class="p-6">
-            <form method="GET" action="{{ route('tenant.overtime.index', $tenant) }}" class="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <form method="GET" action="{{ route('tenant.payroll.overtime.index', $tenant) }}" class="grid grid-cols-1 md:grid-cols-4 gap-4">
                 <div>
                     <label for="date_from" class="block text-sm font-medium text-gray-700 mb-2">Date From</label>
                     <input type="date" id="date_from" name="date_from" value="{{ request('date_from') }}"
@@ -166,7 +166,7 @@
                         </svg>
                         Filter
                     </button>
-                    <a href="{{ route('tenant.overtime.index', $tenant) }}"
+                    <a href="{{ route('tenant.payroll.overtime.index', $tenant) }}"
                        class="flex-1 px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 font-medium transition-colors text-center">
                         Clear
                     </a>
@@ -244,7 +244,7 @@
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
                                 <div class="flex items-center space-x-3">
-                                    <a href="{{ route('tenant.overtime.show', [$tenant, $overtime]) }}"
+                                    <a href="{{ route('tenant.payroll.overtime.show', [$tenant, $overtime]) }}"
                                        class="text-indigo-600 hover:text-indigo-900" title="View Details">
                                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
@@ -253,14 +253,14 @@
                                     </a>
 
                                     @if($overtime->status === 'pending')
-                                        <a href="{{ route('tenant.overtime.edit', [$tenant, $overtime]) }}"
+                                        <a href="{{ route('tenant.payroll.overtime.edit', [$tenant, $overtime]) }}"
                                            class="text-blue-600 hover:text-blue-900" title="Edit">
                                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
                                             </svg>
                                         </a>
 
-                                        <form action="{{ route('tenant.overtime.approve', [$tenant, $overtime]) }}" method="POST" class="inline">
+                                        <form action="{{ route('tenant.payroll.overtime.approve', [$tenant, $overtime]) }}" method="POST" class="inline">
                                             @csrf
                                             <button type="submit" class="text-green-600 hover:text-green-900" title="Approve"
                                                     onclick="return confirm('Approve this overtime record?')">
@@ -270,7 +270,7 @@
                                             </button>
                                         </form>
 
-                                        <form action="{{ route('tenant.overtime.reject', [$tenant, $overtime]) }}" method="POST" class="inline">
+                                        <form action="{{ route('tenant.payroll.overtime.reject', [$tenant, $overtime]) }}" method="POST" class="inline">
                                             @csrf
                                             <button type="submit" class="text-red-600 hover:text-red-900" title="Reject"
                                                     onclick="return confirm('Reject this overtime record?')">
@@ -282,7 +282,7 @@
                                     @endif
 
                                     @if($overtime->status !== 'pending')
-                                        <form action="{{ route('tenant.overtime.destroy', [$tenant, $overtime]) }}" method="POST" class="inline">
+                                        <form action="{{ route('tenant.payroll.overtime.destroy', [$tenant, $overtime]) }}" method="POST" class="inline">
                                             @csrf
                                             @method('DELETE')
                                             <button type="submit" class="text-gray-400 hover:text-red-600" title="Delete"
@@ -312,7 +312,7 @@
                 </svg>
                 <h3 class="text-lg font-medium text-gray-900 mb-2">No Overtime Records Found</h3>
                 <p class="text-gray-500 mb-6">No overtime records match your current filters.</p>
-                <a href="{{ route('tenant.overtime.create', $tenant) }}"
+                <a href="{{ route('tenant.payroll.overtime.create', $tenant) }}"
                    class="inline-flex items-center px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-medium rounded-lg">
                     <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>

@@ -10,7 +10,7 @@
         <div class="px-6 py-4 border-b border-gray-200">
             <div class="flex items-center justify-between">
                 <h3 class="text-lg font-medium text-gray-900">New Overtime Record</h3>
-                <a href="{{ route('tenant.overtime.index', $tenant) }}"
+                <a href="{{ route('tenant.payroll.overtime.index', $tenant) }}"
                    class="text-gray-600 hover:text-gray-900">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
@@ -19,7 +19,7 @@
             </div>
         </div>
 
-        <form action="{{ route('tenant.overtime.store', $tenant) }}" method="POST" class="p-6 space-y-6">
+        <form action="{{ route('tenant.payroll.overtime.store', $tenant) }}" method="POST" class="p-6 space-y-6">
             @csrf
 
             <!-- Employee Selection -->
@@ -174,7 +174,7 @@
 
             <!-- Form Actions -->
             <div class="flex items-center justify-end space-x-3 pt-4 border-t border-gray-200">
-                <a href="{{ route('tenant.overtime.index', $tenant) }}"
+                <a href="{{ route('tenant.payroll.overtime.index', $tenant) }}"
                    class="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 font-medium transition-colors">
                     Cancel
                 </a>

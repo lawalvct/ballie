@@ -136,12 +136,11 @@ class OvertimeController extends Controller
 
             $data['tenant_id'] = $tenantId;
             $data['status'] = 'pending';
-            $data['payment_status'] = 'pending';
 
             // Calculate hours
             $start = \Carbon\Carbon::parse($request->overtime_date . ' ' . $request->start_time);
             $end = \Carbon\Carbon::parse($request->overtime_date . ' ' . $request->end_time);
-            $data['hours'] = $end->diffInHours($start, true);
+            $data['total_hours'] = $end->diffInHours($start, true);
 
             // Multiplier based on type
             $multipliers = [
@@ -230,7 +229,7 @@ class OvertimeController extends Controller
             // Recalculate hours
             $start = \Carbon\Carbon::parse($request->overtime_date . ' ' . $request->start_time);
             $end = \Carbon\Carbon::parse($request->overtime_date . ' ' . $request->end_time);
-            $overtime->hours = $end->diffInHours($start, true);
+            $overtime->total_hours = $end->diffInHours($start, true);
 
             // Update multiplier
             $multipliers = [
@@ -397,11 +396,11 @@ class OvertimeController extends Controller
             $overtimes = $employee->overtimeRecords;
             return [
                 'employee' => $employee,
-                'total_hours' => $overtimes->sum('approved_hours') ?: $overtimes->sum('hours'),
+                'total_hours' => $overtimes->sum('total_hours'),
                 'total_amount' => $overtimes->sum('total_amount'),
                 'record_count' => $overtimes->count(),
-                'paid_amount' => $overtimes->where('payment_status', 'paid')->sum('total_amount'),
-                'unpaid_amount' => $overtimes->where('payment_status', 'pending')->sum('total_amount'),
+                'paid_amount' => $overtimes->where('is_paid', true)->sum('total_amount'),
+                'unpaid_amount' => $overtimes->where('is_paid', false)->sum('total_amount'),
             ];
         })->filter(fn($data) => $data['record_count'] > 0);
 

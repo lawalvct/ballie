@@ -13,7 +13,7 @@
                     <h3 class="text-lg font-medium text-gray-900">Edit Overtime Record</h3>
                     <p class="text-sm text-gray-600 mt-1">{{ $overtime->overtime_number }}</p>
                 </div>
-                <a href="{{ route('tenant.overtime.show', [$tenant, $overtime->id]) }}"
+                <a href="{{ route('tenant.payroll.overtime.show', [$tenant, $overtime->id]) }}"
                    class="text-gray-600 hover:text-gray-900">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
@@ -22,7 +22,7 @@
             </div>
         </div>
 
-        <form action="{{ route('tenant.overtime.update', [$tenant, $overtime->id]) }}" method="POST" class="p-6 space-y-6">
+        <form action="{{ route('tenant.payroll.overtime.update', [$tenant, $overtime->id]) }}" method="POST" class="p-6 space-y-6">
             @csrf
             @method('PUT')
 
@@ -167,7 +167,7 @@
 
             <!-- Form Actions -->
             <div class="flex items-center justify-end space-x-3 pt-4 border-t border-gray-200">
-                <a href="{{ route('tenant.overtime.show', [$tenant, $overtime->id]) }}"
+                <a href="{{ route('tenant.payroll.overtime.show', [$tenant, $overtime->id]) }}"
                    class="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 font-medium transition-colors">
                     Cancel
                 </a>
