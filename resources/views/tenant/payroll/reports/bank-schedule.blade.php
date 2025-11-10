@@ -186,14 +186,23 @@
                                     <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
                                         <div class="flex items-center space-x-2">
                                             <a href="{{ route('tenant.payroll.processing.show', [$tenant, $period]) }}"
-                                               class="text-blue-600 hover:text-blue-900" title="View Details">
+                                               class="text-blue-600 hover:text-blue-900 p-2 hover:bg-blue-50 rounded-lg transition-colors" title="View Details">
                                                 <i class="fas fa-eye"></i>
                                             </a>
                                             @if($period->status === 'approved')
                                                 <a href="{{ route('tenant.payroll.processing.export-bank-file', [$tenant, $period]) }}"
-                                                   class="text-purple-600 hover:text-purple-900" title="Download Bank File">
+                                                   class="text-purple-600 hover:text-purple-900 p-2 hover:bg-purple-50 rounded-lg transition-colors" title="Download Bank File">
                                                     <i class="fas fa-download"></i>
                                                 </a>
+                                                <button onclick="markAsPaid({{ $period->id }}, '{{ $period->name }}')"
+                                                        class="text-green-600 hover:text-green-900 p-2 hover:bg-green-50 rounded-lg transition-colors" title="Mark as Paid">
+                                                    <i class="fas fa-check-circle"></i>
+                                                </button>
+                                            @endif
+                                            @if($period->status === 'paid')
+                                                <span class="text-gray-400 p-2" title="Already Paid">
+                                                    <i class="fas fa-check-double"></i>
+                                                </span>
                                             @endif
                                         </div>
                                     </td>
@@ -237,11 +246,93 @@
                         <p><strong>Purpose:</strong> This report shows all approved payrolls that are ready for bank transfer.</p>
                         <p><strong>Bank File:</strong> Click the download icon to export a CSV file formatted for your bank's bulk payment system.</p>
                         <p><strong>Payment Process:</strong> After downloading the bank file, upload it to your bank's internet banking platform to process the payments.</p>
-                        <p><strong>Status:</strong> Payrolls shown as "Approved" are ready for payment. Once paid, update the status accordingly.</p>
+                        <p><strong>Mark as Paid:</strong> After successfully processing the payment through your bank, click the check icon to mark the payroll as paid.</p>
+                        <p><strong>Status:</strong> Payrolls shown as "Approved" are ready for payment. Once marked as paid, employee payslips will show as "Paid".</p>
                     </div>
                 </div>
             </div>
         </div>
     </div>
 </div>
+
+<!-- Mark as Paid Modal -->
+<div id="markAsPaidModal" class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+    <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-2xl bg-white">
+        <div class="mt-3">
+            <div class="flex items-center justify-center w-12 h-12 mx-auto bg-green-100 rounded-full">
+                <i class="fas fa-check-circle text-green-600 text-2xl"></i>
+            </div>
+            <h3 class="text-lg font-bold text-gray-900 text-center mt-4">Mark Payroll as Paid</h3>
+            <p class="text-sm text-gray-500 text-center mt-2">You are about to mark <span id="periodName" class="font-semibold"></span> as paid.</p>
+
+            <form id="markAsPaidForm" method="POST" class="mt-6 space-y-4">
+                @csrf
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Payment Reference (Optional)</label>
+                    <input type="text" name="payment_reference"
+                           class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                           placeholder="e.g., BANK_TXN_123456">
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Payment Date</label>
+                    <input type="date" name="payment_date"
+                           value="{{ now()->format('Y-m-d') }}"
+                           class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-green-500 focus:border-transparent">
+                </div>
+
+                <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
+                    <p class="text-xs text-yellow-800">
+                        <i class="fas fa-exclamation-triangle mr-1"></i>
+                        This will mark all employee payslips in this period as paid. This action cannot be undone easily.
+                    </p>
+                </div>
+
+                <div class="flex items-center justify-end space-x-3 pt-4">
+                    <button type="button" onclick="closeModal()"
+                            class="px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition-colors">
+                        Cancel
+                    </button>
+                    <button type="submit"
+                            class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors">
+                        <i class="fas fa-check mr-2"></i>Confirm Payment
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+function markAsPaid(periodId, periodName) {
+    const modal = document.getElementById('markAsPaidModal');
+    const form = document.getElementById('markAsPaidForm');
+    const periodNameSpan = document.getElementById('periodName');
+
+    periodNameSpan.textContent = periodName;
+    form.action = `{{ url('') }}/{{ $tenant->slug }}/payroll/processing/${periodId}/mark-paid`;
+
+    modal.classList.remove('hidden');
+}
+
+function closeModal() {
+    const modal = document.getElementById('markAsPaidModal');
+    modal.classList.add('hidden');
+}
+
+// Close modal when clicking outside
+document.getElementById('markAsPaidModal')?.addEventListener('click', function(e) {
+    if (e.target === this) {
+        closeModal();
+    }
+});
+
+// Close modal on Escape key
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+        closeModal();
+    }
+});
+</script>
+
 @endsection

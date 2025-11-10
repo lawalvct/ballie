@@ -1234,7 +1234,7 @@ class PayrollController extends Controller
     public function bankSchedule(Request $request, Tenant $tenant)
     {
         $year = $request->get('year', now()->year);
-        $month = $request->get('month', now()->month);
+        $month = $request->get('month'); // Don't default to current month
         $status = $request->get('status', 'approved'); // approved, paid
 
         // Get payroll periods based on filters
@@ -1246,11 +1246,12 @@ class PayrollController extends Controller
             $query->where('status', $status);
         }
 
-        // Filter by year/month
+        // Filter by year/month - only if month is explicitly provided
         if ($year && $month) {
             $query->whereYear('pay_date', $year)
                   ->whereMonth('pay_date', $month);
-        } elseif ($year) {
+        } elseif ($year && !$month) {
+            // If only year is provided, show all months for that year
             $query->whereYear('pay_date', $year);
         }
 
@@ -1285,5 +1286,81 @@ class PayrollController extends Controller
             'month',
             'status'
         ));
+    }
+
+    /**
+     * Mark payroll period as paid (updates all payroll runs and period status)
+     */
+    public function markPayrollAsPaid(Request $request, Tenant $tenant, PayrollPeriod $period)
+    {
+        // Validate that the period is approved
+        if ($period->status !== 'approved') {
+            return redirect()->back()->with('error', 'Only approved payrolls can be marked as paid.');
+        }
+
+        $validated = $request->validate([
+            'payment_reference' => 'nullable|string|max:255',
+            'payment_date' => 'nullable|date',
+        ]);
+
+        try {
+            DB::transaction(function () use ($period, $validated) {
+                $paymentDate = $validated['payment_date'] ?? now();
+                $reference = $validated['payment_reference'] ?? 'BANK_TRANSFER_' . $period->id . '_' . now()->format('YmdHis');
+
+                // Mark all payroll runs as paid
+                foreach ($period->payrollRuns as $run) {
+                    $run->markAsPaid($reference);
+                }
+
+                // Update period status to paid
+                $period->update([
+                    'status' => 'paid',
+                    'paid_at' => $paymentDate,
+                ]);
+            });
+
+            return redirect()->back()->with('success', 'Payroll marked as paid successfully.');
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', 'Error marking payroll as paid: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Mark individual payroll run as paid
+     */
+    public function markPayslipAsPaid(Request $request, Tenant $tenant, $payrollRunId)
+    {
+        $payrollRun = PayrollRun::whereHas('payrollPeriod', function($query) use ($tenant) {
+                $query->where('tenant_id', $tenant->id);
+            })
+            ->findOrFail($payrollRunId);
+
+        $validated = $request->validate([
+            'payment_reference' => 'nullable|string|max:255',
+        ]);
+
+        try {
+            $reference = $validated['payment_reference'] ?? 'PAYMENT_' . $payrollRunId . '_' . now()->format('YmdHis');
+            $payrollRun->markAsPaid($reference);
+
+            if ($request->wantsJson() || $request->ajax()) {
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Payslip marked as paid successfully.'
+                ]);
+            }
+
+            return redirect()->back()->with('success', 'Payslip marked as paid successfully.');
+        } catch (\Exception $e) {
+            if ($request->wantsJson() || $request->ajax()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Error: ' . $e->getMessage()
+                ], 500);
+            }
+
+            return redirect()->back()->with('error', 'Error marking payslip as paid: ' . $e->getMessage());
+        }
     }
 }

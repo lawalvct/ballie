@@ -641,7 +641,11 @@ Route::prefix('ledger-accounts')->name('ledger-accounts.')->group(function () {
                 Route::get('/{payrollRun}', [PayrollController::class, 'viewPayslip'])->name('view');
                 Route::get('/{payrollRun}/download', [PayrollController::class, 'downloadPayslip'])->name('download');
                 Route::post('/{payrollRun}/email', [PayrollController::class, 'emailPayslip'])->name('email');
+                Route::post('/{payrollRun}/mark-paid', [PayrollController::class, 'markPayslipAsPaid'])->name('mark-paid');
             });
+
+            // Payment Management
+            Route::post('/processing/{period}/mark-paid', [PayrollController::class, 'markPayrollAsPaid'])->name('processing.mark-paid');
 
             // Attendance & Leave Management
             Route::prefix('attendance')->name('attendance.')->group(function () {
