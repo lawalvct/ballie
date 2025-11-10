@@ -27,6 +27,9 @@ class PayrollAccountingService
     {
         $tenantId = $this->payrollPeriod->tenant_id;
 
+        // Ensure default account groups exist
+        $this->ensureAccountGroupsExist($tenantId);
+
         // Get or create essential payroll accounts
         $this->ledgerAccounts = [
             'salary_expense' => $this->getOrCreateAccount($tenantId, 'Salary Expense', 'SAL-EXP', 'expense'),
@@ -39,11 +42,69 @@ class PayrollAccountingService
         ];
     }
 
+        /**
+     * Ensure required account groups exist for payroll accounts
+     */
+    private function ensureAccountGroupsExist(int $tenantId): void
+    {
+        $defaultGroups = [
+            ['name' => 'Current Assets', 'nature' => 'assets', 'code' => 'CA'],
+            ['name' => 'Current Liabilities', 'nature' => 'liabilities', 'code' => 'CL'],
+            ['name' => 'Operating Expenses', 'nature' => 'expenses', 'code' => 'OPEX'],
+        ];
+
+        foreach ($defaultGroups as $group) {
+            \App\Models\AccountGroup::firstOrCreate(
+                [
+                    'tenant_id' => $tenantId,
+                    'code' => $group['code']
+                ],
+                [
+                    'name' => $group['name'],
+                    'nature' => $group['nature'],
+                    'is_active' => true,
+                ]
+            );
+        }
+    }
+
     /**
      * Get or create a ledger account
      */
     private function getOrCreateAccount(int $tenantId, string $name, string $code, string $type): LedgerAccount
     {
+        // Determine the account group based on type
+        $accountGroupCode = match($type) {
+            'asset' => 'CA',          // Current Assets
+            'liability' => 'CL',      // Current Liabilities
+            'expense' => 'OPEX',      // Operating Expenses
+            'income' => 'REV',        // Revenue
+            default => 'CA'
+        };
+
+        $accountGroup = \App\Models\AccountGroup::where('tenant_id', $tenantId)
+            ->where('code', $accountGroupCode)
+            ->first();
+
+        // Fallback: create account group if it doesn't exist
+        if (!$accountGroup) {
+            $groupData = match($accountGroupCode) {
+                'CA' => ['name' => 'Current Assets', 'nature' => 'assets'],
+                'CL' => ['name' => 'Current Liabilities', 'nature' => 'liabilities'],
+                'OPEX' => ['name' => 'Operating Expenses', 'nature' => 'expenses'],
+                'REV' => ['name' => 'Revenue', 'nature' => 'income'],
+                default => ['name' => 'Current Assets', 'nature' => 'assets']
+            };
+
+            $accountGroup = \App\Models\AccountGroup::create([
+                'tenant_id' => $tenantId,
+                'code' => $accountGroupCode,
+                'name' => $groupData['name'],
+                'nature' => $groupData['nature'],
+                'is_active' => true,
+            ]);
+        }
+
         return LedgerAccount::firstOrCreate(
             [
                 'tenant_id' => $tenantId,
@@ -51,12 +112,14 @@ class PayrollAccountingService
             ],
             [
                 'name' => $name,
+                'account_group_id' => $accountGroup->id,
                 'account_type' => $type,
                 'opening_balance' => 0,
                 'current_balance' => 0,
                 'is_active' => true,
                 'is_system_account' => true,
                 'description' => "System generated account for payroll - {$name}",
+                'created_by' => $this->payrollPeriod->created_by ?? auth()->id(),
             ]
         );
     }
@@ -264,14 +327,26 @@ class PayrollAccountingService
      */
     private function getOrCreateVoucherType(string $name, string $code): VoucherType
     {
+        // Generate abbreviation from code (first 2-3 letters)
+        $abbreviation = strtoupper(substr($code, 0, min(3, strlen($code))));
+
         return VoucherType::firstOrCreate(
             [
                 'tenant_id' => $this->payrollPeriod->tenant_id,
-                'code' => $code,
+                'code' => $code
             ],
             [
                 'name' => $name,
+                'abbreviation' => $abbreviation,
                 'description' => "System generated voucher type for {$name}",
+                'numbering_method' => 'auto',
+                'prefix' => $code . '-',
+                'starting_number' => 1,
+                'current_number' => 0,
+                'has_reference' => false,
+                'affects_inventory' => false,
+                'affects_cashbank' => false,
+                'is_system_defined' => true,
                 'is_active' => true,
             ]
         );
