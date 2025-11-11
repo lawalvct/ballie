@@ -13,6 +13,7 @@ class CashRegisterSession extends Model
     use HasFactory, BelongsToTenant;
 
     protected $fillable = [
+        'tenant_id',
         'cash_register_id',
         'user_id',
         'opening_balance',

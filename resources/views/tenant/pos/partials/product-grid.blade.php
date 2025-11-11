@@ -98,8 +98,8 @@
 
                     <!-- Product Image for Grid -->
                     <div>
-                        @if($product->images && $product->images->count() > 0)
-                            <img src="{{ $product->images->first()->image_url }}"
+                        @if($product->image_path)
+                            <img src="{{ Storage::url($product->image_path) }}"
                                  alt="{{ $product->name }}"
                                  class="w-full h-32 object-cover rounded-lg mb-3">
                         @else
@@ -143,8 +143,8 @@
                 <div class="flex items-center p-3 gap-4">
                     <!-- Product Image for List -->
                     <div class="flex-shrink-0">
-                        @if($product->images && $product->images->count() > 0)
-                            <img src="{{ $product->images->first()->image_url }}"
+                        @if($product->image_path)
+                            <img src="{{ Storage::url($product->image_path) }}"
                                  alt="{{ $product->name }}"
                                  class="w-16 h-16 object-cover rounded-lg shadow-sm">
                         @else
