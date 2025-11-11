@@ -221,6 +221,23 @@
                 </div>
                 <p class="text-xs text-rose-200">Issue salary advances and manage loan repayments.</p>
             </a>
+
+            <!-- Employee Announcements Card (NEW) -->
+            <a href="{{ route('tenant.payroll.announcements.index', ['tenant' => $tenant->slug]) }}"
+               class="action-card bg-gradient-to-br from-amber-600 to-amber-800 hover:from-amber-500 hover:to-amber-700 border border-amber-500 rounded-xl p-4 transition-all duration-300 hover:shadow-lg hover:scale-105 group">
+                <div class="flex items-center mb-3">
+                    <div class="w-10 h-10 bg-amber-500 bg-opacity-30 rounded-lg flex items-center justify-center mr-3 group-hover:scale-110 transition-transform duration-300">
+                        <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z"></path>
+                        </svg>
+                    </div>
+                    <div>
+                        <h5 class="font-semibold text-white group-hover:text-amber-200 transition-colors duration-300">Announcements</h5>
+                        <p class="text-xs text-amber-200">Email & SMS</p>
+                    </div>
+                </div>
+                <p class="text-xs text-amber-200">Send notifications to employees via email or SMS.</p>
+            </a>
         </div>
     </div>
 

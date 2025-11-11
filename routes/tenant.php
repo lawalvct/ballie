@@ -719,6 +719,19 @@ Route::prefix('ledger-accounts')->name('ledger-accounts.')->group(function () {
                 Route::post('/assignments/{id}/end', [\App\Http\Controllers\Tenant\ShiftController::class, 'endAssignment'])->name('end-assignment');
                 Route::post('/assignments/bulk', [\App\Http\Controllers\Tenant\ShiftController::class, 'bulkAssign'])->name('bulk-assign');
             });
+
+            // Announcements & Notifications
+            Route::prefix('announcements')->name('announcements.')->group(function () {
+                Route::get('/', [\App\Http\Controllers\Tenant\Payroll\AnnouncementController::class, 'index'])->name('index');
+                Route::get('/create', [\App\Http\Controllers\Tenant\Payroll\AnnouncementController::class, 'create'])->name('create');
+                Route::post('/', [\App\Http\Controllers\Tenant\Payroll\AnnouncementController::class, 'store'])->name('store');
+                Route::get('/{announcement}', [\App\Http\Controllers\Tenant\Payroll\AnnouncementController::class, 'show'])->name('show');
+                Route::get('/{announcement}/edit', [\App\Http\Controllers\Tenant\Payroll\AnnouncementController::class, 'edit'])->name('edit');
+                Route::put('/{announcement}', [\App\Http\Controllers\Tenant\Payroll\AnnouncementController::class, 'update'])->name('update');
+                Route::delete('/{announcement}', [\App\Http\Controllers\Tenant\Payroll\AnnouncementController::class, 'destroy'])->name('destroy');
+                Route::post('/{announcement}/send', [\App\Http\Controllers\Tenant\Payroll\AnnouncementController::class, 'send'])->name('send');
+                Route::post('/preview-recipients', [\App\Http\Controllers\Tenant\Payroll\AnnouncementController::class, 'previewRecipients'])->name('preview-recipients');
+            });
         });
 
         // Admin Management Module

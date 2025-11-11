@@ -120,6 +120,8 @@ class GlobalSearchController extends Controller
             ['name' => 'tenant.payroll.reports.tax-summary', 'title' => 'Tax Summary', 'description' => 'Employee tax summary report', 'icon' => 'fas fa-file-invoice-dollar', 'category' => 'Payroll'],
             ['name' => 'tenant.payroll.reports.employee-summary', 'title' => 'Employee Summary', 'description' => 'Employee payroll statistics', 'icon' => 'fas fa-user-chart', 'category' => 'Payroll'],
             ['name' => 'tenant.payroll.reports.bank-schedule', 'title' => 'Bank Payment Schedule', 'description' => 'Bank payment schedule for payroll', 'icon' => 'fas fa-university', 'category' => 'Payroll'],
+            ['name' => 'tenant.payroll.announcements.index', 'title' => 'Employee Announcements', 'description' => 'Send announcements to employees via email/SMS', 'icon' => 'fas fa-bullhorn', 'category' => 'Payroll'],
+            ['name' => 'tenant.payroll.announcements.create', 'title' => 'Send Announcement', 'description' => 'Create and send announcement to employees', 'icon' => 'fas fa-paper-plane', 'category' => 'Payroll'],
 
             // Dashboard
             ['name' => 'tenant.dashboard', 'title' => 'Dashboard', 'description' => 'Main dashboard overview', 'icon' => 'fas fa-tachometer-alt', 'category' => 'Dashboard'],
@@ -368,6 +370,15 @@ class GlobalSearchController extends Controller
                 'url' => route('tenant.payroll.departments.index', ['tenant' => tenant()->slug]),
                 'icon' => 'fas fa-building',
                 'color' => 'blue',
+            ];
+        }
+
+        if (str_contains($query, 'announcement') || str_contains($query, 'notify') || str_contains($query, 'communication')) {
+            $actions[] = [
+                'title' => 'Send Announcement',
+                'url' => route('tenant.payroll.announcements.create', ['tenant' => tenant()->slug]),
+                'icon' => 'fas fa-bullhorn',
+                'color' => 'orange',
             ];
         }
 
