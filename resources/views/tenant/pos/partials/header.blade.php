@@ -6,7 +6,7 @@
             </div>
             <div>
                 <div class="flex items-center gap-2">
-                    <span class="text-xs px-2 py-0.5 bg-green-500 text-white rounded-full font-medium">Enhanced</span>
+                    {{-- <span class="text-xs px-2 py-0.5 bg-green-500 text-white rounded-full font-medium">Enhanced</span> --}}
                 </div>
                 @if(isset($activeSession))
                     <p class="text-xs md:text-sm text-gray-600 dark:text-gray-400">{{ $activeSession->cashRegister->name }}</p>

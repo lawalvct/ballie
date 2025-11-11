@@ -68,7 +68,7 @@
         @include('tenant.pos.partials.header')
 
         <!-- Feature Hint Banner (dismissible) -->
-        <div x-data="{ showHint: !localStorage.getItem('pos_hint_dismissed') }"
+        {{-- <div x-data="{ showHint: !localStorage.getItem('pos_hint_dismissed') }"
              x-show="showHint"
              x-transition
              class="mx-4 mt-4 bg-gradient-to-r from-purple-50 to-indigo-50 dark:from-purple-900/20 dark:to-indigo-900/20 border border-purple-200 dark:border-purple-800 rounded-xl p-4 shadow-sm">
@@ -100,7 +100,7 @@
                     <i class="fas fa-times"></i>
                 </button>
             </div>
-        </div>
+        </div> --}}
 
         @if(!isset($activeSession))
             @include('tenant.pos.partials.no-session')

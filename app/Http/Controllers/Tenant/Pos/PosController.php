@@ -315,8 +315,8 @@ class PosController extends Controller
         // Update cash register current balance
         $activeSession->cashRegister->update(['current_balance' => $validated['closing_balance']]);
 
-        return redirect()->route('tenant.pos.register-session', ['tenant' => $tenant->slug])
-            ->with('success', 'Cash register session closed successfully.');
+        return redirect()->route('tenant.pos.index', ['tenant' => $tenant->slug])
+            ->with('success', 'Cash register session closed successfully. Please open a new session to continue.');
     }
 
     private function getActiveCashRegisterSession($tenant)

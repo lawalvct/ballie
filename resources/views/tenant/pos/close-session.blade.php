@@ -272,7 +272,7 @@
                     </div>
 
                     <!-- Expected vs Actual -->
-                    <div class="bg-gradient-to-br from-gray-50 to-gray-100 rounded-2xl p-6 border border-gray-200">
+                    <div id="verification-section" class="bg-gradient-to-br from-gray-50 to-gray-100 rounded-2xl p-6 border border-gray-200">
                         <h3 class="font-bold text-gray-900 mb-4 text-lg flex items-center">
                             <i class="fas fa-balance-scale text-gray-600 mr-2"></i>
                             Balance Verification
@@ -309,12 +309,13 @@
                     <label for="closing_notes" class="flex items-center text-sm font-bold text-gray-700 mb-3">
                         <i class="fas fa-sticky-note text-gray-600 mr-2"></i>
                         Closing Notes
+                        <span class="text-xs text-gray-500 font-normal ml-2">(Required if there's a difference)</span>
                     </label>
                     <textarea name="closing_notes"
                               id="closing_notes"
                               rows="4"
                               class="w-full px-6 py-4 border-2 border-gray-300 rounded-2xl focus:ring-4 focus:ring-red-500/20 focus:border-red-500 bg-gray-50 transition-all duration-200 resize-none"
-                              placeholder="Any notes about discrepancies, issues, or observations...">{{ old('closing_notes') }}</textarea>
+                              placeholder="Any notes about discrepancies, issues, or observations...&#10;&#10;Examples:&#10;• 'Customer refund of ₦500 not recorded'&#10;• 'Change given incorrectly on transaction #1234'&#10;• 'Found ₦1000 from previous session'">{{ old('closing_notes') }}</textarea>
                     @error('closing_notes')
                         <p class="mt-2 text-sm text-red-600 flex items-center">
                             <i class="fas fa-exclamation-triangle mr-1"></i>
@@ -323,6 +324,42 @@
                     @enderror
                 </div>
 
+                <!-- Session Performance Summary -->
+                @if($activeSession->sales->count() > 0)
+                    <div class="mt-8 bg-gradient-to-br from-indigo-50 to-purple-100 border-2 border-indigo-200 rounded-2xl p-6">
+                        <div class="flex items-center justify-between mb-6">
+                            <h3 class="text-indigo-900 font-bold text-lg flex items-center">
+                                <i class="fas fa-chart-bar text-indigo-700 mr-3"></i>
+                                Session Performance Summary
+                            </h3>
+                            <span class="text-xs text-indigo-600 bg-indigo-200 px-3 py-1 rounded-full font-medium">REVIEW</span>
+                        </div>
+
+                        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                            <div class="bg-white rounded-xl p-4 border border-indigo-200">
+                                <p class="text-indigo-600 text-sm mb-1">Total Transactions</p>
+                                <p class="text-3xl font-bold text-indigo-900">{{ $activeSession->sales->count() }}</p>
+                            </div>
+                            <div class="bg-white rounded-xl p-4 border border-indigo-200">
+                                <p class="text-indigo-600 text-sm mb-1">Total Revenue</p>
+                                <p class="text-3xl font-bold text-indigo-900">₦{{ number_format($activeSession->total_sales, 0) }}</p>
+                            </div>
+                            <div class="bg-white rounded-xl p-4 border border-indigo-200">
+                                <p class="text-indigo-600 text-sm mb-1">Session Duration</p>
+                                <p class="text-3xl font-bold text-indigo-900">{{ $activeSession->opened_at->diffInHours(now()) }}h</p>
+                            </div>
+                            <div class="bg-white rounded-xl p-4 border border-indigo-200">
+                                <p class="text-indigo-600 text-sm mb-1">Sales Per Hour</p>
+                                <p class="text-3xl font-bold text-indigo-900">
+                                    {{ $activeSession->opened_at->diffInHours(now()) > 0
+                                        ? number_format($activeSession->sales->count() / $activeSession->opened_at->diffInHours(now()), 1)
+                                        : $activeSession->sales->count() }}
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                @endif
+
                 <!-- Cash Counting Helper -->
                 <div class="mt-8 bg-gradient-to-br from-blue-50 to-indigo-100 border-2 border-blue-200 rounded-2xl p-6">
                     <div class="flex items-center justify-between mb-6">
@@ -330,42 +367,55 @@
                             <i class="fas fa-calculator text-blue-700 mr-3"></i>
                             Cash Counting Assistant
                         </h3>
-                        <span class="text-xs text-blue-600 bg-blue-200 px-3 py-1 rounded-full font-medium">HELPER</span>
+                        <div class="flex items-center space-x-2">
+                            <span class="text-xs text-blue-600 bg-blue-200 px-3 py-1 rounded-full font-medium">HELPER</span>
+                            <button type="button" onclick="clearDenominations()" class="text-xs text-blue-600 hover:text-blue-800 bg-blue-100 hover:bg-blue-200 px-3 py-1 rounded-full font-medium transition-colors">
+                                <i class="fas fa-redo mr-1"></i>Reset
+                            </button>
+                        </div>
                     </div>
-                    <p class="text-blue-700 text-sm mb-6">Count each denomination and let us calculate the total for you</p>
+                    <p class="text-blue-700 text-sm mb-6">Count each denomination and let us calculate the total for you. Tab through fields for faster counting.</p>
 
                     <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-                        <div class="bg-white rounded-xl p-4 border border-blue-200 hover:shadow-md transition-all duration-200">
+                        <div class="bg-white rounded-xl p-4 border border-blue-200 hover:shadow-md transition-all duration-200 hover:border-blue-400">
                             <label class="block text-blue-800 font-bold mb-2 text-center">₦1000</label>
-                            <input type="number" id="notes-1000" min="0" class="w-full px-3 py-2 border-2 border-blue-300 rounded-lg text-center font-bold focus:ring-2 focus:ring-blue-500 focus:border-blue-500" onchange="calculateTotal()" placeholder="0">
+                            <input type="number" id="notes-1000" min="0" class="w-full px-3 py-2 border-2 border-blue-300 rounded-lg text-center font-bold focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all" onchange="calculateTotal()" placeholder="0" tabindex="1">
+                            <p class="text-xs text-blue-600 text-center mt-2" id="total-1000">₦0</p>
                         </div>
-                        <div class="bg-white rounded-xl p-4 border border-blue-200 hover:shadow-md transition-all duration-200">
+                        <div class="bg-white rounded-xl p-4 border border-blue-200 hover:shadow-md transition-all duration-200 hover:border-blue-400">
                             <label class="block text-blue-800 font-bold mb-2 text-center">₦500</label>
-                            <input type="number" id="notes-500" min="0" class="w-full px-3 py-2 border-2 border-blue-300 rounded-lg text-center font-bold focus:ring-2 focus:ring-blue-500 focus:border-blue-500" onchange="calculateTotal()" placeholder="0">
+                            <input type="number" id="notes-500" min="0" class="w-full px-3 py-2 border-2 border-blue-300 rounded-lg text-center font-bold focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all" onchange="calculateTotal()" placeholder="0" tabindex="2">
+                            <p class="text-xs text-blue-600 text-center mt-2" id="total-500">₦0</p>
                         </div>
-                        <div class="bg-white rounded-xl p-4 border border-blue-200 hover:shadow-md transition-all duration-200">
+                        <div class="bg-white rounded-xl p-4 border border-blue-200 hover:shadow-md transition-all duration-200 hover:border-blue-400">
                             <label class="block text-blue-800 font-bold mb-2 text-center">₦200</label>
-                            <input type="number" id="notes-200" min="0" class="w-full px-3 py-2 border-2 border-blue-300 rounded-lg text-center font-bold focus:ring-2 focus:ring-blue-500 focus:border-blue-500" onchange="calculateTotal()" placeholder="0">
+                            <input type="number" id="notes-200" min="0" class="w-full px-3 py-2 border-2 border-blue-300 rounded-lg text-center font-bold focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all" onchange="calculateTotal()" placeholder="0" tabindex="3">
+                            <p class="text-xs text-blue-600 text-center mt-2" id="total-200">₦0</p>
                         </div>
-                        <div class="bg-white rounded-xl p-4 border border-blue-200 hover:shadow-md transition-all duration-200">
+                        <div class="bg-white rounded-xl p-4 border border-blue-200 hover:shadow-md transition-all duration-200 hover:border-blue-400">
                             <label class="block text-blue-800 font-bold mb-2 text-center">₦100</label>
-                            <input type="number" id="notes-100" min="0" class="w-full px-3 py-2 border-2 border-blue-300 rounded-lg text-center font-bold focus:ring-2 focus:ring-blue-500 focus:border-blue-500" onchange="calculateTotal()" placeholder="0">
+                            <input type="number" id="notes-100" min="0" class="w-full px-3 py-2 border-2 border-blue-300 rounded-lg text-center font-bold focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all" onchange="calculateTotal()" placeholder="0" tabindex="4">
+                            <p class="text-xs text-blue-600 text-center mt-2" id="total-100">₦0</p>
                         </div>
-                        <div class="bg-white rounded-xl p-4 border border-blue-200 hover:shadow-md transition-all duration-200">
+                        <div class="bg-white rounded-xl p-4 border border-blue-200 hover:shadow-md transition-all duration-200 hover:border-blue-400">
                             <label class="block text-blue-800 font-bold mb-2 text-center">₦50</label>
-                            <input type="number" id="notes-50" min="0" class="w-full px-3 py-2 border-2 border-blue-300 rounded-lg text-center font-bold focus:ring-2 focus:ring-blue-500 focus:border-blue-500" onchange="calculateTotal()" placeholder="0">
+                            <input type="number" id="notes-50" min="0" class="w-full px-3 py-2 border-2 border-blue-300 rounded-lg text-center font-bold focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all" onchange="calculateTotal()" placeholder="0" tabindex="5">
+                            <p class="text-xs text-blue-600 text-center mt-2" id="total-50">₦0</p>
                         </div>
-                        <div class="bg-white rounded-xl p-4 border border-blue-200 hover:shadow-md transition-all duration-200">
+                        <div class="bg-white rounded-xl p-4 border border-blue-200 hover:shadow-md transition-all duration-200 hover:border-blue-400">
                             <label class="block text-blue-800 font-bold mb-2 text-center">₦20</label>
-                            <input type="number" id="notes-20" min="0" class="w-full px-3 py-2 border-2 border-blue-300 rounded-lg text-center font-bold focus:ring-2 focus:ring-blue-500 focus:border-blue-500" onchange="calculateTotal()" placeholder="0">
+                            <input type="number" id="notes-20" min="0" class="w-full px-3 py-2 border-2 border-blue-300 rounded-lg text-center font-bold focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all" onchange="calculateTotal()" placeholder="0" tabindex="6">
+                            <p class="text-xs text-blue-600 text-center mt-2" id="total-20">₦0</p>
                         </div>
-                        <div class="bg-white rounded-xl p-4 border border-blue-200 hover:shadow-md transition-all duration-200">
+                        <div class="bg-white rounded-xl p-4 border border-blue-200 hover:shadow-md transition-all duration-200 hover:border-blue-400">
                             <label class="block text-blue-800 font-bold mb-2 text-center">₦10</label>
-                            <input type="number" id="notes-10" min="0" class="w-full px-3 py-2 border-2 border-blue-300 rounded-lg text-center font-bold focus:ring-2 focus:ring-blue-500 focus:border-blue-500" onchange="calculateTotal()" placeholder="0">
+                            <input type="number" id="notes-10" min="0" class="w-full px-3 py-2 border-2 border-blue-300 rounded-lg text-center font-bold focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all" onchange="calculateTotal()" placeholder="0" tabindex="7">
+                            <p class="text-xs text-blue-600 text-center mt-2" id="total-10">₦0</p>
                         </div>
-                        <div class="bg-white rounded-xl p-4 border border-blue-200 hover:shadow-md transition-all duration-200">
+                        <div class="bg-white rounded-xl p-4 border border-blue-200 hover:shadow-md transition-all duration-200 hover:border-blue-400">
                             <label class="block text-blue-800 font-bold mb-2 text-center">₦5</label>
-                            <input type="number" id="notes-5" min="0" class="w-full px-3 py-2 border-2 border-blue-300 rounded-lg text-center font-bold focus:ring-2 focus:ring-blue-500 focus:border-blue-500" onchange="calculateTotal()" placeholder="0">
+                            <input type="number" id="notes-5" min="0" class="w-full px-3 py-2 border-2 border-blue-300 rounded-lg text-center font-bold focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all" onchange="calculateTotal()" placeholder="0" tabindex="8">
+                            <p class="text-xs text-blue-600 text-center mt-2" id="total-5">₦0</p>
                         </div>
                     </div>
 
@@ -374,9 +424,22 @@
                             <span class="text-blue-800 font-bold text-lg">Calculated Total:</span>
                             <span id="helper-total" class="text-blue-900 font-black text-3xl">₦0</span>
                         </div>
-                        <button type="button" onclick="useHelperTotal()" class="mt-4 w-full bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white px-6 py-3 rounded-xl font-bold transition-all duration-200 flex items-center justify-center space-x-2 shadow-lg">
+
+                        <!-- Breakdown Section -->
+                        <div id="breakdown-section" class="mt-4 pt-4 border-t border-blue-200 hidden">
+                            <div class="flex items-center justify-between mb-2">
+                                <span class="text-blue-700 font-semibold text-sm">Breakdown:</span>
+                                <button type="button" onclick="document.getElementById('breakdown-section').classList.add('hidden')" class="text-blue-500 hover:text-blue-700">
+                                    <i class="fas fa-times"></i>
+                                </button>
+                            </div>
+                            <div id="breakdown-list" class="space-y-1"></div>
+                        </div>
+
+                        <button type="button" onclick="useHelperTotal()" class="mt-4 w-full bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white px-6 py-3 rounded-xl font-bold transition-all duration-200 flex items-center justify-center space-x-2 shadow-lg hover:shadow-xl transform hover:scale-105">
                             <i class="fas fa-arrow-up"></i>
                             <span>Use This Amount</span>
+                            <span class="text-xs bg-blue-500 px-2 py-1 rounded-full ml-2">Alt+U</span>
                         </button>
                     </div>
                 </div>
@@ -384,12 +447,17 @@
                 <!-- Action Buttons -->
                 <div class="mt-10 space-y-6">
                     <!-- Top navigation link -->
-                    <div class="flex items-center justify-center">
+                    <div class="flex items-center justify-between">
                         <a href="{{ route('tenant.pos.index', ['tenant' => $tenant->slug]) }}"
                            class="inline-flex items-center text-gray-600 hover:text-gray-800 font-medium transition-colors duration-200 px-4 py-2 rounded-xl hover:bg-gray-100">
                             <i class="fas fa-arrow-left mr-2"></i>
                             Back to POS
                         </a>
+                        <button type="button" onclick="printSessionSummary()"
+                                class="inline-flex items-center text-blue-600 hover:text-blue-800 font-medium transition-colors duration-200 px-4 py-2 rounded-xl hover:bg-blue-100">
+                            <i class="fas fa-print mr-2"></i>
+                            Print Summary
+                        </button>
                     </div>
 
                     <!-- Main action buttons -->
@@ -399,12 +467,14 @@
                                 class="flex-1 bg-gradient-to-r from-gray-400 to-gray-500 hover:from-gray-500 hover:to-gray-600 text-white px-8 py-4 rounded-2xl font-bold text-lg transition-all duration-200 flex items-center justify-center space-x-3 shadow-lg hover:shadow-xl border border-gray-300">
                             <i class="fas fa-eraser"></i>
                             <span>Clear Form</span>
+                            <span class="text-xs bg-gray-600 px-2 py-1 rounded-full ml-2">Alt+C</span>
                         </button>
 
                         <button type="submit"
                                 class="flex-1 bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white px-8 py-4 rounded-2xl font-bold text-lg transition-all duration-200 flex items-center justify-center space-x-3 shadow-lg hover:shadow-xl border border-red-500 transform hover:scale-105">
                             <i class="fas fa-lock"></i>
                             <span>Close Session</span>
+                            <span class="text-xs bg-red-800 px-2 py-1 rounded-full ml-2">Alt+S</span>
                         </button>
                     </div>
                 </div>
@@ -415,31 +485,93 @@
 
 <script>
 const expectedBalance = {{ $activeSession->opening_balance + $activeSession->total_cash_sales }};
+let helperCalculatedTotal = 0;
 
 function calculateTotal() {
     const denominations = [1000, 500, 200, 100, 50, 20, 10, 5];
     let total = 0;
+    let breakdown = [];
 
     denominations.forEach(denom => {
         const count = parseInt(document.getElementById(`notes-${denom}`).value) || 0;
-        total += count * denom;
+        const amount = count * denom;
+
+        // Update individual denomination total
+        const totalEl = document.getElementById(`total-${denom}`);
+        if (totalEl) {
+            totalEl.textContent = `₦${amount.toLocaleString()}`;
+            totalEl.className = count > 0 ? 'text-xs text-blue-700 font-bold text-center mt-2' : 'text-xs text-blue-600 text-center mt-2';
+        }
+
+        if (count > 0) {
+            total += amount;
+            breakdown.push(`₦${denom} × ${count} = ₦${amount.toLocaleString()}`);
+        }
     });
 
-    document.getElementById('helper-total').textContent = `₦${total.toFixed(2)}`;
+    helperCalculatedTotal = total;
+    document.getElementById('helper-total').textContent = `₦${total.toLocaleString()}`;
+
+    // Show breakdown tooltip if there are items
+    updateBreakdown(breakdown);
+}
+
+function clearDenominations() {
+    const denominations = [1000, 500, 200, 100, 50, 20, 10, 5];
+    denominations.forEach(denom => {
+        document.getElementById(`notes-${denom}`).value = '';
+        const totalEl = document.getElementById(`total-${denom}`);
+        if (totalEl) {
+            totalEl.textContent = '₦0';
+            totalEl.className = 'text-xs text-blue-600 text-center mt-2';
+        }
+    });
+
+    helperCalculatedTotal = 0;
+    document.getElementById('helper-total').textContent = '₦0';
+    document.getElementById('breakdown-section').classList.add('hidden');
+    showNotification('Denominations cleared', 'info');
+}
+
+function updateBreakdown(breakdown) {
+    const breakdownEl = document.getElementById('breakdown-list');
+    if (breakdown.length > 0) {
+        breakdownEl.innerHTML = breakdown.map(item =>
+            `<div class="flex items-center text-sm text-blue-700">
+                <i class="fas fa-check-circle text-blue-500 mr-2 text-xs"></i>
+                ${item}
+            </div>`
+        ).join('');
+        document.getElementById('breakdown-section').classList.remove('hidden');
+    } else {
+        document.getElementById('breakdown-section').classList.add('hidden');
+    }
 }
 
 function useHelperTotal() {
-    const helperTotal = document.getElementById('helper-total').textContent.replace('₦', '');
-    document.getElementById('closing_balance').value = parseFloat(helperTotal).toFixed(2);
+    if (helperCalculatedTotal === 0) {
+        showNotification('Please count your cash first', 'warning');
+        return;
+    }
+
+    document.getElementById('closing_balance').value = helperCalculatedTotal.toFixed(2);
     updateDifference();
+    showNotification('Amount applied successfully!', 'success');
+
+    // Scroll to verification section
+    document.getElementById('verification-section').scrollIntoView({ behavior: 'smooth', block: 'center' });
 }
 
 function updateDifference() {
     const closingBalance = parseFloat(document.getElementById('closing_balance').value) || 0;
     const difference = closingBalance - expectedBalance;
 
-    document.getElementById('actual-count').textContent = `₦${closingBalance.toFixed(2)}`;
-    document.getElementById('difference-display').textContent = `₦${Math.abs(difference).toFixed(2)}`;
+    document.getElementById('actual-count').textContent = `₦${closingBalance.toLocaleString()}`;
+    document.getElementById('difference-display').textContent = `₦${Math.abs(difference).toLocaleString()}`;
+
+    // Update status icon and text
+    const statusIcon = document.getElementById('status-icon');
+    const statusText = document.getElementById('status-text');
 
     // Show/hide difference indicators
     const indicator = document.getElementById('difference-indicator');
@@ -450,23 +582,49 @@ function updateDifference() {
     // Hide all first
     [positive, negative, exact].forEach(el => el.classList.add('hidden'));
 
-    if (Math.abs(difference) < 0.01) {
-        exact.classList.remove('hidden');
-        document.getElementById('difference-display').className = 'text-green-600 font-bold';
-    } else if (difference > 0) {
-        positive.classList.remove('hidden');
-        document.getElementById('difference-amount-positive').textContent = Math.abs(difference).toFixed(2);
-        document.getElementById('difference-display').className = 'text-green-600 font-bold';
-    } else {
-        negative.classList.remove('hidden');
-        document.getElementById('difference-amount-negative').textContent = Math.abs(difference).toFixed(2);
-        document.getElementById('difference-display').className = 'text-red-600 font-bold';
+    if (closingBalance === 0) {
+        indicator.classList.add('hidden');
+        statusIcon.innerHTML = '<i class="fas fa-hourglass-half text-gray-500 text-2xl"></i>';
+        statusIcon.className = 'w-16 h-16 bg-gray-200 rounded-full flex items-center justify-center mx-auto mb-3';
+        statusText.textContent = 'Enter cash count to verify';
+        statusText.className = 'text-gray-600 font-medium';
+        document.getElementById('difference-display').className = 'font-bold text-2xl text-gray-400';
+        return;
     }
 
     indicator.classList.remove('hidden');
+
+    if (Math.abs(difference) < 0.01) {
+        exact.classList.remove('hidden');
+        document.getElementById('difference-display').className = 'font-bold text-2xl text-green-600';
+        statusIcon.innerHTML = '<i class="fas fa-check-circle text-green-600 text-2xl"></i>';
+        statusIcon.className = 'w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-3 animate-pulse';
+        statusText.textContent = 'Perfect match!';
+        statusText.className = 'text-green-600 font-bold';
+    } else if (difference > 0) {
+        positive.classList.remove('hidden');
+        document.getElementById('difference-amount-positive').textContent = Math.abs(difference).toLocaleString();
+        document.getElementById('difference-display').className = 'font-bold text-2xl text-green-600';
+        statusIcon.innerHTML = '<i class="fas fa-arrow-up text-green-600 text-2xl"></i>';
+        statusIcon.className = 'w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-3';
+        statusText.textContent = 'Cash overage detected';
+        statusText.className = 'text-green-600 font-semibold';
+    } else {
+        negative.classList.remove('hidden');
+        document.getElementById('difference-amount-negative').textContent = Math.abs(difference).toLocaleString();
+        document.getElementById('difference-display').className = 'font-bold text-2xl text-red-600';
+        statusIcon.innerHTML = '<i class="fas fa-arrow-down text-red-600 text-2xl"></i>';
+        statusIcon.className = 'w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-3';
+        statusText.textContent = 'Cash shortage detected';
+        statusText.className = 'text-red-600 font-semibold';
+    }
 }
 
 function clearForm() {
+    if (!confirm('Are you sure you want to clear all entered data?')) {
+        return;
+    }
+
     document.getElementById('closing_balance').value = '';
     document.getElementById('closing_notes').value = '';
 
@@ -476,15 +634,277 @@ function clearForm() {
         document.getElementById(`notes-${denom}`).value = '';
     });
 
-    document.getElementById('helper-total').textContent = '₦0.00';
+    helperCalculatedTotal = 0;
+    document.getElementById('helper-total').textContent = '₦0';
+    document.getElementById('breakdown-section').classList.add('hidden');
     document.getElementById('difference-indicator').classList.add('hidden');
-    document.getElementById('actual-count').textContent = '₦0.00';
-    document.getElementById('difference-display').textContent = '₦0.00';
+    document.getElementById('actual-count').textContent = '₦0';
+    document.getElementById('difference-display').textContent = '₦0';
+
+    // Reset status
+    const statusIcon = document.getElementById('status-icon');
+    const statusText = document.getElementById('status-text');
+    statusIcon.innerHTML = '<i class="fas fa-hourglass-half text-gray-500 text-2xl"></i>';
+    statusIcon.className = 'w-16 h-16 bg-gray-200 rounded-full flex items-center justify-center mx-auto mb-3';
+    statusText.textContent = 'Enter cash count to verify';
+    statusText.className = 'text-gray-600 font-medium';
+
+    showNotification('Form cleared', 'info');
 }
 
-// Add event listener for closing balance input
+function showNotification(message, type = 'info') {
+    const notification = document.createElement('div');
+    const colors = {
+        success: 'bg-green-500',
+        error: 'bg-red-500',
+        warning: 'bg-yellow-500',
+        info: 'bg-blue-500'
+    };
+
+    const icons = {
+        success: 'fa-check-circle',
+        error: 'fa-exclamation-circle',
+        warning: 'fa-exclamation-triangle',
+        info: 'fa-info-circle'
+    };
+
+    notification.className = `fixed top-4 right-4 ${colors[type]} text-white px-6 py-4 rounded-xl shadow-2xl flex items-center space-x-3 z-50 animate-slide-in`;
+    notification.innerHTML = `
+        <i class="fas ${icons[type]} text-xl"></i>
+        <span class="font-semibold">${message}</span>
+    `;
+
+    document.body.appendChild(notification);
+
+    setTimeout(() => {
+        notification.style.opacity = '0';
+        notification.style.transform = 'translateX(100%)';
+        setTimeout(() => notification.remove(), 300);
+    }, 3000);
+}
+
+function validateAndSubmit(event) {
+    const closingBalance = parseFloat(document.getElementById('closing_balance').value) || 0;
+    const difference = closingBalance - expectedBalance;
+
+    if (closingBalance === 0) {
+        event.preventDefault();
+        showNotification('Please enter the actual cash count', 'error');
+        document.getElementById('closing_balance').focus();
+        return false;
+    }
+
+    // If there's a significant difference, confirm
+    if (Math.abs(difference) > 100) {
+        event.preventDefault();
+        const confirmMsg = difference > 0
+            ? `You have ₦${Math.abs(difference).toLocaleString()} MORE than expected. Are you sure this is correct?`
+            : `You have ₦${Math.abs(difference).toLocaleString()} LESS than expected. Are you sure this is correct?`;
+
+        if (confirm(confirmMsg + '\n\nClick OK to close the session, or Cancel to recount.')) {
+            event.target.submit();
+        }
+        return false;
+    }
+
+    return true;
+}
+
+// Keyboard shortcuts
+function setupKeyboardShortcuts() {
+    document.addEventListener('keydown', function(e) {
+        // Alt + C to clear form
+        if (e.altKey && e.key === 'c') {
+            e.preventDefault();
+            clearForm();
+        }
+
+        // Alt + U to use helper total
+        if (e.altKey && e.key === 'u') {
+            e.preventDefault();
+            useHelperTotal();
+        }
+
+        // Alt + S to submit (if balance is entered)
+        if (e.altKey && e.key === 's') {
+            e.preventDefault();
+            const closingBalance = parseFloat(document.getElementById('closing_balance').value) || 0;
+            if (closingBalance > 0) {
+                document.querySelector('form').submit();
+            }
+        }
+
+        // Alt + P to print summary
+        if (e.altKey && e.key === 'p') {
+            e.preventDefault();
+            printSessionSummary();
+        }
+    });
+}
+
+function printSessionSummary() {
+    const printContent = `
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <title>Session Summary - {{ $activeSession->cashRegister->name }}</title>
+            <style>
+                body { font-family: Arial, sans-serif; padding: 20px; }
+                .header { text-align: center; margin-bottom: 30px; border-bottom: 2px solid #333; padding-bottom: 20px; }
+                .info-row { display: flex; justify-content: space-between; margin: 10px 0; padding: 8px; background: #f5f5f5; }
+                .section { margin: 20px 0; }
+                .section-title { font-weight: bold; font-size: 18px; margin: 15px 0; border-bottom: 1px solid #999; padding-bottom: 5px; }
+                .amount { font-weight: bold; }
+                .total { font-size: 20px; margin: 20px 0; padding: 15px; background: #e3f2fd; border-left: 4px solid #2196f3; }
+                table { width: 100%; border-collapse: collapse; margin: 10px 0; }
+                th, td { padding: 8px; text-align: left; border-bottom: 1px solid #ddd; }
+                th { background: #f5f5f5; font-weight: bold; }
+                .footer { margin-top: 40px; text-align: center; font-size: 12px; color: #666; }
+                @media print {
+                    body { padding: 0; }
+                    .no-print { display: none; }
+                }
+            </style>
+        </head>
+        <body>
+            <div class="header">
+                <h1>{{ $tenant->name }}</h1>
+                <h2>Cash Register Session Summary</h2>
+                <p><strong>Register:</strong> {{ $activeSession->cashRegister->name }}</p>
+                <p><strong>Date:</strong> {{ $activeSession->opened_at->format('F d, Y') }}</p>
+                <p><strong>Session Start:</strong> {{ $activeSession->opened_at->format('H:i') }} |
+                   <strong>Duration:</strong> {{ $activeSession->opened_at->diffForHumans(null, true) }}</p>
+            </div>
+
+            <div class="section">
+                <div class="section-title">Session Details</div>
+                <div class="info-row">
+                    <span>Opening Balance:</span>
+                    <span class="amount">₦{{ number_format($activeSession->opening_balance, 2) }}</span>
+                </div>
+                <div class="info-row">
+                    <span>Total Sales ({{ $activeSession->sales->count() }} transactions):</span>
+                    <span class="amount">₦{{ number_format($activeSession->total_sales, 2) }}</span>
+                </div>
+                <div class="info-row">
+                    <span>Cash Sales:</span>
+                    <span class="amount">₦{{ number_format($activeSession->total_cash_sales, 2) }}</span>
+                </div>
+                <div class="info-row">
+                    <span>Card/Other Sales:</span>
+                    <span class="amount">₦{{ number_format($activeSession->total_sales - $activeSession->total_cash_sales, 2) }}</span>
+                </div>
+            </div>
+
+            <div class="total">
+                <div style="display: flex; justify-content: space-between;">
+                    <span>Expected Cash in Drawer:</span>
+                    <span class="amount">₦{{ number_format($activeSession->opening_balance + $activeSession->total_cash_sales, 2) }}</span>
+                </div>
+            </div>
+
+            @if($activeSession->sales->count() > 0)
+            <div class="section">
+                <div class="section-title">Recent Transactions (Last 10)</div>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Time</th>
+                            <th>Sale #</th>
+                            <th>Customer</th>
+                            <th>Amount</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach($activeSession->sales->take(10) as $sale)
+                        <tr>
+                            <td>{{ $sale->created_at->format('H:i') }}</td>
+                            <td>{{ $sale->sale_number }}</td>
+                            <td>
+                                @if($sale->customer)
+                                    {{ $sale->customer->customer_type === 'individual'
+                                        ? $sale->customer->first_name . ' ' . $sale->customer->last_name
+                                        : $sale->customer->company_name }}
+                                @else
+                                    Walk-in
+                                @endif
+                            </td>
+                            <td>₦{{ number_format($sale->total_amount, 2) }}</td>
+                        </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="section">
+                <div class="section-title">Performance Metrics</div>
+                <div class="info-row">
+                    <span>Average Transaction Value:</span>
+                    <span class="amount">₦{{ number_format($activeSession->total_sales / $activeSession->sales->count(), 2) }}</span>
+                </div>
+                <div class="info-row">
+                    <span>Sales Per Hour:</span>
+                    <span class="amount">
+                        {{ $activeSession->opened_at->diffInHours(now()) > 0
+                            ? number_format($activeSession->sales->count() / $activeSession->opened_at->diffInHours(now()), 1)
+                            : $activeSession->sales->count() }}
+                    </span>
+                </div>
+            </div>
+            @endif
+
+            <div class="footer">
+                <p>Printed on {{ now()->format('F d, Y H:i:s') }}</p>
+                <p>{{ $tenant->name }} - POS System</p>
+            </div>
+        </body>
+        </html>
+    `;
+
+    const printWindow = window.open('', '_blank', 'width=800,height=600');
+    printWindow.document.write(printContent);
+    printWindow.document.close();
+
+    // Trigger print after content loads
+    printWindow.onload = function() {
+        printWindow.print();
+    };
+}// Add event listener for closing balance input
 document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('closing_balance').addEventListener('input', updateDifference);
+
+    // Setup form validation
+    document.querySelector('form').addEventListener('submit', validateAndSubmit);
+
+    // Setup keyboard shortcuts
+    setupKeyboardShortcuts();
+
+    // Auto-focus on first denomination input
+    document.getElementById('notes-1000').focus();
+
+    // Show keyboard shortcuts hint
+    setTimeout(() => {
+        showNotification('💡 Tip: Use Alt+C to clear, Alt+U to use total, Alt+S to submit', 'info');
+    }, 1000);
 });
+
+// Add CSS for notification animation
+const style = document.createElement('style');
+style.textContent = `
+    @keyframes slide-in {
+        from {
+            transform: translateX(100%);
+            opacity: 0;
+        }
+        to {
+            transform: translateX(0);
+            opacity: 1;
+        }
+    }
+    .animate-slide-in {
+        animation: slide-in 0.3s ease-out;
+    }
+`;
+document.head.appendChild(style);
 </script>
 @endsection
