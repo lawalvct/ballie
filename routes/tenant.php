@@ -947,6 +947,17 @@ Route::prefix('ledger-accounts')->name('ledger-accounts.')->group(function () {
             Route::post('/backup/create', [SettingsController::class, 'createBackup'])->name('backup.create');
             Route::get('/backup/download/{backup}', [SettingsController::class, 'downloadBackup'])->name('backup.download');
             Route::delete('/backup/{backup}', [SettingsController::class, 'deleteBackup'])->name('backup.delete');
+
+            // Cash Register Management
+            Route::prefix('cash-registers')->name('cash-registers.')->group(function () {
+                Route::get('/', [\App\Http\Controllers\Tenant\Settings\CashRegisterController::class, 'index'])->name('index');
+                Route::get('/create', [\App\Http\Controllers\Tenant\Settings\CashRegisterController::class, 'create'])->name('create');
+                Route::post('/', [\App\Http\Controllers\Tenant\Settings\CashRegisterController::class, 'store'])->name('store');
+                Route::get('/{cashRegister}/edit', [\App\Http\Controllers\Tenant\Settings\CashRegisterController::class, 'edit'])->name('edit');
+                Route::put('/{cashRegister}', [\App\Http\Controllers\Tenant\Settings\CashRegisterController::class, 'update'])->name('update');
+                Route::delete('/{cashRegister}', [\App\Http\Controllers\Tenant\Settings\CashRegisterController::class, 'destroy'])->name('destroy');
+                Route::patch('/{cashRegister}/toggle-status', [\App\Http\Controllers\Tenant\Settings\CashRegisterController::class, 'toggleStatus'])->name('toggle-status');
+            });
         });
 
     }); // Close subscription.check middleware group
