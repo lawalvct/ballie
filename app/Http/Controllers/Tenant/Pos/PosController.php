@@ -15,9 +15,14 @@ use App\Models\CashRegisterSession;
 use App\Models\PaymentMethod;
 use App\Models\Receipt;
 use App\Models\StockMovement;
+use App\Models\LedgerAccount;
+use App\Models\Voucher;
+use App\Models\VoucherEntry;
+use App\Models\VoucherType;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 
 class PosController extends Controller
 {
@@ -402,8 +407,199 @@ class PosController extends Controller
 
     private function createAccountingEntries($sale)
     {
-        // This would integrate with your accounting system
-        // Create journal entries for sales, inventory, tax, etc.
-        // Implementation depends on your accounting module structure
+        try {
+            $tenant = tenant();
+
+            // Find or get required ledger accounts
+            $cashAccount = LedgerAccount::where('tenant_id', $tenant->id)
+                ->where('code', 'CASH-001')
+                ->where('is_active', true)
+                ->first();
+
+            if (!$cashAccount) {
+                // Fallback: Find any cash account
+                $cashAccount = LedgerAccount::where('tenant_id', $tenant->id)
+                    ->where('account_type', 'asset')
+                    ->where(function($q) {
+                        $q->where('name', 'LIKE', '%Cash%')
+                          ->orWhere('code', 'LIKE', 'CASH%');
+                    })
+                    ->where('is_active', true)
+                    ->first();
+            }
+
+            $salesAccount = LedgerAccount::where('tenant_id', $tenant->id)
+                ->where('code', 'SALES-001')
+                ->where('is_active', true)
+                ->first();
+
+            if (!$salesAccount) {
+                // Fallback: Find any sales revenue account
+                $salesAccount = LedgerAccount::where('tenant_id', $tenant->id)
+                    ->where('account_type', 'income')
+                    ->where(function($q) {
+                        $q->where('name', 'LIKE', '%Sales%')
+                          ->orWhere('code', 'LIKE', 'SALES%');
+                    })
+                    ->where('is_active', true)
+                    ->first();
+            }
+
+            $cogsAccount = LedgerAccount::where('tenant_id', $tenant->id)
+                ->where('code', 'COGS-001')
+                ->where('is_active', true)
+                ->first();
+
+            if (!$cogsAccount) {
+                // Fallback: Find cost of goods sold account
+                $cogsAccount = LedgerAccount::where('tenant_id', $tenant->id)
+                    ->where('account_type', 'expense')
+                    ->where(function($q) {
+                        $q->where('name', 'LIKE', '%Cost of Goods%')
+                          ->orWhere('code', 'LIKE', 'COGS%');
+                    })
+                    ->where('is_active', true)
+                    ->first();
+            }
+
+            $inventoryAccount = LedgerAccount::where('tenant_id', $tenant->id)
+                ->where('code', 'INV-001')
+                ->where('is_active', true)
+                ->first();
+
+            if (!$inventoryAccount) {
+                // Fallback: Find inventory account
+                $inventoryAccount = LedgerAccount::where('tenant_id', $tenant->id)
+                    ->where('account_type', 'asset')
+                    ->where(function($q) {
+                        $q->where('name', 'LIKE', '%Inventory%')
+                          ->orWhere('name', 'LIKE', '%Stock%')
+                          ->orWhere('code', 'LIKE', 'INV%')
+                          ->orWhere('code', 'LIKE', 'STOCK%');
+                    })
+                    ->where('is_active', true)
+                    ->first();
+            }
+
+            // Validate required accounts exist
+            if (!$cashAccount || !$salesAccount) {
+                Log::warning('POS: Missing required ledger accounts for accounting entries', [
+                    'sale_id' => $sale->id,
+                    'cash_account' => $cashAccount ? 'found' : 'missing',
+                    'sales_account' => $salesAccount ? 'found' : 'missing',
+                ]);
+                return; // Skip accounting if core accounts missing
+            }
+
+            // Get or create Sales voucher type
+            $salesVoucherType = VoucherType::where('tenant_id', $tenant->id)
+                ->where('code', 'SV')
+                ->first();
+
+            if (!$salesVoucherType) {
+                // Create if doesn't exist
+                $salesVoucherType = VoucherType::create([
+                    'tenant_id' => $tenant->id,
+                    'name' => 'Sales',
+                    'code' => 'SV',
+                    'abbreviation' => 'S',
+                    'description' => 'Sales vouchers from POS',
+                    'numbering_method' => 'auto',
+                    'prefix' => 'SV-',
+                    'starting_number' => 1,
+                    'current_number' => 0,
+                    'has_reference' => true,
+                    'affects_inventory' => true,
+                    'inventory_effect' => 'decrease',
+                    'affects_cashbank' => false,
+                    'is_system_defined' => true,
+                    'is_active' => true,
+                ]);
+            }
+
+            // Generate voucher number
+            $voucherNumber = $salesVoucherType->getNextVoucherNumber();
+
+            // Create voucher (journal entry)
+            $voucher = Voucher::create([
+                'tenant_id' => $tenant->id,
+                'voucher_type_id' => $salesVoucherType->id,
+                'voucher_number' => $voucherNumber,
+                'voucher_date' => $sale->sale_date ?? now(),
+                'reference_number' => $sale->sale_number,
+                'narration' => 'POS Sale - ' . $sale->sale_number . ($sale->customer ? ' - ' . $sale->customer->name : ''),
+                'total_amount' => $sale->total_amount,
+                'status' => 'posted', // Auto-post POS entries
+                'created_by' => $sale->user_id,
+                'posted_at' => now(),
+                'posted_by' => $sale->user_id,
+            ]);
+
+            // Entry 1: Debit Cash Account (Money received)
+            VoucherEntry::create([
+                'voucher_id' => $voucher->id,
+                'ledger_account_id' => $cashAccount->id,
+                'debit_amount' => $sale->total_amount,
+                'credit_amount' => 0,
+                'particulars' => 'Cash received - ' . $sale->sale_number,
+            ]);
+
+            // Entry 2: Credit Sales Revenue Account (Income earned)
+            VoucherEntry::create([
+                'voucher_id' => $voucher->id,
+                'ledger_account_id' => $salesAccount->id,
+                'debit_amount' => 0,
+                'credit_amount' => $sale->total_amount,
+                'particulars' => 'Sales revenue - ' . $sale->sale_number,
+            ]);
+
+            // Entry 3 & 4: COGS and Inventory (if accounts exist and we have cost data)
+            if ($cogsAccount && $inventoryAccount) {
+                $totalCost = 0;
+
+                // Calculate total cost from sale items
+                foreach ($sale->items as $item) {
+                    $product = $item->product;
+                    if ($product && $product->purchase_rate > 0) {
+                        $totalCost += $product->purchase_rate * $item->quantity;
+                    }
+                }
+
+                // Only create COGS entries if we have cost data
+                if ($totalCost > 0) {
+                    // Entry 3: Debit COGS (Expense)
+                    VoucherEntry::create([
+                        'voucher_id' => $voucher->id,
+                        'ledger_account_id' => $cogsAccount->id,
+                        'debit_amount' => $totalCost,
+                        'credit_amount' => 0,
+                        'particulars' => 'Cost of goods sold - ' . $sale->sale_number,
+                    ]);
+
+                    // Entry 4: Credit Inventory (Asset reduction)
+                    VoucherEntry::create([
+                        'voucher_id' => $voucher->id,
+                        'ledger_account_id' => $inventoryAccount->id,
+                        'debit_amount' => 0,
+                        'credit_amount' => $totalCost,
+                        'particulars' => 'Inventory reduction - ' . $sale->sale_number,
+                    ]);
+                }
+            }
+
+            Log::info('POS: Accounting entries created successfully', [
+                'sale_id' => $sale->id,
+                'voucher_id' => $voucher->id,
+                'voucher_number' => $voucher->voucher_number,
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('POS: Failed to create accounting entries', [
+                'sale_id' => $sale->id,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+            // Don't throw - let the sale complete even if accounting fails
+        }
     }
 }

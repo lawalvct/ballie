@@ -249,6 +249,8 @@ function duplicateTransaction() {
 function refundTransaction() {
     if (confirm('Process a refund for this transaction?')) {
         // Redirect to refund page
+
+
         window.location.href = `{{ route('tenant.pos.refund', ['tenant' => $tenant->slug, 'sale' => $sale->id]) }}`;
     }
 }

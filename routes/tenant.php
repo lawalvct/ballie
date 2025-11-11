@@ -510,6 +510,16 @@ Route::prefix('ledger-accounts')->name('ledger-accounts.')->group(function () {
         Route::prefix('pos')->name('tenant.pos.')->group(function () {
             Route::get('/', [PosController::class, 'index'])->name('index');
             Route::post('/', [PosController::class, 'store'])->name('store');
+
+            // Receipt routes
+            Route::get('/receipt/{sale}', [PosController::class, 'receipt'])->name('receipt');
+            Route::get('/receipt/{sale}/print', [PosController::class, 'printReceipt'])->name('receipt.print');
+            Route::post('/receipt/{sale}/email', [PosController::class, 'emailReceipt'])->name('email-receipt');
+
+            // Sale actions (void, refund)
+            Route::post('/{sale}/void', [PosController::class, 'voidTransaction'])->name('void');
+            Route::post('/{sale}/refund', [PosController::class, 'refundTransaction'])->name('refund');
+
             Route::get('/register-session', [PosController::class, 'registerSession'])->name('register-session');
             Route::post('/open-session', [PosController::class, 'openSession'])->name('open-session');
             Route::get('/close-session', [PosController::class, 'closeSession'])->name('close-session');
