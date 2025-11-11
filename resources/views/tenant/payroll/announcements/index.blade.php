@@ -3,7 +3,7 @@
 @section('title', 'Employee Announcements - ' . $tenant->name)
 
 @section('page-title', 'Employee Announcements')
-@section('page-description', 'Send announcements and notifications to your employees')
+@section('page-description', '')
 
 @section('action-buttons')
 <a href="{{ route('tenant.payroll.announcements.create', ['tenant' => $tenant->slug]) }}"

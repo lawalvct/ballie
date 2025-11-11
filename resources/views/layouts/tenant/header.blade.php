@@ -14,6 +14,11 @@
     </div>
 
     <div class="flex items-center space-x-4">
+        <!-- Action Buttons -->
+        @hasSection('action-buttons')
+            @yield('action-buttons')
+        @endif
+
         <!-- Search -->
         <div class="relative hidden md:block search-container">
             <input type="text"

@@ -3,7 +3,7 @@
 @section('title', 'Announcement Details - ' . $tenant->name)
 
 @section('page-title', 'Announcement Details')
-@section('page-description', $announcement->title)
+@section('page-description', '')
 
 @section('action-buttons')
 <div class="flex items-center space-x-3">
@@ -13,6 +13,14 @@
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
         </svg>
         Back to List
+    </a>
+
+    <a href="{{ route('tenant.payroll.announcements.create', ['tenant' => $tenant->slug]) }}"
+       class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500">
+        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+        </svg>
+        New Announcement
     </a>
 
     @if($announcement->canBeEdited())
