@@ -565,6 +565,9 @@ document.addEventListener('DOMContentLoaded', function() {
             'Reports': 'bg-indigo-500',
             'Settings': 'bg-gray-500',
             'Dashboard': 'bg-pink-500',
+            'Payroll': 'bg-teal-500',
+            'Admin': 'bg-red-500',
+            'Banking': 'bg-cyan-500',
         };
         return colors[category] || 'bg-gray-500';
     }
@@ -575,6 +578,8 @@ document.addEventListener('DOMContentLoaded', function() {
             'product': 'bg-purple-500',
             'voucher': 'bg-blue-500',
             'ledger_account': 'bg-indigo-500',
+            'employee': 'bg-teal-500',
+            'payroll_period': 'bg-cyan-500',
         };
         return colors[type] || 'bg-gray-500';
     }

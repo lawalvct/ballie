@@ -104,6 +104,23 @@ class GlobalSearchController extends Controller
             ['name' => 'tenant.admin.users.index', 'title' => 'User Management', 'description' => 'Manage users and permissions', 'icon' => 'fas fa-users-cog', 'category' => 'Admin'],
             ['name' => 'tenant.admin.roles.index', 'title' => 'Roles & Permissions', 'description' => 'Manage roles and permissions', 'icon' => 'fas fa-user-shield', 'category' => 'Admin'],
 
+            // Payroll System
+            ['name' => 'tenant.payroll.index', 'title' => 'Payroll Dashboard', 'description' => 'Payroll overview and statistics', 'icon' => 'fas fa-money-check-alt', 'category' => 'Payroll'],
+            ['name' => 'tenant.payroll.employees.index', 'title' => 'Payroll Employees', 'description' => 'Manage payroll employees', 'icon' => 'fas fa-users', 'category' => 'Payroll'],
+            ['name' => 'tenant.payroll.employees.create', 'title' => 'Add Employee', 'description' => 'Add new payroll employee', 'icon' => 'fas fa-user-plus', 'category' => 'Payroll'],
+            ['name' => 'tenant.payroll.processing.index', 'title' => 'Payroll Processing', 'description' => 'Process and manage payroll periods', 'icon' => 'fas fa-calculator', 'category' => 'Payroll'],
+            ['name' => 'tenant.payroll.processing.create', 'title' => 'Create Payroll Period', 'description' => 'Create new payroll period', 'icon' => 'fas fa-plus-circle', 'category' => 'Payroll'],
+            ['name' => 'tenant.payroll.departments.index', 'title' => 'Departments', 'description' => 'Manage company departments', 'icon' => 'fas fa-building', 'category' => 'Payroll'],
+            ['name' => 'tenant.payroll.components.index', 'title' => 'Salary Components', 'description' => 'Manage salary components and allowances', 'icon' => 'fas fa-list-ul', 'category' => 'Payroll'],
+            ['name' => 'tenant.payroll.attendance.index', 'title' => 'Attendance Management', 'description' => 'Track employee attendance', 'icon' => 'fas fa-calendar-check', 'category' => 'Payroll'],
+            ['name' => 'tenant.payroll.attendance.create', 'title' => 'Mark Attendance', 'description' => 'Record employee attendance', 'icon' => 'fas fa-check-circle', 'category' => 'Payroll'],
+            ['name' => 'tenant.payroll.loans.index', 'title' => 'Employee Loans', 'description' => 'Manage employee loans and advances', 'icon' => 'fas fa-hand-holding-usd', 'category' => 'Payroll'],
+            ['name' => 'tenant.payroll.salary-advance.create', 'title' => 'Salary Advance', 'description' => 'Create salary advance voucher', 'icon' => 'fas fa-money-bill-wave', 'category' => 'Payroll'],
+            ['name' => 'tenant.payroll.reports.summary', 'title' => 'Payroll Summary', 'description' => 'Payroll summary report', 'icon' => 'fas fa-chart-bar', 'category' => 'Payroll'],
+            ['name' => 'tenant.payroll.reports.tax-summary', 'title' => 'Tax Summary', 'description' => 'Employee tax summary report', 'icon' => 'fas fa-file-invoice-dollar', 'category' => 'Payroll'],
+            ['name' => 'tenant.payroll.reports.employee-summary', 'title' => 'Employee Summary', 'description' => 'Employee payroll statistics', 'icon' => 'fas fa-user-chart', 'category' => 'Payroll'],
+            ['name' => 'tenant.payroll.reports.bank-schedule', 'title' => 'Bank Payment Schedule', 'description' => 'Bank payment schedule for payroll', 'icon' => 'fas fa-university', 'category' => 'Payroll'],
+
             // Dashboard
             ['name' => 'tenant.dashboard', 'title' => 'Dashboard', 'description' => 'Main dashboard overview', 'icon' => 'fas fa-tachometer-alt', 'category' => 'Dashboard'],
         ];
@@ -213,11 +230,61 @@ class GlobalSearchController extends Controller
                 ];
             });
 
+        // Search Employees
+        $employees = \App\Models\Employee::where('tenant_id', $tenantId)
+            ->where(function ($q) use ($query) {
+                $q->where('first_name', 'like', "%{$query}%")
+                  ->orWhere('last_name', 'like', "%{$query}%")
+                  ->orWhere('employee_number', 'like', "%{$query}%")
+                  ->orWhere('email', 'like', "%{$query}%");
+            })
+            ->limit(5)
+            ->get()
+            ->map(function ($employee) {
+                return [
+                    'type' => 'employee',
+                    'title' => $employee->first_name . ' ' . $employee->last_name,
+                    'description' => "Employee #: {$employee->employee_number}",
+                    'url' => route('tenant.payroll.employees.show', ['tenant' => tenant()->slug, 'employee' => $employee->id]),
+                    'icon' => 'fas fa-user-tie',
+                    'category' => 'Employee',
+                ];
+            });
+
+        // Search Payroll Periods
+        $payrollPeriods = \App\Models\PayrollPeriod::where('tenant_id', $tenantId)
+            ->where(function ($q) use ($query) {
+                $q->where('name', 'like', "%{$query}%")
+                  ->orWhere('status', 'like', "%{$query}%");
+            })
+            ->limit(3)
+            ->get()
+            ->map(function ($period) {
+                $statusColors = [
+                    'draft' => 'gray',
+                    'processing' => 'yellow',
+                    'approved' => 'green',
+                    'paid' => 'blue',
+                ];
+                $statusColor = $statusColors[$period->status] ?? 'gray';
+
+                return [
+                    'type' => 'payroll_period',
+                    'title' => $period->name,
+                    'description' => ucfirst($period->status) . " - " . $period->start_date->format('M d, Y') . " to " . $period->end_date->format('M d, Y'),
+                    'url' => route('tenant.payroll.processing.show', ['tenant' => tenant()->slug, 'period' => $period->id]),
+                    'icon' => 'fas fa-calendar-alt',
+                    'category' => 'Payroll Period',
+                ];
+            });
+
         // Merge all results
         $results = $customers
             ->concat($products)
             ->concat($vouchers)
             ->concat($ledgerAccounts)
+            ->concat($employees)
+            ->concat($payrollPeriods)
             ->take(10);
 
         return $results;
@@ -265,6 +332,42 @@ class GlobalSearchController extends Controller
                 'url' => route('tenant.accounting.vouchers.create', ['tenant' => tenant()->slug]),
                 'icon' => 'fas fa-receipt',
                 'color' => 'orange',
+            ];
+        }
+
+        if (str_contains($query, 'payroll') || str_contains($query, 'salary') || str_contains($query, 'employee')) {
+            $actions[] = [
+                'title' => 'Process Payroll',
+                'url' => route('tenant.payroll.processing.index', ['tenant' => tenant()->slug]),
+                'icon' => 'fas fa-calculator',
+                'color' => 'blue',
+            ];
+        }
+
+        if (str_contains($query, 'attendance')) {
+            $actions[] = [
+                'title' => 'Mark Attendance',
+                'url' => route('tenant.payroll.attendance.create', ['tenant' => tenant()->slug]),
+                'icon' => 'fas fa-calendar-check',
+                'color' => 'green',
+            ];
+        }
+
+        if (str_contains($query, 'loan') || str_contains($query, 'advance')) {
+            $actions[] = [
+                'title' => 'Employee Loans',
+                'url' => route('tenant.payroll.loans.index', ['tenant' => tenant()->slug]),
+                'icon' => 'fas fa-hand-holding-usd',
+                'color' => 'purple',
+            ];
+        }
+
+        if (str_contains($query, 'department')) {
+            $actions[] = [
+                'title' => 'Manage Departments',
+                'url' => route('tenant.payroll.departments.index', ['tenant' => tenant()->slug]),
+                'icon' => 'fas fa-building',
+                'color' => 'blue',
             ];
         }
 
