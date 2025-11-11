@@ -46,11 +46,12 @@
             @endif
 
             <button @click="toggleQuickAdd()"
-                    :class="quickAddEnabled ? 'bg-primary text-white' : 'btn-outline'"
-                    class="px-3 py-3 rounded-xl flex items-center gap-2 transition-all duration-200">
-                <i class="fas fa-bolt"></i>
+                    :class="quickAddEnabled ? 'bg-primary text-white shadow-lg ring-2 ring-purple-300 dark:ring-purple-600' : 'btn-outline'"
+                    class="px-3 py-3 rounded-xl flex items-center gap-2 transition-all duration-200 relative">
+                <i class="fas fa-bolt" :class="quickAddEnabled ? 'animate-pulse' : ''"></i>
                 <span class="hidden md:inline">Quick Add</span>
                 <span class="shortcut-label hidden md:inline">Ctrl+B</span>
+                <span x-show="quickAddEnabled" class="absolute -top-1 -right-1 w-3 h-3 bg-green-500 rounded-full animate-pulse"></span>
             </button>
 
             @if(isset($recentSales) && $recentSales->count() > 0)
@@ -87,6 +88,11 @@
     @if(isset($products) && $products->count() > 0)
         @foreach($products as $product)
         <div @click="quickAddEnabled ? addToCart({{ $product->toJson() }}) : null"
+             x-show="
+                (searchQuery === '' ||
+                 '{{ strtolower($product->name) }}'.includes(searchQuery.toLowerCase()) ||
+                 '{{ strtolower($product->sku) }}'.includes(searchQuery.toLowerCase())) &&
+                (selectedCategory === '' || selectedCategory == '{{ $product->category_id ?? '' }}')"
              class="product-card bg-white/80 dark:bg-gray-800/50 backdrop-blur-sm rounded-xl shadow-lg border border-gray-200/80 dark:border-gray-700/50 hover:border-[var(--color-dark-purple)] dark:hover:border-[var(--color-purple-accent)] transition-all duration-200 transform hover:-translate-y-1 touch-grow group relative overflow-hidden"
              :class="(viewMode || 'grid') === 'grid' ? 'p-4' : 'list-view-item'">
 

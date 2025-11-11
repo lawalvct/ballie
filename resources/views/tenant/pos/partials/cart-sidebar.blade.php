@@ -90,7 +90,9 @@
                                         class="w-7 h-7 bg-white dark:bg-gray-700 hover:bg-gray-100 dark:hover:bg-gray-600 rounded-md flex items-center justify-center transition-colors duration-200 shadow-sm">
                                     <i class="fas fa-minus text-xs text-gray-600 dark:text-gray-300"></i>
                                 </button>
-                                <span class="min-w-[1.5rem] text-center font-semibold text-sm text-gray-900 dark:text-gray-100" x-text="item.quantity"></span>
+                                <button @click="showQuantityModalFor(item, cartItems.findIndex(cartItem => cartItem.id === item.id))"
+                                        class="min-w-[2.5rem] px-2 text-center font-semibold text-sm text-gray-900 dark:text-gray-100 hover:text-[var(--color-dark-purple)] dark:hover:text-[var(--color-purple-accent)] transition-colors duration-200"
+                                        x-text="item.quantity"></button>
                                 <button @click="updateQuantity(cartItems.findIndex(cartItem => cartItem.id === item.id), parseFloat(item.quantity) + 1)"
                                         class="w-7 h-7 bg-white dark:bg-gray-700 hover:bg-gray-100 dark:hover:bg-gray-600 rounded-md flex items-center justify-center transition-colors duration-200 shadow-sm">
                                     <i class="fas fa-plus text-xs text-gray-600 dark:text-gray-300"></i>

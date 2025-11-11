@@ -67,6 +67,41 @@
     <div class="pos-container">
         @include('tenant.pos.partials.header')
 
+        <!-- Feature Hint Banner (dismissible) -->
+        <div x-data="{ showHint: !localStorage.getItem('pos_hint_dismissed') }"
+             x-show="showHint"
+             x-transition
+             class="mx-4 mt-4 bg-gradient-to-r from-purple-50 to-indigo-50 dark:from-purple-900/20 dark:to-indigo-900/20 border border-purple-200 dark:border-purple-800 rounded-xl p-4 shadow-sm">
+            <div class="flex items-start justify-between">
+                <div class="flex items-start gap-3">
+                    <div class="flex-shrink-0 w-8 h-8 bg-purple-500 rounded-lg flex items-center justify-center">
+                        <i class="fas fa-magic text-white text-sm"></i>
+                    </div>
+                    <div>
+                        <h4 class="text-sm font-semibold text-purple-900 dark:text-purple-100 mb-1">✨ Enhanced POS Features</h4>
+                        <p class="text-xs text-purple-700 dark:text-purple-300 mb-2">
+                            <strong>New:</strong> Click cart quantities for precise input • Press <kbd class="px-1.5 py-0.5 bg-purple-200 dark:bg-purple-800 rounded text-xs">F1</kbd> for shortcuts • Real-time search • Improved checkout
+                        </p>
+                        <div class="flex flex-wrap gap-2 text-xs">
+                            <span class="px-2 py-1 bg-white dark:bg-gray-800 rounded-md text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-700">
+                                <i class="fas fa-keyboard text-xs mr-1"></i>Keyboard shortcuts
+                            </span>
+                            <span class="px-2 py-1 bg-white dark:bg-gray-800 rounded-md text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-700">
+                                <i class="fas fa-calculator text-xs mr-1"></i>Quick quantity input
+                            </span>
+                            <span class="px-2 py-1 bg-white dark:bg-gray-800 rounded-md text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-700">
+                                <i class="fas fa-search text-xs mr-1"></i>Live filtering
+                            </span>
+                        </div>
+                    </div>
+                </div>
+                <button @click="showHint = false; localStorage.setItem('pos_hint_dismissed', 'true')"
+                        class="text-purple-400 hover:text-purple-600 dark:hover:text-purple-200 transition-colors">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+        </div>
+
         @if(!isset($activeSession))
             @include('tenant.pos.partials.no-session')
         @else
@@ -109,6 +144,79 @@
         @endif
     </div>
 
+    <!-- Quantity Input Modal -->
+    <div x-show="showQuantityModal"
+         x-transition:enter="transition ease-out duration-300"
+         x-transition:enter-start="opacity-0 scale-95"
+         x-transition:enter-end="opacity-100 scale-100"
+         x-transition:leave="transition ease-in duration-200"
+         x-transition:leave-start="opacity-100 scale-100"
+         x-transition:leave-end="opacity-0 scale-95"
+         @keydown.enter="confirmQuantity()"
+         @keydown.escape="showQuantityModal = false"
+         class="fixed inset-0 bg-black/50 dark:bg-gray-900/80 flex items-center justify-center z-50 p-4"
+         style="display: none;">
+        <div class="bg-white dark:bg-gray-800 backdrop-blur-sm rounded-2xl shadow-2xl w-full max-w-sm border border-gray-100 dark:border-gray-700 p-6">
+            <div class="flex items-center justify-between mb-6">
+                <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Enter Quantity</h3>
+                <button @click="showQuantityModal = false; quantityInput = ''"
+                        class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors duration-200">
+                    <i class="fas fa-times text-xl"></i>
+                </button>
+            </div>
+
+            <div class="mb-6">
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Quantity for: <span class="text-[var(--color-dark-purple)] dark:text-[var(--color-purple-accent)] font-semibold" x-text="quantityModalProduct?.name"></span>
+                </label>
+                <input type="number"
+                       x-model="quantityInput"
+                       min="0.01"
+                       step="0.01"
+                       class="w-full px-4 py-3 text-lg text-center border-2 border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-[var(--color-dark-purple)] focus:border-[var(--color-dark-purple)] bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                       placeholder="0.00"
+                       autofocus>
+                <p class="text-xs text-gray-500 dark:text-gray-400 mt-2">
+                    Available: <span x-text="quantityModalProduct?.stock_quantity"></span> units
+                </p>
+            </div>
+
+            <!-- Number Pad -->
+            <div class="grid grid-cols-3 gap-2 mb-4">
+                <template x-for="num in [1,2,3,4,5,6,7,8,9]" :key="num">
+                    <button @click="quantityInput = (quantityInput || '') + num.toString()"
+                            class="py-4 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-lg text-lg font-semibold text-gray-900 dark:text-white transition-colors duration-200">
+                        <span x-text="num"></span>
+                    </button>
+                </template>
+                <button @click="quantityInput = (quantityInput || '') + '.'"
+                        class="py-4 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-lg text-lg font-semibold text-gray-900 dark:text-white transition-colors duration-200">
+                    .
+                </button>
+                <button @click="quantityInput = (quantityInput || '') + '0'"
+                        class="py-4 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-lg text-lg font-semibold text-gray-900 dark:text-white transition-colors duration-200">
+                    0
+                </button>
+                <button @click="quantityInput = quantityInput.slice(0, -1)"
+                        class="py-4 bg-red-100 dark:bg-red-900/30 hover:bg-red-200 dark:hover:bg-red-900/50 rounded-lg text-lg font-semibold text-red-600 dark:text-red-400 transition-colors duration-200">
+                    <i class="fas fa-backspace"></i>
+                </button>
+            </div>
+
+            <!-- Actions -->
+            <div class="flex gap-3">
+                <button @click="showQuantityModal = false; quantityInput = ''"
+                        class="flex-1 py-3 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 rounded-xl font-semibold text-gray-700 dark:text-gray-200 transition-colors duration-200">
+                    Cancel
+                </button>
+                <button @click="confirmQuantity()"
+                        class="flex-1 py-3 bg-gradient-to-r from-[var(--color-dark-purple)] to-[var(--color-dark-purple-2)] hover:opacity-90 rounded-xl font-semibold text-white transition-opacity duration-200">
+                    Confirm
+                </button>
+            </div>
+        </div>
+    </div>
+
     <!-- Keyboard Shortcuts Guide -->
     <div x-show="showKeyboardShortcuts"
          x-transition:enter="transition ease-out duration-300"
@@ -137,6 +245,10 @@
             </div>
             <div class="space-y-4">
                 <div class="flex justify-between items-center p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+                    <span class="font-medium">Toggle Quick Add</span>
+                    <span class="shortcut-label">Ctrl+B</span>
+                </div>
+                <div class="flex justify-between items-center p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
                     <span class="font-medium">Toggle Dark Mode</span>
                     <span class="shortcut-label">Ctrl+D</span>
                 </div>
@@ -145,16 +257,28 @@
                     <span class="shortcut-label">Ctrl+F</span>
                 </div>
                 <div class="flex justify-between items-center p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
-                    <span class="font-medium">Toggle Quick Add</span>
-                    <span class="shortcut-label">Ctrl+B</span>
+                    <span class="font-medium">Show Shortcuts</span>
+                    <span class="shortcut-label">Ctrl+K / F1</span>
                 </div>
                 <div class="flex justify-between items-center p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
-                    <span class="font-medium">Close Modals</span>
+                    <span class="font-medium">Proceed to Payment</span>
+                    <span class="shortcut-label">Ctrl+P</span>
+                </div>
+                <div class="flex justify-between items-center p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+                    <span class="font-medium">Focus Search</span>
+                    <span class="shortcut-label">F2</span>
+                </div>
+                <div class="flex justify-between items-center p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+                    <span class="font-medium">Toggle View Mode</span>
+                    <span class="shortcut-label">F3</span>
+                </div>
+                <div class="flex justify-between items-center p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+                    <span class="font-medium">Clear Cart</span>
+                    <span class="shortcut-label">F4</span>
+                </div>
+                <div class="flex justify-between items-center p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+                    <span class="font-medium">Close Modals / Exit</span>
                     <span class="shortcut-label">Esc</span>
-                </div>
-                <div class="flex justify-between items-center p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
-                    <span class="font-medium">Toggle Cart (Mobile)</span>
-                    <span class="shortcut-label"><i class="fas fa-shopping-cart"></i></span>
                 </div>
             </div>
             <div class="mt-6">
@@ -188,6 +312,10 @@ function posSystem() {
         showMenuDropdown: false,
         showCartSidebar: (typeof window !== 'undefined' && window.innerWidth >= 1024), // Show by default on desktop, hidden on mobile
         showKeyboardShortcuts: false,
+        showQuantityModal: false,
+        quantityInput: '',
+        quantityModalProduct: null,
+        quantityModalCartIndex: null,
         payments: [{
             method_id: '',
             amount: 0,
@@ -291,28 +419,108 @@ function posSystem() {
             @endif
         },
 
-        completeSale() {
+        async completeSale() {
+            // Validation
+            if (this.cartItems.length === 0) {
+                this.showNotification = true;
+                this.notificationMessage = 'Cart is empty!';
+                this.notificationType = 'error';
+                return;
+            }
+
+            if (this.totalPaid < this.cartTotal) {
+                this.showNotification = true;
+                this.notificationMessage = 'Payment amount is insufficient!';
+                this.notificationType = 'error';
+                return;
+            }
+
+            // Validate payment methods
+            for (let payment of this.payments) {
+                if (!payment.method_id || payment.amount <= 0) {
+                    this.showNotification = true;
+                    this.notificationMessage = 'Please complete all payment details!';
+                    this.notificationType = 'error';
+                    return;
+                }
+            }
+
             this.isProcessing = true;
 
-            // Simulate processing for demo purposes
-            setTimeout(() => {
-                this.isProcessing = false;
-                this.showPaymentModal = false;
+            try {
+                const response = await fetch('{{ route("tenant.pos.store", ["tenant" => $tenant->slug]) }}', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        customer_id: this.selectedCustomer || null,
+                        items: this.cartItems.map(item => ({
+                            product_id: item.id,
+                            quantity: item.quantity,
+                            unit_price: item.unit_price,
+                            discount_amount: 0,
+                        })),
+                        payments: this.payments,
+                        notes: null
+                    })
+                });
 
-                // Show success message
-                this.notificationMessage = 'Sale completed successfully!';
-                this.notificationType = 'success';
+                const result = await response.json();
+
+                if (result.success) {
+                    // Show success message
+                    this.notificationMessage = result.message || 'Sale completed successfully!';
+                    this.notificationType = 'success';
+                    this.showNotification = true;
+
+                    // Show change if any
+                    if (result.change_amount > 0) {
+                        setTimeout(() => {
+                            this.notificationMessage = `Change: ₦${this.formatMoney(result.change_amount)}`;
+                            this.notificationType = 'info';
+                            this.showNotification = true;
+                        }, 2000);
+                    }
+
+                    // Close modal and reset
+                    this.showPaymentModal = false;
+                    this.cartItems = [];
+                    this.selectedCustomer = '';
+                    this.payments = [{
+                        method_id: this.getCashPaymentMethodId(),
+                        amount: 0,
+                        reference: ''
+                    }];
+
+                    // Open receipt in new window
+                    if (result.receipt_url) {
+                        setTimeout(() => {
+                            window.open(result.receipt_url, '_blank');
+                        }, 1000);
+                    }
+
+                    // Hide notification after 5 seconds
+                    setTimeout(() => {
+                        this.showNotification = false;
+                    }, 5000);
+                } else {
+                    throw new Error(result.message || 'Sale failed');
+                }
+            } catch (error) {
+                console.error('Sale error:', error);
+                this.notificationMessage = error.message || 'Failed to complete sale. Please try again.';
+                this.notificationType = 'error';
                 this.showNotification = true;
 
-                // Reset cart
-                this.cartItems = [];
-                this.updateCart();
-
-                // Hide notification after 3 seconds
                 setTimeout(() => {
                     this.showNotification = false;
-                }, 3000);
-            }, 1500);
+                }, 5000);
+            } finally {
+                this.isProcessing = false;
+            }
         },
 
         // Methods
@@ -320,8 +528,25 @@ function posSystem() {
             const existingItem = this.cartItems.find(item => item.id === product.id);
 
             if (existingItem) {
+                // Check stock before adding
+                if (existingItem.quantity + 1 > existingItem.stock_quantity) {
+                    this.notificationMessage = `Only ${existingItem.stock_quantity} units available in stock`;
+                    this.notificationType = 'warning';
+                    this.showNotification = true;
+                    setTimeout(() => this.showNotification = false, 3000);
+                    return;
+                }
                 this.updateQuantity(this.cartItems.indexOf(existingItem), parseFloat(existingItem.quantity) + 1);
             } else {
+                // Check if product has stock
+                if (product.stock_quantity <= 0) {
+                    this.notificationMessage = `${product.name} is out of stock`;
+                    this.notificationType = 'error';
+                    this.showNotification = true;
+                    setTimeout(() => this.showNotification = false, 3000);
+                    return;
+                }
+
                 this.cartItems.push({
                     id: product.id,
                     name: product.name,
@@ -332,20 +557,19 @@ function posSystem() {
                     stock_quantity: product.stock_quantity,
                     lineTotal: parseFloat(product.selling_price)
                 });
-            }
 
-            // Show cart on mobile when adding first item
-            if (typeof window !== 'undefined' && window.innerWidth < 1024 && this.cartItems.length === 1) {
-                this.showCartSidebar = true;
+                this.updateLineTotal(this.cartItems.length - 1);
 
                 // Show notification
                 this.notificationMessage = `${product.name} added to cart`;
                 this.notificationType = 'success';
                 this.showNotification = true;
+                setTimeout(() => this.showNotification = false, 2000);
+            }
 
-                setTimeout(() => {
-                    this.showNotification = false;
-                }, 2000);
+            // Show cart on mobile when adding first item
+            if (typeof window !== 'undefined' && window.innerWidth < 1024 && this.cartItems.length === 1) {
+                this.showCartSidebar = true;
             }
         },
 
@@ -377,8 +601,16 @@ function posSystem() {
         },
 
         clearCart() {
-            if (confirm('Are you sure you want to clear the cart?')) {
+            if (this.cartItems.length === 0) {
+                return;
+            }
+
+            if (confirm('Are you sure you want to clear the cart? This will remove all items.')) {
                 this.cartItems = [];
+                this.notificationMessage = 'Cart cleared';
+                this.notificationType = 'info';
+                this.showNotification = true;
+                setTimeout(() => this.showNotification = false, 2000);
             }
         },
 
@@ -455,6 +687,63 @@ function posSystem() {
             this.showKeyboardShortcuts = !this.showKeyboardShortcuts;
         },
 
+        showQuantityModalFor(product, cartIndex = null) {
+            this.quantityModalProduct = product;
+            this.quantityModalCartIndex = cartIndex;
+            this.quantityInput = cartIndex !== null ? this.cartItems[cartIndex].quantity.toString() : '1';
+            this.showQuantityModal = true;
+        },
+
+        confirmQuantity() {
+            const qty = parseFloat(this.quantityInput);
+
+            if (!qty || qty <= 0) {
+                this.notificationMessage = 'Please enter a valid quantity';
+                this.notificationType = 'error';
+                this.showNotification = true;
+                setTimeout(() => this.showNotification = false, 3000);
+                return;
+            }
+
+            if (this.quantityModalCartIndex !== null) {
+                // Updating existing cart item
+                this.updateQuantity(this.quantityModalCartIndex, qty);
+            } else {
+                // Adding new item with custom quantity
+                const product = this.quantityModalProduct;
+                if (qty > product.stock_quantity) {
+                    this.notificationMessage = `Only ${product.stock_quantity} units available`;
+                    this.notificationType = 'warning';
+                    this.showNotification = true;
+                    setTimeout(() => this.showNotification = false, 3000);
+                    return;
+                }
+
+                // Check if product already in cart
+                const existingIndex = this.cartItems.findIndex(item => item.id === product.id);
+                if (existingIndex !== -1) {
+                    this.updateQuantity(existingIndex, qty);
+                } else {
+                    this.cartItems.push({
+                        id: product.id,
+                        name: product.name,
+                        sku: product.sku,
+                        quantity: qty,
+                        unit_price: parseFloat(product.selling_price),
+                        tax_rate: parseFloat(product.tax_rate || 0),
+                        stock_quantity: product.stock_quantity,
+                        lineTotal: 0
+                    });
+                    this.updateLineTotal(this.cartItems.length - 1);
+                }
+            }
+
+            this.showQuantityModal = false;
+            this.quantityInput = '';
+            this.quantityModalProduct = null;
+            this.quantityModalCartIndex = null;
+        },
+
         toggleScanner() {
             this.showScanner = !this.showScanner;
             // Scanner implementation would go here
@@ -477,8 +766,10 @@ function posSystem() {
         },
 
         filterProducts() {
-            // Product filtering implementation
-            console.log('Filtering products...', this.searchQuery, this.selectedCategory);
+            // This will be reactive - the template will automatically update when searchQuery or selectedCategory changes
+            // We're using Alpine.js reactive properties, so filtering happens in the template via x-show or v-if
+            // For now, log to confirm it's being called
+            console.log('Filtering products with query:', this.searchQuery, 'and category:', this.selectedCategory);
         },
 
         init() {
@@ -539,7 +830,23 @@ function posSystem() {
             // Add keyboard shortcuts
             if (typeof window !== 'undefined') {
                 window.addEventListener('keydown', (e) => {
-                    if (e.ctrlKey && e.key === 'b') { // Ctrl+B for quick cart
+                    // Prevent shortcuts when typing in inputs
+                    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.tagName === 'SELECT') {
+                        // Allow Escape key even in inputs
+                        if (e.key === 'Escape') {
+                            e.target.blur();
+                            if (this.showPaymentModal) {
+                                this.showPaymentModal = false;
+                            } else if (this.showQuantityModal) {
+                                this.showQuantityModal = false;
+                            } else if (this.showKeyboardShortcuts) {
+                                this.showKeyboardShortcuts = false;
+                            }
+                        }
+                        return;
+                    }
+
+                    if (e.ctrlKey && e.key === 'b') { // Ctrl+B for quick add
                         e.preventDefault();
                         this.toggleQuickAdd();
                     } else if (e.ctrlKey && e.key === 'd') { // Ctrl+D for dark mode
@@ -551,9 +858,29 @@ function posSystem() {
                     } else if (e.ctrlKey && e.key === 'k') { // Ctrl+K for keyboard shortcuts
                         e.preventDefault();
                         this.toggleKeyboardShortcuts();
+                    } else if (e.ctrlKey && e.key === 'p') { // Ctrl+P for payment (if cart has items)
+                        e.preventDefault();
+                        if (this.cartItems.length > 0) {
+                            this.proceedToPayment();
+                        }
+                    } else if (e.key === 'F1') { // F1 for help/shortcuts
+                        e.preventDefault();
+                        this.toggleKeyboardShortcuts();
+                    } else if (e.key === 'F2') { // F2 to focus search
+                        e.preventDefault();
+                        const searchInput = document.querySelector('input[placeholder*="Search"]');
+                        if (searchInput) searchInput.focus();
+                    } else if (e.key === 'F3') { // F3 to toggle view
+                        e.preventDefault();
+                        this.toggleViewMode();
+                    } else if (e.key === 'F4') { // F4 to clear cart
+                        e.preventDefault();
+                        this.clearCart();
                     } else if (e.key === 'Escape') {
                         if (this.showPaymentModal) {
                             this.showPaymentModal = false;
+                        } else if (this.showQuantityModal) {
+                            this.showQuantityModal = false;
                         } else if (this.showKeyboardShortcuts) {
                             this.showKeyboardShortcuts = false;
                         } else if (typeof window !== 'undefined' && window.innerWidth < 1024 && this.showCartSidebar) {
@@ -593,6 +920,18 @@ function posSystem() {
     -webkit-line-clamp: 2;
     -webkit-box-orient: vertical;
     overflow: hidden;
+}
+
+/* Keyboard key styling */
+kbd {
+    display: inline-block;
+    padding: 0.2rem 0.4rem;
+    font-size: 0.75rem;
+    font-family: monospace;
+    line-height: 1;
+    border: 1px solid currentColor;
+    border-radius: 0.25rem;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
 }
 
 /* Custom scrollbar */
