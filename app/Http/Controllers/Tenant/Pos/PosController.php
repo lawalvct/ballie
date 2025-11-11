@@ -35,7 +35,8 @@ class PosController extends Controller
         $activeSession = CashRegisterSession::whereHas('cashRegister', function($query) use ($tenant) {
                 $query->where('tenant_id', $tenant->id);
             })
-            ->where('status', 'open')
+            ->where('user_id', Auth::id())
+            ->whereNull('closed_at')
             ->with('cashRegister')
             ->first();
 
@@ -44,6 +45,12 @@ class PosController extends Controller
             'paymentMethods' => PaymentMethod::where('tenant_id', $tenant->id)->active()->get(),
             'cashRegisters' => CashRegister::where('tenant_id', $tenant->id)->active()->get()
         ];
+
+        // If no active session, redirect to register session page
+        if (!$activeSession) {
+            return redirect()->route('tenant.pos.register-session', ['tenant' => $tenant->slug])
+                ->with('info', 'Please open a cash register session to start selling.');
+        }
 
         // Only load additional data if session is active
         if ($activeSession) {
