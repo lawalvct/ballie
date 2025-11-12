@@ -78,6 +78,7 @@ class PosController extends Controller
                     ->orderBy('company_name')
                     ->get(),
                 'recentSales' => Sale::where('tenant_id', $tenant->id)
+                    ->where('cash_register_session_id', $activeSession->id)
                     ->with(['customer', 'items.product'])
                     ->latest()
                     ->limit(10)
@@ -324,6 +325,11 @@ class PosController extends Controller
 
         return redirect()->route('tenant.pos.index', ['tenant' => $tenant->slug])
             ->with('success', 'Cash register session closed successfully. Please open a new session to continue.');
+    }
+
+    public function customerDisplay(Tenant $tenant)
+    {
+        return view('tenant.pos.customer-display', compact('tenant'));
     }
 
     private function getActiveCashRegisterSession($tenant)

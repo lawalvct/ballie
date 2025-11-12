@@ -476,6 +476,9 @@ function posSystem() {
                     this.notificationType = 'success';
                     this.showNotification = true;
 
+                    // Broadcast sale completion to customer display
+                    this.broadcastSaleComplete(this.cartTotal, result.change_amount || 0);
+
                     // Show change if any
                     if (result.change_amount > 0) {
                         setTimeout(() => {
@@ -560,6 +563,9 @@ function posSystem() {
 
                 this.updateLineTotal(this.cartItems.length - 1);
 
+                // Broadcast to customer display
+                this.broadcastCartUpdate();
+
                 // Show notification
                 this.notificationMessage = `${product.name} added to cart`;
                 this.notificationType = 'success';
@@ -575,6 +581,7 @@ function posSystem() {
 
         removeFromCart(index) {
             this.cartItems.splice(index, 1);
+            this.broadcastCartUpdate();
         },
 
         updateQuantity(index, newQuantity) {
@@ -591,6 +598,7 @@ function posSystem() {
 
             item.quantity = newQuantity;
             this.updateLineTotal(index);
+            this.broadcastCartUpdate();
         },
 
         updateLineTotal(index) {
@@ -607,11 +615,68 @@ function posSystem() {
 
             if (confirm('Are you sure you want to clear the cart? This will remove all items.')) {
                 this.cartItems = [];
+                this.broadcastCartClear();
                 this.notificationMessage = 'Cart cleared';
                 this.notificationType = 'info';
                 this.showNotification = true;
                 setTimeout(() => this.showNotification = false, 2000);
             }
+        },
+
+        // Broadcast cart updates to customer display
+        broadcastCartUpdate() {
+            const cartData = {
+                items: this.cartItems.map(item => ({
+                    name: item.name,
+                    quantity: item.quantity,
+                    price: item.unit_price,
+                    total: item.quantity * item.unit_price
+                })),
+                subtotal: this.cartSubtotal,
+                tax: this.cartTax,
+                discount: 0,
+                total: this.cartTotal
+            };
+
+            // Broadcast via BroadcastChannel
+            if (this.customerDisplayChannel) {
+                this.customerDisplayChannel.postMessage({
+                    type: 'CART_UPDATE',
+                    data: cartData
+                });
+            }
+
+            // Also save to localStorage as fallback
+            localStorage.setItem('pos_customer_cart', JSON.stringify(cartData));
+        },
+
+        broadcastCartClear() {
+            if (this.customerDisplayChannel) {
+                this.customerDisplayChannel.postMessage({
+                    type: 'CART_CLEAR'
+                });
+            }
+            localStorage.removeItem('pos_customer_cart');
+        },
+
+        broadcastSaleComplete(total, change) {
+            if (this.customerDisplayChannel) {
+                this.customerDisplayChannel.postMessage({
+                    type: 'SALE_COMPLETE',
+                    data: { total, change }
+                });
+            }
+        },
+
+        openCustomerDisplay() {
+            const url = '{{ route("tenant.pos.customer-display", ["tenant" => $tenant->slug]) }}';
+            const features = 'width=1024,height=768,menubar=no,toolbar=no,location=no,status=no';
+            window.open(url, 'CustomerDisplay', features);
+
+            this.notificationMessage = 'Customer display opened in new window';
+            this.notificationType = 'success';
+            this.showNotification = true;
+            setTimeout(() => this.showNotification = false, 2000);
         },
 
         updateCart() {
@@ -773,6 +838,9 @@ function posSystem() {
         },
 
         init() {
+            // Initialize BroadcastChannel for customer display
+            this.customerDisplayChannel = new BroadcastChannel('pos_customer_display');
+
             // Initialize critical properties early to prevent undefined errors
             if (!this.viewMode) {
                 this.viewMode = 'grid';

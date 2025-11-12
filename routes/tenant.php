@@ -524,6 +524,10 @@ Route::prefix('ledger-accounts')->name('ledger-accounts.')->group(function () {
             Route::post('/open-session', [PosController::class, 'openSession'])->name('open-session');
             Route::get('/close-session', [PosController::class, 'closeSession'])->name('close-session');
             Route::post('/close-session', [PosController::class, 'storeCloseSession'])->name('store-close-session');
+
+            // Customer Display
+            Route::get('/customer-display', [PosController::class, 'customerDisplay'])->name('customer-display');
+
             Route::get('/sale', [PosController::class, 'sale'])->name('sale');
             Route::post('/sale', [PosController::class, 'processSale'])->name('sale.process');
             Route::get('/transactions', [PosController::class, 'transactions'])->name('transactions');
