@@ -17,7 +17,7 @@ class AttendanceController extends Controller
     {
         $tenantId = $tenant->id;
 
-        $query = AttendanceRecord::with(['employee.department', 'approvedBy'])
+        $query = AttendanceRecord::with(['employee.department', 'shift', 'approver'])
             ->where('tenant_id', $tenantId);
 
         // Filters
@@ -33,6 +33,10 @@ class AttendanceController extends Controller
 
         if ($request->filled('status')) {
             $query->where('status', $request->status);
+        }
+
+        if ($request->filled('shift_id')) {
+            $query->where('shift_id', $request->shift_id);
         }
 
         if ($request->filled('date_from')) {
@@ -58,8 +62,12 @@ class AttendanceController extends Controller
             ->where('status', 'active')
             ->orderBy('first_name')
             ->get();
+        $shifts = \App\Models\ShiftSchedule::where('tenant_id', $tenantId)
+            ->where('is_active', true)
+            ->orderBy('name')
+            ->get();
 
-        return view('tenant.attendance.index', compact('attendances', 'departments', 'employees'));
+        return view('tenant.attendance.index', compact('attendances', 'departments', 'employees', 'shifts'));
     }
 
     public function dashboard(Tenant $tenant)
@@ -152,6 +160,7 @@ class AttendanceController extends Controller
         $tenantId = $tenant->id;
         $employee = Employee::where('id', $request->employee_id)
             ->where('tenant_id', $tenantId)
+            ->with('currentShiftAssignment.shift')
             ->firstOrFail();
 
         // Check if already clocked in today
@@ -160,24 +169,58 @@ class AttendanceController extends Controller
             ->where('attendance_date', $today)
             ->first();
 
-        if ($existing && $existing->clock_in_time) {
+        if ($existing && $existing->clock_in) {
             return back()->with('error', 'Employee has already clocked in today.');
         }
 
         try {
-            $attendance = AttendanceRecord::clockIn(
-                $employee->id,
-                $tenantId,
-                $request->ip(),
-                $request->notes
-            );
+            DB::beginTransaction();
+
+            // Get employee's assigned shift
+            $shift = $employee->currentShiftAssignment?->shift;
+
+            // Create or update attendance record
+            $attendance = $existing ?: new AttendanceRecord();
+            $attendance->tenant_id = $tenantId;
+            $attendance->employee_id = $employee->id;
+            $attendance->attendance_date = $today;
+            $attendance->shift_id = $shift?->id;
+
+            // Set scheduled times from shift
+            if ($shift) {
+                $attendance->scheduled_in = \Carbon\Carbon::parse($today . ' ' . $shift->start_time);
+                $attendance->scheduled_out = \Carbon\Carbon::parse($today . ' ' . $shift->end_time);
+                $attendance->break_minutes = $shift->break_minutes ?? 0;
+            }
+
+            $attendance->clock_in = now();
+            $attendance->clock_in_ip = $request->ip();
+            $attendance->clock_in_notes = $request->notes;
+            $attendance->status = 'present';
+
+            // Calculate if late
+            if ($attendance->scheduled_in && $attendance->clock_in > $attendance->scheduled_in) {
+                $lateMinutes = $attendance->scheduled_in->diffInMinutes($attendance->clock_in);
+                $graceMinutes = $shift?->late_grace_minutes ?? 0;
+
+                if ($lateMinutes > $graceMinutes) {
+                    $attendance->late_minutes = $lateMinutes - $graceMinutes;
+                    $attendance->status = 'late';
+                }
+            }
+
+            $attendance->save();
+
+            DB::commit();
 
             return back()->with('success', sprintf(
-                '%s clocked in successfully at %s',
-                $employee->full_name,
-                $attendance->clock_in_time
+                '%s clocked in successfully at %s%s',
+                $employee->first_name . ' ' . $employee->last_name,
+                $attendance->clock_in->format('h:i A'),
+                $attendance->status === 'late' ? ' (Late by ' . $attendance->late_minutes . ' min)' : ''
             ));
         } catch (\Exception $e) {
+            DB::rollBack();
             return back()->with('error', 'Failed to clock in: ' . $e->getMessage());
         }
     }
@@ -198,26 +241,56 @@ class AttendanceController extends Controller
         $today = now()->toDateString();
         $attendance = AttendanceRecord::where('employee_id', $employee->id)
             ->where('attendance_date', $today)
+            ->with('shift')
             ->first();
 
-        if (!$attendance || !$attendance->clock_in_time) {
+        if (!$attendance || !$attendance->clock_in) {
             return back()->with('error', 'Employee has not clocked in today.');
         }
 
-        if ($attendance->clock_out_time) {
+        if ($attendance->clock_out) {
             return back()->with('error', 'Employee has already clocked out today.');
         }
 
         try {
-            $attendance->clockOut($request->ip(), $request->notes);
+            DB::beginTransaction();
+
+            $attendance->clock_out = now();
+            $attendance->clock_out_ip = $request->ip();
+            $attendance->clock_out_notes = $request->notes;
+
+            // Calculate work hours
+            $totalMinutes = $attendance->clock_in->diffInMinutes($attendance->clock_out);
+            $attendance->work_hours_minutes = $totalMinutes - ($attendance->break_minutes ?? 0);
+
+            // Calculate early out
+            if ($attendance->scheduled_out && $attendance->clock_out < $attendance->scheduled_out) {
+                $earlyMinutes = $attendance->clock_out->diffInMinutes($attendance->scheduled_out);
+                $graceMinutes = $attendance->shift?->early_out_grace_minutes ?? 0;
+
+                if ($earlyMinutes > $graceMinutes) {
+                    $attendance->early_out_minutes = $earlyMinutes - $graceMinutes;
+                }
+            }
+
+            // Calculate overtime
+            if ($attendance->scheduled_out && $attendance->clock_out > $attendance->scheduled_out) {
+                $attendance->overtime_minutes = $attendance->scheduled_out->diffInMinutes($attendance->clock_out);
+            }
+
+            $attendance->save();
+
+            DB::commit();
 
             return back()->with('success', sprintf(
-                '%s clocked out successfully at %s. Total work hours: %.2f',
-                $employee->full_name,
-                $attendance->clock_out_time,
-                $attendance->work_hours
+                '%s clocked out successfully at %s. Work hours: %.2fh%s',
+                $employee->first_name . ' ' . $employee->last_name,
+                $attendance->clock_out->format('h:i A'),
+                $attendance->calculateWorkHours(),
+                $attendance->hasOvertime() ? ' (OT: ' . $attendance->calculateOvertimeHours() . 'h)' : ''
             ));
         } catch (\Exception $e) {
+            DB::rollBack();
             return back()->with('error', 'Failed to clock out: ' . $e->getMessage());
         }
     }

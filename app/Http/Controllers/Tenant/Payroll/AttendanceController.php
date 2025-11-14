@@ -42,26 +42,46 @@ class AttendanceController extends Controller
             $query->where('employee_id', $request->employee);
         }
 
+        // Shift filter
+        if ($request->filled('shift_id')) {
+            $query->where('shift_id', $request->shift_id);
+        }
+
         $attendanceRecords = $query->orderBy('clock_in')->get();
 
-        // Get all active employees for the day
+        // Get all active employees for the dropdown filter
         $employees = Employee::where('tenant_id', $tenant->id)
             ->where('status', 'active')
             ->with('department')
+            ->orderBy('first_name')
             ->get();
 
-        // Create attendance records for employees without records
-        foreach ($employees as $employee) {
-            if (!$attendanceRecords->where('employee_id', $employee->id)->count()) {
-                $record = AttendanceRecord::create([
-                    'tenant_id' => $tenant->id,
-                    'employee_id' => $employee->id,
-                    'attendance_date' => $selectedDate,
-                    'status' => 'absent',
-                    'created_by' => Auth::id(),
-                ]);
+        // Only create missing attendance records when NO filters are applied (showing all employees for the day)
+        $hasFilters = $request->filled('department') || $request->filled('status') ||
+                      $request->filled('employee') || $request->filled('shift_id');
 
-                $attendanceRecords->push($record->load(['employee.department']));
+        if (!$hasFilters) {
+            // Create attendance records for employees without records
+            foreach ($employees as $employee) {
+                if (!$attendanceRecords->where('employee_id', $employee->id)->count()) {
+                    // Check if record already exists in database (to prevent duplicates)
+                    $existing = AttendanceRecord::where('tenant_id', $tenant->id)
+                        ->where('employee_id', $employee->id)
+                        ->where('attendance_date', $selectedDate)
+                        ->first();
+
+                    if (!$existing) {
+                        $record = AttendanceRecord::create([
+                            'tenant_id' => $tenant->id,
+                            'employee_id' => $employee->id,
+                            'attendance_date' => $selectedDate,
+                            'status' => 'absent',
+                            'created_by' => Auth::id(),
+                        ]);
+
+                        $attendanceRecords->push($record->load(['employee.department']));
+                    }
+                }
             }
         }
 
@@ -76,9 +96,13 @@ class AttendanceController extends Controller
         ];
 
         $departments = Department::where('tenant_id', $tenant->id)->active()->get();
+        $shifts = ShiftSchedule::where('tenant_id', $tenant->id)
+            ->where('is_active', true)
+            ->orderBy('name')
+            ->get();
 
         return view('tenant.payroll.attendance.index', compact(
-            'tenant', 'attendanceRecords', 'selectedDate', 'stats', 'departments', 'employees'
+            'tenant', 'attendanceRecords', 'selectedDate', 'stats', 'departments', 'employees', 'shifts'
         ));
     }
 
@@ -113,8 +137,12 @@ class AttendanceController extends Controller
             ], 400);
         }
 
-        // Get employee's shift schedule
-        $shift = $employee->currentShift;
+        // Get employee's shift schedule from current assignment
+        $employeeWithShift = Employee::where('id', $employee->id)
+            ->with('currentShiftAssignment.shift')
+            ->first();
+
+        $shift = $employeeWithShift->currentShiftAssignment?->shift;
 
         $attendance = $existingRecord ?? new AttendanceRecord();
         $attendance->tenant_id = $tenant->id;

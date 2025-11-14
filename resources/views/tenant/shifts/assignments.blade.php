@@ -61,7 +61,7 @@
                         <option value="">{{ __('All Shifts') }}</option>
                         @foreach($shifts as $shift)
                         <option value="{{ $shift->id }}" {{ request('shift_id') == $shift->id ? 'selected' : '' }}>
-                            {{ $shift->shift_name }}
+                            {{ $shift->name }}
                         </option>
                         @endforeach
                     </select>

@@ -138,10 +138,19 @@
             <input type="hidden" name="date" value="{{ $selectedDate->format('Y-m-d') }}">
             <div>
                 <label for="department" class="block text-sm font-medium text-gray-700">Department</label>
-                <select id="department" name="department" class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md">
+                <select id="department" name="department_id" class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md">
                     <option value="">All Departments</option>
                     @foreach($departments as $dept)
-                        <option value="{{ $dept->id }}" {{ request('department') == $dept->id ? 'selected' : '' }}>{{ $dept->name }}</option>
+                        <option value="{{ $dept->id }}" {{ request('department_id') == $dept->id ? 'selected' : '' }}>{{ $dept->name }}</option>
+                    @endforeach
+                </select>
+            </div>
+            <div>
+                <label for="shift" class="block text-sm font-medium text-gray-700">Shift</label>
+                <select id="shift" name="shift_id" class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md">
+                    <option value="">All Shifts</option>
+                    @foreach($shifts as $shift)
+                        <option value="{{ $shift->id }}" {{ request('shift_id') == $shift->id ? 'selected' : '' }}>{{ $shift->name }} ({{ $shift->code }})</option>
                     @endforeach
                 </select>
             </div>
@@ -158,10 +167,10 @@
             </div>
             <div>
                 <label for="employee" class="block text-sm font-medium text-gray-700">Employee</label>
-                <select id="employee" name="employee" class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md">
+                <select id="employee" name="employee_id" class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md">
                     <option value="">All Employees</option>
                     @foreach($employees as $emp)
-                        <option value="{{ $emp->id }}" {{ request('employee') == $emp->id ? 'selected' : '' }}>{{ $emp->first_name }} {{ $emp->last_name }}</option>
+                        <option value="{{ $emp->id }}" {{ request('employee_id') == $emp->id ? 'selected' : '' }}>{{ $emp->first_name }} {{ $emp->last_name }}</option>
                     @endforeach
                 </select>
             </div>
@@ -190,6 +199,7 @@
                         </th>
                         <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Employee</th>
                         <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Department</th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Shift</th>
                         <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Clock In</th>
                         <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Clock Out</th>
                         <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Work Hours</th>
@@ -220,8 +230,23 @@
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ $record->employee->department->name ?? 'N/A' }}</td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                @if($record->shift)
+                                    <div class="flex items-center">
+                                        <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-indigo-100 text-indigo-800">
+                                            {{ $record->shift->name }}
+                                        </span>
+                                    </div>
+                                    <div class="text-xs text-gray-500 mt-1">{{ $record->shift->code }} • {{ \Carbon\Carbon::parse($record->shift->start_time)->format('g:i A') }}-{{ \Carbon\Carbon::parse($record->shift->end_time)->format('g:i A') }}</div>
+                                @else
+                                    <span class="text-gray-400 text-xs italic">No shift assigned</span>
+                                @endif
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                                 @if($record->clock_in)
                                     <div>{{ $record->clock_in->format('h:i A') }}</div>
+                                    @if($record->scheduled_in)
+                                        <div class="text-xs text-gray-400">Scheduled: {{ $record->scheduled_in->format('g:i A') }}</div>
+                                    @endif
                                     @if($record->late_minutes > 0)
                                         <div class="text-xs text-red-500">Late: {{ $record->late_minutes }} min</div>
                                     @endif
@@ -232,6 +257,9 @@
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                                 @if($record->clock_out)
                                     <div>{{ $record->clock_out->format('h:i A') }}</div>
+                                    @if($record->scheduled_out)
+                                        <div class="text-xs text-gray-400">Scheduled: {{ $record->scheduled_out->format('g:i A') }}</div>
+                                    @endif
                                     @if($record->early_out_minutes > 0)
                                         <div class="text-xs text-orange-500">Early: {{ $record->early_out_minutes }} min</div>
                                     @endif
