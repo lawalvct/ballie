@@ -123,6 +123,23 @@
                 </div>
                 <p class="text-xs text-pink-200">Configure allowances, deductions, and benefits.</p>
             </a>
+
+            <!-- Shift Management Card -->
+            <a href="{{ route('tenant.payroll.shifts.index', ['tenant' => $tenant->slug]) }}"
+               class="action-card bg-gradient-to-br from-emerald-600 to-emerald-800 hover:from-emerald-500 hover:to-emerald-700 border border-emerald-500 rounded-xl p-4 transition-all duration-300 hover:shadow-lg hover:scale-105 group">
+                <div class="flex items-center mb-3">
+                    <div class="w-10 h-10 bg-emerald-500 bg-opacity-30 rounded-lg flex items-center justify-center mr-3 group-hover:scale-110 transition-transform duration-300">
+                        <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                    </div>
+                    <div>
+                        <h5 class="font-semibold text-white group-hover:text-emerald-200 transition-colors duration-300">Shift Management</h5>
+                        <p class="text-xs text-emerald-200">Work schedules</p>
+                    </div>
+                </div>
+                <p class="text-xs text-emerald-200">Create and manage employee shift schedules.</p>
+            </a>
         </div>
     </div>
 
