@@ -291,8 +291,9 @@ class ShiftController extends Controller
                 $currentAssignment->save();
             }
 
-            // Create new assignment
+            // Create new assignment (include tenant_id)
             EmployeeShiftAssignment::create([
+                'tenant_id' => $tenantId,
                 'employee_id' => $employee->id,
                 'shift_id' => $shift->id,
                 'effective_from' => $request->effective_from,
@@ -374,8 +375,9 @@ class ShiftController extends Controller
                     $currentAssignment->save();
                 }
 
-                // Create new assignment
+                // Create new assignment (include tenant_id)
                 EmployeeShiftAssignment::create([
+                    'tenant_id' => $tenantId,
                     'employee_id' => $employee->id,
                     'shift_id' => $request->shift_id,
                     'effective_from' => $request->effective_from,
