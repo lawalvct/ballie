@@ -1259,9 +1259,19 @@ class PayrollController extends Controller
      */
     public function importEmployees(Request $request, Tenant $tenant)
     {
-        $request->validate([
-            'file' => 'required|file|mimes:csv,xlsx|max:2048',
-        ]);
+        try {
+            $request->validate([
+                'file' => 'required|file|mimes:csv,txt,xlsx,xls|mimetypes:text/csv,text/plain,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet|max:2048',
+            ]);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            if ($request->wantsJson() || $request->ajax()) {
+                return response()->json([
+                    'message' => 'Validation failed',
+                    'errors' => $e->errors(),
+                ], 422);
+            }
+            throw $e;
+        }
 
         $file = $request->file('file');
         $imported = 0;
@@ -1386,6 +1396,7 @@ class PayrollController extends Controller
                             'basic_salary' => $data['basic_salary'],
                             'effective_date' => now(),
                             'is_current' => true,
+                            'created_by' => auth()->id() ?? 1, // Fallback to user ID 1 if auth not available
                         ]);
                     }
 

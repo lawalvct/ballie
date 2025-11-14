@@ -10,8 +10,16 @@
     Track and manage employee attendance for <span class="font-semibold">{{ $selectedDate->format('F d, Y') }}</span>.
 @endsection
 
-@section('action-buttons')
-<input type="date"
+
+
+
+
+@section('content')
+<div class="container mx-auto px-4 sm:px-6 lg:px-8 py-8" x-data="attendance()">
+
+    <div class="flex justify-end mb-4">
+        <div class="flex items-center space-x-2">
+           <input type="date"
        value="{{ $selectedDate->format('Y-m-d') }}"
        onchange="window.location.href = '{{ route('tenant.payroll.attendance.index', $tenant) }}?date=' + this.value"
        class="flex-1 px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
@@ -24,14 +32,6 @@
 <a href="{{ route('tenant.payroll.attendance.monthly-report', $tenant) }}" class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
     <i class="fas fa-calendar-alt mr-2"></i> Monthly Report
 </a>
-@endsection
-
-@section('content')
-<div class="container mx-auto px-4 sm:px-6 lg:px-8 py-8" x-data="attendance()">
-
-    <div class="flex justify-end mb-4">
-        <div class="flex items-center space-x-2">
-            @yield('action-buttons')
         </div>
     </div>
 

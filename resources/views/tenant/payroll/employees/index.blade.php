@@ -388,14 +388,26 @@
         <!-- Modal Body -->
         <div class="p-6">
             <!-- Instructions -->
-            <div class="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-                <h4 class="font-medium text-blue-900 mb-2">Import Instructions:</h4>
-                <ul class="text-sm text-blue-800 space-y-1 list-disc list-inside">
-                    <li>Download the template below to see the required format</li>
-                    <li>Fill in employee data in the template</li>
-                    <li>Save as CSV file</li>
-                    <li>Upload the file to import all employees at once</li>
-                </ul>
+            <div class="mb-6 border border-blue-200 rounded-lg" x-data="{ open: false }">
+                <button @click="open = !open" type="button" class="w-full p-4 bg-blue-50 hover:bg-blue-100 transition-colors duration-200 flex items-center justify-between rounded-lg">
+                    <h4 class="font-medium text-blue-900">Import Instructions</h4>
+                    <i class="fas transition-transform duration-200" :class="open ? 'fa-chevron-up' : 'fa-chevron-down'"></i>
+                </button>
+                <div x-show="open"
+                     x-transition:enter="transition ease-out duration-200"
+                     x-transition:enter-start="opacity-0 transform -translate-y-2"
+                     x-transition:enter-end="opacity-100 transform translate-y-0"
+                     x-transition:leave="transition ease-in duration-150"
+                     x-transition:leave-start="opacity-100 transform translate-y-0"
+                     x-transition:leave-end="opacity-0 transform -translate-y-2"
+                     class="p-4 bg-white border-t border-blue-200">
+                    <ul class="text-sm text-blue-800 space-y-1 list-disc list-inside">
+                        <li>Download the template below to see the required format</li>
+                        <li>Fill in employee data in the template</li>
+                        <li>Save as CSV file</li>
+                        <li>Upload the file to import all employees at once</li>
+                    </ul>
+                </div>
             </div>
 
             <!-- Download Template Button -->
@@ -615,6 +627,15 @@ document.addEventListener('DOMContentLoaded', function() {
                 location.reload();
             } else {
                 let errorMsg = data.message || 'Unknown error';
+
+                // Check for validation errors
+                if (data.errors && typeof data.errors === 'object') {
+                    const validationErrors = Object.values(data.errors).flat();
+                    if (validationErrors.length > 0) {
+                        errorMsg += '\n\nValidation errors:\n' + validationErrors.join('\n');
+                    }
+                }
+
                 if (data.error_details && data.error_details.length > 0) {
                     errorMsg += '\n\nFirst few errors:\n' + data.error_details.join('\n');
                 }
