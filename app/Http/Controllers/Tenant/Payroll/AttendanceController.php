@@ -71,15 +71,23 @@ class AttendanceController extends Controller
                         ->first();
 
                     if (!$existing) {
+                        // Get employee's current shift assignment
+                        $employeeWithShift = Employee::where('id', $employee->id)
+                            ->with('currentShiftAssignment.shift')
+                            ->first();
+
+                        $shiftId = $employeeWithShift->currentShiftAssignment?->shift_id;
+
                         $record = AttendanceRecord::create([
                             'tenant_id' => $tenant->id,
                             'employee_id' => $employee->id,
                             'attendance_date' => $selectedDate,
+                            'shift_id' => $shiftId,
                             'status' => 'absent',
                             'created_by' => Auth::id(),
                         ]);
 
-                        $attendanceRecords->push($record->load(['employee.department']));
+                        $attendanceRecords->push($record->load(['employee.department', 'shift']));
                     }
                 }
             }

@@ -121,9 +121,11 @@ class Employee extends Model
     public function currentShiftAssignment(): HasOne
     {
         return $this->hasOne(EmployeeShiftAssignment::class)
-            ->whereNull('effective_to')
-            ->orWhere('effective_to', '>=', now())
             ->where('effective_from', '<=', now())
+            ->where(function($q) {
+                $q->whereNull('effective_to')
+                  ->orWhere('effective_to', '>=', now());
+            })
             ->orderBy('effective_from', 'desc');
     }
 
