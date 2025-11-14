@@ -69,7 +69,7 @@ class ShiftController extends Controller
             DB::commit();
 
             return redirect()
-                ->route('tenant.payroll.shifts.index', ['tenant' => $tenant->id])
+                ->route('tenant.payroll.shifts.index', $tenant)
                 ->with('success', 'Shift created successfully.');
         } catch (\Exception $e) {
             DB::rollBack();
@@ -146,7 +146,7 @@ class ShiftController extends Controller
             DB::commit();
 
             return redirect()
-                ->route('tenant.payroll.shifts.show', ['tenant' => $tenant->id, 'shift' => $shift->id])
+                ->route('tenant.payroll.shifts.show', [$tenant, $shift->id])
                 ->with('success', 'Shift updated successfully.');
         } catch (\Exception $e) {
             DB::rollBack();
@@ -179,7 +179,7 @@ class ShiftController extends Controller
             DB::commit();
 
             return redirect()
-                ->route('tenant.payroll.shifts.index', ['tenant' => $tenant->id])
+                ->route('tenant.payroll.shifts.index', $tenant)
                 ->with('success', 'Shift deleted successfully.');
         } catch (\Exception $e) {
             DB::rollBack();
@@ -303,7 +303,7 @@ class ShiftController extends Controller
             DB::commit();
 
             return redirect()
-                ->route('tenant.payroll.shifts.assignments', ['tenant' => $tenant->id])
+                ->route('tenant.payroll.shifts.assignments', $tenant)
                 ->with('success', 'Employee assigned to shift successfully.');
         } catch (\Exception $e) {
             DB::rollBack();
