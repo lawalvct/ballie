@@ -19,7 +19,7 @@ class ShiftController extends Controller
 
         $shifts = ShiftSchedule::where('tenant_id', $tenantId)
             ->withCount('employeeAssignments')
-            ->orderBy('shift_name')
+            ->orderBy('name')
             ->get();
 
         return view('tenant.shifts.index', compact('shifts'));
@@ -33,15 +33,14 @@ class ShiftController extends Controller
     public function store(Request $request, Tenant $tenant)
     {
         $request->validate([
-            'shift_name' => 'required|string|max:100',
-            'shift_code' => 'required|string|max:20|unique:shift_schedules,shift_code',
+            'name' => 'required|string|max:100',
+            'code' => 'required|string|max:20|unique:shift_schedules,code',
             'start_time' => 'required|date_format:H:i',
             'end_time' => 'required|date_format:H:i',
             'working_days' => 'required|array',
             'working_days.*' => 'in:monday,tuesday,wednesday,thursday,friday,saturday,sunday',
-            'grace_period_minutes' => 'nullable|integer|min:0|max:60',
-            'half_day_hours' => 'nullable|numeric|min:0',
-            'full_day_hours' => 'required|numeric|min:0',
+            'late_grace_minutes' => 'nullable|integer|min:0|max:60',
+            'work_hours' => 'required|numeric|min:0',
             'shift_allowance' => 'nullable|numeric|min:0',
             'description' => 'nullable|string|max:500',
         ]);
@@ -51,19 +50,18 @@ class ShiftController extends Controller
         DB::beginTransaction();
         try {
             $data = $request->only([
-                'shift_name',
-                'shift_code',
+                'name',
+                'code',
                 'start_time',
                 'end_time',
-                'grace_period_minutes',
-                'half_day_hours',
-                'full_day_hours',
+                'late_grace_minutes',
+                'work_hours',
                 'shift_allowance',
                 'description',
             ]);
 
             $data['tenant_id'] = $tenantId;
-            $data['working_days'] = implode(',', $request->working_days);
+            $data['working_days'] = $request->working_days;
             $data['is_active'] = true;
 
             $shift = ShiftSchedule::create($data);
@@ -71,7 +69,7 @@ class ShiftController extends Controller
             DB::commit();
 
             return redirect()
-                ->route('tenant.shifts.index', ['tenant' => $tenant->id])
+                ->route('tenant.payroll.shifts.index', ['tenant' => $tenant->id])
                 ->with('success', 'Shift created successfully.');
         } catch (\Exception $e) {
             DB::rollBack();
@@ -88,8 +86,8 @@ class ShiftController extends Controller
             ->withCount('employeeAssignments')
             ->firstOrFail();
 
-        $assignments = EmployeeShiftAssignment::with('employee.department')
-            ->where('shift_schedule_id', $shift->id)
+        $assignments = EmployeeShiftAssignment::with(['employee.department', 'shift'])
+            ->where('shift_id', $shift->id)
             ->orderBy('effective_from', 'desc')
             ->paginate(20);
 
@@ -110,15 +108,14 @@ class ShiftController extends Controller
     public function update(Request $request, Tenant $tenant, $id)
     {
         $request->validate([
-            'shift_name' => 'required|string|max:100',
-            'shift_code' => 'required|string|max:20|unique:shift_schedules,shift_code,' . $id,
+            'name' => 'required|string|max:100',
+            'code' => 'required|string|max:20|unique:shift_schedules,code,' . $id,
             'start_time' => 'required|date_format:H:i',
             'end_time' => 'required|date_format:H:i',
             'working_days' => 'required|array',
             'working_days.*' => 'in:monday,tuesday,wednesday,thursday,friday,saturday,sunday',
-            'grace_period_minutes' => 'nullable|integer|min:0|max:60',
-            'half_day_hours' => 'nullable|numeric|min:0',
-            'full_day_hours' => 'required|numeric|min:0',
+            'late_grace_minutes' => 'nullable|integer|min:0|max:60',
+            'work_hours' => 'required|numeric|min:0',
             'shift_allowance' => 'nullable|numeric|min:0',
             'description' => 'nullable|string|max:500',
             'is_active' => 'required|boolean',
@@ -132,25 +129,24 @@ class ShiftController extends Controller
         DB::beginTransaction();
         try {
             $shift->fill($request->only([
-                'shift_name',
-                'shift_code',
+                'name',
+                'code',
                 'start_time',
                 'end_time',
-                'grace_period_minutes',
-                'half_day_hours',
-                'full_day_hours',
+                'late_grace_minutes',
+                'work_hours',
                 'shift_allowance',
                 'description',
                 'is_active',
             ]));
 
-            $shift->working_days = implode(',', $request->working_days);
+            $shift->working_days = $request->working_days;
             $shift->save();
 
             DB::commit();
 
             return redirect()
-                ->route('tenant.shifts.show', ['tenant' => $tenant->id, 'shift' => $shift->id])
+                ->route('tenant.payroll.shifts.show', ['tenant' => $tenant->id, 'shift' => $shift->id])
                 ->with('success', 'Shift updated successfully.');
         } catch (\Exception $e) {
             DB::rollBack();
@@ -166,7 +162,7 @@ class ShiftController extends Controller
             ->firstOrFail();
 
         // Check if shift has active assignments
-        $activeAssignments = EmployeeShiftAssignment::where('shift_schedule_id', $shift->id)
+        $activeAssignments = EmployeeShiftAssignment::where('shift_id', $shift->id)
             ->where(function($q) {
                 $q->whereNull('effective_to')
                     ->orWhere('effective_to', '>=', now()->toDateString());
@@ -183,7 +179,7 @@ class ShiftController extends Controller
             DB::commit();
 
             return redirect()
-                ->route('tenant.shifts.index', ['tenant' => $tenant->id])
+                ->route('tenant.payroll.shifts.index', ['tenant' => $tenant->id])
                 ->with('success', 'Shift deleted successfully.');
         } catch (\Exception $e) {
             DB::rollBack();
@@ -196,7 +192,7 @@ class ShiftController extends Controller
     {
         $tenantId = $tenant->id;
 
-        $query = EmployeeShiftAssignment::with(['employee.department', 'shiftSchedule'])
+        $query = EmployeeShiftAssignment::with(['employee.department', 'shift'])
             ->whereHas('employee', function($q) use ($tenantId) {
                 $q->where('tenant_id', $tenantId);
             });
@@ -212,7 +208,7 @@ class ShiftController extends Controller
         }
 
         if ($request->filled('shift_id')) {
-            $query->where('shift_schedule_id', $request->shift_id);
+            $query->where('shift_id', $request->shift_id);
         }
 
         if ($request->filled('status')) {
@@ -255,7 +251,7 @@ class ShiftController extends Controller
 
         $employees = Employee::where('tenant_id', $tenantId)
             ->where('status', 'active')
-            ->with(['department', 'currentShiftAssignment.shiftSchedule'])
+            ->with(['department', 'currentShiftAssignment.shift'])
             ->orderBy('first_name')
             ->get();
 
@@ -266,7 +262,7 @@ class ShiftController extends Controller
     {
         $request->validate([
             'employee_id' => 'required|exists:employees,id',
-            'shift_schedule_id' => 'required|exists:shift_schedules,id',
+            'shift_id' => 'required|exists:shift_schedules,id',
             'effective_from' => 'required|date',
             'effective_to' => 'nullable|date|after:effective_from',
             'is_permanent' => 'required|boolean',
@@ -277,7 +273,7 @@ class ShiftController extends Controller
             ->where('tenant_id', $tenantId)
             ->firstOrFail();
 
-        $shift = ShiftSchedule::where('id', $request->shift_schedule_id)
+        $shift = ShiftSchedule::where('id', $request->shift_id)
             ->where('tenant_id', $tenantId)
             ->firstOrFail();
 
@@ -298,7 +294,7 @@ class ShiftController extends Controller
             // Create new assignment
             EmployeeShiftAssignment::create([
                 'employee_id' => $employee->id,
-                'shift_schedule_id' => $shift->id,
+                'shift_id' => $shift->id,
                 'effective_from' => $request->effective_from,
                 'effective_to' => $request->is_permanent ? null : $request->effective_to,
                 'is_permanent' => $request->is_permanent,
@@ -307,7 +303,7 @@ class ShiftController extends Controller
             DB::commit();
 
             return redirect()
-                ->route('tenant.shifts.assignments', ['tenant' => $tenant->id])
+                ->route('tenant.payroll.shifts.assignments', ['tenant' => $tenant->id])
                 ->with('success', 'Employee assigned to shift successfully.');
         } catch (\Exception $e) {
             DB::rollBack();
@@ -344,7 +340,7 @@ class ShiftController extends Controller
         $request->validate([
             'employee_ids' => 'required|array',
             'employee_ids.*' => 'exists:employees,id',
-            'shift_schedule_id' => 'required|exists:shift_schedules,id',
+            'shift_id' => 'required|exists:shift_schedules,id',
             'effective_from' => 'required|date',
             'is_permanent' => 'required|boolean',
             'effective_to' => 'nullable|date|after:effective_from',
@@ -381,7 +377,7 @@ class ShiftController extends Controller
                 // Create new assignment
                 EmployeeShiftAssignment::create([
                     'employee_id' => $employee->id,
-                    'shift_schedule_id' => $request->shift_schedule_id,
+                    'shift_id' => $request->shift_id,
                     'effective_from' => $request->effective_from,
                     'effective_to' => $request->is_permanent ? null : $request->effective_to,
                     'is_permanent' => $request->is_permanent,

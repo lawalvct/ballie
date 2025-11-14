@@ -17,7 +17,7 @@
 
 -   Clock in/out tracking with timestamps
 -   IP address and location logging
--   Scheduled vs actual time comparison
+-   mparisoScheduled vs actual time con
 -   Automatic calculation of:
     -   Late minutes
     -   Early out minutes
@@ -118,12 +118,57 @@ $attendance->hasOvertime(); // Boolean
 
 ## 📋 HOW THE ATTENDANCE SYSTEM WORKS
 
+### Shift & Working Hours Management:
+
+**The system uses SHIFT SCHEDULES to determine working hours:**
+
+1. **Shift Schedules** (`shift_schedules` table)
+
+    - Define working hours (e.g., 8:00 AM - 5:00 PM = 8 hours)
+    - Set break time (e.g., 60 minutes lunch)
+    - Configure grace periods:
+        - Late grace: 15 minutes (arrive 8:15 AM = not late)
+        - Early out grace: 15 minutes (leave 4:45 PM = not early)
+    - Optional shift allowance (extra pay for evening/night shifts)
+    - Working days configuration (Monday-Friday, etc.)
+    - Default shift for new employees
+
+2. **Default Shifts Created Automatically:**
+
+    - **Morning Shift**: 8:00 AM - 5:00 PM (8 hours + 1 hour break)
+    - **Evening Shift**: 2:00 PM - 10:00 PM (8 hours + 1 hour break, ₦5,000 allowance)
+    - **Night Shift**: 10:00 PM - 6:00 AM (8 hours + 1 hour break, ₦10,000 allowance)
+
+3. **Assigning Shifts to Employees:**
+
+    - Admin assigns shift to employee via `employee_shift_assignments`
+    - Can have different shifts for different periods
+    - System uses employee's active shift for attendance calculation
+
+4. **Tenant-Wide Default Settings** (stored in `tenants.settings` JSON):
+    ```json
+    {
+        "attendance": {
+            "default_shift_id": 1,
+            "default_work_hours": 8,
+            "default_break_minutes": 60,
+            "default_late_grace_minutes": 15,
+            "auto_clock_out_enabled": true,
+            "auto_clock_out_time": "18:00",
+            "require_location": false,
+            "allow_early_clock_in_minutes": 30
+        }
+    }
+    ```
+
 ### Daily Flow:
 
 1. **Morning - Auto-Create Records**
 
     - When admin opens attendance page
     - System creates blank attendance records for all active employees
+    - Uses employee's assigned shift OR tenant's default shift
+    - Sets `scheduled_in` and `scheduled_out` from shift times
     - Default status: "absent"
 
 2. **Employee Arrives**
@@ -133,24 +178,36 @@ $attendance->hasOvertime(); // Boolean
         - Exact clock-in time
         - IP address
         - Location (if provided)
-    - Compares with scheduled time from shift
-    - Automatically sets status:
-        - "present" if on time
-        - "late" if after grace period
+    - **Compares with shift's scheduled start time:**
+        - Calculates difference in minutes
+        - Applies shift's `late_grace_minutes` (default 15 min)
+        - If within grace period: Status = "present"
+        - If beyond grace period: Status = "late" + records late_minutes
+    - Example:
+        - Shift start: 8:00 AM, Grace: 15 min
+        - Clock in at 8:10 AM → Present (within grace)
+        - Clock in at 8:20 AM → Late (20 minutes late)
 
 3. **Employee Leaves**
 
     - Employee/Admin clocks out
     - System calculates:
-        - Total work hours
-        - Early departure (if applicable)
-        - Overtime (if worked beyond scheduled time)
+        - **Total minutes** = clock_out - clock_in
+        - **Work hours** = (total_minutes - break_minutes) / 60
+        - **Early departure**: If clock_out < scheduled_out (minus grace)
+        - **Overtime**: If clock_out > scheduled_out
+    - Example:
+        - Shift: 8:00 AM - 5:00 PM (8 hours + 1 hour break)
+        - Clock in: 8:00 AM, Clock out: 6:00 PM
+        - Work time: 10 hours - 1 hour break = 9 hours
+        - Overtime: 1 hour
 
 4. **Manual Adjustments**
 
     - Admin can mark absent with reason
-    - Admin can mark half-day
-    - Admin can manually edit times
+    - Admin can mark half-day (work_hours = shift_hours / 2)
+    - Admin can manually edit clock times
+    - Admin can adjust break minutes
 
 5. **Approval**
     - Manager/Admin approves attendance
