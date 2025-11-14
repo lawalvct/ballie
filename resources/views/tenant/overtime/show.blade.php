@@ -99,12 +99,22 @@
                     <div class="text-base font-semibold text-gray-900">{{ $overtime->overtime_number }}</div>
                 </div>
 
+                <!-- Calculation Method -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-500 mb-1">Calculation Method</label>
+                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-sm font-medium
+                        {{ $overtime->calculation_method === 'hourly' ? 'bg-blue-100 text-blue-800' : 'bg-green-100 text-green-800' }}">
+                        {{ $overtime->calculation_method === 'hourly' ? 'Hourly Rate' : 'Fixed Amount' }}
+                    </span>
+                </div>
+
                 <!-- Date -->
                 <div>
                     <label class="block text-sm font-medium text-gray-500 mb-1">Date</label>
                     <div class="text-base text-gray-900">{{ $overtime->overtime_date->format('F d, Y') }}</div>
                 </div>
 
+                @if($overtime->calculation_method === 'hourly')
                 <!-- Time Range -->
                 <div>
                     <label class="block text-sm font-medium text-gray-500 mb-1">Time Range</label>
@@ -137,14 +147,21 @@
                     <label class="block text-sm font-medium text-gray-500 mb-1">Hourly Rate</label>
                     <div class="text-base text-gray-900">₦{{ number_format($overtime->hourly_rate, 2) }}</div>
                 </div>
+                @endif
 
                 <!-- Total Amount -->
                 <div>
                     <label class="block text-sm font-medium text-gray-500 mb-1">Total Amount</label>
                     <div class="text-2xl font-bold text-indigo-600">₦{{ number_format($overtime->total_amount, 2) }}</div>
+                    @if($overtime->calculation_method === 'hourly')
                     <div class="text-xs text-gray-500 mt-1">
                         {{ $overtime->total_hours }} hrs × ₦{{ number_format($overtime->hourly_rate, 2) }} × {{ $overtime->multiplier }}x
                     </div>
+                    @else
+                    <div class="text-xs text-gray-500 mt-1">
+                        Fixed amount (no hourly calculation)
+                    </div>
+                    @endif
                 </div>
             </div>
 

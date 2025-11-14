@@ -12,7 +12,7 @@ class OvertimeRecord extends Model
 
     protected $fillable = [
         'tenant_id', 'employee_id', 'overtime_number', 'overtime_date',
-        'start_time', 'end_time', 'total_hours', 'hourly_rate', 'multiplier',
+        'calculation_method', 'start_time', 'end_time', 'total_hours', 'hourly_rate', 'multiplier',
         'total_amount', 'reason', 'work_description', 'overtime_type',
         'status', 'approved_by', 'approved_at', 'approval_remarks',
         'rejected_by', 'rejected_at', 'rejection_reason',
@@ -43,13 +43,16 @@ class OvertimeRecord extends Model
                 $overtime->overtime_number = static::generateOvertimeNumber($overtime->tenant_id);
             }
 
-            // Calculate total amount
-            $overtime->total_amount = $overtime->total_hours * $overtime->hourly_rate * $overtime->multiplier;
+            // Calculate total amount based on method
+            if ($overtime->calculation_method === 'hourly') {
+                $overtime->total_amount = $overtime->total_hours * $overtime->hourly_rate * $overtime->multiplier;
+            }
+            // For fixed, total_amount is already set from user input
         });
 
         static::updating(function ($overtime) {
-            // Recalculate if hours, rate, or multiplier changes
-            if ($overtime->isDirty(['total_hours', 'hourly_rate', 'multiplier'])) {
+            // Recalculate only if hourly method and relevant fields change
+            if ($overtime->calculation_method === 'hourly' && $overtime->isDirty(['total_hours', 'hourly_rate', 'multiplier'])) {
                 $overtime->total_amount = $overtime->total_hours * $overtime->hourly_rate * $overtime->multiplier;
             }
         });
@@ -151,7 +154,7 @@ class OvertimeRecord extends Model
         }
     }
 
-    public function approve(int $userId, ?string $remarks = null): bool
+    public function approve(int $userId, ?float $approvedHours = null, ?string $remarks = null): bool
     {
         if ($this->status !== 'pending') {
             return false;
@@ -161,6 +164,14 @@ class OvertimeRecord extends Model
         $this->approved_by = $userId;
         $this->approved_at = now();
         $this->approval_remarks = $remarks;
+
+        // If approved hours provided and different from recorded hours, recalculate
+        if ($approvedHours !== null && $this->calculation_method === 'hourly' && $approvedHours != $this->total_hours) {
+            $this->total_hours = $approvedHours;
+            // Recalculate total amount with approved hours
+            $this->total_amount = $this->total_hours * $this->hourly_rate * $this->multiplier;
+        }
+
         $this->save();
 
         return true;

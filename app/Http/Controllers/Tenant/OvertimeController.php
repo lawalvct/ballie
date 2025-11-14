@@ -110,10 +110,12 @@ class OvertimeController extends Controller
         $request->validate([
             'employee_id' => 'required|exists:employees,id',
             'overtime_date' => 'required|date',
-            'start_time' => 'required|date_format:H:i',
-            'end_time' => 'required|date_format:H:i|after:start_time',
-            'overtime_type' => 'required|in:weekday,weekend,holiday,emergency',
-            'hourly_rate' => 'required|numeric|min:0',
+            'calculation_method' => 'required|in:hourly,fixed',
+            'start_time' => 'required_if:calculation_method,hourly|nullable|date_format:H:i',
+            'end_time' => 'required_if:calculation_method,hourly|nullable|date_format:H:i|after:start_time',
+            'overtime_type' => 'required_if:calculation_method,hourly|nullable|in:weekday,weekend,holiday,emergency',
+            'hourly_rate' => 'required_if:calculation_method,hourly|nullable|numeric|min:0',
+            'fixed_amount' => 'required_if:calculation_method,fixed|nullable|numeric|min:0',
             'reason' => 'required|string|max:500',
         ]);
 
@@ -124,39 +126,48 @@ class OvertimeController extends Controller
 
         DB::beginTransaction();
         try {
-            $data = $request->only([
-                'employee_id',
-                'overtime_date',
-                'start_time',
-                'end_time',
-                'overtime_type',
-                'hourly_rate',
-                'reason',
-            ]);
-
-            $data['tenant_id'] = $tenantId;
-            $data['status'] = 'pending';
-
-            // Calculate hours
-            $start = \Carbon\Carbon::parse($request->overtime_date . ' ' . $request->start_time);
-            $end = \Carbon\Carbon::parse($request->overtime_date . ' ' . $request->end_time);
-            $data['total_hours'] = $end->diffInHours($start, true);
-
-            // Multiplier based on type
-            $multipliers = [
-                'weekday' => 1.5,
-                'weekend' => 2.0,
-                'holiday' => 2.5,
-                'emergency' => 2.0,
+            $data = [
+                'tenant_id' => $tenantId,
+                'employee_id' => $request->employee_id,
+                'overtime_date' => $request->overtime_date,
+                'calculation_method' => $request->calculation_method,
+                'reason' => $request->reason,
+                'work_description' => $request->work_description,
+                'status' => 'pending',
+                'created_by' => auth()->id(),
             ];
-            $data['multiplier'] = $multipliers[$request->overtime_type];
+
+            if ($request->calculation_method === 'hourly') {
+                // Hourly calculation
+                $data['start_time'] = $request->start_time;
+                $data['end_time'] = $request->end_time;
+                $data['overtime_type'] = $request->overtime_type;
+                $data['hourly_rate'] = $request->hourly_rate;
+
+                // Calculate hours
+                $start = \Carbon\Carbon::parse($request->overtime_date . ' ' . $request->start_time);
+                $end = \Carbon\Carbon::parse($request->overtime_date . ' ' . $request->end_time);
+                $data['total_hours'] = $end->diffInHours($start, true);
+
+                // Multiplier based on type
+                $multipliers = [
+                    'weekday' => 1.5,
+                    'weekend' => 2.0,
+                    'holiday' => 2.5,
+                    'emergency' => 2.0,
+                ];
+                $data['multiplier'] = $multipliers[$request->overtime_type];
+            } else {
+                // Fixed amount
+                $data['total_amount'] = $request->fixed_amount;
+            }
 
             $overtime = OvertimeRecord::create($data);
 
             DB::commit();
 
             return redirect()
-                ->route('tenant.payroll.overtime.show', ['tenant' => $tenant->id, 'id' => $overtime->id])
+                ->route('tenant.payroll.overtime.show', ['tenant' => $tenant->slug, 'id' => $overtime->id])
                 ->with('success', 'Overtime record created successfully.');
         } catch (\Exception $e) {
             DB::rollBack();
@@ -202,10 +213,12 @@ class OvertimeController extends Controller
     {
         $request->validate([
             'overtime_date' => 'required|date',
-            'start_time' => 'required|date_format:H:i',
-            'end_time' => 'required|date_format:H:i|after:start_time',
-            'overtime_type' => 'required|in:weekday,weekend,holiday,emergency',
-            'hourly_rate' => 'required|numeric|min:0',
+            'calculation_method' => 'required|in:hourly,fixed',
+            'start_time' => 'required_if:calculation_method,hourly|nullable|date_format:H:i',
+            'end_time' => 'required_if:calculation_method,hourly|nullable|date_format:H:i|after:start_time',
+            'overtime_type' => 'required_if:calculation_method,hourly|nullable|in:weekday,weekend,holiday,emergency',
+            'hourly_rate' => 'required_if:calculation_method,hourly|nullable|numeric|min:0',
+            'fixed_amount' => 'required_if:calculation_method,fixed|nullable|numeric|min:0',
             'reason' => 'required|string|max:500',
         ]);
 
@@ -217,35 +230,53 @@ class OvertimeController extends Controller
 
         DB::beginTransaction();
         try {
-            $overtime->fill($request->only([
-                'overtime_date',
-                'start_time',
-                'end_time',
-                'overtime_type',
-                'hourly_rate',
-                'reason',
-            ]));
+            $overtime->calculation_method = $request->calculation_method;
+            $overtime->overtime_date = $request->overtime_date;
+            $overtime->reason = $request->reason;
+            $overtime->work_description = $request->work_description;
 
-            // Recalculate hours
-            $start = \Carbon\Carbon::parse($request->overtime_date . ' ' . $request->start_time);
-            $end = \Carbon\Carbon::parse($request->overtime_date . ' ' . $request->end_time);
-            $overtime->total_hours = $end->diffInHours($start, true);
+            if ($request->calculation_method === 'hourly') {
+                // Hourly calculation
+                $overtime->start_time = $request->start_time;
+                $overtime->end_time = $request->end_time;
+                $overtime->overtime_type = $request->overtime_type;
+                $overtime->hourly_rate = $request->hourly_rate;
 
-            // Update multiplier
-            $multipliers = [
-                'weekday' => 1.5,
-                'weekend' => 2.0,
-                'holiday' => 2.5,
-                'emergency' => 2.0,
-            ];
-            $overtime->multiplier = $multipliers[$request->overtime_type];
+                // Calculate hours
+                $start = \Carbon\Carbon::parse($request->overtime_date . ' ' . $request->start_time);
+                $end = \Carbon\Carbon::parse($request->overtime_date . ' ' . $request->end_time);
+                $overtime->total_hours = $end->diffInHours($start, true);
 
+                // Update multiplier
+                $multipliers = [
+                    'weekday' => 1.5,
+                    'weekend' => 2.0,
+                    'holiday' => 2.5,
+                    'emergency' => 2.0,
+                ];
+                $overtime->multiplier = $multipliers[$request->overtime_type];
+            } else {
+                // Fixed amount
+                $overtime->total_amount = $request->fixed_amount;
+                // Clear hourly fields but keep overtime_type with default
+                $overtime->start_time = null;
+                $overtime->end_time = null;
+                $overtime->total_hours = null;
+                $overtime->hourly_rate = null;
+                $overtime->multiplier = null;
+                // Keep weekday as default for fixed amount (column doesn't allow null)
+                if (!$overtime->overtime_type) {
+                    $overtime->overtime_type = 'weekday';
+                }
+            }
+
+            $overtime->updated_by = auth()->id();
             $overtime->save();
 
             DB::commit();
 
             return redirect()
-                ->route('tenant.payroll.overtime.show', ['tenant' => $tenant->id, 'id' => $overtime->id])
+                ->route('tenant.payroll.overtime.show', ['tenant' => $tenant->slug, 'id' => $overtime->id])
                 ->with('success', 'Overtime record updated successfully.');
         } catch (\Exception $e) {
             DB::rollBack();
@@ -387,7 +418,7 @@ class OvertimeController extends Controller
             DB::commit();
 
             return redirect()
-                ->route('tenant.payroll.overtime.index', ['tenant' => $tenant->id])
+                ->route('tenant.payroll.overtime.index', ['tenant' => $tenant->slug])
                 ->with('success', 'Overtime record deleted successfully.');
         } catch (\Exception $e) {
             DB::rollBack();

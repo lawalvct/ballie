@@ -17,12 +17,13 @@ return new class extends Migration
             $table->foreignId('employee_id')->constrained('employees')->onDelete('cascade');
             $table->string('overtime_number')->unique(); // OT-2024-001
             $table->date('overtime_date');
-            $table->time('start_time');
-            $table->time('end_time');
-            $table->integer('total_hours'); // Total overtime hours
-            $table->decimal('hourly_rate', 10, 2); // Rate per hour
-            $table->decimal('multiplier', 4, 2)->default(1.5); // 1.5x, 2x for weekends/holidays
-            $table->decimal('total_amount', 10, 2); // Calculated overtime pay
+            $table->enum('calculation_method', ['hourly', 'fixed'])->default('hourly'); // hourly or fixed amount
+            $table->time('start_time')->nullable();
+            $table->time('end_time')->nullable();
+            $table->integer('total_hours')->nullable(); // Total overtime hours (null for fixed)
+            $table->decimal('hourly_rate', 10, 2)->nullable(); // Rate per hour (null for fixed)
+            $table->decimal('multiplier', 4, 2)->nullable(); // 1.5x, 2x for weekends/holidays (null for fixed)
+            $table->decimal('total_amount', 10, 2); // Calculated or fixed overtime pay
             $table->text('reason');
             $table->text('work_description')->nullable(); // What work was done
 

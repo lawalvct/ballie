@@ -47,6 +47,37 @@
                 @enderror
             </div>
 
+            <!-- Calculation Method -->
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">
+                    Calculation Method <span class="text-red-500">*</span>
+                </label>
+                <div class="grid grid-cols-2 gap-4">
+                    <label class="relative flex items-center p-4 border-2 rounded-lg cursor-pointer hover:bg-gray-50 transition-colors"
+                           onclick="toggleCalculationMethod('hourly')">
+                        <input type="radio" name="calculation_method" value="hourly" id="method_hourly"
+                               {{ old('calculation_method', $overtime->calculation_method ?? 'hourly') == 'hourly' ? 'checked' : '' }}
+                               class="w-4 h-4 text-indigo-600 border-gray-300 focus:ring-indigo-500">
+                        <div class="ml-3">
+                            <div class="font-medium text-gray-900">Hourly Rate</div>
+                            <div class="text-xs text-gray-500">Calculate based on hours × rate × multiplier</div>
+                        </div>
+                    </label>
+                    <label class="relative flex items-center p-4 border-2 rounded-lg cursor-pointer hover:bg-gray-50 transition-colors"
+                           onclick="toggleCalculationMethod('fixed')">
+                        <input type="radio" name="calculation_method" value="fixed" id="method_fixed"
+                               {{ old('calculation_method', $overtime->calculation_method) == 'fixed' ? 'checked' : '' }}
+                               class="w-4 h-4 text-indigo-600 border-gray-300 focus:ring-indigo-500">
+                        <div class="ml-3">
+                            <div class="font-medium text-gray-900">Fixed Amount</div>
+                            <div class="text-xs text-gray-500">Enter a specific amount directly</div>
+                        </div>
+                    </label>
+                </div>
+            </div>
+
+            <!-- Hourly Fields Container -->
+            <div id="hourly_fields" class="space-y-6">
             <!-- Time Range -->
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
@@ -54,7 +85,7 @@
                         Start Time <span class="text-red-500">*</span>
                     </label>
                     <input type="time" id="start_time" name="start_time"
-                           value="{{ old('start_time', \Carbon\Carbon::parse($overtime->start_time)->format('H:i')) }}" required
+                           value="{{ old('start_time', $overtime->start_time ? \Carbon\Carbon::parse($overtime->start_time)->format('H:i') : '') }}"
                            onchange="calculateHours()"
                            class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-indigo-500 focus:border-transparent @error('start_time') border-red-500 @enderror">
                     @error('start_time')
@@ -67,7 +98,7 @@
                         End Time <span class="text-red-500">*</span>
                     </label>
                     <input type="time" id="end_time" name="end_time"
-                           value="{{ old('end_time', \Carbon\Carbon::parse($overtime->end_time)->format('H:i')) }}" required
+                           value="{{ old('end_time', $overtime->end_time ? \Carbon\Carbon::parse($overtime->end_time)->format('H:i') : '') }}"
                            onchange="calculateHours()"
                            class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-indigo-500 focus:border-transparent @error('end_time') border-red-500 @enderror">
                     @error('end_time')
@@ -138,6 +169,33 @@
                     <span id="calculation_formula">{{ $overtime->total_hours }} hours × ₦{{ number_format($overtime->hourly_rate, 2) }} × {{ $overtime->multiplier }}x = ₦{{ number_format($overtime->total_amount, 2) }}</span>
                 </p>
             </div>
+            </div>
+
+            <!-- Fixed Amount Container -->
+            <div id="fixed_fields" class="hidden">
+                <div>
+                    <label for="fixed_amount" class="block text-sm font-medium text-gray-700 mb-2">
+                        Fixed Overtime Amount (₦) <span class="text-red-500">*</span>
+                    </label>
+                    <div class="relative">
+                        <span class="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500">₦</span>
+                        <input type="number" id="fixed_amount" name="fixed_amount"
+                               value="{{ old('fixed_amount', $overtime->calculation_method == 'fixed' ? $overtime->total_amount : '') }}"
+                               step="0.01" min="0"
+                               placeholder="Enter amount"
+                               class="w-full border border-gray-300 rounded-lg pl-10 pr-4 py-3 text-lg font-medium focus:ring-2 focus:ring-indigo-500 focus:border-transparent @error('fixed_amount') border-red-500 @enderror">
+                    </div>
+                    <p class="text-sm text-gray-500 mt-2">
+                        <svg class="w-4 h-4 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                        Enter the exact amount you want to pay as overtime, regardless of hours worked.
+                    </p>
+                    @error('fixed_amount')
+                        <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                    @enderror
+                </div>
+            </div>
 
             <!-- Reason -->
             <div>
@@ -182,6 +240,38 @@
 
 @push('scripts')
 <script>
+// Toggle between hourly and fixed calculation methods
+function toggleCalculationMethod(method) {
+    const hourlyFields = document.getElementById('hourly_fields');
+    const fixedFields = document.getElementById('fixed_fields');
+    const hourlyRadio = document.querySelector('input[name="calculation_method"][value="hourly"]');
+    const fixedRadio = document.querySelector('input[name="calculation_method"][value="fixed"]');
+
+    if (method === 'hourly') {
+        hourlyFields.classList.remove('hidden');
+        fixedFields.classList.add('hidden');
+        hourlyRadio.checked = true;
+
+        // Make hourly fields required
+        document.getElementById('start_time').required = true;
+        document.getElementById('end_time').required = true;
+        document.getElementById('overtime_type').required = true;
+        document.getElementById('hourly_rate').required = true;
+        document.getElementById('fixed_amount').required = false;
+    } else {
+        hourlyFields.classList.add('hidden');
+        fixedFields.classList.remove('hidden');
+        fixedRadio.checked = true;
+
+        // Make fixed field required
+        document.getElementById('fixed_amount').required = true;
+        document.getElementById('start_time').required = false;
+        document.getElementById('end_time').required = false;
+        document.getElementById('overtime_type').required = false;
+        document.getElementById('hourly_rate').required = false;
+    }
+}
+
 function calculateHours() {
     const startTime = document.getElementById('start_time').value;
     const endTime = document.getElementById('end_time').value;
@@ -228,9 +318,13 @@ function calculateAmount() {
     }
 }
 
-// Initial calculation
+// Initial calculation and view setup
 document.addEventListener('DOMContentLoaded', function() {
-    calculateHours();
+    const currentMethod = document.querySelector('input[name="calculation_method"]:checked')?.value || 'hourly';
+    toggleCalculationMethod(currentMethod);
+    if (currentMethod === 'hourly') {
+        calculateHours();
+    }
 });
 </script>
 @endpush
