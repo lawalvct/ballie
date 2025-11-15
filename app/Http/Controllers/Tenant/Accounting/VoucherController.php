@@ -314,14 +314,18 @@ class VoucherController extends Controller
                 $entry->updateLedgerAccountBalance();
             }
 
+            $voucherTypeName = $voucher->voucherType->name ?? 'Voucher';
+
             return redirect()
                 ->route('tenant.accounting.vouchers.show', ['tenant' => $tenant->slug, 'voucher' => $voucher->id])
-                ->with('success', 'Payment voucher created and posted successfully.');
+                ->with('success', $voucherTypeName . ' created and posted successfully.');
         }
+
+        $voucherTypeName = VoucherType::find($request->voucher_type_id)->name ?? 'Voucher';
 
         return redirect()
             ->route('tenant.accounting.vouchers.index', $tenant->slug)
-            ->with('success', 'Payment voucher saved as draft successfully.');
+            ->with('success', $voucherTypeName . ' saved as draft successfully.');
     }
 
     /**

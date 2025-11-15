@@ -104,7 +104,12 @@
                                 $runningBalance += $trend->total_sales;
                             @endphp
                             <tr class="border-b border-gray-200 hover:bg-yellow-50">
-                                <td class="px-4 py-3 text-sm text-gray-900 border-r border-gray-200">{{ $trend->period }}</td>
+                                <td class="px-4 py-3 text-sm border-r border-gray-200">
+                                    <a href="{{ route('tenant.accounting.invoices.index', ['tenant' => $tenant->slug, 'from_date' => $trend->period_key . '-01', 'to_date' => date('Y-m-t', strtotime($trend->period_key . '-01'))]) }}" 
+                                       class="text-blue-600 hover:text-blue-800 hover:underline font-medium">
+                                        {{ $trend->period }}
+                                    </a>
+                                </td>
                                 <td class="px-4 py-3 text-sm text-gray-900 text-center border-r border-gray-200">{{ number_format($trend->invoice_count) }}</td>
                                 <td class="px-4 py-3 text-sm text-gray-900 text-right border-r border-gray-200">--</td>
                                 <td class="px-4 py-3 text-sm text-gray-900 text-right border-r border-gray-200">{{ number_format($trend->total_sales, 2) }}</td>
