@@ -1520,6 +1520,103 @@ class PayrollController extends Controller
     }
 
     /**
+     * Show salary update form
+     */
+    public function editSalary(Tenant $tenant, Employee $employee)
+    {
+        // Validate that the employee belongs to this tenant
+        if ($employee->tenant_id !== $tenant->id) {
+            abort(404);
+        }
+
+        $employee->load([
+            'department',
+            'position',
+            'currentSalary.salaryComponents.salaryComponent'
+        ]);
+
+        $salaryComponents = SalaryComponent::where('tenant_id', $tenant->id)
+            ->active()
+            ->orderBy('sort_order')
+            ->get();
+
+        return view('tenant.payroll.employees.edit-salary', compact(
+            'tenant', 'employee', 'salaryComponents'
+        ));
+    }
+
+    /**
+     * Update employee salary
+     */
+    public function updateSalary(Request $request, Tenant $tenant, Employee $employee)
+    {
+        // Validate that the employee belongs to this tenant
+        if ($employee->tenant_id !== $tenant->id) {
+            abort(404);
+        }
+
+        return DB::transaction(function () use ($request, $tenant, $employee) {
+            $validated = $request->validate([
+                'basic_salary' => 'required|numeric|min:0',
+                'effective_date' => 'required|date',
+                'notes' => 'nullable|string|max:1000',
+                'components' => 'nullable|array',
+                'components.*.enabled' => 'nullable|boolean',
+                'components.*.amount' => 'nullable|numeric|min:0',
+                'components.*.percentage' => 'nullable|numeric|min:0|max:100',
+            ]);
+
+            // Mark current salary as not current and set end date
+            if ($employee->currentSalary) {
+                $employee->currentSalary->update([
+                    'is_current' => false,
+                    'end_date' => now()->subDay()->toDateString(),
+                ]);
+            }
+
+            // Create new salary record
+            $newSalary = EmployeeSalary::create([
+                'employee_id' => $employee->id,
+                'basic_salary' => $validated['basic_salary'],
+                'effective_date' => $validated['effective_date'],
+                'is_current' => true,
+                'notes' => $validated['notes'] ?? null,
+                'created_by' => Auth::id(),
+            ]);
+
+            // Handle salary components
+            if (isset($validated['components'])) {
+                foreach ($validated['components'] as $componentId => $componentData) {
+                    if (isset($componentData['enabled']) && $componentData['enabled']) {
+                        $salaryComponent = SalaryComponent::find($componentId);
+
+                        if ($salaryComponent && $salaryComponent->tenant_id === $tenant->id) {
+                            $componentRecord = [
+                                'employee_salary_id' => $newSalary->id,
+                                'salary_component_id' => $componentId,
+                            ];
+
+                            if ($salaryComponent->calculation_type === 'percentage') {
+                                $componentRecord['percentage'] = $componentData['percentage'] ?? 0;
+                                $componentRecord['amount'] = null;
+                            } elseif ($salaryComponent->calculation_type === 'fixed') {
+                                $componentRecord['amount'] = $componentData['amount'] ?? 0;
+                                $componentRecord['percentage'] = null;
+                            }
+
+                            \App\Models\EmployeeSalaryComponent::create($componentRecord);
+                        }
+                    }
+                }
+            }
+
+            return redirect()
+                ->route('tenant.payroll.employees.show', ['tenant' => $tenant->slug, 'employee' => $employee->id])
+                ->with('success', 'Employee salary updated successfully.');
+        });
+    }
+
+    /**
      * Toggle employee status
      */
     public function toggleStatus(Tenant $tenant, Employee $employee)

@@ -167,11 +167,11 @@
                                     </div>
                                     <div class="text-right">
                                         <p class="font-bold text-emerald-600">
-                                            ₦{{ number_format($payrollRun->net_pay, 2) }}
+                                            ₦{{ number_format($payrollRun->net_salary ?? 0, 2) }}
                                         </p>
                                         <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium
-                                            {{ $payrollRun->status === 'paid' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800' }}">
-                                            {{ ucfirst($payrollRun->status) }}
+                                            {{ $payrollRun->payment_status === 'paid' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800' }}">
+                                            {{ ucfirst($payrollRun->payment_status ?? 'pending') }}
                                         </span>
                                     </div>
                                 </div>
@@ -239,7 +239,8 @@
                            class="block w-full bg-green-600 hover:bg-green-700 text-white px-4 py-3 rounded-lg font-medium transition-colors duration-300 text-center">
                             <i class="fas fa-money-check-alt mr-2"></i>Generate Payslip
                         </a>
-                        <a href="#" class="block w-full bg-purple-600 hover:bg-purple-700 text-white px-4 py-3 rounded-lg font-medium transition-colors duration-300 text-center">
+                        <a href="{{ route('tenant.payroll.employees.edit-salary', ['tenant' => $tenant->slug, 'employee' => $employee->id]) }}"
+                           class="block w-full bg-purple-600 hover:bg-purple-700 text-white px-4 py-3 rounded-lg font-medium transition-colors duration-300 text-center">
                             <i class="fas fa-calculator mr-2"></i>Update Salary
                         </a>
                         <a href="#" class="block w-full bg-orange-600 hover:bg-orange-700 text-white px-4 py-3 rounded-lg font-medium transition-colors duration-300 text-center">

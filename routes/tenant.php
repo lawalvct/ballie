@@ -572,6 +572,7 @@ Route::prefix('ledger-accounts')->name('ledger-accounts.')->group(function () {
                 Route::post('/{employee}/reset-portal-link', [PayrollController::class, 'resetPortalLink'])->name('reset-portal-link');
                 Route::get('/{employee}/profile', [PayrollController::class, 'employeeProfile'])->name('profile');
                 Route::get('/{employee}/salary-history', [PayrollController::class, 'salaryHistory'])->name('salary-history');
+                Route::get('/{employee}/edit-salary', [PayrollController::class, 'editSalary'])->name('edit-salary');
                 Route::post('/{employee}/update-salary', [PayrollController::class, 'updateSalary'])->name('update-salary');
                 Route::get('/{employee}/export', [PayrollController::class, 'exportEmployee'])->name('export');
                 Route::get('/{employee}/payslip', [PayrollController::class, 'generatePayslip'])->name('payslip');
