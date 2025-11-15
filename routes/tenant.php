@@ -712,6 +712,7 @@ Route::prefix('ledger-accounts')->name('ledger-accounts.')->group(function () {
                 Route::post('/{id}/approve', [\App\Http\Controllers\Tenant\OvertimeController::class, 'approve'])->name('approve');
                 Route::post('/{id}/reject', [\App\Http\Controllers\Tenant\OvertimeController::class, 'reject'])->name('reject');
                 Route::post('/{id}/mark-paid', [\App\Http\Controllers\Tenant\OvertimeController::class, 'markPaid'])->name('mark-paid');
+                Route::get('/{id}/download-payment-slip', [\App\Http\Controllers\Tenant\OvertimeController::class, 'downloadPaymentSlip'])->name('download-payment-slip');
                 Route::post('/bulk-approve', [\App\Http\Controllers\Tenant\OvertimeController::class, 'bulkApprove'])->name('bulk-approve');
                 Route::get('/report/monthly', [\App\Http\Controllers\Tenant\OvertimeController::class, 'report'])->name('report');
             });

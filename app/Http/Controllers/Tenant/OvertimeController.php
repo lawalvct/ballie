@@ -341,26 +341,153 @@ class OvertimeController extends Controller
     public function markPaid(Request $request, Tenant $tenant, $id)
     {
         $request->validate([
-            'payroll_run_id' => 'required|exists:payroll_runs,id',
+            'payroll_run_id' => 'nullable|exists:payroll_runs,id',
+            'payment_date' => 'nullable|date',
+            'payment_method' => 'nullable|in:cash,bank,voucher',
+            'reference_number' => 'nullable|string|max:255',
+            'create_voucher' => 'nullable|boolean',
+            'cash_bank_account_id' => 'required_if:create_voucher,true|nullable|exists:ledger_accounts,id',
+            'payment_notes' => 'nullable|string|max:500',
         ]);
 
         $tenantId = $tenant->id;
         $overtime = OvertimeRecord::where('id', $id)
             ->where('tenant_id', $tenantId)
             ->where('status', 'approved')
-            ->where('payment_status', 'pending')
+            ->where('is_paid', false)
             ->firstOrFail();
 
         DB::beginTransaction();
         try {
-            $overtime->markAsPaid($request->payroll_run_id);
+            $paymentDate = $request->payment_date ? \Carbon\Carbon::parse($request->payment_date) : now();
+
+            // Create accounting voucher if requested
+            $voucherNumber = null;
+            if ($request->create_voucher && $request->cash_bank_account_id) {
+                $voucherNumber = $this->createPaymentVoucher(
+                    $tenant,
+                    $overtime,
+                    $request->cash_bank_account_id,
+                    $paymentDate,
+                    $request->reference_number,
+                    $request->payment_notes
+                );
+            }
+
+            // Mark overtime as paid
+            $overtime->is_paid = true;
+            $overtime->paid_date = $paymentDate;
+            $overtime->status = 'paid';
+
+            if ($request->payroll_run_id) {
+                $overtime->payroll_run_id = $request->payroll_run_id;
+            }
+
+            $overtime->save();
+
             DB::commit();
 
-            return back()->with('success', 'Overtime marked as paid successfully.');
+            $message = 'Overtime marked as paid successfully.';
+            if ($voucherNumber) {
+                $message .= " Payment voucher {$voucherNumber} created.";
+            }
+
+            return back()->with('success', $message);
         } catch (\Exception $e) {
             DB::rollBack();
             return back()->with('error', 'Failed to mark as paid: ' . $e->getMessage());
         }
+    }
+
+    /**
+     * Create payment voucher for overtime payment
+     */
+    private function createPaymentVoucher(
+        Tenant $tenant,
+        OvertimeRecord $overtime,
+        int $cashBankAccountId,
+        $paymentDate,
+        $referenceNumber = null,
+        $notes = null
+    ): string {
+        // Get voucher type for payment
+        $voucherType = \App\Models\VoucherType::where('tenant_id', $tenant->id)
+            ->where('code', 'PV')
+            ->first();
+
+        if (!$voucherType) {
+            throw new \Exception('Payment voucher type not found. Please set up voucher types.');
+        }
+
+        // Get or create Overtime Expense ledger account
+        $overtimeExpenseAccount = \App\Models\LedgerAccount::where('tenant_id', $tenant->id)
+            ->where('code', 'EXP-OT')
+            ->first();
+
+        if (!$overtimeExpenseAccount) {
+            // Get or create Expense account group
+            $expenseGroup = \App\Models\AccountGroup::firstOrCreate(
+                [
+                    'tenant_id' => $tenant->id,
+                    'name' => 'Expenses',
+                ],
+                [
+                    'code' => 'EXP',
+                    'description' => 'Expense accounts',
+                    'is_system' => true,
+                ]
+            );
+
+            // Create the overtime expense account
+            $overtimeExpenseAccount = \App\Models\LedgerAccount::create([
+                'tenant_id' => $tenant->id,
+                'account_group_id' => $expenseGroup->id,
+                'code' => 'EXP-OT',
+                'name' => 'Overtime Expenses',
+                'account_type' => 'expense',
+                'is_system_account' => true,
+                'is_active' => true,
+                'description' => 'Employee overtime payments',
+                'created_by' => Auth::id(),
+            ]);
+        }
+
+        // Get cash/bank account
+        $cashBankAccount = \App\Models\LedgerAccount::findOrFail($cashBankAccountId);
+
+        // Create voucher
+        $voucher = \App\Models\Voucher::create([
+            'tenant_id' => $tenant->id,
+            'voucher_type_id' => $voucherType->id,
+            'voucher_number' => $voucherType->getNextVoucherNumber(),
+            'voucher_date' => $paymentDate,
+            'reference_number' => $referenceNumber ?? $overtime->overtime_number,
+            'narration' => $notes ?? "Overtime payment for {$overtime->employee->full_name} - {$overtime->overtime_number}",
+            'total_amount' => $overtime->total_amount,
+            'status' => 'posted',
+            'created_by' => Auth::id(),
+            'posted_by' => Auth::id(),
+            'posted_at' => now(),
+        ]);
+
+        // Create voucher entries (Payment: Credit Cash/Bank, Debit Expense)
+        \App\Models\VoucherEntry::create([
+            'voucher_id' => $voucher->id,
+            'ledger_account_id' => $overtimeExpenseAccount->id,
+            'debit_amount' => $overtime->total_amount,
+            'credit_amount' => 0,
+            'particulars' => "Overtime expense - {$overtime->employee->full_name}",
+        ]);
+
+        \App\Models\VoucherEntry::create([
+            'voucher_id' => $voucher->id,
+            'ledger_account_id' => $cashBankAccount->id,
+            'debit_amount' => 0,
+            'credit_amount' => $overtime->total_amount,
+            'particulars' => "Payment for overtime - {$overtime->overtime_number}",
+        ]);
+
+        return $voucher->voucher_number;
     }
 
     public function bulkApprove(Request $request, Tenant $tenant)
@@ -465,5 +592,33 @@ class OvertimeController extends Controller
             'month',
             'year'
         ));
+    }
+
+    /**
+     * Download overtime payment slip as PDF
+     */
+    public function downloadPaymentSlip(Tenant $tenant, $id)
+    {
+        $tenantId = $tenant->id;
+
+        $overtime = OvertimeRecord::with([
+            'employee.department',
+            'approver',
+            'rejector',
+            'payrollRun'
+        ])
+            ->where('id', $id)
+            ->where('tenant_id', $tenantId)
+            ->firstOrFail();
+
+        // Generate PDF
+        $pdf = \PDF::loadView('tenant.overtime.payment-slip-pdf', compact('tenant', 'overtime'));
+
+        $fileName = 'overtime_payment_slip_' .
+                    $overtime->employee->employee_number . '_' .
+                    $overtime->overtime_number . '_' .
+                    \Carbon\Carbon::parse($overtime->overtime_date)->format('Y-m-d') . '.pdf';
+
+        return $pdf->download($fileName);
     }
 }
