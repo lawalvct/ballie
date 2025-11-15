@@ -580,7 +580,7 @@ class AttendanceController extends Controller
 
         return response()->json([
             'success' => true,
-            'qr_code' => $qrCode,
+            'qr_code' => (string) $qrCode, // force string output for JSON serialization
             'type' => $type,
             'date' => $date,
             'expires_at' => now()->endOfDay()->format('Y-m-d H:i:s'),
