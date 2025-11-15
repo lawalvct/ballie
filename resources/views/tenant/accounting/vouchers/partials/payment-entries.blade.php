@@ -44,6 +44,7 @@
                 <input
                     type="text"
                     x-model="bankEntry.particulars"
+                    @keyup="syncParticulars()"
                     placeholder="Payment description"
                     class="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
                 >
@@ -289,6 +290,7 @@ function paymentVoucherEntries() {
         ],
         totalPaymentAmount: 0,
         isSubmitting: false,
+        lastBankParticulars: '',
 
         init() {
             this.calculateTotal();
@@ -297,9 +299,18 @@ function paymentVoucherEntries() {
         addEntry() {
             this.paymentEntries.push({
                 ledger_account_id: '',
-                particulars: '',
+                particulars: this.bankEntry.particulars,
                 debit_amount: 0
             });
+        },
+
+        syncParticulars() {
+            this.paymentEntries.forEach(entry => {
+                if (!entry.particulars || entry.particulars === this.lastBankParticulars) {
+                    entry.particulars = this.bankEntry.particulars;
+                }
+            });
+            this.lastBankParticulars = this.bankEntry.particulars;
         },
 
         removeEntry(index) {
