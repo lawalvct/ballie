@@ -263,11 +263,31 @@ class PayrollController extends Controller
                 'components.*.id' => 'exists:salary_components,id',
                 'components.*.amount' => 'nullable|numeric|min:0',
                 'components.*.percentage' => 'nullable|numeric|min:0|max:100',
+                'avatar' => 'nullable|image|mimes:jpeg,jpg,png|max:2048',
             ]);
+
+            // Handle avatar upload
+            $avatarPath = null;
+            if ($request->hasFile('avatar')) {
+                $avatar = $request->file('avatar');
+                $filename = time() . '_' . uniqid() . '.' . $avatar->getClientOriginalExtension();
+
+                // Create employees directory if it doesn't exist
+                $employeesPath = public_path('employees');
+                if (!file_exists($employeesPath)) {
+                    mkdir($employeesPath, 0755, true);
+                }
+
+                // Move file to public/employees
+                $avatar->move($employeesPath, $filename);
+                $avatarPath = 'employees/' . $filename;
+            }
+
             // Create employee
             $employee = Employee::create(array_merge($validated, [
                 'tenant_id' => $tenant->id,
-                'status' => 'active'
+                'status' => 'active',
+                'avatar' => $avatarPath,
             ]));
 
             // Create salary structure
@@ -374,7 +394,38 @@ class PayrollController extends Controller
                 'components.*.id' => 'exists:salary_components,id',
                 'components.*.amount' => 'nullable|numeric|min:0',
                 'components.*.percentage' => 'nullable|numeric|min:0|max:100',
+                'avatar' => 'nullable|image|mimes:jpeg,jpg,png|max:2048',
+                'remove_avatar' => 'nullable|boolean',
             ]);
+
+            // Handle avatar removal
+            if ($request->has('remove_avatar') && $request->remove_avatar) {
+                if ($employee->avatar && file_exists(public_path($employee->avatar))) {
+                    unlink(public_path($employee->avatar));
+                }
+                $validated['avatar'] = null;
+            }
+
+            // Handle new avatar upload
+            if ($request->hasFile('avatar')) {
+                // Delete old avatar if exists
+                if ($employee->avatar && file_exists(public_path($employee->avatar))) {
+                    unlink(public_path($employee->avatar));
+                }
+
+                $avatar = $request->file('avatar');
+                $filename = time() . '_' . uniqid() . '.' . $avatar->getClientOriginalExtension();
+
+                // Create employees directory if it doesn't exist
+                $employeesPath = public_path('employees');
+                if (!file_exists($employeesPath)) {
+                    mkdir($employeesPath, 0755, true);
+                }
+
+                // Move file to public/employees
+                $avatar->move($employeesPath, $filename);
+                $validated['avatar'] = 'employees/' . $filename;
+            }
 
             // Update employee
             $employee->update($validated);

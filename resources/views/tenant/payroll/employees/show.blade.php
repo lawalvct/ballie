@@ -9,8 +9,14 @@
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
             <div class="flex items-center justify-between">
                 <div class="flex items-center space-x-6">
-                    <div class="w-20 h-20 bg-white/20 backdrop-blur-sm rounded-xl flex items-center justify-center">
-                        <i class="fas fa-user-circle text-3xl text-white"></i>
+                    <div class="w-20 h-20 bg-white/20 backdrop-blur-sm rounded-xl flex items-center justify-center overflow-hidden">
+                        @if($employee->avatar)
+                            <img src="{{ asset($employee->avatar) }}"
+                                 alt="{{ $employee->first_name }}"
+                                 class="w-full h-full object-cover">
+                        @else
+                            <i class="fas fa-user-circle text-3xl text-white"></i>
+                        @endif
                     </div>
                     <div>
                         <h1 class="text-3xl font-bold text-white mb-1">

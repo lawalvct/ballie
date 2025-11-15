@@ -70,7 +70,7 @@
     </div>
     @endif
 
-    <form action="{{ route('tenant.payroll.employees.update', ['tenant' => $tenant->slug, 'employee' => $employee->id]) }}" method="POST" id="employeeForm">
+    <form action="{{ route('tenant.payroll.employees.update', ['tenant' => $tenant->slug, 'employee' => $employee->id]) }}" method="POST" enctype="multipart/form-data" id="employeeForm">
         @csrf
         @method('PUT')
 
@@ -91,6 +91,56 @@
                 <i class="fas fa-user mr-2 text-blue-500"></i>
                 Personal Information
             </h3>
+
+            <!-- Employee Photo -->
+            <div class="mb-6 flex items-start space-x-6">
+                <div class="flex-shrink-0">
+                    <div class="relative">
+                        <div id="avatar-preview" class="w-32 h-32 rounded-full border-4 border-gray-200 overflow-hidden bg-gray-100 flex items-center justify-center">
+                            @if($employee->avatar)
+                                <img id="avatar-image" src="{{ asset($employee->avatar) }}" alt="{{ $employee->full_name }}" class="w-full h-full object-cover">
+                            @else
+                                <svg class="w-16 h-16 text-gray-400" fill="currentColor" viewBox="0 0 24 24">
+                                    <path d="M24 20.993V24H0v-2.996A14.977 14.977 0 0112.004 15c4.904 0 9.26 2.354 11.996 5.993zM16.002 8.999a4 4 0 11-8 0 4 4 0 018 0z"/>
+                                </svg>
+                                <img id="avatar-image" src="" alt="Employee Photo" class="hidden w-full h-full object-cover">
+                            @endif
+                        </div>
+                    </div>
+                </div>
+                <div class="flex-1">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">
+                        Employee Photo (Optional)
+                    </label>
+                    <div class="flex items-center space-x-3">
+                        <label for="avatar" class="cursor-pointer inline-flex items-center px-4 py-2 border border-gray-300 rounded-lg shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50">
+                            <svg class="w-5 h-5 mr-2 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                            </svg>
+                            {{ $employee->avatar ? 'Change Photo' : 'Choose Photo' }}
+                        </label>
+                        @if($employee->avatar)
+                            <label class="inline-flex items-center">
+                                <input type="checkbox" name="remove_avatar" value="1" class="rounded border-gray-300 text-red-600 focus:ring-red-500">
+                                <span class="ml-2 text-sm text-gray-700">Remove photo</span>
+                            </label>
+                        @endif
+                        <button type="button" id="remove-avatar-preview" class="hidden inline-flex items-center px-4 py-2 border border-red-300 rounded-lg shadow-sm text-sm font-medium text-red-700 bg-white hover:bg-red-50">
+                            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                            </svg>
+                            Cancel
+                        </button>
+                    </div>
+                    <input type="file" name="avatar" id="avatar" accept="image/jpeg,image/png,image/jpg" class="hidden">
+                    <p class="mt-2 text-xs text-gray-500">
+                        Accepted formats: JPG, JPEG, PNG. Maximum size: 2MB.
+                    </p>
+                    @error('avatar')
+                        <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                    @enderror
+                </div>
+            </div>
 
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div class="form-group">
@@ -1021,6 +1071,59 @@ function toggleAttendanceExemptionReason() {
         container.classList.add('hidden');
         document.getElementById('attendance_exemption_reason').value = '';
     }
+}
+
+// Avatar upload and preview functionality
+const avatarInput = document.getElementById('avatar');
+const avatarImage = document.getElementById('avatar-image');
+const removeAvatarPreviewBtn = document.getElementById('remove-avatar-preview');
+
+if (avatarInput) {
+    avatarInput.addEventListener('change', function(e) {
+        const file = e.target.files[0];
+
+        if (file) {
+            // Validate file size (2MB)
+            if (file.size > 2048 * 1024) {
+                alert('File size must be less than 2MB');
+                avatarInput.value = '';
+                return;
+            }
+
+            // Validate file type
+            const validTypes = ['image/jpeg', 'image/jpg', 'image/png'];
+            if (!validTypes.includes(file.type)) {
+                alert('Only JPG, JPEG and PNG files are allowed');
+                avatarInput.value = '';
+                return;
+            }
+
+            // Show preview
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                avatarImage.src = e.target.result;
+                avatarImage.classList.remove('hidden');
+                if (removeAvatarPreviewBtn) {
+                    removeAvatarPreviewBtn.classList.remove('hidden');
+                }
+            };
+            reader.readAsDataURL(file);
+        }
+    });
+}
+
+if (removeAvatarPreviewBtn) {
+    removeAvatarPreviewBtn.addEventListener('click', function() {
+        avatarInput.value = '';
+        const currentAvatar = '{{ $employee->avatar ? asset($employee->avatar) : "" }}';
+        if (currentAvatar) {
+            avatarImage.src = currentAvatar;
+        } else {
+            avatarImage.src = '';
+            avatarImage.classList.add('hidden');
+        }
+        removeAvatarPreviewBtn.classList.add('hidden');
+    });
 }
 </script>
 @endsection
