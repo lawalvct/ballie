@@ -75,12 +75,36 @@ class PayrollPeriod extends Model
             ->with(['currentSalary.salaryComponents.salaryComponent', 'activeLoans'])
             ->get();
 
+        $processedCount = 0;
+        $skippedEmployees = [];
+
         foreach ($employees as $employee) {
-            $this->generatePayrollForEmployee($employee);
+            try {
+                $this->generatePayrollForEmployee($employee);
+                $processedCount++;
+            } catch (\Exception $e) {
+                // Skip employees without salary and collect their info
+                $skippedEmployees[] = [
+                    'name' => $employee->full_name,
+                    'number' => $employee->employee_number,
+                    'reason' => $e->getMessage()
+                ];
+            }
         }
 
         $this->updateTotals();
         $this->update(['status' => 'processing']);
+
+        // If any employees were skipped, throw a warning exception
+        if (count($skippedEmployees) > 0) {
+            $message = "Payroll generated for {$processedCount} employees. ";
+            $message .= count($skippedEmployees) . " employee(s) skipped:\n";
+            foreach ($skippedEmployees as $skipped) {
+                $message .= "- {$skipped['name']} ({$skipped['number']}): No salary record\n";
+            }
+            // Store this as a flash message instead of throwing
+            session()->flash('warning', $message);
+        }
     }
 
     private function generatePayrollForEmployee(Employee $employee): void

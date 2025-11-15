@@ -59,6 +59,12 @@ class PayrollCalculator
     private function calculateGrossSalary(): void
     {
         $salary = $this->employee->currentSalary;
+
+        // Check if employee has a current salary
+        if (!$salary) {
+            throw new \Exception("Employee {$this->employee->full_name} ({$this->employee->employee_number}) does not have a current salary set. Please set up their salary before generating payroll.");
+        }
+
         $this->calculations['basic_salary'] = $salary->basic_salary;
         $this->calculations['earnings'] = []; // Store individual earnings for details
 
