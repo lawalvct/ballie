@@ -7,8 +7,11 @@ use App\Models\Employee;
 use App\Models\PayrollRun;
 use App\Models\PayrollRunDetail;
 use App\Models\EmployeeLoan;
+use App\Models\AttendanceRecord;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Log;
+use Carbon\Carbon;
 
 class EmployeePortalController extends Controller
 {
@@ -294,4 +297,151 @@ class EmployeePortalController extends Controller
             'payroll_count' => $stats->payroll_count ?? 0,
         ];
     }
+
+    /**
+     * Show attendance page with QR scanner
+     */
+    public function attendance($token)
+    {
+        $employee = $this->getAuthenticatedEmployee($token);
+        if (!$employee) {
+            return redirect()->route('payroll.portal.login', $token);
+        }
+
+        // Get today's attendance
+        $todayAttendance = AttendanceRecord::where('employee_id', $employee->id)
+            ->whereDate('attendance_date', now())
+            ->first();
+
+        // Get recent attendance records (last 7 days)
+        $recentAttendance = AttendanceRecord::where('employee_id', $employee->id)
+            ->whereDate('attendance_date', '>=', now()->subDays(7))
+            ->orderBy('attendance_date', 'desc')
+            ->get();
+
+        return view('payroll.portal.attendance', compact(
+            'employee',
+            'token',
+            'todayAttendance',
+            'recentAttendance'
+        ));
+    }
+
+    /**
+     * Process scanned QR code for attendance
+     */
+    public function scanAttendanceQR(Request $request, $token)
+    {
+        $employee = $this->getAuthenticatedEmployee($token);
+        if (!$employee) {
+            return response()->json(['error' => 'Unauthorized'], 401);
+        }
+
+        $request->validate([
+            'qr_data' => 'required|string',
+        ]);
+
+        try {
+            // Decrypt QR payload
+            $payload = decrypt($request->qr_data);
+
+            // Validate payload structure
+            if (!isset($payload['tenant_id'], $payload['date'], $payload['type'], $payload['expires_at'])) {
+                return response()->json(['error' => 'Invalid QR code format'], 400);
+            }
+
+            // Verify tenant matches
+            if ($payload['tenant_id'] !== $employee->tenant_id) {
+                return response()->json(['error' => 'QR code is not valid for your organization'], 403);
+            }
+
+            // Check if QR code is expired
+            if (Carbon::parse($payload['expires_at'])->isPast()) {
+                return response()->json(['error' => 'QR code has expired'], 400);
+            }
+
+            // Verify the date matches today
+            if ($payload['date'] !== now()->format('Y-m-d')) {
+                return response()->json(['error' => 'QR code is for a different date'], 400);
+            }
+
+            // Get or create today's attendance record
+            $attendance = AttendanceRecord::firstOrCreate(
+                [
+                    'tenant_id' => $employee->tenant_id,
+                    'employee_id' => $employee->id,
+                    'attendance_date' => now()->toDateString(),
+                ],
+                [
+                    'status' => 'absent',
+                ]
+            );
+
+            $type = $payload['type'];
+
+            // Process based on type (clock_in or clock_out)
+            if ($type === 'clock_in') {
+                if ($attendance->clock_in) {
+                    return response()->json([
+                        'error' => 'Already clocked in',
+                        'clock_in_time' => $attendance->clock_in->format('h:i A'),
+                    ], 400);
+                }
+
+                $attendance->clockIn(
+                    $request->ip(),
+                    $request->header('User-Agent'),
+                    'Scanned via QR Code'
+                );
+
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Clocked in successfully',
+                    'clock_in_time' => $attendance->clock_in->format('h:i A'),
+                    'status' => $attendance->status,
+                    'late_minutes' => $attendance->late_minutes,
+                ]);
+
+            } elseif ($type === 'clock_out') {
+                if (!$attendance->clock_in) {
+                    return response()->json([
+                        'error' => 'Must clock in before clocking out',
+                    ], 400);
+                }
+
+                if ($attendance->clock_out) {
+                    return response()->json([
+                        'error' => 'Already clocked out',
+                        'clock_out_time' => $attendance->clock_out->format('h:i A'),
+                    ], 400);
+                }
+
+                $attendance->clockOut(
+                    $request->ip(),
+                    $request->header('User-Agent'),
+                    'Scanned via QR Code'
+                );
+
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Clocked out successfully',
+                    'clock_out_time' => $attendance->clock_out->format('h:i A'),
+                    'work_hours' => $attendance->calculateWorkHours(),
+                    'overtime_hours' => $attendance->calculateOvertimeHours(),
+                ]);
+            }
+
+            return response()->json(['error' => 'Invalid QR code type'], 400);
+
+        } catch (\Illuminate\Contracts\Encryption\DecryptException $e) {
+            return response()->json(['error' => 'Invalid or corrupted QR code'], 400);
+        } catch (\Exception $e) {
+            Log::error('QR Scan Error: ' . $e->getMessage(), [
+                'employee_id' => $employee->id,
+                'request' => $request->all(),
+            ]);
+            return response()->json(['error' => 'An error occurred processing your scan: ' . $e->getMessage()], 500);
+        }
+    }
 }
+

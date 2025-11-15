@@ -15,6 +15,7 @@ class Employee extends Model
 
     protected $fillable = [
         'tenant_id', 'department_id', 'position_id', 'employee_number', 'unique_link_token',
+        'portal_token', 'portal_token_expires_at',
         'first_name', 'last_name', 'email', 'phone', 'date_of_birth', 'gender',
         'marital_status', 'address', 'state_of_origin', 'job_title', 'hire_date',
         'confirmation_date', 'employment_type', 'pay_frequency', 'status',
@@ -27,6 +28,7 @@ class Employee extends Model
         'date_of_birth' => 'date',
         'hire_date' => 'date',
         'confirmation_date' => 'date',
+        'portal_token_expires_at' => 'datetime',
         'annual_relief' => 'decimal:2',
         'attendance_deduction_exempt' => 'boolean',
     ];
@@ -41,6 +43,10 @@ class Employee extends Model
             }
             if (empty($employee->unique_link_token)) {
                 $employee->unique_link_token = Str::random(32);
+            }
+            if (empty($employee->portal_token)) {
+                $employee->portal_token = Str::random(64);
+                $employee->portal_token_expires_at = now()->addDays(90);
             }
         });
     }
@@ -137,7 +143,9 @@ class Employee extends Model
 
     public function getPortalLinkAttribute(): string
     {
-        return route('employee.portal', ['token' => $this->unique_link_token]);
+        // Use portal_token if available, fallback to unique_link_token for backwards compatibility
+        $token = $this->portal_token ?? $this->unique_link_token;
+        return route('payroll.portal.login', ['token' => $token]);
     }
 
     public function getCurrentBasicSalaryAttribute(): float
@@ -307,4 +315,25 @@ class Employee extends Model
             }
         }
     }
+
+    /**
+     * Regenerate portal token with new expiry date
+     */
+    public function regeneratePortalToken(): void
+    {
+        $this->portal_token = Str::random(64);
+        $this->portal_token_expires_at = now()->addDays(90);
+        $this->save();
+    }
+
+    /**
+     * Check if portal token is valid (not expired)
+     */
+    public function hasValidPortalToken(): bool
+    {
+        return $this->portal_token &&
+               $this->portal_token_expires_at &&
+               $this->portal_token_expires_at->isFuture();
+    }
 }
+

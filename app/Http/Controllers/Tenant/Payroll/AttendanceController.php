@@ -12,6 +12,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
+use SimpleSoftwareIO\QrCode\Facades\QrCode;
 
 class AttendanceController extends Controller
 {
@@ -554,4 +555,44 @@ class AttendanceController extends Controller
 
         return redirect()->back()->with('success', 'Attendance updated successfully');
     }
+
+    /**
+     * Generate daily attendance QR codes (Clock In and Clock Out)
+     */
+    public function generateAttendanceQR(Request $request, Tenant $tenant)
+    {
+        $date = $request->get('date', now()->format('Y-m-d'));
+        $type = $request->get('type', 'clock_in'); // clock_in or clock_out
+
+        // Create encrypted payload
+        $payload = encrypt([
+            'tenant_id' => $tenant->id,
+            'date' => $date,
+            'type' => $type,
+            'expires_at' => now()->endOfDay()->toDateTimeString(),
+            'generated_at' => now()->toDateTimeString(),
+        ]);
+
+        // Generate QR code as SVG
+        $qrCode = QrCode::size(300)
+            ->margin(2)
+            ->generate($payload);
+
+        return response()->json([
+            'success' => true,
+            'qr_code' => $qrCode,
+            'type' => $type,
+            'date' => $date,
+            'expires_at' => now()->endOfDay()->format('Y-m-d H:i:s'),
+        ]);
+    }
+
+    /**
+     * Display QR code view for admin
+     */
+    public function showAttendanceQR(Tenant $tenant)
+    {
+        return view('tenant.payroll.attendance.qr-codes', compact('tenant'));
+    }
 }
+

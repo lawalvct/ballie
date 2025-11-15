@@ -576,7 +576,7 @@ Route::prefix('ledger-accounts')->name('ledger-accounts.')->group(function () {
                 Route::post('/{employee}/update-salary', [PayrollController::class, 'updateSalary'])->name('update-salary');
                 Route::get('/{employee}/export', [PayrollController::class, 'exportEmployee'])->name('export');
                 Route::get('/{employee}/payslip', [PayrollController::class, 'generatePayslip'])->name('payslip');
-                
+
                 // Document management
                 Route::post('/{employee}/documents', [PayrollController::class, 'uploadDocument'])->name('documents.upload');
                 Route::get('/{employee}/documents/{document}/download', [PayrollController::class, 'downloadDocument'])->name('documents.download');
@@ -678,6 +678,8 @@ Route::prefix('ledger-accounts')->name('ledger-accounts.')->group(function () {
                 Route::get('/', [\App\Http\Controllers\Tenant\Payroll\AttendanceController::class, 'index'])->name('index');
                 Route::get('/monthly-report', [\App\Http\Controllers\Tenant\Payroll\AttendanceController::class, 'monthlyReport'])->name('monthly-report');
                 Route::get('/employee/{employee}', [\App\Http\Controllers\Tenant\Payroll\AttendanceController::class, 'employeeAttendance'])->name('employee');
+                Route::get('/qr-codes', [\App\Http\Controllers\Tenant\Payroll\AttendanceController::class, 'showAttendanceQR'])->name('qr-codes');
+                Route::get('/generate-qr', [\App\Http\Controllers\Tenant\Payroll\AttendanceController::class, 'generateAttendanceQR'])->name('generate-qr');
 
                 Route::post('/clock-in', [\App\Http\Controllers\Tenant\Payroll\AttendanceController::class, 'clockIn'])->name('clock-in');
                 Route::post('/clock-out', [\App\Http\Controllers\Tenant\Payroll\AttendanceController::class, 'clockOut'])->name('clock-out');
@@ -1011,5 +1013,7 @@ Route::prefix('employee-portal')->name('payroll.portal.')->group(function () {
     Route::get('/{token}/loans', [App\Http\Controllers\Payroll\EmployeePortalController::class, 'loans'])->name('loans');
     Route::get('/{token}/tax-certificate/{year?}', [App\Http\Controllers\Payroll\EmployeePortalController::class, 'taxCertificate'])->name('tax-certificate');
     Route::get('/{token}/tax-certificate/{year}/download', [App\Http\Controllers\Payroll\EmployeePortalController::class, 'downloadTaxCertificate'])->name('tax-certificate.download');
+    Route::get('/{token}/attendance', [App\Http\Controllers\Payroll\EmployeePortalController::class, 'attendance'])->name('attendance');
+    Route::post('/{token}/scan-attendance', [App\Http\Controllers\Payroll\EmployeePortalController::class, 'scanAttendanceQR'])->name('scan-attendance');
     Route::post('/{token}/logout', [App\Http\Controllers\Payroll\EmployeePortalController::class, 'logout'])->name('logout');
 });
