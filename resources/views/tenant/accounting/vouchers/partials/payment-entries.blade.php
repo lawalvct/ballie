@@ -10,7 +10,7 @@
                 </div>
                 <div>
                     <h3 class="text-lg font-bold text-gray-900">Bank Account</h3>
-                    <p class="text-sm text-gray-500">Debit entry - Money going out</p>
+                    <p class="text-sm text-gray-500">Credit entry - Money going out</p>
                 </div>
             </div>
 
@@ -49,10 +49,10 @@
                 >
             </div>
 
-            {{-- Debit Amount (Auto-calculated, Read-only) --}}
+            {{-- Credit Amount (Auto-calculated, Read-only) --}}
             <div class="col-span-3">
                 <label class="block text-sm font-medium text-gray-700 mb-1">
-                    Debit Amount (Auto)
+                    Credit Amount (Auto)
                 </label>
                 <div class="relative">
                     <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-gray-500">₦</span>
@@ -65,20 +65,20 @@
                 </div>
             </div>
 
-            {{-- Hidden Credit Amount (always 0 for bank in payment voucher) --}}
+            {{-- Hidden Debit Amount (always 0 for bank in payment voucher) --}}
             <input type="hidden" :value="0">
 
                 {{-- Type Badge --}}
                 <div class="col-span-1 flex items-end justify-center pb-2">
-                    <span class="px-3 py-1.5 bg-green-600 text-white text-xs font-bold rounded-lg shadow-sm">Dr.</span>
+                    <span class="px-3 py-1.5 bg-red-600 text-white text-xs font-bold rounded-lg shadow-sm">Cr.</span>
                 </div>
             </div>
 
             {{-- Hidden inputs for bank entry submission --}}
             <input type="hidden" name="entries[0][ledger_account_id]" :value="bankEntry.ledger_account_id">
             <input type="hidden" name="entries[0][particulars]" :value="bankEntry.particulars">
-            <input type="hidden" name="entries[0][debit_amount]" :value="totalPaymentAmount">
-            <input type="hidden" name="entries[0][credit_amount]" value="0">
+            <input type="hidden" name="entries[0][debit_amount]" value="0">
+            <input type="hidden" name="entries[0][credit_amount]" :value="totalPaymentAmount">
         </div>
 
         {{-- Payment Entries Section (Multiple Entries - Credit) --}}
@@ -92,7 +92,7 @@
                     </div>
                     <div>
                         <h3 class="text-lg font-bold text-gray-900">Payment Entries</h3>
-                        <p class="text-sm text-gray-500">Credit entries - Accounts being paid</p>
+                        <p class="text-sm text-gray-500">Debit entries - Accounts being paid</p>
                     </div>
                 </div>
                 <button
@@ -142,17 +142,17 @@
                         >
                     </div>
 
-                    {{-- Credit Amount (User Input) --}}
+                    {{-- Debit Amount (User Input) --}}
                     <div class="col-span-2">
                         <label class="block text-sm font-medium text-gray-700 mb-1">
-                            Credit Amount <span class="text-red-500">*</span>
+                            Debit Amount <span class="text-red-500">*</span>
                         </label>
                         <div class="relative">
                             <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-gray-500">₦</span>
                             <input
                                 type="number"
                                 step="0.01"
-                                x-model.number="entry.credit_amount"
+                                x-model.number="entry.debit_amount"
                                 @input="calculateTotal()"
                                 required
                                 placeholder="0.00"
@@ -161,12 +161,12 @@
                         </div>
                     </div>
 
-                    {{-- Hidden Debit Amount (always 0 for payment entries) --}}
+                    {{-- Hidden Credit Amount (always 0 for payment entries) --}}
                     <input type="hidden" :value="0">
 
                         {{-- Type Badge & Remove Button --}}
                         <div class="col-span-2 flex items-end justify-between pb-2">
-                            <span class="px-3 py-1.5 bg-blue-600 text-white text-xs font-bold rounded-lg shadow-sm">Cr.</span>
+                            <span class="px-3 py-1.5 bg-green-600 text-white text-xs font-bold rounded-lg shadow-sm">Dr.</span>
                             <button
                                 type="button"
                                 @click="removeEntry(index)"
@@ -183,8 +183,8 @@
                         {{-- Hidden inputs for payment entry submission --}}
                         <input type="hidden" :name="`entries[${index + 1}][ledger_account_id]`" :value="entry.ledger_account_id">
                         <input type="hidden" :name="`entries[${index + 1}][particulars]`" :value="entry.particulars">
-                        <input type="hidden" :name="`entries[${index + 1}][debit_amount]`" value="0">
-                        <input type="hidden" :name="`entries[${index + 1}][credit_amount]`" :value="entry.credit_amount">
+                        <input type="hidden" :name="`entries[${index + 1}][debit_amount]`" :value="entry.debit_amount">
+                        <input type="hidden" :name="`entries[${index + 1}][credit_amount]`" value="0">
                     </div>
                 </template>
             </div>
@@ -210,17 +210,17 @@
                 <div class="bg-white rounded-lg p-4 shadow-sm">
                     <div class="text-sm font-semibold text-gray-700 mb-3">Transaction Summary</div>
                     <div class="space-y-2">
-                        <div class="flex justify-between items-center p-2 bg-green-50 rounded-lg">
+                        <div class="flex justify-between items-center p-2 bg-red-50 rounded-lg">
                             <span class="text-sm text-gray-700">Bank Account</span>
                             <div class="flex items-center">
-                                <span class="px-2 py-1 bg-green-600 text-white text-xs font-bold rounded mr-2">Dr</span>
+                                <span class="px-2 py-1 bg-red-600 text-white text-xs font-bold rounded mr-2">Cr</span>
                                 <span class="font-semibold text-gray-900">₦<span x-text="formatNumber(totalPaymentAmount)"></span></span>
                             </div>
                         </div>
-                        <div class="flex justify-between items-center p-2 bg-blue-50 rounded-lg">
+                        <div class="flex justify-between items-center p-2 bg-green-50 rounded-lg">
                             <span class="text-sm text-gray-700">Payment Entries</span>
                             <div class="flex items-center">
-                                <span class="px-2 py-1 bg-blue-600 text-white text-xs font-bold rounded mr-2">Cr</span>
+                                <span class="px-2 py-1 bg-green-600 text-white text-xs font-bold rounded mr-2">Dr</span>
                                 <span class="font-semibold text-gray-900">₦<span x-text="formatNumber(totalPaymentAmount)"></span></span>
                             </div>
                         </div>
@@ -244,6 +244,9 @@
                 type="submit"
                 name="action"
                 value="save"
+                @click="setTimeout(() => isSubmitting = true, 0)"
+                :disabled="isSubmitting"
+                :class="isSubmitting ? 'opacity-50 cursor-not-allowed' : ''"
                 class="inline-flex items-center justify-center rounded-lg border-2 border-blue-600 bg-white px-6 py-3 text-sm font-semibold text-blue-600 shadow-sm hover:bg-blue-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-all"
             >
                 <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -255,6 +258,9 @@
                 type="submit"
                 name="action"
                 value="save_and_post"
+                @click="setTimeout(() => isSubmitting = true, 0)"
+                :disabled="isSubmitting"
+                :class="isSubmitting ? 'opacity-50 cursor-not-allowed' : ''"
                 class="inline-flex items-center justify-center rounded-lg border border-transparent bg-gradient-to-r from-green-600 to-emerald-600 px-6 py-3 text-sm font-semibold text-white shadow-lg hover:from-green-700 hover:to-emerald-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 hover:shadow-xl transition-all transform hover:-translate-y-0.5"
             >
                 <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -278,10 +284,11 @@ function paymentVoucherEntries() {
             {
                 ledger_account_id: '',
                 particulars: '',
-                credit_amount: 0
+                debit_amount: 0
             }
         ],
         totalPaymentAmount: 0,
+        isSubmitting: false,
 
         init() {
             this.calculateTotal();
@@ -291,7 +298,7 @@ function paymentVoucherEntries() {
             this.paymentEntries.push({
                 ledger_account_id: '',
                 particulars: '',
-                credit_amount: 0
+                debit_amount: 0
             });
         },
 
@@ -304,7 +311,7 @@ function paymentVoucherEntries() {
 
         calculateTotal() {
             this.totalPaymentAmount = this.paymentEntries.reduce((sum, entry) => {
-                return sum + (parseFloat(entry.credit_amount) || 0);
+                return sum + (parseFloat(entry.debit_amount) || 0);
             }, 0);
         },
 
