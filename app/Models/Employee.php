@@ -228,6 +228,11 @@ class Employee extends Model
         return $assignment?->shiftSchedule;
     }
 
+    public function documents(): HasMany
+    {
+        return $this->hasMany(EmployeeDocument::class)->orderBy('created_at', 'desc');
+    }
+
     public function getMonthlyAttendanceSummary($month = null, $year = null): array
     {
         $month = $month ?? date('m');

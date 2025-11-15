@@ -5,6 +5,7 @@
 /public/storage
 /public/demos
 /public/employees
+/public/employee_documents
 /storage/*.key
 /vendor
 .env

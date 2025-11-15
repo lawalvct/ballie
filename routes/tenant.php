@@ -576,6 +576,11 @@ Route::prefix('ledger-accounts')->name('ledger-accounts.')->group(function () {
                 Route::post('/{employee}/update-salary', [PayrollController::class, 'updateSalary'])->name('update-salary');
                 Route::get('/{employee}/export', [PayrollController::class, 'exportEmployee'])->name('export');
                 Route::get('/{employee}/payslip', [PayrollController::class, 'generatePayslip'])->name('payslip');
+                
+                // Document management
+                Route::post('/{employee}/documents', [PayrollController::class, 'uploadDocument'])->name('documents.upload');
+                Route::get('/{employee}/documents/{document}/download', [PayrollController::class, 'downloadDocument'])->name('documents.download');
+                Route::delete('/{employee}/documents/{document}', [PayrollController::class, 'deleteDocument'])->name('documents.delete');
             });
 
             // Departments

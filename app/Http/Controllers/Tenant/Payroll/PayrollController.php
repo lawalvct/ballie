@@ -328,10 +328,90 @@ class PayrollController extends Controller
             'payrollRuns' => function($q) {
                 $q->with('payrollPeriod')->orderBy('created_at', 'desc')->limit(10);
             },
-            'loans'
+            'loans',
+            'documents.uploader'
         ]);
 
         return view('tenant.payroll.employees.show', compact('tenant', 'employee'));
+    }
+
+    public function uploadDocument(Request $request, Tenant $tenant, Employee $employee)
+    {
+        if ($employee->tenant_id !== $tenant->id) {
+            abort(404);
+        }
+
+        $validated = $request->validate([
+            'document_type' => 'required|string|max:255',
+            'document_name' => 'required|string|max:255',
+            'file' => 'required|file|mimes:pdf,jpg,jpeg,png,doc,docx|max:5120',
+        ]);
+
+        $file = $request->file('file');
+        $fileSize = $file->getSize();
+        $filename = time() . '_' . uniqid() . '.' . $file->getClientOriginalExtension();
+        $path = 'employee_documents/' . $employee->id;
+        
+        $fullPath = public_path($path);
+        if (!file_exists($fullPath)) {
+            mkdir($fullPath, 0755, true);
+        }
+
+        $file->move($fullPath, $filename);
+
+        \App\Models\EmployeeDocument::create([
+            'tenant_id' => $tenant->id,
+            'employee_id' => $employee->id,
+            'document_type' => $validated['document_type'],
+            'document_name' => $validated['document_name'],
+            'file_path' => $path . '/' . $filename,
+            'file_size' => $fileSize,
+            'uploaded_by' => Auth::id(),
+        ]);
+
+        return redirect()->back()->with('success', 'Document uploaded successfully.');
+    }
+
+    public function downloadDocument(Tenant $tenant, Employee $employee, $documentId)
+    {
+        if ($employee->tenant_id !== $tenant->id) {
+            abort(404);
+        }
+
+        $document = \App\Models\EmployeeDocument::where('employee_id', $employee->id)
+            ->where('id', $documentId)
+            ->firstOrFail();
+
+        $filePath = public_path($document->file_path);
+        
+        if (!file_exists($filePath)) {
+            return redirect()->back()->with('error', 'File not found.');
+        }
+
+        $extension = pathinfo($document->file_path, PATHINFO_EXTENSION);
+        $downloadName = $document->document_name . '.' . $extension;
+
+        return response()->download($filePath, $downloadName);
+    }
+
+    public function deleteDocument(Tenant $tenant, Employee $employee, $documentId)
+    {
+        if ($employee->tenant_id !== $tenant->id) {
+            abort(404);
+        }
+
+        $document = \App\Models\EmployeeDocument::where('employee_id', $employee->id)
+            ->where('id', $documentId)
+            ->firstOrFail();
+
+        $filePath = public_path($document->file_path);
+        if (file_exists($filePath)) {
+            unlink($filePath);
+        }
+
+        $document->delete();
+
+        return redirect()->back()->with('success', 'Document deleted successfully.');
     }
 
     public function editEmployee(Tenant $tenant, Employee $employee)
