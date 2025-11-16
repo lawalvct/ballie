@@ -16,6 +16,7 @@ class VoucherEntry extends Model
         'debit_amount',
         'credit_amount',
         'particulars',
+        'document_path',
     ];
 
     protected $casts = [

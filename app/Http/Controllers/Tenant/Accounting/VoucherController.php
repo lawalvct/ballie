@@ -282,17 +282,26 @@ class VoucherController extends Controller
             ]);
 
             // Create voucher entries
-            foreach ($request->entries as $entryData) {
+            foreach ($request->entries as $index => $entryData) {
                 $debitAmount = (float) ($entryData['debit_amount'] ?? 0);
                 $creditAmount = (float) ($entryData['credit_amount'] ?? 0);
 
                 if ($debitAmount > 0 || $creditAmount > 0) {
+                    // Handle document upload
+                    $documentPath = null;
+                    if ($request->hasFile("entries.{$index}.document")) {
+                        $file = $request->file("entries.{$index}.document");
+                        $filename = time() . '_' . $index . '_' . $file->getClientOriginalName();
+                        $documentPath = $file->storeAs('voucher_documents', $filename, 'public');
+                    }
+
                     VoucherEntry::create([
                         'voucher_id' => $voucher->id,
                         'ledger_account_id' => $entryData['ledger_account_id'],
                         'particulars' => $entryData['particulars'],
                         'debit_amount' => $debitAmount,
                         'credit_amount' => $creditAmount,
+                        'document_path' => $documentPath,
                     ]);
                 }
             }

@@ -69,7 +69,7 @@
     </div>
 
     <!-- Form -->
-    <form method="POST" action="{{ route('tenant.accounting.vouchers.store', ['tenant' => $tenant->slug]) }}" class="space-y-6">
+    <form method="POST" action="{{ route('tenant.accounting.vouchers.store', ['tenant' => $tenant->slug]) }}" enctype="multipart/form-data" class="space-y-6">
         @csrf
 
         <!-- Voucher Header -->

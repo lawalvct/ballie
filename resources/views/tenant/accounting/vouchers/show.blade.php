@@ -186,7 +186,7 @@
                 </span>
             </div>
         </div>
-        
+
         <!-- Mobile View -->
         <div class="block sm:hidden">
             @foreach($voucher->entries as $entry)
@@ -196,7 +196,7 @@
                             @php
                                 $colors = [
                                     'Assets' => 'blue',
-                                    'Liabilities' => 'red', 
+                                    'Liabilities' => 'red',
                                     'Equity' => 'green',
                                     'Income' => 'purple',
                                     'Expenses' => 'orange'
@@ -219,6 +219,16 @@
                             @if($entry->particulars)
                                 <div class="text-xs text-gray-600 mt-1">
                                     {{ $entry->particulars }}
+                                </div>
+                            @endif
+                            @if($entry->document_path)
+                                <div class="mt-2">
+                                    <a href="{{ asset('storage/' . $entry->document_path) }}" target="_blank" class="inline-flex items-center text-xs text-blue-600 hover:text-blue-800">
+                                        <svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                                            <path fill-rule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z" clip-rule="evenodd"/>
+                                        </svg>
+                                        View Document
+                                    </a>
                                 </div>
                             @endif
                             <div class="flex justify-between mt-2">
@@ -262,6 +272,9 @@
                         <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                             Particulars
                         </th>
+                        <th scope="col" class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Document
+                        </th>
                         <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                             Debit Amount
                         </th>
@@ -279,7 +292,7 @@
                                         @php
                                             $colors = [
                                                 'Assets' => 'blue',
-                                                'Liabilities' => 'red', 
+                                                'Liabilities' => 'red',
                                                 'Equity' => 'green',
                                                 'Income' => 'purple',
                                                 'Expenses' => 'orange'
@@ -304,6 +317,18 @@
                             </td>
                             <td class="px-6 py-4">
                                 <div class="text-sm text-gray-900">{{ $entry->particulars ?: 'N/A' }}</div>
+                            </td>
+                            <td class="px-6 py-4 text-center">
+                                @if($entry->document_path)
+                                    <a href="{{ asset('storage/' . $entry->document_path) }}" target="_blank" class="inline-flex items-center text-sm text-blue-600 hover:text-blue-800">
+                                        <svg class="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                                            <path fill-rule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z" clip-rule="evenodd"/>
+                                        </svg>
+                                        View
+                                    </a>
+                                @else
+                                    <span class="text-xs text-gray-400">-</span>
+                                @endif
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap text-right text-sm text-gray-900">
                                 @if($entry->debit_amount > 0)

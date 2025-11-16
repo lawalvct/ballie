@@ -111,27 +111,36 @@
             <div class="space-y-4">
                 <template x-for="(entry, index) in paymentEntries" :key="index">
                     <div class="grid grid-cols-12 gap-4 items-start p-5 bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl border-2 border-blue-200 hover:border-blue-400 transition-all shadow-sm hover:shadow-md">
-                    {{-- Ledger Account Dropdown --}}
-                    <div class="col-span-4">
+                    {{-- Ledger Account Searchable --}}
+                    <div class="col-span-3" x-data="{ search: '', showDropdown: false }">
                         <label class="block text-sm font-medium text-gray-700 mb-1">
                             Ledger Account <span class="text-red-500">*</span>
                         </label>
-                        <select
-                            x-model="entry.ledger_account_id"
-                            required
-                            class="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
-                        >
-                            <option value="">Select Account</option>
-                            @foreach($ledgerAccounts as $account)
-                                <option :value="{{ $account->id }}">
-                                    {{ $account->name }} ({{ $account->code }})
-                                </option>
-                            @endforeach
-                        </select>
+                        <div class="relative">
+                            <input
+                                type="text"
+                                x-model="search"
+                                @focus="showDropdown = true"
+                                @click.away="showDropdown = false"
+                                placeholder="Search account..."
+                                class="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+                            >
+                            <div x-show="showDropdown" class="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-auto">
+                                @foreach($ledgerAccounts as $account)
+                                    <div
+                                        x-show="'{{ strtolower($account->name . ' ' . $account->code) }}'.includes(search.toLowerCase())"
+                                        @click="entry.ledger_account_id = {{ $account->id }}; search = '{{ $account->name }} ({{ $account->code }})'; showDropdown = false"
+                                        class="px-3 py-2 hover:bg-blue-50 cursor-pointer text-sm"
+                                    >
+                                        {{ $account->name }} ({{ $account->code }})
+                                    </div>
+                                @endforeach
+                            </div>
+                        </div>
                     </div>
 
                     {{-- Particulars --}}
-                    <div class="col-span-4">
+                    <div class="col-span-3">
                         <label class="block text-sm font-medium text-gray-700 mb-1">
                             Particulars
                         </label>
@@ -159,6 +168,28 @@
                                 placeholder="0.00"
                                 class="w-full pl-8 rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
                             >
+                        </div>
+                    </div>
+
+                    {{-- Document Upload --}}
+                    <div class="col-span-2">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">
+                            Document
+                        </label>
+                        <div class="relative">
+                            <input
+                                type="file"
+                                :name="`entries[${index + 1}][document]`"
+                                accept=".jpg,.jpeg,.png,.pdf"
+                                @change="handleFileChange($event, index)"
+                                class="block w-full text-sm text-gray-500 file:mr-2 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-gradient-to-r file:from-blue-500 file:to-blue-600 file:text-white hover:file:from-blue-600 hover:file:to-blue-700 file:cursor-pointer file:shadow-sm hover:file:shadow-md file:transition-all"
+                            >
+                        </div>
+                        <div x-show="entry.fileName" class="mt-2 text-xs text-green-600 flex items-center bg-green-50 px-2 py-1 rounded">
+                            <svg class="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+                            </svg>
+                            <span x-text="entry.fileName"></span>
                         </div>
                     </div>
 
@@ -285,7 +316,9 @@ function paymentVoucherEntries() {
             {
                 ledger_account_id: '',
                 particulars: '',
-                debit_amount: 0
+                debit_amount: 0,
+                fileName: '',
+                search: ''
             }
         ],
         totalPaymentAmount: 0,
@@ -300,7 +333,9 @@ function paymentVoucherEntries() {
             this.paymentEntries.push({
                 ledger_account_id: '',
                 particulars: this.bankEntry.particulars,
-                debit_amount: 0
+                debit_amount: 0,
+                fileName: '',
+                search: ''
             });
         },
 
@@ -317,6 +352,22 @@ function paymentVoucherEntries() {
             if (this.paymentEntries.length > 1) {
                 this.paymentEntries.splice(index, 1);
                 this.calculateTotal();
+            }
+        },
+
+        handleFileChange(event, index) {
+            const file = event.target.files[0];
+            if (file) {
+                // Validate file size (5MB max)
+                if (file.size > 5 * 1024 * 1024) {
+                    alert('File size must be less than 5MB');
+                    event.target.value = '';
+                    this.paymentEntries[index].fileName = '';
+                    return;
+                }
+                this.paymentEntries[index].fileName = file.name;
+            } else {
+                this.paymentEntries[index].fileName = '';
             }
         },
 
