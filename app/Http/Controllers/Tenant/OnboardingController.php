@@ -21,6 +21,7 @@ use Database\Seeders\DefaultLedgerAccountsSeeder;
 use Database\Seeders\DefaultBanksSeeder;
 use Database\Seeders\DefaultProductCategoriesSeeder;
 use Database\Seeders\DefaultUnitsSeeder;
+use Database\Seeders\DefaultShiftsSeeder;
 
 class OnboardingController extends Controller
 {
@@ -319,11 +320,17 @@ class OnboardingController extends Controller
                 DefaultUnitsSeeder::seedForTenant($tenant->id);
             }, "Units seeding for tenant: {$tenant->id}");
 
+            // Seed Default Shifts with retry mechanism
+            $this->retryOperation(function() use ($tenant) {
+                DefaultShiftsSeeder::seedForTenant($tenant->id);
+            }, "Default shifts seeding for tenant: {$tenant->id}");
+
             // Final verification
             $accountGroupsCount = \App\Models\AccountGroup::where('tenant_id', $tenant->id)->count();
             $voucherTypesCount = \App\Models\VoucherType::where('tenant_id', $tenant->id)->count();
             $categoriesCount = \App\Models\ProductCategory::where('tenant_id', $tenant->id)->count();
             $unitsCount = \App\Models\Unit::where('tenant_id', $tenant->id)->count();
+            $shiftsCount = \App\Models\ShiftSchedule::where('tenant_id', $tenant->id)->count();
 
             Log::info("All default data seeded successfully", [
                 'tenant_id' => $tenant->id,
@@ -334,7 +341,8 @@ class OnboardingController extends Controller
                 'banks' => $banksCount,
                 'product_categories' => $categoriesCount,
                 'units' => $unitsCount,
-                'total' => $accountGroupsCount + $voucherTypesCount + $ledgerCount + $banksCount + $categoriesCount + $unitsCount
+                'shifts' => $shiftsCount,
+                'total' => $accountGroupsCount + $voucherTypesCount + $ledgerCount + $banksCount + $categoriesCount + $unitsCount + $shiftsCount
             ]);
 
             // Restore original timeout
@@ -402,6 +410,7 @@ class OnboardingController extends Controller
             $ledgerAccountsCount = \App\Models\LedgerAccount::where('tenant_id', $tenantId)->count();
             $categoriesCount = \App\Models\ProductCategory::where('tenant_id', $tenantId)->count();
             $unitsCount = \App\Models\Unit::where('tenant_id', $tenantId)->count();
+            $shiftsCount = \App\Models\ShiftSchedule::where('tenant_id', $tenantId)->count();
 
             return response()->json([
                 'success' => true,
@@ -411,7 +420,8 @@ class OnboardingController extends Controller
                     'ledger_accounts' => $ledgerAccountsCount,
                     'product_categories' => $categoriesCount,
                     'units' => $unitsCount,
-                    'total_seeded_items' => $accountGroupsCount + $voucherTypesCount + $ledgerAccountsCount + $categoriesCount + $unitsCount
+                    'shifts' => $shiftsCount,
+                    'total_seeded_items' => $accountGroupsCount + $voucherTypesCount + $ledgerAccountsCount + $categoriesCount + $unitsCount + $shiftsCount
                 ]
             ]);
         } catch (\Exception $e) {

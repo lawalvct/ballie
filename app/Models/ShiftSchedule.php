@@ -62,60 +62,13 @@ class ShiftSchedule extends Model
     }
 
     // Methods
+    /**
+     * @deprecated Use DefaultShiftsSeeder::seedForTenant() instead
+     * This method is kept for backward compatibility but seeding should be done via the seeder
+     */
     public static function createDefaultShifts($tenantId): void
     {
-        $shifts = [
-            [
-                'name' => 'Morning Shift',
-                'code' => 'MS',
-                'description' => 'Standard morning working hours',
-                'start_time' => '08:00:00',
-                'end_time' => '17:00:00',
-                'work_hours' => 8,
-                'break_minutes' => 60,
-                'late_grace_minutes' => 15,
-                'early_out_grace_minutes' => 15,
-                'shift_allowance' => 0,
-                'is_night_shift' => false,
-                'is_default' => true,
-                'color' => '#3b82f6',
-                'sort_order' => 1,
-            ],
-            [
-                'name' => 'Evening Shift',
-                'code' => 'ES',
-                'description' => 'Evening working hours',
-                'start_time' => '14:00:00',
-                'end_time' => '22:00:00',
-                'work_hours' => 8,
-                'break_minutes' => 60,
-                'late_grace_minutes' => 15,
-                'early_out_grace_minutes' => 15,
-                'shift_allowance' => 5000,
-                'is_night_shift' => false,
-                'color' => '#f59e0b',
-                'sort_order' => 2,
-            ],
-            [
-                'name' => 'Night Shift',
-                'code' => 'NS',
-                'description' => 'Night working hours',
-                'start_time' => '22:00:00',
-                'end_time' => '06:00:00',
-                'work_hours' => 8,
-                'break_minutes' => 60,
-                'late_grace_minutes' => 15,
-                'early_out_grace_minutes' => 15,
-                'shift_allowance' => 10000,
-                'is_night_shift' => true,
-                'color' => '#6366f1',
-                'sort_order' => 3,
-            ],
-        ];
-
-        foreach ($shifts as $shift) {
-            static::create(array_merge(['tenant_id' => $tenantId], $shift));
-        }
+        \Database\Seeders\DefaultShiftsSeeder::seedForTenant($tenantId);
     }
 
     public function isWorkingDay(string $dayName): bool

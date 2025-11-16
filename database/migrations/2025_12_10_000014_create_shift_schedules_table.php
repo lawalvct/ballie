@@ -15,7 +15,7 @@ return new class extends Migration
             $table->id();
             $table->foreignId('tenant_id')->constrained()->onDelete('cascade');
             $table->string('name'); // Morning Shift, Night Shift, etc.
-            $table->string('code')->unique(); // MS, NS, ES
+            $table->string('code'); // MS, NS, ES
             $table->text('description')->nullable();
 
             // Shift times
@@ -48,6 +48,7 @@ return new class extends Migration
 
             $table->index(['tenant_id', 'is_active']);
             $table->index('code');
+            $table->unique(['tenant_id', 'code']);
         });
     }
 
