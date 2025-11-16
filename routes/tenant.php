@@ -145,6 +145,7 @@ Route::middleware(['auth'])->group(function () {
             Route::get('/global-search', [GlobalSearchController::class, 'search'])->name('global-search');
             Route::get('/quick-actions', [GlobalSearchController::class, 'quickActions'])->name('quick-actions');
             Route::get('/customers/search', [InvoiceController::class, 'searchCustomers'])->name('customers.search');
+            Route::get('/vendors/search', [VendorController::class, 'search'])->name('vendors.search');
             Route::get('/products/search', [InvoiceController::class, 'searchProducts'])->name('products.search');
             Route::get('/ledger-accounts/search', [InvoiceController::class, 'searchLedgerAccounts'])->name('ledger-accounts.search');
         });

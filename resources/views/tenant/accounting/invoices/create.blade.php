@@ -19,7 +19,7 @@
                 <svg class="w-3 h-3 md:w-4 md:h-4 md:mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
                 </svg>
-               <span class="ml-1 md:ml-0">Sales</span>
+               <span class="ml-1 md:ml-0"> Sales Invoice +</span>
             </a>
 
             <a href="{{ route('tenant.accounting.invoices.create', ['tenant' => $tenant->slug, 'type' => 'pur']) }}"
@@ -27,7 +27,7 @@
                 <svg class="w-3 h-3 md:w-4 md:h-4 md:mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"></path>
                 </svg>
-                <span class="ml-1 md:ml-0">Purchase</span>
+                <span class="ml-1 md:ml-0">Purchase Invoice +</span>
             </a>
 
             <a href="{{ route('tenant.accounting.invoices.create', ['tenant' => $tenant->slug, 'type' => 'sr']) }}"
@@ -35,7 +35,7 @@
                 <svg class="w-3 h-3 md:w-4 md:h-4 md:mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 8h6m-5 0a3 3 0 110 6H9l3 3m-3-6h6m6 1a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                 </svg>
-                <span class="ml-1 md:ml-0">S-Return</span>
+                <span class="ml-1 md:ml-0">Sales-Return Invoice +</span>
             </a>
 
             <a href="{{ route('tenant.accounting.invoices.create', ['tenant' => $tenant->slug, 'type' => 'pr']) }}"
@@ -43,7 +43,7 @@
                 <svg class="w-3 h-3 md:w-4 md:h-4 md:mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"></path>
                 </svg>
-                <span class="ml-1 md:ml-0">P-Return</span>
+                <span class="ml-1 md:ml-0">Purchase-Return Invoice +</span>
             </a>
         </div>
         <div class="flex items-center space-x-2 md:space-x-3">
@@ -177,12 +177,12 @@
                                 <input type="text"
                                        x-model="searchTerm"
                                        @input="searchCustomers()"
-                                       @focus="showDropdown = true"
+                                       @focus="searchCustomers()"
                                        placeholder="Type to search customers..."
                                        class="w-full pl-3 pr-10 py-2 text-base border border-gray-300 focus:outline-none focus:ring-primary-500 focus:border-primary-500 rounded-lg"
                                        :class="selectedCustomerId ? 'bg-green-50 border-green-300' : ''">
                                 <input type="hidden" name="customer_id" x-model="selectedCustomerId" required>
-                                
+
                                 <!-- Selected indicator -->
                                 <div x-show="selectedCustomerId" class="absolute right-3 top-2.5">
                                     <svg class="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -193,6 +193,7 @@
                                 <!-- Dropdown -->
                                 <div x-show="showDropdown && (customers.length > 0 || loading)"
                                      x-transition
+                                     @click.away="showDropdown = false"
                                      class="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto">
 
                                     <!-- Loading -->
@@ -219,7 +220,7 @@
                                     </template>
 
                                     <!-- No results -->
-                                    <div x-show="!loading && customers.length === 0 && searchTerm.length >= 2"
+                                    <div x-show="!loading && customers.length === 0"
                                          class="px-3 py-2 text-gray-500 text-center">
                                         <svg class="w-8 h-8 mx-auto mb-2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
@@ -227,9 +228,9 @@
                                         No customers found
                                     </div>
                                 </div>
-                                
+
                                 <!-- Selected customer display -->
-                                <div x-show="selectedCustomerId && selectedCustomerName" 
+                                <div x-show="selectedCustomerId && selectedCustomerName"
                                      class="mt-2 p-2 bg-blue-50 border border-blue-200 rounded-lg">
                                     <div class="flex items-center justify-between">
                                         <div class="flex items-center">
@@ -241,7 +242,7 @@
                                                 <div class="text-xs text-gray-600" x-text="'Ledger: ' + selectedLedgerName"></div>
                                             </div>
                                         </div>
-                                        <button type="button" 
+                                        <button type="button"
                                                 @click="clearSelection()"
                                                 class="text-gray-400 hover:text-red-600 transition-colors"
                                                 title="Clear selection">
@@ -265,26 +266,89 @@
 
                     <!-- Vendor (for Purchase transactions) -->
                     <div id="vendorSection" class="hidden">
-                        <label for="vendor_select" class="block text-sm font-medium text-gray-700 mb-2">
+                        <label for="vendor_search" class="block text-sm font-medium text-gray-700 mb-2">
                             Vendor <span class="text-red-500">*</span>
                         </label>
                         <div class="flex gap-2">
-                            <div class="flex-1">
-                                <select name="customer_id"
-                                        id="vendor_select"
-                                        disabled
-                                        class="w-full pl-3 pr-10 py-2 text-base border border-gray-300 focus:outline-none focus:ring-primary-500 focus:border-primary-500 rounded-lg">
-                                    <option value="">Select Vendor</option>
-                                    @if(isset($vendors))
-                                        @foreach($vendors as $vendor)
-                                            <option value="{{ $vendor->ledgerAccount->id }}" 
-                                                    data-ledger-name="{{ $vendor->ledgerAccount->name }}"
-                                                    {{ old('customer_id') == $vendor->ledgerAccount->id ? 'selected' : '' }}>
-                                                {{ $vendor->display_name }} - Ledger: {{ $vendor->ledgerAccount->name }}
-                                            </option>
-                                        @endforeach
-                                    @endif
-                                </select>
+                            <div class="relative flex-1" x-data="vendorSearch()">
+                                <input type="text"
+                                       x-model="searchTerm"
+                                       @input="searchVendors()"
+                                       @focus="showDropdown = true"
+                                       placeholder="Type to search vendors..."
+                                       class="w-full pl-3 pr-10 py-2 text-base border border-gray-300 focus:outline-none focus:ring-primary-500 focus:border-primary-500 rounded-lg"
+                                       :class="selectedVendorId ? 'bg-green-50 border-green-300' : ''">
+                                <input type="hidden" name="customer_id" x-model="selectedVendorId" required>
+
+                                <!-- Selected indicator -->
+                                <div x-show="selectedVendorId" class="absolute right-3 top-2.5">
+                                    <svg class="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                    </svg>
+                                </div>
+
+                                <!-- Dropdown -->
+                                <div x-show="showDropdown && (vendors.length > 0 || loading)"
+                                     x-transition
+                                     @click.away="showDropdown = false"
+                                     class="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+
+                                    <!-- Loading -->
+                                    <div x-show="loading" class="px-3 py-2 text-gray-500 flex items-center">
+                                        <svg class="animate-spin h-4 w-4 mr-2 text-gray-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                        </svg>
+                                        Searching...
+                                    </div>
+
+                                    <!-- Results -->
+                                    <template x-for="vendor in vendors" :key="vendor.id">
+                                        <div @click="selectVendor(vendor)"
+                                             class="px-3 py-2 cursor-pointer hover:bg-green-50 border-b border-gray-100 last:border-b-0 transition-colors">
+                                            <div class="flex items-center justify-between">
+                                                <div class="flex-1">
+                                                    <div class="font-medium text-gray-900" x-text="vendor.display_name"></div>
+                                                    <div class="text-xs text-gray-500 mt-0.5" x-text="vendor.email || 'No email'"></div>
+                                                </div>
+                                                <div class="text-xs text-green-600 font-medium" x-text="'Ledger: ' + vendor.ledger_account_name"></div>
+                                            </div>
+                                        </div>
+                                    </template>
+
+                                    <!-- No results -->
+                                    <div x-show="!loading && vendors.length === 0 && searchTerm.length >= 2"
+                                         class="px-3 py-2 text-gray-500 text-center">
+                                        <svg class="w-8 h-8 mx-auto mb-2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                                        </svg>
+                                        No vendors found
+                                    </div>
+                                </div>
+
+                                <!-- Selected vendor display -->
+                                <div x-show="selectedVendorId && selectedVendorName"
+                                     class="mt-2 p-2 bg-green-50 border border-green-200 rounded-lg">
+                                    <div class="flex items-center justify-between">
+                                        <div class="flex items-center">
+                                            <svg class="w-4 h-4 text-green-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path>
+                                            </svg>
+                                            <div>
+                                                <div class="text-sm font-medium text-gray-900" x-text="selectedVendorName"></div>
+                                                <div class="text-xs text-gray-600" x-text="'Ledger: ' + selectedLedgerName"></div>
+                                            </div>
+                                        </div>
+                                        <button type="button"
+                                                @click="clearSelection()"
+                                                class="text-gray-400 hover:text-red-600 transition-colors"
+                                                title="Clear selection">
+                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                                            </svg>
+                                        </button>
+                                    </div>
+                                </div>
                             </div>
                             <button type="button"
                                     onclick="openQuickAddModal('vendor')"
@@ -1122,12 +1186,6 @@ function customerSearch() {
         searchTimeout: null,
 
         searchCustomers() {
-            if (this.searchTerm.length < 2) {
-                this.customers = [];
-                this.showDropdown = false;
-                return;
-            }
-
             if (this.searchTimeout) {
                 clearTimeout(this.searchTimeout);
             }
@@ -1136,7 +1194,8 @@ function customerSearch() {
                 this.loading = true;
                 this.showDropdown = true;
 
-                fetch('/{{ $tenant->slug }}/api/customers/search?q=' + encodeURIComponent(this.searchTerm))
+                const searchQuery = this.searchTerm || '';
+                fetch('/{{ $tenant->slug }}/api/customers/search?q=' + encodeURIComponent(searchQuery))
                     .then(response => response.json())
                     .then(data => {
                         this.customers = data;
@@ -1158,11 +1217,78 @@ function customerSearch() {
             this.showDropdown = false;
             this.customers = [];
         },
-        
+
         clearSelection() {
             this.searchTerm = '';
             this.selectedCustomerId = '';
             this.selectedCustomerName = '';
+            this.selectedLedgerName = '';
+        },
+
+        init() {
+            document.addEventListener('click', (e) => {
+                if (!this.$el.contains(e.target)) {
+                    this.showDropdown = false;
+                }
+            });
+        }
+    }
+}
+
+// Vendor Search Component
+function vendorSearch() {
+    return {
+        searchTerm: '',
+        vendors: [],
+        selectedVendorId: '{{ old('customer_id') }}',
+        selectedVendorName: '',
+        selectedLedgerName: '',
+        showDropdown: false,
+        loading: false,
+        searchTimeout: null,
+
+        searchVendors() {
+            if (this.searchTerm.length < 2) {
+                this.vendors = [];
+                this.showDropdown = false;
+                return;
+            }
+
+            if (this.searchTimeout) {
+                clearTimeout(this.searchTimeout);
+            }
+
+            this.searchTimeout = setTimeout(() => {
+                this.loading = true;
+                this.showDropdown = true;
+
+                fetch('/{{ $tenant->slug }}/api/vendors/search?q=' + encodeURIComponent(this.searchTerm))
+                    .then(response => response.json())
+                    .then(data => {
+                        this.vendors = data;
+                        this.loading = false;
+                    })
+                    .catch(error => {
+                        console.error('Search error:', error);
+                        this.vendors = [];
+                        this.loading = false;
+                    });
+            }, 300);
+        },
+
+        selectVendor(vendor) {
+            this.searchTerm = vendor.display_name;
+            this.selectedVendorId = vendor.ledger_account_id;
+            this.selectedVendorName = vendor.display_name;
+            this.selectedLedgerName = vendor.ledger_account_name || vendor.display_name;
+            this.showDropdown = false;
+            this.vendors = [];
+        },
+
+        clearSelection() {
+            this.searchTerm = '';
+            this.selectedVendorId = '';
+            this.selectedVendorName = '';
             this.selectedLedgerName = '';
         },
 

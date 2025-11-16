@@ -407,4 +407,40 @@ class VendorController extends Controller
                 ->with('error', 'An error occurred during import: ' . $e->getMessage());
         }
     }
+
+    /**
+     * Search vendors for dropdown/autocomplete
+     */
+    public function search(Request $request, Tenant $tenant)
+    {
+        $query = $request->get('q', '');
+
+        if (strlen($query) < 2) {
+            return response()->json([]);
+        }
+
+        $vendors = Vendor::where('tenant_id', $tenant->id)
+            ->with('ledgerAccount')
+            ->where(function($q) use ($query) {
+                $q->where('first_name', 'like', "%{$query}%")
+                  ->orWhere('last_name', 'like', "%{$query}%")
+                  ->orWhere('company_name', 'like', "%{$query}%")
+                  ->orWhere('email', 'like', "%{$query}%")
+                  ->orWhere('phone', 'like', "%{$query}%");
+            })
+            ->limit(20)
+            ->get()
+            ->map(function($vendor) {
+                return [
+                    'id' => $vendor->id,
+                    'ledger_account_id' => $vendor->ledger_account_id,
+                    'display_name' => $vendor->display_name,
+                    'email' => $vendor->email,
+                    'phone' => $vendor->phone,
+                    'ledger_account_name' => $vendor->ledgerAccount ? $vendor->ledgerAccount->name : 'No Ledger',
+                ];
+            });
+
+        return response()->json($vendors);
+    }
 }

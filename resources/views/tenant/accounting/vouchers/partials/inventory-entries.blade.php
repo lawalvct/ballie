@@ -43,25 +43,31 @@
                     <template x-for="(item, index) in inventoryItems" :key="index">
                         <tr class="border-b border-gray-100 hover:bg-gray-50">
                             <td class="py-3 px-2">
-                                <select :name="`inventory_items[${index}][product_id]`"
-                                        x-model="item.product_id"
-                                        @change="updateProductDetails(index)"
+                                <div x-data="{ search: '', showDropdown: false }" class="relative">
+                                    <input
+                                        type="text"
+                                        x-model="search"
+                                        @focus="showDropdown = true"
+                                        @click.away="showDropdown = false"
+                                        placeholder="Search product..."
                                         class="block w-full pl-3 pr-10 py-2 text-sm border border-gray-300 focus:outline-none focus:ring-primary-500 focus:border-primary-500 rounded-md"
-                                        required>
-                                    <option value="">Select Product</option>
-                                    @foreach($products ?? [] as $product)
-                                        <option value="{{ $product->id }}"
-                                                data-name="{{ $product->name }}"
-                                                data-rate="{{ $product->sales_rate }}"
-                                                data-purchase-rate="{{ $product->purchase_rate }}"
-                                                data-stock="{{ $product->current_stock }}"
-                                                data-unit="{{ $product->primaryUnit->name ?? 'Pcs' }}">
-                                            {{ $product->name }} ({{ $product->sku }})
-                                        </option>
-                                    @endforeach
-                                </select>
-                                <div class="mt-1 text-xs text-gray-500" x-show="item.current_stock">
-                                    Stock: <span x-text="item.current_stock"></span> <span x-text="item.unit"></span>
+                                    >
+                                    <input type="hidden" :name="`inventory_items[${index}][product_id]`" x-model="item.product_id" required>
+                                    <div x-show="showDropdown" class="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-auto">
+                                        @foreach($products ?? [] as $product)
+                                            <div
+                                                x-show="search === '' || '{{ strtolower($product->name . ' ' . $product->sku) }}'.includes(search.toLowerCase())"
+                                                @click="item.product_id = {{ $product->id }}; item.product_name = '{{ $product->name }}'; item.rate = {{ $product->sales_rate }}; item.purchase_rate = {{ $product->purchase_rate }}; item.current_stock = {{ $product->current_stock }}; item.unit = '{{ $product->primaryUnit->name ?? 'Pcs' }}'; item.description = item.description || '{{ $product->name }}'; search = '{{ $product->name }} ({{ $product->sku }})'; showDropdown = false; $parent.$parent.calculateAmount(index)"
+                                                class="px-3 py-2 hover:bg-blue-50 cursor-pointer text-sm border-b border-gray-100 last:border-b-0"
+                                            >
+                                                <div class="font-medium text-gray-900">{{ $product->name }}</div>
+                                                <div class="text-xs text-gray-500">SKU: {{ $product->sku }} | Stock: {{ $product->current_stock }} {{ $product->primaryUnit->name ?? 'Pcs' }}</div>
+                                            </div>
+                                        @endforeach
+                                    </div>
+                                    <div class="mt-1 text-xs text-gray-500" x-show="item.current_stock">
+                                        Stock: <span x-text="item.current_stock"></span> <span x-text="item.unit"></span>
+                                    </div>
                                 </div>
                             </td>
                             <td class="py-3 px-2">
