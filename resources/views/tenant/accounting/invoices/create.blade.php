@@ -1314,21 +1314,16 @@ function productSearch(itemIndex) {
         itemIndex: itemIndex,
 
         searchProducts() {
-            if (this.searchTerm.length < 2) {
-                this.products = [];
-                this.showDropdown = false;
-                return;
-            }
-
             if (this.searchTimeout) {
                 clearTimeout(this.searchTimeout);
             }
 
+            const query = this.searchTerm || '';
             this.searchTimeout = setTimeout(() => {
                 this.loading = true;
                 this.showDropdown = true;
 
-                fetch('/{{ $tenant->slug }}/api/products/search?q=' + encodeURIComponent(this.searchTerm))
+                fetch('/{{ $tenant->slug }}/api/products/search?q=' + encodeURIComponent(query))
                     .then(response => response.json())
                     .then(data => {
                         this.products = data;

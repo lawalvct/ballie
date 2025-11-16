@@ -982,53 +982,66 @@ class InvoiceController extends Controller
 
     public function searchCustomers(Request $request, Tenant $tenant)
     {
-        $query = $request->get('q', '');
+        $query = trim($request->get('q', ''));
 
-        if (strlen($query) < 2) {
-            return response()->json([]);
-        }
+        $customersQuery = Customer::where('tenant_id', $tenant->id)
+            ->with('ledgerAccount');
 
-        $customers = Customer::where('tenant_id', $tenant->id)
-            ->with('ledgerAccount')
-            ->where(function($q) use ($query) {
+        if (strlen($query) >= 2) {
+            $customersQuery->where(function($q) use ($query) {
                 $q->where('first_name', 'like', "%{$query}%")
                   ->orWhere('last_name', 'like', "%{$query}%")
                   ->orWhere('company_name', 'like', "%{$query}%")
                   ->orWhere('email', 'like', "%{$query}%");
-            })
+            });
+        } else {
+            // Default list when user has not typed anything yet
+            $customersQuery->orderBy('updated_at', 'desc');
+        }
+
+        $customers = $customersQuery
             ->limit(10)
             ->get()
             ->map(function($customer) {
+                $ledgerAccount = $customer->ledgerAccount;
+
                 return [
                     'id' => $customer->id,
-                    'ledger_account_id' => $customer->ledgerAccount->id,
-                    'ledger_account_name' => $customer->ledgerAccount->name,
+                    'ledger_account_id' => $ledgerAccount?->id,
+                    'ledger_account_name' => $ledgerAccount?->name,
                     'display_name' => $customer->company_name ?: trim($customer->first_name . ' ' . $customer->last_name),
                     'email' => $customer->email
                 ];
-            });
+            })
+            ->filter(function($customer) {
+                return !empty($customer['ledger_account_id']);
+            })
+            ->values();
 
         return response()->json($customers);
     }
 
     public function searchProducts(Request $request, Tenant $tenant)
     {
-        $query = $request->get('q', '');
+        $query = trim($request->get('q', ''));
 
-        if (strlen($query) < 2) {
-            return response()->json([]);
-        }
-
-        $products = Product::where('tenant_id', $tenant->id)
+        $productsQuery = Product::where('tenant_id', $tenant->id)
             ->where('is_active', true)
             ->where('is_saleable', true)
-            ->with(['primaryUnit'])
-            ->where(function($q) use ($query) {
+            ->with(['primaryUnit']);
+
+        if (strlen($query) >= 2) {
+            $productsQuery->where(function($q) use ($query) {
                 $q->where('name', 'like', "%{$query}%")
                   ->orWhere('sku', 'like', "%{$query}%")
                   ->orWhere('description', 'like', "%{$query}%");
-            })
-            ->limit(10)
+            });
+        } else {
+            $productsQuery->orderBy('updated_at', 'desc');
+        }
+
+        $products = $productsQuery
+            ->limit(15)
             ->get()
             ->map(function($product) {
                 return [

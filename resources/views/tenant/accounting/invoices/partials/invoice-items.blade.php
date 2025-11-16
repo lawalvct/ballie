@@ -51,7 +51,7 @@
                                             <input type="text"
                                                    x-model="searchTerm"
                                                    @input="searchProducts()"
-                                                   @focus="showDropdown = true"
+                                                   @focus="searchProducts()"
                                                    placeholder="Search..."
                                                    class="block w-full pl-2 md:pl-3 pr-2 py-1.5 md:py-2 text-xs md:text-sm border border-gray-300 focus:outline-none focus:ring-primary-500 focus:border-primary-500 rounded-md">
                                             <button type="button"
@@ -92,7 +92,7 @@
                                             </template>
 
                                             <!-- No results -->
-                                            <div x-show="!loading && products.length === 0 && searchTerm.length >= 2"
+                                            <div x-show="!loading && products.length === 0"
                                                  class="px-3 py-2 text-gray-500 text-xs">
                                                 No products found
                                             </div>
@@ -174,7 +174,7 @@
                         </tr>
                     </tfoot>
                 </table>
-                <br />  <br />  <br /> 
+                <br />  <br />  <br />
             </div>
         </div>
 
