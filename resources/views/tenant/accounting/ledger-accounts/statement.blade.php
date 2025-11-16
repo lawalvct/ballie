@@ -152,11 +152,34 @@
     </div>
 
     <!-- Transactions Table -->
-    <div class="bg-white shadow-sm rounded-lg border border-gray-200">
+    <div class="bg-white shadow-sm rounded-lg border border-gray-200" x-data="{ viewMode: 'condensed' }">
         <div class="px-6 py-4 border-b border-gray-200">
             <div class="flex items-center justify-between">
                 <h3 class="text-lg font-medium text-gray-900">Transaction History</h3>
-                <span class="text-sm text-gray-500">{{ $transactions->count() }} transactions</span>
+                <div class="flex items-center space-x-4">
+                    <!-- View Mode Toggle (Tally ERP Style) -->
+                    <div class="inline-flex rounded-md shadow-sm" role="group">
+                        <button type="button"
+                                @click="viewMode = 'condensed'; toggleAllDetails(false)"
+                                :class="viewMode === 'condensed' ? 'bg-blue-600 text-white' : 'bg-white text-gray-700 hover:bg-gray-50'"
+                                class="px-4 py-2 text-sm font-medium border border-gray-300 rounded-l-lg focus:z-10 focus:ring-2 focus:ring-blue-500 transition-colors">
+                            <svg class="w-4 h-4 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
+                            </svg>
+                            Condensed
+                        </button>
+                        <button type="button"
+                                @click="viewMode = 'detailed'; toggleAllDetails(true)"
+                                :class="viewMode === 'detailed' ? 'bg-blue-600 text-white' : 'bg-white text-gray-700 hover:bg-gray-50'"
+                                class="px-4 py-2 text-sm font-medium border border-gray-300 rounded-r-lg focus:z-10 focus:ring-2 focus:ring-blue-500 transition-colors">
+                            <svg class="w-4 h-4 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16"></path>
+                            </svg>
+                            Detailed
+                        </button>
+                    </div>
+                    <span class="text-sm text-gray-500">{{ $transactions->count() }} transactions</span>
+                </div>
             </div>
         </div>
         <div class="overflow-x-auto">
@@ -218,10 +241,12 @@
                                     {{ $transaction->voucher->voucher_date->format('d M Y') }}
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm">
-                                    <a href="{{ route('tenant.accounting.vouchers.show', [$tenant, $transaction->voucher]) }}"
-                                       class="text-blue-600 hover:text-blue-900 font-medium">
-                                        {{ $transaction->voucher->voucher_number }}
-                                    </a>
+                                    <div class="flex items-center space-x-2">
+                                        <a href="{{ route('tenant.accounting.vouchers.show', [$tenant, $transaction->voucher]) }}"
+                                           class="text-blue-600 hover:text-blue-900 font-medium">
+                                            {{ $transaction->voucher->voucher_number }}
+                                        </a>
+                                    </div>
                                 </td>
                                 <td class="px-6 py-4 text-sm text-gray-900">
                                     {{ $transaction->particulars ?? $transaction->voucher->narration ?? 'Transaction' }}
@@ -247,6 +272,79 @@
                                     <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {{ $runningBalance >= 0 ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800' }}">
                                         {{ $runningBalance >= 0 ? 'Dr' : 'Cr' }}
                                     </span>
+                                </td>
+                            </tr>
+
+                            <!-- Expandable Details Row -->
+                            <tr id="voucher-{{ $transaction->voucher->id }}" class="hidden bg-blue-50 border-l-4 border-blue-500">
+                                <td colspan="7" class="px-6 py-4">
+                                    <div class="space-y-3">
+                                        <div class="flex items-center justify-between">
+                                            <h4 class="text-sm font-semibold text-gray-900">
+                                                Voucher Entries - {{ $transaction->voucher->voucherType->name ?? 'N/A' }}
+                                            </h4>
+                                            <span class="text-xs text-gray-500">{{ $transaction->voucher->entries->count() }} entries</span>
+                                        </div>
+
+                                        <div class="overflow-hidden rounded-lg border border-blue-200">
+                                            <table class="min-w-full divide-y divide-blue-200">
+                                                <thead class="bg-blue-100">
+                                                    <tr>
+                                                        <th class="px-4 py-2 text-left text-xs font-medium text-gray-700">Account</th>
+                                                        <th class="px-4 py-2 text-left text-xs font-medium text-gray-700">Particulars</th>
+                                                        <th class="px-4 py-2 text-right text-xs font-medium text-gray-700">Debit (₦)</th>
+                                                        <th class="px-4 py-2 text-right text-xs font-medium text-gray-700">Credit (₦)</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody class="bg-white divide-y divide-blue-100">
+                                                    @foreach($transaction->voucher->entries as $entry)
+                                                        <tr class="{{ $entry->id === $transaction->id ? 'bg-yellow-50 font-semibold' : '' }}">
+                                                            <td class="px-4 py-2 text-xs text-gray-900">
+                                                                <div class="flex items-center">
+                                                                    {{ $entry->ledgerAccount->name }}
+                                                                    @if($entry->id === $transaction->id)
+                                                                        <span class="ml-2 px-2 py-0.5 text-xs rounded-full bg-yellow-200 text-yellow-800">Current</span>
+                                                                    @endif
+                                                                </div>
+                                                            </td>
+                                                            <td class="px-4 py-2 text-xs text-gray-700">
+                                                                {{ $entry->particulars ?? '-' }}
+                                                            </td>
+                                                            <td class="px-4 py-2 text-xs text-right">
+                                                                @if($entry->debit_amount > 0)
+                                                                    <span class="text-green-600 font-medium">{{ number_format($entry->debit_amount, 2) }}</span>
+                                                                @else
+                                                                    <span class="text-gray-400">-</span>
+                                                                @endif
+                                                            </td>
+                                                            <td class="px-4 py-2 text-xs text-right">
+                                                                @if($entry->credit_amount > 0)
+                                                                    <span class="text-red-600 font-medium">{{ number_format($entry->credit_amount, 2) }}</span>
+                                                                @else
+                                                                    <span class="text-gray-400">-</span>
+                                                                @endif
+                                                            </td>
+                                                        </tr>
+                                                    @endforeach
+                                                    <tr class="bg-blue-50 font-semibold">
+                                                        <td colspan="2" class="px-4 py-2 text-xs text-right text-gray-900">Total:</td>
+                                                        <td class="px-4 py-2 text-xs text-right text-green-600">
+                                                            {{ number_format($transaction->voucher->entries->sum('debit_amount'), 2) }}
+                                                        </td>
+                                                        <td class="px-4 py-2 text-xs text-right text-red-600">
+                                                            {{ number_format($transaction->voucher->entries->sum('credit_amount'), 2) }}
+                                                        </td>
+                                                    </tr>
+                                                </tbody>
+                                            </table>
+                                        </div>
+
+                                        @if($transaction->voucher->narration)
+                                            <div class="text-xs text-gray-600 bg-white p-3 rounded border border-blue-200">
+                                                <span class="font-medium">Narration:</span> {{ $transaction->voucher->narration }}
+                                            </div>
+                                        @endif
+                                    </div>
                                 </td>
                             </tr>
                         @endforeach
@@ -375,4 +473,39 @@
         background: #94a3b8;
     }
 </style>
+@endpush
+
+@push('scripts')
+<script>
+    function toggleDetails(rowId) {
+        const detailsRow = document.getElementById(rowId);
+        if (detailsRow) {
+            detailsRow.classList.toggle('hidden');
+
+            // Optional: Add visual feedback by changing button appearance
+            const button = event.target.closest('button');
+            if (button) {
+                const isExpanded = !detailsRow.classList.contains('hidden');
+                if (isExpanded) {
+                    button.classList.remove('bg-gray-100', 'text-gray-700');
+                    button.classList.add('bg-blue-100', 'text-blue-700');
+                } else {
+                    button.classList.remove('bg-blue-100', 'text-blue-700');
+                    button.classList.add('bg-gray-100', 'text-gray-700');
+                }
+            }
+        }
+    }
+
+    function toggleAllDetails(show) {
+        const allDetailsRows = document.querySelectorAll('[id^="voucher-"]');
+        allDetailsRows.forEach(row => {
+            if (show) {
+                row.classList.remove('hidden');
+            } else {
+                row.classList.add('hidden');
+            }
+        });
+    }
+</script>
 @endpush

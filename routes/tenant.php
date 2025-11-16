@@ -255,7 +255,19 @@ Route::prefix('invoices')->name('invoices.')->group(function () {
 Route::prefix('vouchers')->name('vouchers.')->group(function () {
     Route::get('/', [VoucherController::class, 'index'])->name('index');
     Route::get('/create', [VoucherController::class, 'create'])->name('create');
-    Route::get('/create/{type}', [VoucherController::class, 'create'])->name('create.type'); // Add this line
+    Route::get('/create/{type}', [VoucherController::class, 'create'])->name('create.type');
+
+    // Bulk payment upload (MUST be before parameterized routes)
+    Route::get('/bulk-payment-template', [VoucherController::class, 'downloadBulkPaymentTemplate'])->name('bulk-payment-template');
+    Route::post('/upload-bulk-payments', [VoucherController::class, 'uploadBulkPayments'])->name('upload-bulk-payments');
+
+    // Bulk actions
+    Route::post('/bulk/post', [VoucherController::class, 'bulkPost'])->name('bulk.post');
+    Route::delete('/bulk/delete', [VoucherController::class, 'bulkDelete'])->name('bulk.delete');
+    Route::get('/export', [VoucherController::class, 'export'])->name('export');
+    Route::post('/bulk-action', [VoucherController::class, 'bulkAction'])->name('bulk.action');
+
+    // Standard CRUD routes
     Route::post('/', [VoucherController::class, 'store'])->name('store');
     Route::get('/{voucher}', [VoucherController::class, 'show'])->name('show');
     Route::get('/{voucher}/edit', [VoucherController::class, 'edit'])->name('edit');
@@ -268,15 +280,7 @@ Route::prefix('vouchers')->name('vouchers.')->group(function () {
     Route::get('/{voucher}/duplicate', [VoucherController::class, 'duplicate'])->name('duplicate');
     Route::get('/{voucher}/pdf', [VoucherController::class, 'pdf'])->name('pdf');
     Route::get('/{voucher}/print', [VoucherController::class, 'print'])->name('print');
-
-    // Bulk actions
-    Route::post('/bulk/post', [VoucherController::class, 'bulkPost'])->name('bulk.post');
-    Route::delete('/bulk/delete', [VoucherController::class, 'bulkDelete'])->name('bulk.delete');
-    Route::get('/export', [VoucherController::class, 'export'])->name('export');
-    Route::post('/bulk-action', [VoucherController::class, 'bulkAction'])->name('bulk.action');
 });
-
-
 // Ledger Accounts
 Route::prefix('ledger-accounts')->name('ledger-accounts.')->group(function () {
      Route::get('/', [LedgerAccountController::class, 'index'])->name('index');

@@ -12,7 +12,12 @@ use App\Models\Product;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Str;
 use Barryvdh\DomPDF\Facade\Pdf;
+use Maatwebsite\Excel\Facades\Excel;
+use App\Imports\PaymentEntriesImport;
+use App\Exports\PaymentEntriesTemplateExport;
 
 
 use App\Services\VoucherTypeService;
@@ -776,5 +781,147 @@ class VoucherController extends Controller
             'toDate',
             'accountType'
         ));
+    }
+
+    /**
+     * Download bulk payment entries template
+     */
+    public function downloadBulkPaymentTemplate(Tenant $tenant)
+    {
+        $fileName = 'bulk_payment_entries_template_' . date('Y-m-d') . '.xlsx';
+        return Excel::download(new PaymentEntriesTemplateExport($tenant->id), $fileName);
+    }
+
+    /**
+     * Upload and process bulk payment entries
+     */
+    public function uploadBulkPayments(Request $request, Tenant $tenant)
+    {
+        // Validate request
+        $request->validate([
+            'bank_account_id' => 'required|exists:ledger_accounts,id',
+            'voucher_date' => 'required|date',
+            'file' => 'required|file|mimes:xlsx,xls,csv|max:10240',
+            'narration' => 'nullable|string|max:500',
+        ]);
+
+        try {
+            // Verify bank account belongs to tenant
+            $bankAccount = LedgerAccount::where('id', $request->bank_account_id)
+                ->where('tenant_id', $tenant->id)
+                ->firstOrFail();
+
+            // Process the import file
+            $import = new PaymentEntriesImport($tenant->id);
+            Excel::import($import, $request->file('file'));
+
+            // Check for validation errors
+            if ($import->hasErrors()) {
+                return response()->json([
+                    'success' => false,
+                    'errors' => $import->getErrors(),
+                    'message' => 'Validation failed for ' . count($import->getErrors()) . ' row(s). Please fix the errors and try again.'
+                ], 422);
+            }
+
+            // Get validated entries
+            $entries = $import->getEntries();
+
+            if (empty($entries)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'No valid entries found in the uploaded file.'
+                ], 422);
+            }
+
+            // Get payment voucher type
+            $voucherType = VoucherType::where('name', 'Payment')
+                ->where('tenant_id', $tenant->id)
+                ->first();
+
+            if (!$voucherType) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Payment voucher type not found for this tenant.'
+                ], 422);
+            }
+
+            // Generate bulk upload reference
+            $bulkUploadReference = 'BULK_' . strtoupper(Str::random(10)) . '_' . time();
+            $uploadedFileName = $request->file('file')->getClientOriginalName();
+
+            // Save voucher with all entries in a transaction
+            DB::beginTransaction();
+
+            try {
+                // Generate voucher number
+                $voucherNumber = $voucherType->getNextVoucherNumber();
+
+                // Calculate total amount before creating voucher
+                $totalDebitAmount = $import->getTotalAmount();
+
+                // Create the voucher
+                $voucher = Voucher::create([
+                    'tenant_id' => $tenant->id,
+                    'voucher_type_id' => $voucherType->id,
+                    'voucher_number' => $voucherNumber,
+                    'voucher_date' => $request->voucher_date,
+                    'reference_number' => $bulkUploadReference,
+                    'narration' => $request->narration ?? 'Bulk payment upload from ' . $uploadedFileName,
+                    'total_amount' => $totalDebitAmount,
+                    'status' => 'draft',
+                    'created_by' => Auth::id(),
+                    'bulk_upload_reference' => $bulkUploadReference,
+                    'uploaded_file_name' => $uploadedFileName,
+                ]);
+
+                // Create credit entry for bank account
+                VoucherEntry::create([
+                    'voucher_id' => $voucher->id,
+                    'ledger_account_id' => $bankAccount->id,
+                    'particulars' => 'Bulk payment - ' . count($entries) . ' entries',
+                    'debit_amount' => 0,
+                    'credit_amount' => $totalDebitAmount,
+                ]);
+
+                // Create debit entries for each expense account
+                foreach ($entries as $entry) {
+                    VoucherEntry::create([
+                        'voucher_id' => $voucher->id,
+                        'ledger_account_id' => $entry['ledger_account_id'],
+                        'particulars' => $entry['particulars'],
+                        'debit_amount' => $entry['debit_amount'],
+                        'credit_amount' => 0,
+                    ]);
+                }
+
+                DB::commit();
+
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Successfully uploaded ' . count($entries) . ' payment entries.',
+                    'voucher_id' => $voucher->id,
+                    'voucher_number' => $voucherNumber,
+                    'redirect_url' => route('tenant.accounting.vouchers.show', ['tenant' => $tenant->slug, 'voucher' => $voucher->id])
+                ]);
+
+            } catch (\Exception $e) {
+                DB::rollBack();
+                Log::error('Bulk payment upload database error: ' . $e->getMessage());
+
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Failed to save voucher: ' . $e->getMessage()
+                ], 500);
+            }
+
+        } catch (\Exception $e) {
+            Log::error('Bulk payment upload error: ' . $e->getMessage());
+
+            return response()->json([
+                'success' => false,
+                'message' => 'An error occurred while processing the file: ' . $e->getMessage()
+            ], 500);
+        }
     }
 }
