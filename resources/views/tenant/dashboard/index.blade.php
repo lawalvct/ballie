@@ -11,7 +11,9 @@
     <span class="hidden md:inline">View your business metrics and insights</span>
 @endsection
 
-
+@push('styles')
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+@endpush
 
 @section('content')
 <div class="space-y-6">
@@ -142,32 +144,31 @@
     <!-- Charts -->
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div class="bg-white rounded-lg shadow-sm border p-6">
-            <h3 class="text-lg font-semibold mb-4">Revenue & Expenses Trend</h3>
-            <div class="h-64 flex items-center justify-center">
-                <div class="text-center">
-                    <div class="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-3">
-                        <svg class="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
-                        </svg>
-                    </div>
-                    <p class="text-gray-600 text-sm">Revenue: ₦{{ number_format($totalRevenue) }}</p>
-                    <p class="text-gray-500 text-xs">Chart coming soon</p>
-                </div>
+            <div class="flex items-center justify-between mb-6">
+                <h3 class="text-lg font-semibold text-gray-900">Revenue Trend</h3>
+                <select class="px-3 py-1 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 focus:border-transparent">
+                    <option value="7">Last 7 days</option>
+                    <option value="30" selected>Last 30 days</option>
+                    <option value="90">Last 90 days</option>
+                    <option value="365">Last year</option>
+                </select>
+            </div>
+            <div class="h-64">
+                <canvas id="revenueChart"></canvas>
             </div>
         </div>
 
         <div class="bg-white rounded-lg shadow-sm border p-6">
-            <h3 class="text-lg font-semibold mb-4">Profit Margin</h3>
-            <div class="h-64 flex items-center justify-center">
-                <div class="text-center">
-                    <div class="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-3">
-                        <svg class="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path>
-                        </svg>
-                    </div>
-                    <p class="text-gray-600 text-sm">Growth: {{ number_format($quickStats['monthly_sales_percentage'], 1) }}%</p>
-                    <p class="text-gray-500 text-xs">Chart coming soon</p>
-                </div>
+            <div class="flex items-center justify-between mb-6">
+                <h3 class="text-lg font-semibold text-gray-900">Sales by Category</h3>
+                <select class="px-3 py-1 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 focus:border-transparent">
+                    <option value="30" selected>Last 30 days</option>
+                    <option value="90">Last 90 days</option>
+                    <option value="365">Last year</option>
+                </select>
+            </div>
+            <div class="h-64">
+                <canvas id="categoryChart"></canvas>
             </div>
         </div>
     </div>
@@ -306,6 +307,7 @@
 </div>
 @endsection
 
+@push('scripts')
 <script>
 function dismissAlert(alertType) {
     document.getElementById('alert-' + alertType).style.display = 'none';
@@ -313,6 +315,7 @@ function dismissAlert(alertType) {
 }
 
 document.addEventListener('DOMContentLoaded', function() {
+    // Handle alert dismissals
     const alerts = ['low_stock', 'out_of_stock'];
     alerts.forEach(function(alertType) {
         const dismissed = localStorage.getItem('dismissed_alert_' + alertType);
@@ -320,7 +323,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const dismissedTime = parseInt(dismissed);
             const now = Date.now();
             const oneDay = 24 * 60 * 60 * 1000;
-            
+
             if (now - dismissedTime < oneDay) {
                 const alertElement = document.getElementById('alert-' + alertType);
                 if (alertElement) {
@@ -329,7 +332,77 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         }
     });
+
+    // Revenue Chart with real data from backend
+    const revenueCtx = document.getElementById('revenueChart').getContext('2d');
+    new Chart(revenueCtx, {
+        type: 'line',
+        data: {
+            labels: {!! json_encode($chartData['labels']) !!},
+            datasets: [{
+                label: 'Revenue',
+                data: {!! json_encode($chartData['revenue']) !!},
+                borderColor: 'rgb(59, 130, 246)',
+                backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                tension: 0.4,
+                fill: true
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    display: false
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        callback: function(value) {
+                            return '₦' + (value / 1000000).toFixed(1) + 'M';
+                        }
+                    }
+                }
+            }
+        }
+    });
+
+    // Category Chart
+    const categoryCtx = document.getElementById('categoryChart').getContext('2d');
+    new Chart(categoryCtx, {
+        type: 'doughnut',
+        data: {
+            labels: ['Electronics', 'Clothing', 'Home & Garden', 'Sports', 'Books', 'Others'],
+            datasets: [{
+                data: [35, 25, 15, 12, 8, 5],
+                backgroundColor: [
+                    'rgb(59, 130, 246)',
+                    'rgb(16, 185, 129)',
+                    'rgb(245, 158, 11)',
+                    'rgb(239, 68, 68)',
+                    'rgb(139, 92, 246)',
+                    'rgb(107, 114, 128)'
+                ]
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'bottom',
+                    labels: {
+                        padding: 20,
+                        usePointStyle: true
+                    }
+                }
+            }
+        }
+    });
 });
 </script>
+@endpush
 
 

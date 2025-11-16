@@ -82,7 +82,7 @@
             <!-- Profile Information Tab -->
             <div x-show="activeTab === 'profile'" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100">
                 <div class="bg-white rounded-2xl shadow-lg border border-gray-200 p-8 mt-6">
-                    <form method="POST" action="{{ route('tenant.profile.update', ['tenant' => $tenant->slug]) }}" enctype="multipart/form-data">
+                    <form id="tenant-profile-form" method="POST" action="{{ route('tenant.profile.update', ['tenant' => $tenant->slug]) }}" enctype="multipart/form-data">
                         @csrf
                         @method('PUT')
 
@@ -96,15 +96,13 @@
                                          alt="Profile Photo"
                                          class="w-24 h-24 rounded-full object-cover border-4 border-gray-200">
                                     @if($user->avatar)
-                                    <form method="POST" action="{{ route('tenant.profile.avatar.remove', ['tenant' => $tenant->slug]) }}" class="absolute -bottom-2 -right-2">
-                                        @csrf
-                                        @method('DELETE')
-                                        <button type="submit" class="bg-red-500 hover:bg-red-600 text-white rounded-full p-2 shadow-lg transition-colors">
-                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                                            </svg>
-                                        </button>
-                                    </form>
+                                    <button type="submit"
+                                            form="remove-avatar-form"
+                                            class="absolute -bottom-2 -right-2 bg-red-500 hover:bg-red-600 text-white rounded-full p-2 shadow-lg transition-colors">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                                        </svg>
+                                    </button>
                                     @endif
                                 </div>
                                 <div class="flex-1">
@@ -204,14 +202,21 @@
                                 Cancel
                             </a>
                             <button type="submit"
+                                    id="profile-submit-btn"
                                     class="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors flex items-center">
                                 <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
                                 </svg>
-                                Save Changes
+                                <span class="btn-text">Save Changes</span>
                             </button>
                         </div>
                     </form>
+                    @if($user->avatar)
+                    <form id="remove-avatar-form" method="POST" action="{{ route('tenant.profile.avatar.remove', ['tenant' => $tenant->slug]) }}" class="hidden">
+                        @csrf
+                        @method('DELETE')
+                    </form>
+                    @endif
                 </div>
             </div>
 
@@ -279,11 +284,12 @@
                                 Cancel
                             </button>
                             <button type="submit"
+                                    id="password-submit-btn"
                                     class="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors flex items-center">
                                 <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
                                 </svg>
-                                Update Password
+                                <span class="btn-text">Update Password</span>
                             </button>
                         </div>
                     </form>
@@ -293,6 +299,7 @@
     </div>
 </div>
 
+<script src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
 <script>
 function previewAvatar(event) {
     const file = event.target.files[0];
@@ -304,5 +311,22 @@ function previewAvatar(event) {
         reader.readAsDataURL(file);
     }
 }
+
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('Profile page loaded');
+
+    const profileForm = document.getElementById('tenant-profile-form');
+    if (profileForm) {
+        console.log('Profile form found');
+        profileForm.addEventListener('submit', function(e) {
+            console.log('Form submitting...');
+            const submitBtn = this.querySelector('#profile-submit-btn');
+            if (submitBtn) {
+                submitBtn.disabled = true;
+                submitBtn.innerHTML = '<svg class="w-5 h-5 mr-2 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>Saving...';
+            }
+        });
+    }
+});
 </script>
 @endsection
