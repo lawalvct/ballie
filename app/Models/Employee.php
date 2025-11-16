@@ -145,7 +145,7 @@ class Employee extends Model
     {
         // Use portal_token if available, fallback to unique_link_token for backwards compatibility
         $token = $this->portal_token ?? $this->unique_link_token;
-        return route('payroll.portal.login', ['token' => $token]);
+        return route('payroll.portal.login', ['tenant' => $this->tenant->slug, 'token' => $token]);
     }
 
     public function getCurrentBasicSalaryAttribute(): float

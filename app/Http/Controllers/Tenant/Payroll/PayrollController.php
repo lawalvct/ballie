@@ -351,7 +351,7 @@ class PayrollController extends Controller
         $fileSize = $file->getSize();
         $filename = time() . '_' . uniqid() . '.' . $file->getClientOriginalExtension();
         $path = 'employee_documents/' . $employee->id;
-        
+
         $fullPath = public_path($path);
         if (!file_exists($fullPath)) {
             mkdir($fullPath, 0755, true);
@@ -383,7 +383,7 @@ class PayrollController extends Controller
             ->firstOrFail();
 
         $filePath = public_path($document->file_path);
-        
+
         if (!file_exists($filePath)) {
             return redirect()->back()->with('error', 'File not found.');
         }
@@ -392,6 +392,29 @@ class PayrollController extends Controller
         $downloadName = $document->document_name . '.' . $extension;
 
         return response()->download($filePath, $downloadName);
+    }
+
+    public function resetPortalToken(Tenant $tenant, Employee $employee)
+    {
+        if ($employee->tenant_id !== $tenant->id) {
+            abort(404);
+        }
+
+        try {
+            $employee->regeneratePortalToken();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Portal token reset successfully',
+                'portal_link' => $employee->portal_link,
+                'expires_at' => $employee->portal_token_expires_at->format('M d, Y')
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to reset portal token: ' . $e->getMessage()
+            ], 500);
+        }
     }
 
     public function deleteDocument(Tenant $tenant, Employee $employee, $documentId)

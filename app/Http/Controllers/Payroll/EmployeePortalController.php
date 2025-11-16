@@ -15,7 +15,7 @@ use Carbon\Carbon;
 
 class EmployeePortalController extends Controller
 {
-    public function login(Request $request, $token)
+    public function login(Request $request, $tenant, $token)
     {
         $employee = Employee::where('portal_token', $token)
             ->where('portal_token_expires_at', '>', now())
@@ -31,33 +31,33 @@ class EmployeePortalController extends Controller
                 'date_of_birth' => 'required|date',
             ]);
 
-            if ($employee->employee_id === $request->employee_id &&
+            if ($employee->employee_number === $request->employee_id &&
                 $employee->date_of_birth &&
                 $employee->date_of_birth->format('Y-m-d') === $request->date_of_birth) {
 
                 session(['employee_portal_id' => $employee->id]);
-                return redirect()->route('payroll.portal.dashboard', $token);
+                return redirect()->route('payroll.portal.dashboard', ['tenant' => $tenant, 'token' => $token]);
             }
 
             return back()->withErrors(['Invalid credentials']);
         }
 
-        return view('payroll.portal.login', compact('employee', 'token'));
+        return view('payroll.portal.login', compact('employee', 'tenant', 'token'));
     }
 
-    public function dashboard($token)
+    public function dashboard($tenant, $token)
     {
         $employee = $this->getAuthenticatedEmployee($token);
         if (!$employee) {
-            return redirect()->route('payroll.portal.login', $token);
+            return redirect()->route('payroll.portal.login', ['tenant' => $tenant, 'token' => $token]);
         }
 
         // Get recent payslips
-        $recentPayslips = PayrollRunDetail::whereHas('payrollRun', function($query) {
+        $recentPayslips = PayrollRun::where('employee_id', $employee->id)
+            ->whereHas('payrollPeriod', function($query) {
                 $query->where('status', 'approved');
             })
-            ->where('employee_id', $employee->id)
-            ->with('payrollRun.payrollPeriod')
+            ->with('payrollPeriod')
             ->orderBy('created_at', 'desc')
             ->limit(6)
             ->get();
@@ -72,6 +72,7 @@ class EmployeePortalController extends Controller
 
         return view('payroll.portal.dashboard', compact(
             'employee',
+            'tenant',
             'token',
             'recentPayslips',
             'activeLoans',
@@ -79,40 +80,40 @@ class EmployeePortalController extends Controller
         ));
     }
 
-    public function payslips($token)
+    public function payslips($tenant, $token)
     {
         $employee = $this->getAuthenticatedEmployee($token);
         if (!$employee) {
-            return redirect()->route('payroll.portal.login', $token);
+            return redirect()->route('payroll.portal.login', ['tenant' => $tenant, 'token' => $token]);
         }
 
-        $payslips = PayrollRunDetail::whereHas('payrollRun', function($query) {
+        $payslips = PayrollRun::where('employee_id', $employee->id)
+            ->whereHas('payrollPeriod', function($query) {
                 $query->where('status', 'approved');
             })
-            ->where('employee_id', $employee->id)
-            ->with(['payrollRun.payrollPeriod', 'employeeSalaryComponents.salaryComponent'])
+            ->with(['payrollPeriod', 'details.salaryComponent'])
             ->orderBy('created_at', 'desc')
             ->paginate(12);
 
-        return view('payroll.portal.payslips', compact('employee', 'token', 'payslips'));
+        return view('payroll.portal.payslips', compact('employee', 'tenant', 'token', 'payslips'));
     }
 
-    public function payslip($token, PayrollRunDetail $payslip)
+    public function payslip($tenant, $token, PayrollRun $payslip)
     {
         $employee = $this->getAuthenticatedEmployee($token);
         if (!$employee || $payslip->employee_id !== $employee->id) {
-            return redirect()->route('payroll.portal.login', $token);
+            return redirect()->route('payroll.portal.login', ['tenant' => $tenant, 'token' => $token]);
         }
 
         $payslip->load([
-            'payrollRun.payrollPeriod',
-            'employeeSalaryComponents.salaryComponent'
+            'payrollPeriod',
+            'details.salaryComponent'
         ]);
 
-        return view('payroll.portal.payslip', compact('employee', 'token', 'payslip'));
+        return view('payroll.portal.payslip', compact('employee', 'tenant', 'token', 'payslip'));
     }
 
-    public function downloadPayslip($token, PayrollRunDetail $payslip)
+    public function downloadPayslip($tenant, $token, PayrollRun $payslip)
     {
         $employee = $this->getAuthenticatedEmployee($token);
         if (!$employee || $payslip->employee_id !== $employee->id) {
@@ -120,8 +121,8 @@ class EmployeePortalController extends Controller
         }
 
         $payslip->load([
-            'payrollRun.payrollPeriod',
-            'employeeSalaryComponents.salaryComponent'
+            'payrollPeriod',
+            'details.salaryComponent'
         ]);
 
         $pdf = app('dompdf.wrapper');
@@ -132,21 +133,21 @@ class EmployeePortalController extends Controller
         return $pdf->download($filename);
     }
 
-    public function profile($token)
+    public function profile($tenant, $token)
     {
         $employee = $this->getAuthenticatedEmployee($token);
         if (!$employee) {
-            return redirect()->route('payroll.portal.login', $token);
+            return redirect()->route('payroll.portal.login', ['tenant' => $tenant, 'token' => $token]);
         }
 
-        return view('payroll.portal.profile', compact('employee', 'token'));
+        return view('payroll.portal.profile', compact('employee', 'tenant', 'token'));
     }
 
-    public function updateProfile(Request $request, $token)
+    public function updateProfile(Request $request, $tenant, $token)
     {
         $employee = $this->getAuthenticatedEmployee($token);
         if (!$employee) {
-            return redirect()->route('payroll.portal.login', $token);
+            return redirect()->route('payroll.portal.login', ['tenant' => $tenant, 'token' => $token]);
         }
 
         $request->validate([
@@ -172,51 +173,52 @@ class EmployeePortalController extends Controller
         return back()->with('success', 'Profile updated successfully');
     }
 
-    public function loans($token)
+    public function loans($tenant, $token)
     {
         $employee = $this->getAuthenticatedEmployee($token);
         if (!$employee) {
-            return redirect()->route('payroll.portal.login', $token);
+            return redirect()->route('payroll.portal.login', ['tenant' => $tenant, 'token' => $token]);
         }
 
         $loans = EmployeeLoan::where('employee_id', $employee->id)
             ->orderBy('created_at', 'desc')
             ->get();
 
-        return view('payroll.portal.loans', compact('employee', 'token', 'loans'));
+        return view('payroll.portal.loans', compact('employee', 'tenant', 'token', 'loans'));
     }
 
-    public function taxCertificate($token, $year = null)
+    public function taxCertificate($tenant, $token, $year = null)
     {
         $employee = $this->getAuthenticatedEmployee($token);
         if (!$employee) {
-            return redirect()->route('payroll.portal.login', $token);
+            return redirect()->route('payroll.portal.login', ['tenant' => $tenant, 'token' => $token]);
         }
 
         $year = $year ?: date('Y');
 
-        $taxData = PayrollRunDetail::whereHas('payrollRun', function($query) {
+        $taxData = PayrollRun::where('employee_id', $employee->id)
+            ->whereHas('payrollPeriod', function($query) {
                 $query->where('status', 'approved');
             })
-            ->where('employee_id', $employee->id)
             ->whereYear('created_at', $year)
             ->selectRaw('
-                SUM(gross_pay) as total_gross,
-                SUM(tax_amount) as total_tax,
-                SUM(pension_amount) as total_pension,
-                SUM(net_pay) as total_net
+                SUM(gross_salary) as total_gross,
+                SUM(monthly_tax) as total_tax,
+                SUM(0) as total_pension,
+                SUM(net_salary) as total_net
             ')
             ->first();
 
         return view('payroll.portal.tax-certificate', compact(
             'employee',
+            'tenant',
             'token',
             'year',
             'taxData'
         ));
     }
 
-    public function downloadTaxCertificate($token, $year = null)
+    public function downloadTaxCertificate($tenant, $token, $year = null)
     {
         $employee = $this->getAuthenticatedEmployee($token);
         if (!$employee) {
@@ -225,16 +227,16 @@ class EmployeePortalController extends Controller
 
         $year = $year ?: date('Y');
 
-        $taxData = PayrollRunDetail::whereHas('payrollRun', function($query) {
+        $taxData = PayrollRun::where('employee_id', $employee->id)
+            ->whereHas('payrollPeriod', function($query) {
                 $query->where('status', 'approved');
             })
-            ->where('employee_id', $employee->id)
             ->whereYear('created_at', $year)
             ->selectRaw('
-                SUM(gross_pay) as total_gross,
-                SUM(tax_amount) as total_tax,
-                SUM(pension_amount) as total_pension,
-                SUM(net_pay) as total_net
+                SUM(gross_salary) as total_gross,
+                SUM(monthly_tax) as total_tax,
+                SUM(0) as total_pension,
+                SUM(net_salary) as total_net
             ')
             ->first();
 
@@ -250,10 +252,10 @@ class EmployeePortalController extends Controller
         return $pdf->download($filename);
     }
 
-    public function logout($token)
+    public function logout($tenant, $token)
     {
         session()->forget('employee_portal_id');
-        return redirect()->route('payroll.portal.login', $token)
+        return redirect()->route('payroll.portal.login', ['tenant' => $tenant, 'token' => $token])
             ->with('message', 'You have been logged out successfully');
     }
 
@@ -275,16 +277,16 @@ class EmployeePortalController extends Controller
     {
         $year = date('Y');
 
-        $stats = PayrollRunDetail::whereHas('payrollRun', function($query) {
+        $stats = PayrollRun::where('employee_id', $employee->id)
+            ->whereHas('payrollPeriod', function($query) {
                 $query->where('status', 'approved');
             })
-            ->where('employee_id', $employee->id)
             ->whereYear('created_at', $year)
             ->selectRaw('
-                SUM(gross_pay) as ytd_gross,
-                SUM(tax_amount) as ytd_tax,
-                SUM(pension_amount) as ytd_pension,
-                SUM(net_pay) as ytd_net,
+                SUM(gross_salary) as ytd_gross,
+                SUM(monthly_tax) as ytd_tax,
+                SUM(0) as ytd_pension,
+                SUM(net_salary) as ytd_net,
                 COUNT(*) as payroll_count
             ')
             ->first();
@@ -301,11 +303,11 @@ class EmployeePortalController extends Controller
     /**
      * Show attendance page with QR scanner
      */
-    public function attendance($token)
+    public function attendance($tenant, $token)
     {
         $employee = $this->getAuthenticatedEmployee($token);
         if (!$employee) {
-            return redirect()->route('payroll.portal.login', $token);
+            return redirect()->route('payroll.portal.login', ['tenant' => $tenant, 'token' => $token]);
         }
 
         // Get today's attendance
@@ -321,6 +323,7 @@ class EmployeePortalController extends Controller
 
         return view('payroll.portal.attendance', compact(
             'employee',
+            'tenant',
             'token',
             'todayAttendance',
             'recentAttendance'
@@ -330,7 +333,7 @@ class EmployeePortalController extends Controller
     /**
      * Process scanned QR code for attendance
      */
-    public function scanAttendanceQR(Request $request, $token)
+    public function scanAttendanceQR(Request $request, $tenant, $token)
     {
         $employee = $this->getAuthenticatedEmployee($token);
         if (!$employee) {
