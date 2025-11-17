@@ -215,6 +215,8 @@ class InvoiceController extends Controller
         Log::info('Validation Passed Successfully');
 
         try {
+            $shouldPost = in_array($request->action, ['save_and_post', 'save_and_post_new_sales']);
+
             DB::beginTransaction();
             Log::info('Database Transaction Started');
 
@@ -387,7 +389,23 @@ class InvoiceController extends Controller
                 ->latest('id')
                 ->first();
 
-            $nextNumber = $lastVoucher ? $lastVoucher->voucher_number + 1 : 1;
+            $nextNumber = 1;
+            if ($lastVoucher) {
+                $rawNumber = $lastVoucher->voucher_number;
+
+                if (is_numeric($rawNumber)) {
+                    $nextNumber = (int) $rawNumber + 1;
+                } elseif (preg_match('/(\d+)(?!.*\d)/', (string) $rawNumber, $matches)) {
+                    // Handles values such as "SV-2024-0012" by taking the last numeric block
+                    $nextNumber = (int) $matches[1] + 1;
+                } else {
+                    Log::warning('Unable to parse numeric portion of voucher number', [
+                        'last_voucher_id' => $lastVoucher->id,
+                        'last_voucher_number' => $rawNumber,
+                    ]);
+                    $nextNumber = $lastVoucher->id + 1; // Fall back to monotonic id-based value
+                }
+            }
 
             Log::info('Voucher Number Generated', [
                 'last_voucher_id' => $lastVoucher?->id,
@@ -404,10 +422,10 @@ class InvoiceController extends Controller
                 'reference_number' => $request->reference_number,
                 'narration' => $request->narration,
                 'total_amount' => $totalAmount,
-                'status' => $request->action === 'save_and_post' ? 'posted' : 'draft',
+                'status' => $shouldPost ? 'posted' : 'draft',
                 'created_by' => auth()->id(),
-                'posted_at' => $request->action === 'save_and_post' ? now() : null,
-                'posted_by' => $request->action === 'save_and_post' ? auth()->id() : null,
+                'posted_at' => $shouldPost ? now() : null,
+                'posted_by' => $shouldPost ? auth()->id() : null,
                 'meta_data' => json_encode(['inventory_items' => $inventoryItems]),
             ];
 
@@ -460,7 +478,7 @@ class InvoiceController extends Controller
             Log::info('Accounting Entries Created Successfully');
 
             // Update product stock if posted, using voucher type's inventory_effect
-            if ($request->action === 'save_and_post') {
+            if ($shouldPost) {
                 Log::info('Updating Product Stock', [
                     'effect' => $voucherType->inventory_effect ?? 'decrease'
                 ]);
@@ -482,7 +500,7 @@ class InvoiceController extends Controller
             DB::commit();
             Log::info('Database Transaction Committed Successfully');
 
-            $message = $request->action === 'save_and_post'
+            $message = $shouldPost
                 ? 'Invoice created and posted successfully!'
                 : 'Invoice saved as draft successfully!';
 

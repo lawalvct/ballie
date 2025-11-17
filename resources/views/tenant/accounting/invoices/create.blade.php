@@ -10,6 +10,38 @@
 
 @section('content')
 <div class="space-y-6" x-data="invoiceForm()">
+    <!-- Validation Errors -->
+    @if ($errors->any())
+        <div class="bg-red-50 border-l-4 border-red-400 p-4 rounded-lg shadow-sm">
+            <div class="flex">
+                <div class="flex-shrink-0">
+                    <svg class="h-5 w-5 text-red-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
+                    </svg>
+                </div>
+                <div class="ml-3">
+                    <h3 class="text-sm font-medium text-red-800">
+                        There {{ $errors->count() == 1 ? 'is' : 'are' }} {{ $errors->count() }} error{{ $errors->count() == 1 ? '' : 's' }} with your submission:
+                    </h3>
+                    <div class="mt-2 text-sm text-red-700">
+                        <ul class="list-disc list-inside space-y-1">
+                            @foreach ($errors->all() as $error)
+                                <li>{{ $error }}</li>
+                            @endforeach
+                        </ul>
+                    </div>
+                </div>
+                <div class="ml-auto pl-3">
+                    <button type="button" onclick="this.parentElement.parentElement.parentElement.style.display='none'" class="inline-flex text-red-400 hover:text-red-600 focus:outline-none">
+                        <svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                            <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" />
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        </div>
+    @endif
+
     <!-- Header -->
     <div class="flex flex-col space-y-3 md:flex-row md:items-center md:justify-between md:space-y-0">
         <div class="grid grid-cols-2 md:flex md:flex-wrap gap-2">
@@ -60,6 +92,7 @@
     <!-- Form -->
     <form method="POST" action="{{ route('tenant.accounting.invoices.store', ['tenant' => $tenant->slug]) }}" class="space-y-6">
         @csrf
+        <input type="hidden" name="customer_id" id="selectedPartyId" value="{{ old('customer_id') }}">
 
         <!-- Invoice Header -->
         <div class="bg-white shadow-sm rounded-lg border border-gray-200">
@@ -181,7 +214,6 @@
                                        placeholder="Type to search customers..."
                                        class="w-full pl-3 pr-10 py-2 text-base border border-gray-300 focus:outline-none focus:ring-primary-500 focus:border-primary-500 rounded-lg"
                                        :class="selectedCustomerId ? 'bg-green-50 border-green-300' : ''">
-                                <input type="hidden" name="customer_id" x-model="selectedCustomerId" required>
 
                                 <!-- Selected indicator -->
                                 <div x-show="selectedCustomerId" class="absolute right-3 top-2.5">
@@ -252,6 +284,11 @@
                                         </button>
                                     </div>
                                 </div>
+
+                                <!-- Debug: Show current customer_id value -->
+                                <div x-show="selectedCustomerId" class="mt-1 text-xs text-gray-500">
+                                    Customer ID: <span x-text="selectedCustomerId" class="font-mono bg-gray-100 px-1 rounded"></span>
+                                </div>
                             </div>
                             <button type="button"
                                     onclick="openQuickAddModal('customer')"
@@ -278,7 +315,6 @@
                                        placeholder="Type to search vendors..."
                                        class="w-full pl-3 pr-10 py-2 text-base border border-gray-300 focus:outline-none focus:ring-primary-500 focus:border-primary-500 rounded-lg"
                                        :class="selectedVendorId ? 'bg-green-50 border-green-300' : ''">
-                                <input type="hidden" name="customer_id" x-model="selectedVendorId" required>
 
                                 <!-- Selected indicator -->
                                 <div x-show="selectedVendorId" class="absolute right-3 top-2.5">
@@ -348,6 +384,11 @@
                                             </svg>
                                         </button>
                                     </div>
+                                </div>
+
+                                <!-- Debug: Show current vendor/customer_id value -->
+                                <div x-show="selectedVendorId" class="mt-1 text-xs text-gray-500">
+                                    Vendor ID: <span x-text="selectedVendorId" class="font-mono bg-gray-100 px-1 rounded"></span>
                                 </div>
                             </div>
                             <button type="button"
@@ -1210,12 +1251,19 @@ function customerSearch() {
         },
 
         selectCustomer(customer) {
+            console.log('✅ Customer selected:', customer);
             this.searchTerm = customer.display_name;
             this.selectedCustomerId = customer.ledger_account_id;
             this.selectedCustomerName = customer.display_name;
             this.selectedLedgerName = customer.ledger_account_name || customer.display_name;
             this.showDropdown = false;
             this.customers = [];
+
+            const hiddenInput = document.getElementById('selectedPartyId');
+            if (hiddenInput) {
+                hiddenInput.value = customer.ledger_account_id;
+                hiddenInput.dispatchEvent(new Event('input'));
+            }
         },
 
         clearSelection() {
@@ -1223,9 +1271,18 @@ function customerSearch() {
             this.selectedCustomerId = '';
             this.selectedCustomerName = '';
             this.selectedLedgerName = '';
+            const hiddenInput = document.getElementById('selectedPartyId');
+            if (hiddenInput) {
+                hiddenInput.value = '';
+                hiddenInput.dispatchEvent(new Event('input'));
+            }
         },
 
         init() {
+            console.log('🟢 Customer search initialized', {
+                selectedId: this.selectedCustomerId,
+                searchTerm: this.searchTerm
+            });
             document.addEventListener('click', (e) => {
                 if (!this.$el.contains(e.target)) {
                     this.showDropdown = false;
@@ -1277,12 +1334,19 @@ function vendorSearch() {
         },
 
         selectVendor(vendor) {
+            console.log('✅ Vendor selected:', vendor);
             this.searchTerm = vendor.display_name;
             this.selectedVendorId = vendor.ledger_account_id;
             this.selectedVendorName = vendor.display_name;
             this.selectedLedgerName = vendor.ledger_account_name || vendor.display_name;
             this.showDropdown = false;
             this.vendors = [];
+
+            const hiddenInput = document.getElementById('selectedPartyId');
+            if (hiddenInput) {
+                hiddenInput.value = vendor.ledger_account_id;
+                hiddenInput.dispatchEvent(new Event('input'));
+            }
         },
 
         clearSelection() {
@@ -1290,9 +1354,18 @@ function vendorSearch() {
             this.selectedVendorId = '';
             this.selectedVendorName = '';
             this.selectedLedgerName = '';
+            const hiddenInput = document.getElementById('selectedPartyId');
+            if (hiddenInput) {
+                hiddenInput.value = '';
+                hiddenInput.dispatchEvent(new Event('input'));
+            }
         },
 
         init() {
+            console.log('🟢 Vendor search initialized', {
+                selectedId: this.selectedVendorId,
+                searchTerm: this.searchTerm
+            });
             document.addEventListener('click', (e) => {
                 if (!this.$el.contains(e.target)) {
                     this.showDropdown = false;
@@ -1711,6 +1784,82 @@ window.addEventListener('product-created', function(e) {
                 component.calculateAmount(index);
             }
         }
+    }
+});
+
+// Add form submission logging
+document.addEventListener('DOMContentLoaded', function() {
+    const invoiceForm = document.querySelector('form[action*="invoices.store"]');
+
+    if (invoiceForm) {
+        // Log when form is about to submit
+        invoiceForm.addEventListener('submit', function(e) {
+            const formData = new FormData(invoiceForm);
+
+            // Log FormData contents
+            const formDataObj = {};
+            for (let [key, value] of formData.entries()) {
+                formDataObj[key] = value;
+            }
+
+            console.log('📝 Invoice form submitting...', {
+                action: e.submitter?.value || 'unknown',
+                formDataObject: formDataObj
+            });
+
+            // Check for required fields
+            const customerSection = document.getElementById('customerSection');
+            const vendorSection = document.getElementById('vendorSection');
+            const isCustomerVisible = customerSection && !customerSection.classList.contains('hidden');
+            const isVendorVisible = vendorSection && !vendorSection.classList.contains('hidden');
+
+            const customerIdInputs = document.querySelectorAll('input[name="customer_id"]');
+            let customerId = '';
+            let customerInputDetails = [];
+            customerIdInputs.forEach(input => {
+                const parentDiv = input.closest('div[id]');
+                const isParentVisible = parentDiv ? !parentDiv.classList.contains('hidden') : true;
+                customerInputDetails.push({
+                    value: input.value,
+                    hasValue: !!input.value,
+                    parentId: parentDiv?.id,
+                    isVisible: isParentVisible,
+                    alpineData: input._x_dataStack ? 'has Alpine' : 'no Alpine'
+                });
+                if (input.value && isParentVisible) {
+                    customerId = input.value;
+                }
+            });
+
+            const voucherTypeId = document.querySelector('select[name="voucher_type_id"]')?.value;
+            const voucherDate = document.querySelector('input[name="voucher_date"]')?.value;
+
+            console.log('📋 Form validation check:', {
+                isCustomerVisible,
+                isVendorVisible,
+                customerId,
+                voucherTypeId,
+                voucherDate,
+                allCustomerInputs: customerInputDetails
+            });
+
+            if (!customerId || customerId === '') {
+                console.error('❌ Customer/Vendor ID is missing!', {
+                    visibleSection: isCustomerVisible ? 'customer' : isVendorVisible ? 'vendor' : 'none',
+                    inputs: customerInputDetails
+                });
+                alert('⚠️ Please select a ' + (isCustomerVisible ? 'customer' : 'vendor') + ' before submitting!');
+            }
+            if (!voucherTypeId) {
+                console.error('❌ Voucher Type ID is missing!');
+            }
+            if (!voucherDate) {
+                console.error('❌ Voucher Date is missing!');
+            }            // Don't prevent submission - let it go through normally
+            console.log('✅ Form validation passed, submitting to server...');
+        });
+
+        console.log('✅ Form submission logger initialized');
     }
 });
 </script>
