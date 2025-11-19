@@ -112,10 +112,14 @@
     <footer class="bg-white border-t border-gray-200 mt-12">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
             <div class="text-center text-sm text-gray-600">
-                <p>© {{ date('Y') }} Employee Self-Service Portal. All rights reserved.</p>
+              
                 <p class="mt-1">
                     <i class="fas fa-shield-alt text-green-600"></i>
                     Your data is secure and encrypted
+                </p>
+                <p class="mt-2">
+                    &copy; 2025 All Rights Reserved. Ballie Tech Solution<br>
+                    Version 1.0.0
                 </p>
             </div>
         </div>

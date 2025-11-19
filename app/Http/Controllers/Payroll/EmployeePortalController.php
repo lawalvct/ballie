@@ -128,7 +128,7 @@ class EmployeePortalController extends Controller
         $pdf = app('dompdf.wrapper');
         $pdf->loadView('payroll.portal.payslip-pdf', compact('employee', 'payslip'));
 
-        $filename = "payslip_{$employee->employee_id}_{$payslip->payrollRun->payrollPeriod->name}.pdf";
+        $filename = "payslip_{$employee->employee_number}_{$payslip->payrollPeriod->name}.pdf";
 
         return $pdf->download($filename);
     }

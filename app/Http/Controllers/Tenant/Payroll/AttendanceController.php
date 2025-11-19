@@ -561,30 +561,38 @@ class AttendanceController extends Controller
      */
     public function generateAttendanceQR(Request $request, Tenant $tenant)
     {
-        $date = $request->get('date', now()->format('Y-m-d'));
-        $type = $request->get('type', 'clock_in'); // clock_in or clock_out
+        try {
+            $date = $request->get('date', now()->format('Y-m-d'));
+            $type = $request->get('type', 'clock_in'); // clock_in or clock_out
 
-        // Create encrypted payload
-        $payload = encrypt([
-            'tenant_id' => $tenant->id,
-            'date' => $date,
-            'type' => $type,
-            'expires_at' => now()->endOfDay()->toDateTimeString(),
-            'generated_at' => now()->toDateTimeString(),
-        ]);
+            // Create encrypted payload
+            $payload = encrypt([
+                'tenant_id' => $tenant->id,
+                'date' => $date,
+                'type' => $type,
+                'expires_at' => now()->endOfDay()->toDateTimeString(),
+                'generated_at' => now()->toDateTimeString(),
+            ]);
 
-        // Generate QR code as SVG
-        $qrCode = QrCode::size(300)
-            ->margin(2)
-            ->generate($payload);
+            // Generate QR code as SVG
+            $qrCode = QrCode::size(300)
+                ->margin(2)
+                ->generate($payload);
 
-        return response()->json([
-            'success' => true,
-            'qr_code' => (string) $qrCode, // force string output for JSON serialization
-            'type' => $type,
-            'date' => $date,
-            'expires_at' => now()->endOfDay()->format('Y-m-d H:i:s'),
-        ]);
+            return response()->json([
+                'success' => true,
+                'qr_code' => (string) $qrCode,
+                'type' => $type,
+                'date' => $date,
+                'expires_at' => now()->endOfDay()->format('Y-m-d H:i:s'),
+            ]);
+        } catch (\Error $e) {
+            return response()->json([
+                'success' => false,
+                'error' => 'QR Code package not available. Please install: composer require simplesoftwareio/simple-qrcode',
+                'qr_code' => '<div class="text-center p-8"><p class="text-red-600">QR Code package not installed</p><p class="text-sm text-gray-600 mt-2">Run: composer require simplesoftwareio/simple-qrcode</p></div>',
+            ]);
+        }
     }
 
     /**
