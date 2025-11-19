@@ -1,45 +1,9 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>Employee Portal - Dashboard</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-</head>
-<body class="bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 min-h-screen">
-    <!-- Header -->
-    <header class="bg-white shadow-md">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-            <div class="flex items-center justify-between">
-                <div class="flex items-center space-x-4">
-                    <div class="w-12 h-12 bg-indigo-600 rounded-full flex items-center justify-center">
-                        <i class="fas fa-user-circle text-2xl text-white"></i>
-                    </div>
-                    <div>
-                        <h1 class="text-2xl font-bold text-gray-900">Welcome, {{ $employee->first_name }}!</h1>
-                        <p class="text-sm text-gray-600">{{ $employee->employee_number }} • {{ $employee->department->name ?? 'N/A' }}</p>
-                    </div>
-                </div>
-                <div class="flex items-center space-x-4">
-                    <a href="{{ route('payroll.portal.profile', ['tenant' => $tenant, 'token' => $token]) }}"
-                       class="text-gray-600 hover:text-indigo-600 transition-colors">
-                        <i class="fas fa-user-cog text-xl"></i>
-                    </a>
-                    <form action="{{ route('payroll.portal.logout', ['tenant' => $tenant, 'token' => $token]) }}" method="POST">
-                        @csrf
-                        <button type="submit" class="text-gray-600 hover:text-red-600 transition-colors">
-                            <i class="fas fa-sign-out-alt text-xl"></i>
-                        </button>
-                    </form>
-                </div>
-            </div>
-        </div>
-    </header>
+@extends('payroll.portal.layout')
 
-    <!-- Main Content -->
-    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+@section('title', 'Dashboard')
+@section('page-title', 'Welcome, ' . $employee->first_name . '!')
+
+@section('content')
         <!-- Year-to-Date Stats -->
         <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
             <div class="bg-white rounded-xl shadow-md p-6">
@@ -91,9 +55,9 @@
             </div>
         </div>
 
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
             <!-- Recent Payslips -->
-            <div class="lg:col-span-2 bg-white rounded-xl shadow-md p-6">
+            <div class="bg-white rounded-xl shadow-md p-6">
                 <div class="flex items-center justify-between mb-6">
                     <h2 class="text-xl font-bold text-gray-900">
                         <i class="fas fa-file-invoice-dollar mr-2 text-indigo-600"></i>
@@ -133,59 +97,8 @@
                 @endif
             </div>
 
-            <!-- Quick Links & Loans -->
-            <div class="space-y-6">
-                <!-- Quick Links -->
-                <div class="bg-white rounded-xl shadow-md p-6">
-                    <h2 class="text-xl font-bold text-gray-900 mb-4">
-                        <i class="fas fa-link mr-2 text-indigo-600"></i>
-                        Quick Links
-                    </h2>
-                    <div class="space-y-2">
-                        <a href="{{ route('payroll.portal.payslips', ['tenant' => $tenant, 'token' => $token]) }}"
-                           class="flex items-center justify-between p-3 rounded-lg hover:bg-gray-50 transition-colors group">
-                            <span class="flex items-center text-gray-700 group-hover:text-indigo-600">
-                                <i class="fas fa-file-invoice-dollar w-5 mr-3"></i>
-                                My Payslips
-                            </span>
-                            <i class="fas fa-chevron-right text-gray-400 group-hover:text-indigo-600"></i>
-                        </a>
-                        <a href="{{ route('payroll.portal.profile', ['tenant' => $tenant, 'token' => $token]) }}"
-                           class="flex items-center justify-between p-3 rounded-lg hover:bg-gray-50 transition-colors group">
-                            <span class="flex items-center text-gray-700 group-hover:text-indigo-600">
-                                <i class="fas fa-user w-5 mr-3"></i>
-                                My Profile
-                            </span>
-                            <i class="fas fa-chevron-right text-gray-400 group-hover:text-indigo-600"></i>
-                        </a>
-                        <a href="{{ route('payroll.portal.loans', ['tenant' => $tenant, 'token' => $token]) }}"
-                           class="flex items-center justify-between p-3 rounded-lg hover:bg-gray-50 transition-colors group">
-                            <span class="flex items-center text-gray-700 group-hover:text-indigo-600">
-                                <i class="fas fa-hand-holding-usd w-5 mr-3"></i>
-                                My Loans
-                            </span>
-                            <i class="fas fa-chevron-right text-gray-400 group-hover:text-indigo-600"></i>
-                        </a>
-                        <a href="{{ route('payroll.portal.tax-certificate', ['tenant' => $tenant, 'token' => $token]) }}"
-                           class="flex items-center justify-between p-3 rounded-lg hover:bg-gray-50 transition-colors group">
-                            <span class="flex items-center text-gray-700 group-hover:text-indigo-600">
-                                <i class="fas fa-file-alt w-5 mr-3"></i>
-                                Tax Certificate
-                            </span>
-                            <i class="fas fa-chevron-right text-gray-400 group-hover:text-indigo-600"></i>
-                        </a>
-                        <a href="{{ route('payroll.portal.attendance', ['tenant' => $tenant, 'token' => $token]) }}"
-                           class="flex items-center justify-between p-3 rounded-lg hover:bg-gray-50 transition-colors group">
-                            <span class="flex items-center text-gray-700 group-hover:text-indigo-600">
-                                <i class="fas fa-calendar-check w-5 mr-3"></i>
-                                Attendance
-                            </span>
-                            <i class="fas fa-chevron-right text-gray-400 group-hover:text-indigo-600"></i>
-                        </a>
-                    </div>
-                </div>
-
-                <!-- Active Loans -->
+            <!-- Active Loans -->
+            <div>
                 <div class="bg-white rounded-xl shadow-md p-6">
                     <h2 class="text-xl font-bold text-gray-900 mb-4">
                         <i class="fas fa-hand-holding-usd mr-2 text-indigo-600"></i>
@@ -218,22 +131,6 @@
                             @endforeach
                         </div>
                     @endif
-                </div>
             </div>
         </div>
-    </main>
-
-    <!-- Footer -->
-    <footer class="bg-white border-t border-gray-200 mt-12">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-            <div class="text-center text-sm text-gray-600">
-                <p>© {{ date('Y') }} Employee Self-Service Portal. All rights reserved.</p>
-                <p class="mt-1">
-                    <i class="fas fa-shield-alt text-green-600"></i>
-                    Your data is secure and encrypted
-                </p>
-            </div>
-        </div>
-    </footer>
-</body>
-</html>
+@endsection

@@ -575,6 +575,7 @@ Route::prefix('ledger-accounts')->name('ledger-accounts.')->group(function () {
                 Route::delete('/{employee}', [PayrollController::class, 'destroyEmployee'])->name('destroy');
                 Route::patch('/{employee}/toggle-status', [PayrollController::class, 'toggleStatus'])->name('toggle-status');
                 Route::post('/{employee}/reset-portal-token', [PayrollController::class, 'resetPortalToken'])->name('reset-portal-token');
+                Route::post('/{employee}/reset-portal-link', [PayrollController::class, 'resetPortalToken'])->name('reset-portal-link');
                 Route::get('/{employee}/profile', [PayrollController::class, 'employeeProfile'])->name('profile');
                 Route::get('/{employee}/salary-history', [PayrollController::class, 'salaryHistory'])->name('salary-history');
                 Route::get('/{employee}/edit-salary', [PayrollController::class, 'editSalary'])->name('edit-salary');

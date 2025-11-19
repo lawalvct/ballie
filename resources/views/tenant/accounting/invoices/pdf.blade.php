@@ -392,7 +392,7 @@ if (!function_exists('numberToWords')) {
         <div class="header">
             <div class="header-left">
                 @if($tenant->logo)
-                    <img src="{{ asset('storage/' . $tenant->logo) }}" alt="{{ $tenant->name }}" class="logo">
+                    <img src="{{ storage_path('app/public/' . $tenant->logo) }}" alt="" class="logo">
                 @endif
                 <div class="company-name">{{ $tenant->name }}</div>
                 <div class="company-details">

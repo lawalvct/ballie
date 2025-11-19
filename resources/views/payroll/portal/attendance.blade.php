@@ -1,6 +1,7 @@
 @extends('payroll.portal.layout')
 
-@section('title', 'Attendance - ' . $employee->full_name)
+@section('title', 'Attendance')
+@section('page-title', $employee->first_name . '\'s Attendance')
 
 @section('content')
 <div class="max-w-4xl mx-auto">
@@ -138,7 +139,9 @@
         @endif
     </div>
 </div>
+@endsection
 
+@push('scripts')
 <!-- Include html5-qrcode library -->
 <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
 
@@ -154,26 +157,124 @@ document.getElementById('stop-scan-btn').addEventListener('click', function() {
 });
 
 function startScanner() {
-    document.getElementById('scanner-container').style.display = 'block';
-    document.getElementById('start-scan-btn').style.display = 'none';
+    // Check HTTPS requirement
+    const isSecure = window.location.protocol === 'https:' || window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+    
+    if (!isSecure) {
+        showMessage('🔒 Camera requires HTTPS. Please access this page via HTTPS or contact your administrator.', 'error');
+        showHttpsInstructions();
+        return;
+    }
 
-    html5QrcodeScanner = new Html5Qrcode("qr-reader");
+    // Check if browser supports camera access
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        showMessage('❌ Your browser does not support camera access. Please use Chrome, Safari, or Firefox.', 'error');
+        return;
+    }
 
-    const config = {
-        fps: 10,
-        qrbox: { width: 250, height: 250 },
-        aspectRatio: 1.0
-    };
+    // Show permission prompt message
+    showMessage('Please allow camera access when prompted by your browser.', 'info');
 
-    html5QrcodeScanner.start(
-        { facingMode: "environment" },
-        config,
-        onScanSuccess,
-        onScanFailure
-    ).catch(err => {
-        console.error('Unable to start scanner:', err);
-        showMessage('Error: Unable to access camera. Please check permissions.', 'error');
-        stopScanner();
+    // Request camera permission explicitly with better error handling
+    navigator.mediaDevices.getUserMedia({ 
+        video: { 
+            facingMode: "environment",
+            width: { ideal: 1280 },
+            height: { ideal: 720 }
+        } 
+    })
+    .then(stream => {
+        // Permission granted, stop the stream and start QR scanner
+        stream.getTracks().forEach(track => track.stop());
+        
+        showMessage('Camera access granted. Starting scanner...', 'success');
+        
+        setTimeout(() => {
+            document.getElementById('scanner-container').style.display = 'block';
+            document.getElementById('start-scan-btn').style.display = 'none';
+
+            html5QrcodeScanner = new Html5Qrcode("qr-reader");
+
+            const config = {
+                fps: 10,
+                qrbox: { width: 250, height: 250 },
+                aspectRatio: 1.0,
+                rememberLastUsedCamera: true
+            };
+
+            html5QrcodeScanner.start(
+                { facingMode: "environment" },
+                config,
+                onScanSuccess,
+                onScanFailure
+            ).catch(err => {
+                console.error('Unable to start scanner:', err);
+                showMessage('Error: Unable to start camera. Please try again.', 'error');
+                stopScanner();
+            });
+        }, 1000);
+    })
+    .catch(err => {
+        console.error('Camera permission error:', err);
+
+        // Show detailed error message based on error type
+        let errorMessage = '';
+        let showInstructions = true;
+
+        if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
+            errorMessage = '📷 Camera access was denied. Please allow camera access to scan QR codes.';
+        } else if (err.name === 'NotFoundError' || err.name === 'DevicesNotFoundError') {
+            errorMessage = '📷 No camera found on this device.';
+            showInstructions = false;
+        } else if (err.name === 'NotReadableError' || err.name === 'TrackStartError') {
+            errorMessage = '📷 Camera is already in use by another application. Please close other apps using the camera.';
+            showInstructions = false;
+        } else if (err.name === 'OverconstrainedError') {
+            errorMessage = '📷 Camera does not support the required settings. Trying with basic settings...';
+            // Try again with basic settings
+            retryWithBasicSettings();
+            return;
+        } else if (err.name === 'NotSupportedError') {
+            errorMessage = '📷 Camera access requires a secure connection (HTTPS). Please use HTTPS or localhost.';
+            showInstructions = false;
+        } else {
+            errorMessage = '📷 Unable to access camera. Please check your device settings and try again.';
+        }
+
+        showMessage(errorMessage, 'error');
+
+        if (showInstructions) {
+            showCameraInstructions();
+        }
+    });
+}
+
+function retryWithBasicSettings() {
+    navigator.mediaDevices.getUserMedia({ video: true })
+    .then(stream => {
+        stream.getTracks().forEach(track => track.stop());
+        showMessage('Camera access granted with basic settings. Starting scanner...', 'success');
+        
+        setTimeout(() => {
+            document.getElementById('scanner-container').style.display = 'block';
+            document.getElementById('start-scan-btn').style.display = 'none';
+
+            html5QrcodeScanner = new Html5Qrcode("qr-reader");
+
+            html5QrcodeScanner.start(
+                { facingMode: "environment" },
+                { fps: 10, qrbox: 250 },
+                onScanSuccess,
+                onScanFailure
+            ).catch(() => {
+                showMessage('Error: Unable to start camera with basic settings.', 'error');
+                stopScanner();
+            });
+        }, 1000);
+    })
+    .catch(() => {
+        showMessage('📷 Camera access denied. Please allow camera access in your browser settings.', 'error');
+        showCameraInstructions();
     });
 }
 
@@ -196,7 +297,7 @@ function onScanSuccess(decodedText, decodedResult) {
     showMessage('Processing scan...', 'info');
 
     // Send scanned data to server
-    fetch('{{ route("payroll.portal.scan-attendance", $token) }}', {
+    fetch('{{ route("payroll.portal.scan-attendance", ["tenant" => $tenant, "token" => $token]) }}', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
@@ -261,5 +362,70 @@ function showMessage(message, type) {
         }, 5000);
     }
 }
+
+function showHttpsInstructions() {
+    const statusDiv = document.getElementById('scan-status');
+    let instructions = '<div class="mt-4 p-4 bg-red-50 rounded-lg border border-red-200">';
+    instructions += '<div class="text-red-800 font-semibold mb-3">🔒 HTTPS Required for Camera Access</div>';
+    instructions += '<div class="text-sm text-red-700 space-y-2">';
+    instructions += '<p>Modern browsers require a secure connection (HTTPS) to access the camera.</p>';
+    instructions += '<div class="font-medium mt-3">Solutions:</div>';
+    instructions += '<ol class="list-decimal ml-4 space-y-1">';
+    instructions += '<li>Ask your administrator to enable HTTPS on the server</li>';
+    instructions += '<li>Access via: <code class="bg-red-100 px-2 py-1 rounded">https://' + window.location.host + window.location.pathname + '</code></li>';
+    instructions += '</ol>';
+    instructions += '</div></div>';
+    statusDiv.innerHTML = statusDiv.innerHTML + instructions;
+}
+
+function showCameraInstructions() {
+    const statusDiv = document.getElementById('scan-status');
+    const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+    const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
+    const isAndroid = /Android/i.test(navigator.userAgent);
+
+    let instructions = '<div class="mt-4 p-4 bg-blue-50 rounded-lg border border-blue-200">';
+    instructions += '<div class="text-blue-800 font-semibold mb-3">📱 How to enable camera access:</div>';
+    instructions += '<div class="text-sm text-blue-700 space-y-2">';
+
+    if (isIOS) {
+        instructions += '<div class="font-medium">For iPhone/iPad:</div>';
+        instructions += '<ol class="list-decimal ml-4 space-y-1">';
+        instructions += '<li>Look for a camera icon in the address bar and tap it</li>';
+        instructions += '<li>Select "Allow" when prompted</li>';
+        instructions += '<li>If no icon appears, go to Settings > Safari > Camera > Allow</li>';
+        instructions += '<li>Refresh this page and try again</li>';
+        instructions += '</ol>';
+    } else if (isAndroid) {
+        instructions += '<div class="font-medium">For Android:</div>';
+        instructions += '<ol class="list-decimal ml-4 space-y-1">';
+        instructions += '<li>Tap the lock or info icon (🔒 or ⓘ) in the address bar</li>';
+        instructions += '<li>Tap "Site settings" or "Permissions"</li>';
+        instructions += '<li>Find "Camera" and set it to "Allow"</li>';
+        instructions += '<li>Refresh this page and try again</li>';
+        instructions += '</ol>';
+        instructions += '<div class="mt-3 text-xs text-blue-600">💡 Alternative: Clear browser data for this site and try again</div>';
+    } else {
+        instructions += '<div class="font-medium">For Desktop:</div>';
+        instructions += '<ol class="list-decimal ml-4 space-y-1">';
+        instructions += '<li>Click the camera icon (📷) in the address bar</li>';
+        instructions += '<li>Select "Always allow camera access"</li>';
+        instructions += '<li>Refresh this page and try again</li>';
+        instructions += '</ol>';
+    }
+
+    instructions += '</div>';
+    instructions += '<div class="mt-3 text-xs text-blue-600">🔄 After changing settings, please refresh this page</div>';
+    instructions += '</div>';
+
+    // Add retry button
+    instructions += '<div class="mt-3">';
+    instructions += '<button onclick="location.reload()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium">';
+    instructions += '🔄 Refresh Page';
+    instructions += '</button>';
+    instructions += '</div>';
+
+    statusDiv.innerHTML = statusDiv.innerHTML + instructions;
+}
 </script>
-@endsection
+@endpush
