@@ -1142,9 +1142,12 @@ class InvoiceController extends Controller
         // Determine which account to use based on voucher type
         $accountId = null;
         if ($isSales) {
+            // For SALES: Use sales_account_id (Income account like "Sales Revenue")
             $accountId = $product->sales_account_id;
         } elseif ($isPurchase) {
-            $accountId = $product->purchase_account_id;
+            // For PURCHASE: Use stock_asset_account_id (Asset account like "Inventory")
+            // This is critical: Purchases go to Balance Sheet (Asset), NOT P&L (Expense)
+            $accountId = $product->stock_asset_account_id;
         }
 
         if (!$accountId) {
@@ -1154,14 +1157,17 @@ class InvoiceController extends Controller
                     ->where('name', 'Sales Revenue')
                     ->first();
             } else {
+                // For purchase, default to Inventory asset account
                 $defaultAccount = LedgerAccount::where('tenant_id', $tenant->id)
                     ->where('name', 'Inventory')
+                    ->orWhere('code', 'INV')
+                    ->where('account_type', 'asset')
                     ->first();
             }
 
             if (!$defaultAccount) {
                 throw new \Exception("Product {$product->name} does not have a " .
-                    ($isSales ? 'sales' : 'purchase') . " account assigned, and no default account found.");
+                    ($isSales ? 'sales' : 'stock asset') . " account assigned, and no default account found.");
             }
             $accountId = $defaultAccount->id;
         }
@@ -1268,15 +1274,18 @@ class InvoiceController extends Controller
             ]);
         }
     } elseif ($isPurchase) {
-        // PURCHASE INVOICE:
-        // Debit: Product's Purchase Account(s) - one entry per unique purchase account
+        // PURCHASE INVOICE (Proper Accounting):
+        // When you buy inventory, it becomes an ASSET on the Balance Sheet
+        // It does NOT affect Profit & Loss until you sell it
+
+        // Debit: Inventory/Stock Asset Account (Balance Sheet - Asset increases)
         foreach ($groupedItems as $accountId => $amount) {
             VoucherEntry::create([
                 'voucher_id' => $voucher->id,
-                'ledger_account_id' => $accountId,
+                'ledger_account_id' => $accountId, // This is stock_asset_account_id from product
                 'debit_amount' => $amount,
                 'credit_amount' => 0,
-                'particulars' => 'Purchase invoice - ' . $voucher->getDisplayNumber(),
+                'particulars' => 'Purchase of inventory - ' . $voucher->getDisplayNumber(),
             ]);
         }
 
@@ -1303,13 +1312,13 @@ class InvoiceController extends Controller
             ]);
         }
 
-        // Credit: Supplier Account (Accounts Payable)
+        // Credit: Supplier Account (Balance Sheet - Accounts Payable increases)
         VoucherEntry::create([
             'voucher_id' => $voucher->id,
-            'ledger_account_id' => $customerLedger_id, // Note: variable name is customerLedger_id but can be supplier too
+            'ledger_account_id' => $customerLedger_id, // Note: variable name is customerLedger_id but is actually supplier
             'debit_amount' => 0,
             'credit_amount' => $totalAmount,
-            'particulars' => 'Purchase invoice - ' . $voucher->getDisplayNumber(),
+            'particulars' => 'Purchase from supplier - ' . $voucher->getDisplayNumber(),
         ]);
     }
 
