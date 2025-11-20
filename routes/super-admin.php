@@ -50,6 +50,36 @@ Route::prefix('super-admin')->name('super-admin.')->group(function () {
         Route::post('/impersonate/{tenant}/{user}', [TenantController::class, 'impersonate'])->name('impersonate');
         Route::post('/stop-impersonation', [TenantController::class, 'stopImpersonation'])->name('stop-impersonation');
 
+        // Affiliate Management
+        Route::prefix('affiliates')->name('affiliates.')->group(function () {
+            Route::get('/', [\App\Http\Controllers\SuperAdmin\AffiliateController::class, 'index'])->name('index');
+            Route::get('/export', [\App\Http\Controllers\SuperAdmin\AffiliateController::class, 'export'])->name('export');
+            Route::get('/{affiliate}', [\App\Http\Controllers\SuperAdmin\AffiliateController::class, 'show'])->name('show');
+            Route::get('/{affiliate}/edit', [\App\Http\Controllers\SuperAdmin\AffiliateController::class, 'edit'])->name('edit');
+            Route::put('/{affiliate}', [\App\Http\Controllers\SuperAdmin\AffiliateController::class, 'update'])->name('update');
+
+            // Approval actions
+            Route::post('/{affiliate}/approve', [\App\Http\Controllers\SuperAdmin\AffiliateController::class, 'approve'])->name('approve');
+            Route::post('/{affiliate}/reject', [\App\Http\Controllers\SuperAdmin\AffiliateController::class, 'reject'])->name('reject');
+            Route::post('/{affiliate}/suspend', [\App\Http\Controllers\SuperAdmin\AffiliateController::class, 'suspend'])->name('suspend');
+            Route::post('/{affiliate}/reactivate', [\App\Http\Controllers\SuperAdmin\AffiliateController::class, 'reactivate'])->name('reactivate');
+
+            // Bulk actions
+            Route::post('/bulk/approve', [\App\Http\Controllers\SuperAdmin\AffiliateController::class, 'bulkApprove'])->name('bulk.approve');
+        });
+
+        // Affiliate Commissions
+        Route::prefix('affiliate-commissions')->name('affiliate-commissions.')->group(function () {
+            Route::get('/', [\App\Http\Controllers\SuperAdmin\AffiliateController::class, 'commissions'])->name('index');
+            Route::post('/{commission}/approve', [\App\Http\Controllers\SuperAdmin\AffiliateController::class, 'approveCommission'])->name('approve');
+        });
+
+        // Affiliate Payouts
+        Route::prefix('affiliate-payouts')->name('affiliate-payouts.')->group(function () {
+            Route::get('/', [\App\Http\Controllers\SuperAdmin\AffiliateController::class, 'payouts'])->name('index');
+            Route::post('/{payout}/process', [\App\Http\Controllers\SuperAdmin\AffiliateController::class, 'processPayout'])->name('process');
+        });
+
         // Support Center (Future implementation)
         Route::prefix('support')->name('support.')->group(function () {
             Route::get('/tickets', function () {
