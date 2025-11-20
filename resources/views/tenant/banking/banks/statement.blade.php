@@ -1,17 +1,20 @@
 @extends('layouts.tenant')
 
-@section('title', 'Bank Statement - ' . $bank->bank_name)
+@section('page-title', 'Bank Statement')
+@section('page-description', $bank->bank_name . ' - ' . $bank->masked_account_number)
 
 @section('content')
+@php
+    $transactions = collect($transactionsWithBalance ?? []);
+    $debitCount = $transactions->where('debit', '>', 0)->count();
+    $creditCount = $transactions->where('credit', '>', 0)->count();
+@endphp
 <div class="space-y-6">
-    <!-- Header -->
+    <!-- Header Actions -->
     <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between">
         <div>
-            <h1 class="text-3xl font-bold text-gray-900">Bank Statement</h1>
-            <p class="mt-2 text-gray-600">{{ $bank->bank_name }} - {{ $bank->masked_account_number }}</p>
-
             <!-- Breadcrumb -->
-            <nav class="flex mt-3" aria-label="Breadcrumb">
+            <nav class="flex" aria-label="Breadcrumb">
                 <ol class="inline-flex items-center space-x-1 md:space-x-3">
                     <li class="inline-flex items-center">
                         <a href="{{ route('tenant.dashboard', $tenant) }}"
@@ -55,7 +58,14 @@
                 </ol>
             </nav>
         </div>
-        <div class="mt-4 lg:mt-0 flex space-x-3">
+        <div class="mt-4 lg:mt-0 flex flex-wrap gap-2">
+            <button onclick="exportToCSV()"
+                    class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-lg shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 print:hidden">
+                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                </svg>
+                Export CSV
+            </button>
             <button onclick="window.print()"
                     class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-lg shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 print:hidden">
                 <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -68,38 +78,50 @@
                 <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
                 </svg>
-                Back to Account
+                Back
             </a>
         </div>
     </div>
 
-    <!-- Date Filter -->
+    <!-- Date Filter & Quick Actions -->
     <div class="bg-white shadow-sm rounded-lg border border-gray-200 print:hidden">
         <div class="p-6">
-            <form action="{{ route('tenant.banking.banks.statement', [$tenant, $bank->id]) }}" method="GET" class="flex flex-wrap items-end gap-4">
-                <div class="flex-1 min-w-[200px]">
-                    <label for="start_date" class="block text-sm font-medium text-gray-700 mb-2">Start Date</label>
-                    <input type="date"
-                           name="start_date"
-                           id="start_date"
-                           value="{{ request('start_date', is_string($startDate) ? $startDate : $startDate->format('Y-m-d')) }}"
-                           class="block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-emerald-500 focus:border-emerald-500">
+            <form action="{{ route('tenant.banking.banks.statement', [$tenant, $bank->id]) }}" method="GET" class="space-y-4">
+                <div class="flex flex-wrap items-end gap-4">
+                    <div class="flex-1 min-w-[200px]">
+                        <label for="start_date" class="block text-sm font-medium text-gray-700 mb-2">Start Date</label>
+                        <input type="date"
+                               name="start_date"
+                               id="start_date"
+                               value="{{ request('start_date', is_string($startDate) ? $startDate : $startDate->format('Y-m-d')) }}"
+                               class="block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-emerald-500 focus:border-emerald-500">
+                    </div>
+                    <div class="flex-1 min-w-[200px]">
+                        <label for="end_date" class="block text-sm font-medium text-gray-700 mb-2">End Date</label>
+                        <input type="date"
+                               name="end_date"
+                               id="end_date"
+                               value="{{ request('end_date', is_string($endDate) ? $endDate : $endDate->format('Y-m-d')) }}"
+                               class="block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-emerald-500 focus:border-emerald-500">
+                    </div>
+                    <button type="submit"
+                            class="inline-flex items-center px-6 py-2 border border-transparent text-sm font-medium rounded-lg shadow-sm text-white bg-emerald-600 hover:bg-emerald-700">
+                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+                        </svg>
+                        Generate
+                    </button>
                 </div>
-                <div class="flex-1 min-w-[200px]">
-                    <label for="end_date" class="block text-sm font-medium text-gray-700 mb-2">End Date</label>
-                    <input type="date"
-                           name="end_date"
-                           id="end_date"
-                           value="{{ request('end_date', is_string($endDate) ? $endDate : $endDate->format('Y-m-d')) }}"
-                           class="block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-emerald-500 focus:border-emerald-500">
+
+                <!-- Quick Date Filters -->
+                <div class="flex flex-wrap gap-2">
+                    <span class="text-sm text-gray-600 mr-2">Quick filters:</span>
+                    <button type="button" onclick="setDateRange('today')" class="px-3 py-1 text-xs font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-md">Today</button>
+                    <button type="button" onclick="setDateRange('week')" class="px-3 py-1 text-xs font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-md">This Week</button>
+                    <button type="button" onclick="setDateRange('month')" class="px-3 py-1 text-xs font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-md">This Month</button>
+                    <button type="button" onclick="setDateRange('quarter')" class="px-3 py-1 text-xs font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-md">This Quarter</button>
+                    <button type="button" onclick="setDateRange('year')" class="px-3 py-1 text-xs font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-md">This Year</button>
                 </div>
-                <button type="submit"
-                        class="inline-flex items-center px-6 py-2 border border-transparent text-sm font-medium rounded-lg shadow-sm text-white bg-emerald-600 hover:bg-emerald-700">
-                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
-                    </svg>
-                    Generate Statement
-                </button>
             </form>
         </div>
     </div>
@@ -153,17 +175,17 @@
             </div>
 
             <!-- Summary Cards -->
-            <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-3 mb-8">
                 <!-- Opening Balance -->
-                <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                    <div class="flex items-center justify-between">
-                        <div>
-                            <p class="text-xs font-medium text-blue-600 uppercase">Opening Balance</p>
-                            <p class="mt-2 text-2xl font-bold text-blue-900">₦{{ number_format($openingBalanceAmount ?? 0, 2) }}</p>
-                            <p class="mt-1 text-xs text-blue-600">{{ ($openingBalanceAmount ?? 0) >= 0 ? 'DR' : 'CR' }}</p>
+                <div class="bg-gradient-to-br from-blue-50 to-blue-100 border-2 border-blue-200 rounded-xl p-3 shadow-sm">
+                    <div class="flex items-start justify-between">
+                        <div class="flex-1">
+                            <p class="text-[10px] font-semibold text-blue-700 uppercase tracking-wide">Opening</p>
+                            <p class="mt-1 text-lg font-bold text-blue-900">₦{{ number_format($openingBalanceAmount ?? 0, 2) }}</p>
+                            <p class="mt-0.5 text-[10px] font-medium text-blue-600">{{ ($openingBalanceAmount ?? 0) >= 0 ? 'Debit' : 'Credit' }}</p>
                         </div>
-                        <div class="h-12 w-12 bg-blue-100 rounded-full flex items-center justify-center">
-                            <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <div class="h-8 w-8 bg-blue-200 rounded-lg flex items-center justify-center">
+                            <svg class="w-4 h-4 text-blue-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                             </svg>
                         </div>
@@ -171,15 +193,15 @@
                 </div>
 
                 <!-- Total Debits -->
-                <div class="bg-green-50 border border-green-200 rounded-lg p-4">
-                    <div class="flex items-center justify-between">
-                        <div>
-                            <p class="text-xs font-medium text-green-600 uppercase">Total Debits</p>
-                            <p class="mt-2 text-2xl font-bold text-green-900">₦{{ number_format($totalDebits ?? 0, 2) }}</p>
-                            <p class="mt-1 text-xs text-green-600">Money In</p>
+                <div class="bg-gradient-to-br from-green-50 to-green-100 border-2 border-green-200 rounded-xl p-3 shadow-sm">
+                    <div class="flex items-start justify-between">
+                        <div class="flex-1">
+                            <p class="text-[10px] font-semibold text-green-700 uppercase tracking-wide">Debits</p>
+                            <p class="mt-1 text-lg font-bold text-green-900">₦{{ number_format($totalDebits ?? 0, 2) }}</p>
+                            <p class="mt-0.5 text-[10px] font-medium text-green-600">Money In</p>
                         </div>
-                        <div class="h-12 w-12 bg-green-100 rounded-full flex items-center justify-center">
-                            <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <div class="h-8 w-8 bg-green-200 rounded-lg flex items-center justify-center">
+                            <svg class="w-4 h-4 text-green-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 11l5-5m0 0l5 5m-5-5v12"></path>
                             </svg>
                         </div>
@@ -187,15 +209,15 @@
                 </div>
 
                 <!-- Total Credits -->
-                <div class="bg-red-50 border border-red-200 rounded-lg p-4">
-                    <div class="flex items-center justify-between">
-                        <div>
-                            <p class="text-xs font-medium text-red-600 uppercase">Total Credits</p>
-                            <p class="mt-2 text-2xl font-bold text-red-900">₦{{ number_format($totalCredits ?? 0, 2) }}</p>
-                            <p class="mt-1 text-xs text-red-600">Money Out</p>
+                <div class="bg-gradient-to-br from-red-50 to-red-100 border-2 border-red-200 rounded-xl p-3 shadow-sm">
+                    <div class="flex items-start justify-between">
+                        <div class="flex-1">
+                            <p class="text-[10px] font-semibold text-red-700 uppercase tracking-wide">Credits</p>
+                            <p class="mt-1 text-lg font-bold text-red-900">₦{{ number_format($totalCredits ?? 0, 2) }}</p>
+                            <p class="mt-0.5 text-[10px] font-medium text-red-600">Money Out</p>
                         </div>
-                        <div class="h-12 w-12 bg-red-100 rounded-full flex items-center justify-center">
-                            <svg class="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <div class="h-8 w-8 bg-red-200 rounded-lg flex items-center justify-center">
+                            <svg class="w-4 h-4 text-red-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 13l-5 5m0 0l-5-5m5 5V6"></path>
                             </svg>
                         </div>
@@ -203,16 +225,39 @@
                 </div>
 
                 <!-- Closing Balance -->
-                <div class="bg-purple-50 border border-purple-200 rounded-lg p-4">
-                    <div class="flex items-center justify-between">
-                        <div>
-                            <p class="text-xs font-medium text-purple-600 uppercase">Closing Balance</p>
-                            <p class="mt-2 text-2xl font-bold text-purple-900">₦{{ number_format($closingBalance ?? 0, 2) }}</p>
-                            <p class="mt-1 text-xs text-purple-600">{{ ($closingBalance ?? 0) >= 0 ? 'DR' : 'CR' }}</p>
+                <div class="bg-gradient-to-br from-purple-50 to-purple-100 border-2 border-purple-200 rounded-xl p-3 shadow-sm">
+                    <div class="flex items-start justify-between">
+                        <div class="flex-1">
+                            <p class="text-[10px] font-semibold text-purple-700 uppercase tracking-wide">Closing</p>
+                            <p class="mt-1 text-lg font-bold text-purple-900">₦{{ number_format($closingBalance ?? 0, 2) }}</p>
+                            <p class="mt-0.5 text-[10px] font-medium text-purple-600">{{ ($closingBalance ?? 0) >= 0 ? 'Debit' : 'Credit' }}</p>
                         </div>
-                        <div class="h-12 w-12 bg-purple-100 rounded-full flex items-center justify-center">
-                            <svg class="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <div class="h-8 w-8 bg-purple-200 rounded-lg flex items-center justify-center">
+                            <svg class="w-4 h-4 text-purple-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path>
+                            </svg>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Transaction Count -->
+                <div class="bg-gradient-to-br from-gray-50 to-gray-100 border-2 border-gray-200 rounded-xl p-3 shadow-sm">
+                    <div class="flex items-start justify-between">
+                        <div class="flex-1">
+                            <p class="text-[10px] font-semibold text-gray-700 uppercase tracking-wide">Transactions</p>
+                            <div class="mt-1">
+                                <span class="text-lg font-bold text-gray-900">{{ count($transactionsWithBalance ?? []) }}</span>
+                                <span class="text-[10px] text-gray-500 ml-1">Total</span>
+                            </div>
+                            <div class="mt-0.5 flex space-x-2 text-[10px]">
+                                <span class="text-green-600 font-medium">{{ $debitCount }} Dr</span>
+                                <span class="text-gray-300">|</span>
+                                <span class="text-red-600 font-medium">{{ $creditCount }} Cr</span>
+                            </div>
+                        </div>
+                        <div class="h-8 w-8 bg-gray-200 rounded-lg flex items-center justify-center">
+                            <svg class="w-4 h-4 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"></path>
                             </svg>
                         </div>
                     </div>
@@ -269,28 +314,30 @@
                         </tr>
 
                         <!-- Transaction Rows -->
-                        @foreach($transactionsWithBalance as $transaction)
-                        <tr class="hover:bg-gray-50">
+                        @foreach($transactionsWithBalance as $index => $transaction)
+                        <tr class="{{ $index % 2 === 0 ? 'bg-white' : 'bg-gray-50' }} hover:bg-emerald-50 transition-colors">
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                                 {{ \Carbon\Carbon::parse($transaction['date'])->format('M d, Y') }}
                             </td>
                             <td class="px-6 py-4 text-sm text-gray-900">
-                                {{ $transaction['particulars'] }}
+                                <div class="font-medium">{{ $transaction['particulars'] }}</div>
                             </td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                {{ $transaction['voucher_type'] }}
+                            <td class="px-6 py-4 whitespace-nowrap text-sm">
+                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                                    {{ $transaction['voucher_type'] }}
+                                </span>
                             </td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 font-mono">
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600 font-mono">
                                 {{ $transaction['voucher_number'] }}
                             </td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-right {{ $transaction['debit'] > 0 ? 'text-green-600 font-medium' : 'text-gray-400' }}">
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-right {{ $transaction['debit'] > 0 ? 'text-green-700 font-semibold' : 'text-gray-300' }}">
                                 {{ $transaction['debit'] > 0 ? number_format($transaction['debit'], 2) : '-' }}
                             </td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-right {{ $transaction['credit'] > 0 ? 'text-red-600 font-medium' : 'text-gray-400' }}">
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-right {{ $transaction['credit'] > 0 ? 'text-red-700 font-semibold' : 'text-gray-300' }}">
                                 {{ $transaction['credit'] > 0 ? number_format($transaction['credit'], 2) : '-' }}
                             </td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-right font-medium {{ $transaction['running_balance'] >= 0 ? 'text-green-600' : 'text-red-600' }}">
-                                {{ number_format(abs($transaction['running_balance']), 2) }} {{ $transaction['running_balance'] >= 0 ? 'DR' : 'CR' }}
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-right font-bold {{ $transaction['running_balance'] >= 0 ? 'text-emerald-700' : 'text-red-700' }}">
+                                {{ number_format(abs($transaction['running_balance']), 2) }} <span class="text-xs">{{ $transaction['running_balance'] >= 0 ? 'DR' : 'CR' }}</span>
                             </td>
                         </tr>
                         @endforeach
@@ -381,5 +428,74 @@
         }
     }
 </style>
+@endpush
+
+@push('scripts')
+<script>
+function setDateRange(range) {
+    const today = new Date();
+    let startDate, endDate = today;
+
+    switch(range) {
+        case 'today':
+            startDate = today;
+            break;
+        case 'week':
+            startDate = new Date(today.setDate(today.getDate() - today.getDay()));
+            endDate = new Date();
+            break;
+        case 'month':
+            startDate = new Date(today.getFullYear(), today.getMonth(), 1);
+            endDate = new Date();
+            break;
+        case 'quarter':
+            const quarter = Math.floor(today.getMonth() / 3);
+            startDate = new Date(today.getFullYear(), quarter * 3, 1);
+            endDate = new Date();
+            break;
+        case 'year':
+            startDate = new Date(today.getFullYear(), 0, 1);
+            endDate = new Date();
+            break;
+    }
+
+    document.getElementById('start_date').value = formatDate(startDate);
+    document.getElementById('end_date').value = formatDate(endDate);
+    document.querySelector('form').submit();
+}
+
+function formatDate(date) {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+}
+
+function exportToCSV() {
+    const table = document.querySelector('table');
+    if (!table) return;
+
+    let csv = [];
+    const rows = table.querySelectorAll('tr');
+
+    for (let row of rows) {
+        const cols = row.querySelectorAll('td, th');
+        const csvRow = [];
+        for (let col of cols) {
+            csvRow.push('"' + col.innerText.replace(/"/g, '""') + '"');
+        }
+        csv.push(csvRow.join(','));
+    }
+
+    const csvContent = csv.join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'bank_statement_{{ $bank->bank_name }}_{{ now()->format("Y-m-d") }}.csv';
+    a.click();
+    window.URL.revokeObjectURL(url);
+}
+</script>
 @endpush
 @endsection
