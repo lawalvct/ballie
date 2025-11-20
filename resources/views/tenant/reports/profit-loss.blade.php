@@ -6,6 +6,18 @@
 
 @section('content')
 <div class="space-y-6">
+    <!-- Header with View Toggle -->
+    <div class="flex items-center justify-between mb-4">
+        <h1 class="text-2xl font-bold text-gray-900">Profit & Loss Statement</h1>
+        <a href="{{ route('tenant.accounting.profit-loss-table', ['tenant' => $tenant->slug, 'from_date' => $fromDate, 'to_date' => $toDate]) }}"
+           class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-lg shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50">
+            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M3 14h18m-9-4v8m-7 0h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"></path>
+            </svg>
+            Tabular View
+        </a>
+    </div>
+
     <!-- Date Range Filter -->
     <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
         <form method="GET" class="flex flex-wrap items-end gap-4">
@@ -62,7 +74,7 @@
                     <div class="space-y-2">
                         @forelse($incomeData as $item)
                             <div class="flex justify-between items-center py-2 px-3 hover:bg-gray-50 rounded-lg group">
-                                <a href="{{ route('tenant.accounting.ledger-accounts.show', ['tenant' => $tenant->slug, 'ledgerAccount' => $item['account']->id]) }}" 
+                                <a href="{{ route('tenant.accounting.ledger-accounts.show', ['tenant' => $tenant->slug, 'ledgerAccount' => $item['account']->id]) }}"
                                    class="text-gray-700 hover:text-emerald-600 flex items-center gap-2">
                                     <span>{{ $item['account']->name }}</span>
                                     <svg class="w-4 h-4 opacity-0 group-hover:opacity-100 transition-opacity" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -92,7 +104,7 @@
                     <div class="space-y-2">
                         @forelse($expenseData as $item)
                             <div class="flex justify-between items-center py-2 px-3 hover:bg-gray-50 rounded-lg group">
-                                <a href="{{ route('tenant.accounting.ledger-accounts.show', ['tenant' => $tenant->slug, 'ledgerAccount' => $item['account']->id]) }}" 
+                                <a href="{{ route('tenant.accounting.ledger-accounts.show', ['tenant' => $tenant->slug, 'ledgerAccount' => $item['account']->id]) }}"
                                    class="text-gray-700 hover:text-red-600 flex items-center gap-2">
                                     <span>{{ $item['account']->name }}</span>
                                     <svg class="w-4 h-4 opacity-0 group-hover:opacity-100 transition-opacity" fill="none" stroke="currentColor" viewBox="0 0 24 24">

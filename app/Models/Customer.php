@@ -166,6 +166,7 @@ class Customer extends Model
             'name' => $this->getFullNameAttribute(),
             'code' => 'CUST-' . str_pad($this->id, 4, '0', STR_PAD_LEFT),
             'account_group_id' => $arGroup->id,
+            'account_type' => 'asset', // Customers are assets (Accounts Receivable)
             'opening_balance' => 0,
             'balance_type' => 'dr', // Customers are assets, so debit balance
             'address' => $this->getFullAddressAttribute(),

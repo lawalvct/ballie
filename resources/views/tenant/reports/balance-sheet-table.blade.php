@@ -7,7 +7,10 @@
             <h1 class="text-2xl font-bold text-gray-900">Balance Sheet (Standard Table)</h1>
             <p class="text-sm text-gray-500">As of {{ \Carbon\Carbon::parse($asOfDate ?? now())->format('F d, Y') }}</p>
         </div>
-        <a href="{{ route('tenant.reports.balance-sheet', ['tenant' => $tenant->slug, 'as_of_date' => $asOfDate]) }}" class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-lg shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50">Modern View</a>
+        <div class="flex space-x-2">
+            <a href="{{ route('tenant.accounting.balance-sheet', ['tenant' => $tenant->slug, 'as_of_date' => $asOfDate]) }}" class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-lg shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50">Modern View</a>
+            <a href="{{ route('tenant.accounting.balance-sheet-dr-cr', ['tenant' => $tenant->slug, 'as_of_date' => $asOfDate]) }}" class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-lg shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50">DR/CR View</a>
+        </div>
     </div>
     <div class="bg-white shadow rounded-lg overflow-x-auto">
         <table class="min-w-full divide-y divide-gray-200">

@@ -97,6 +97,92 @@ class ReportsController extends Controller
         ));
     }
 
+    public function profitLossTable(Request $request, Tenant $tenant)
+    {
+        $fromDate = $request->get('from_date', now()->startOfMonth()->toDateString());
+        $toDate = $request->get('to_date', now()->toDateString());
+        $mode = $request->get('mode', 'detailed'); // 'condensed' or 'detailed'
+
+        // Get income accounts with account groups
+        $incomeAccounts = LedgerAccount::where('tenant_id', $tenant->id)
+            ->where('account_type', 'income')
+            ->where('is_active', true)
+            ->with('accountGroup')
+            ->orderBy('code')
+            ->get();
+
+        // Get expense accounts with account groups
+        $expenseAccounts = LedgerAccount::where('tenant_id', $tenant->id)
+            ->where('account_type', 'expense')
+            ->where('is_active', true)
+            ->with('accountGroup')
+            ->orderBy('code')
+            ->get();
+
+        $incomeByGroup = [];
+        $expenseByGroup = [];
+        $totalIncome = 0;
+        $totalExpenses = 0;
+
+        // Group income accounts
+        foreach ($incomeAccounts as $account) {
+            $balance = $this->calculateAccountBalanceForPeriod($account, $fromDate, $toDate);
+            if (abs($balance) >= 0.01) {
+                $groupName = $account->accountGroup ? $account->accountGroup->name : 'Uncategorized Income';
+
+                if (!isset($incomeByGroup[$groupName])) {
+                    $incomeByGroup[$groupName] = [
+                        'accounts' => [],
+                        'total' => 0
+                    ];
+                }
+
+                $incomeByGroup[$groupName]['accounts'][] = [
+                    'account' => $account,
+                    'amount' => abs($balance)
+                ];
+                $incomeByGroup[$groupName]['total'] += abs($balance);
+                $totalIncome += abs($balance);
+            }
+        }
+
+        // Group expense accounts
+        foreach ($expenseAccounts as $account) {
+            $balance = $this->calculateAccountBalanceForPeriod($account, $fromDate, $toDate);
+            if (abs($balance) >= 0.01) {
+                $groupName = $account->accountGroup ? $account->accountGroup->name : 'Uncategorized Expenses';
+
+                if (!isset($expenseByGroup[$groupName])) {
+                    $expenseByGroup[$groupName] = [
+                        'accounts' => [],
+                        'total' => 0
+                    ];
+                }
+
+                $expenseByGroup[$groupName]['accounts'][] = [
+                    'account' => $account,
+                    'amount' => abs($balance)
+                ];
+                $expenseByGroup[$groupName]['total'] += abs($balance);
+                $totalExpenses += abs($balance);
+            }
+        }
+
+        $netProfit = $totalIncome - $totalExpenses;
+
+        return view('tenant.reports.profit-loss-table', compact(
+            'tenant',
+            'incomeByGroup',
+            'expenseByGroup',
+            'totalIncome',
+            'totalExpenses',
+            'netProfit',
+            'fromDate',
+            'toDate',
+            'mode'
+        ));
+    }
+
     public function trialBalance(Request $request, Tenant $tenant)
     {
         // Handle both new date range and legacy single date
@@ -609,6 +695,133 @@ class ReportsController extends Controller
             'totalEquity' => $totalEquity,
             'totalLiabilitiesAndEquity' => $totalLiabilitiesAndEquity,
             'retainedEarnings' => $retainedEarnings,
+            'balanceCheck' => $balanceCheck,
+        ]);
+    }
+
+    public function balanceSheetDrCr(Request $request, Tenant $tenant)
+    {
+        $asOfDate = $request->get('as_of_date', now()->toDateString());
+
+        // Get all accounts
+        $assetAccounts = LedgerAccount::where('tenant_id', $tenant->id)
+            ->where('account_type', 'asset')
+            ->where('is_active', true)
+            ->orderBy('code')
+            ->get();
+
+        $liabilityAccounts = LedgerAccount::where('tenant_id', $tenant->id)
+            ->where('account_type', 'liability')
+            ->where('is_active', true)
+            ->orderBy('code')
+            ->get();
+
+        $equityAccounts = LedgerAccount::where('tenant_id', $tenant->id)
+            ->where('account_type', 'equity')
+            ->where('is_active', true)
+            ->orderBy('code')
+            ->get();
+
+        $incomeAccounts = LedgerAccount::where('tenant_id', $tenant->id)
+            ->where('account_type', 'income')
+            ->where('is_active', true)
+            ->get();
+
+        $expenseAccounts = LedgerAccount::where('tenant_id', $tenant->id)
+            ->where('account_type', 'expense')
+            ->where('is_active', true)
+            ->get();
+
+        $debitSide = [];
+        $creditSide = [];
+        $totalDebits = 0;
+        $totalCredits = 0;
+
+        // Assets go on Debit side
+        foreach ($assetAccounts as $account) {
+            $balance = $this->calculateAccountBalance($account, $asOfDate);
+            if (abs($balance) >= 0.01) {
+                $debitSide[] = [
+                    'account' => $account,
+                    'balance' => abs($balance),
+                    'type' => 'Asset'
+                ];
+                $totalDebits += abs($balance);
+            }
+        }
+
+        // Liabilities go on Credit side
+        foreach ($liabilityAccounts as $account) {
+            $balance = $this->calculateAccountBalance($account, $asOfDate);
+            if (abs($balance) >= 0.01) {
+                $creditSide[] = [
+                    'account' => $account,
+                    'balance' => abs($balance),
+                    'type' => 'Liability'
+                ];
+                $totalCredits += abs($balance);
+            }
+        }
+
+        // Equity goes on Credit side
+        foreach ($equityAccounts as $account) {
+            $balance = $this->calculateAccountBalance($account, $asOfDate);
+            if (abs($balance) >= 0.01) {
+                $creditSide[] = [
+                    'account' => $account,
+                    'balance' => abs($balance),
+                    'type' => 'Equity'
+                ];
+                $totalCredits += abs($balance);
+            }
+        }
+
+        // Calculate retained earnings (Net Income/Loss)
+        $totalIncome = 0;
+        $totalExpenses = 0;
+
+        foreach ($incomeAccounts as $account) {
+            $totalIncome += $this->calculateAccountBalance($account, $asOfDate);
+        }
+
+        foreach ($expenseAccounts as $account) {
+            $totalExpenses += $this->calculateAccountBalance($account, $asOfDate);
+        }
+
+        $retainedEarnings = $totalIncome - $totalExpenses;
+
+        // Retained Earnings logic:
+        // Profit (positive) = Credit side (increases equity)
+        // Loss (negative) = Debit side (decreases equity)
+        if (abs($retainedEarnings) >= 0.01) {
+            if ($retainedEarnings >= 0) {
+                // Profit - goes to Credit side
+                $creditSide[] = [
+                    'account' => (object)['name' => 'Retained Earnings (Net Profit)', 'code' => 'RE'],
+                    'balance' => $retainedEarnings,
+                    'type' => 'Equity'
+                ];
+                $totalCredits += $retainedEarnings;
+            } else {
+                // Loss - goes to Debit side (to balance the equation)
+                $debitSide[] = [
+                    'account' => (object)['name' => 'Retained Earnings (Net Loss)', 'code' => 'RE'],
+                    'balance' => abs($retainedEarnings),
+                    'type' => 'Equity (Contra)'
+                ];
+                $totalDebits += abs($retainedEarnings);
+            }
+        }
+
+        $balanceCheck = abs($totalDebits - $totalCredits) < 0.01;
+
+        return view('tenant.reports.balance-sheet-dr-cr', [
+            'tenant' => $tenant,
+            'asOfDate' => $asOfDate,
+            'debitSide' => $debitSide,
+            'creditSide' => $creditSide,
+            'totalDebits' => $totalDebits,
+            'totalCredits' => $totalCredits,
             'balanceCheck' => $balanceCheck,
         ]);
     }

@@ -367,9 +367,12 @@ Route::prefix('ledger-accounts')->name('ledger-accounts.')->group(function () {
             Route::get('/balance-sheet', [ReportsController::class, 'balanceSheet'])->name('balance-sheet');
             // Standard Table Balance Sheet
             Route::get('/balance-sheet-table', [ReportsController::class, 'balanceSheetTable'])->name('balance-sheet-table');
+            // DR/CR Balance Sheet
+            Route::get('/balance-sheet-dr-cr', [ReportsController::class, 'balanceSheetDrCr'])->name('balance-sheet-dr-cr');
 
             // Profit & Loss
             Route::get('/profit-loss', [ReportsController::class, 'profitLoss'])->name('profit-loss');
+            Route::get('/profit-loss-table', [ReportsController::class, 'profitLossTable'])->name('profit-loss-table');
 
             // Cash Flow
             Route::get('/cash-flow', [ReportsController::class, 'cashFlow'])->name('cash-flow');

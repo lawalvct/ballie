@@ -118,6 +118,7 @@ class Vendor extends Model
             'name' => $this->getFullNameAttribute(),
             'code' => 'VEND-' . str_pad($this->id, 4, '0', STR_PAD_LEFT),
             'account_group_id' => $apGroup->id,
+            'account_type' => 'liability', // Vendors are liabilities (Accounts Payable)
             'opening_balance' => 0,
             'balance_type' => 'cr', // Vendors are liabilities, so credit balance
             'address' => $this->getFullAddressAttribute(),
