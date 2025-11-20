@@ -6,6 +6,9 @@ use App\Http\Controllers\Controller;
 use App\Models\Plan;
 use App\Models\Subscription;
 use App\Models\SubscriptionPayment;
+use App\Models\Affiliate;
+use App\Models\AffiliateReferral;
+use App\Models\AffiliateCommission;
 use App\Helpers\PaymentHelper;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -579,6 +582,9 @@ class SubscriptionController extends Controller
                     $successMessage = 'Payment successful! You have been upgraded to ' . $plan->name . ' plan.';
                 }
 
+                // Process affiliate commission
+                $this->processAffiliateCommission($tenant, $payment, $isRenewal);
+
                 DB::commit();
 
                 // Redirect to success page
@@ -786,6 +792,140 @@ class SubscriptionController extends Controller
             ]);
 
             return back()->with('error', 'An error occurred while processing your renewal. Please try again.');
+        }
+    }
+
+    /**
+     * Process affiliate commission for successful payments
+     */
+    protected function processAffiliateCommission($tenant, SubscriptionPayment $payment, $isRenewal = false)
+    {
+        try {
+            // Check if tenant was referred by an affiliate
+            $referral = AffiliateReferral::where('referred_tenant_id', $tenant->id)
+                ->where('status', '!=', 'cancelled')
+                ->first();
+
+            if (!$referral) {
+                Log::info('No affiliate referral found for tenant', [
+                    'tenant_id' => $tenant->id
+                ]);
+                return;
+            }
+
+            $affiliate = $referral->affiliate;
+
+            if (!$affiliate || $affiliate->status !== 'active') {
+                Log::info('Affiliate not active or not found', [
+                    'tenant_id' => $tenant->id,
+                    'affiliate_id' => $referral->affiliate_id
+                ]);
+                return;
+            }
+
+            // Get commission settings
+            $recurringEnabled = config('affiliate.recurring_commission_enabled', true);
+            $commissionRate = $affiliate->getCommissionRate();
+            $firstPaymentBonus = config('affiliate.first_payment_bonus', 0);
+
+            // Determine if this is the first payment
+            $isFirstPayment = $referral->status === 'pending';
+
+            // Check if we should create commission
+            $shouldCreateCommission = false;
+            $commissionType = 'recurring';
+            $bonusRate = 0;
+
+            if ($isFirstPayment) {
+                // Always create commission for first payment
+                $shouldCreateCommission = true;
+                $commissionType = 'first_payment';
+                $bonusRate = $firstPaymentBonus;
+
+                // Update referral to confirmed
+                $referral->update([
+                    'status' => 'confirmed',
+                    'conversion_type' => 'first_payment',
+                    'conversion_value' => $payment->amount,
+                    'conversion_date' => now(),
+                ]);
+
+                Log::info('First payment commission triggered', [
+                    'tenant_id' => $tenant->id,
+                    'affiliate_id' => $affiliate->id,
+                    'payment_amount' => $payment->amount
+                ]);
+            } elseif ($recurringEnabled && $isRenewal) {
+                // Create commission for recurring payments if enabled
+                $shouldCreateCommission = true;
+                $commissionType = 'recurring';
+
+                Log::info('Recurring payment commission triggered', [
+                    'tenant_id' => $tenant->id,
+                    'affiliate_id' => $affiliate->id,
+                    'payment_amount' => $payment->amount
+                ]);
+            }
+
+            if ($shouldCreateCommission) {
+                // Calculate commission amount
+                $totalRate = $commissionRate + $bonusRate;
+                $commissionAmount = ($payment->amount / 100) * $totalRate; // Convert from kobo to naira and apply rate
+
+                // Calculate due date (hold period)
+                $holdDays = config('affiliate.commission_hold_days', 30);
+                $dueDate = now()->addDays($holdDays);
+
+                // Create commission record
+                $commission = AffiliateCommission::create([
+                    'affiliate_id' => $affiliate->id,
+                    'referred_tenant_id' => $tenant->id,
+                    'affiliate_referral_id' => $referral->id,
+                    'payment_reference' => $payment->payment_reference,
+                    'payment_amount' => $payment->amount / 100, // Convert to naira
+                    'commission_rate' => $totalRate,
+                    'commission_amount' => $commissionAmount,
+                    'commission_type' => $commissionType,
+                    'status' => 'pending', // Requires approval
+                    'description' => $isFirstPayment
+                        ? "First payment commission from {$tenant->name}"
+                        : "Recurring payment commission from {$tenant->name}",
+                    'payment_date' => now(),
+                    'due_date' => $dueDate,
+                ]);
+
+                // Update affiliate total commissions
+                $affiliate->increment('total_commissions', $commissionAmount);
+
+                Log::info('Affiliate commission created', [
+                    'commission_id' => $commission->id,
+                    'affiliate_id' => $affiliate->id,
+                    'tenant_id' => $tenant->id,
+                    'commission_amount' => $commissionAmount,
+                    'commission_type' => $commissionType,
+                    'payment_reference' => $payment->payment_reference,
+                    'due_date' => $dueDate
+                ]);
+
+                // TODO: Send notification to affiliate about new commission
+            } else {
+                Log::info('Commission not created - conditions not met', [
+                    'tenant_id' => $tenant->id,
+                    'affiliate_id' => $affiliate->id,
+                    'is_first_payment' => $isFirstPayment,
+                    'is_renewal' => $isRenewal,
+                    'recurring_enabled' => $recurringEnabled
+                ]);
+            }
+
+        } catch (\Exception $e) {
+            // Don't fail the payment if commission processing fails
+            Log::error('Affiliate commission processing failed', [
+                'tenant_id' => $tenant->id,
+                'payment_id' => $payment->id,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
         }
     }
 }
