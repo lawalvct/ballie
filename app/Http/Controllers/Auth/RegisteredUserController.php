@@ -7,6 +7,8 @@ use App\Models\User;
 use App\Models\Tenant;
 use App\Helpers\TenantHelper;
 use App\Models\Plan;
+use App\Models\Affiliate;
+use App\Models\AffiliateReferral;
 use App\Notifications\WelcomeNotification;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Http\Request;
@@ -15,6 +17,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Cookie;
 use Illuminate\Validation\Rules;
 use Illuminate\View\View;
 
@@ -88,6 +91,58 @@ class RegisteredUserController extends Controller
                 $tenant = Tenant::create($tenantData);
 
                 Log::info('Tenant created successfully', ['tenant_id' => $tenant->id, 'slug' => $tenant->slug]);
+
+                // Check for affiliate referral code from cookie or request
+                $affiliateCode = session('affiliate_code') ?? $request->cookie('ballie_ref') ?? $request->input('ref');
+
+                if ($affiliateCode) {
+                    $affiliate = Affiliate::where('affiliate_code', $affiliateCode)
+                        ->where('status', 'active')
+                        ->first();
+
+                    if ($affiliate) {
+                        // Get tracking data from session or request
+                        $trackingData = session('tracking_data', []);
+
+                        if (empty($trackingData)) {
+                            $trackingData = [
+                                'utm_source' => $request->input('utm_source'),
+                                'utm_medium' => $request->input('utm_medium'),
+                                'utm_campaign' => $request->input('utm_campaign'),
+                                'utm_term' => $request->input('utm_term'),
+                                'utm_content' => $request->input('utm_content'),
+                                'ip_address' => $request->ip(),
+                                'user_agent' => $request->userAgent(),
+                            ];
+                        }
+
+                        $trackingData['registered_at'] = now();
+                        $trackingData['plan_selected'] = $selectedPlan->name;
+
+                        // Create affiliate referral record
+                        AffiliateReferral::create([
+                            'affiliate_id' => $affiliate->id,
+                            'referred_tenant_id' => $tenant->id,
+                            'referral_source' => $trackingData['utm_source'] ?? 'direct',
+                            'conversion_type' => 'registration',
+                            'conversion_value' => 0, // Will be updated on first payment
+                            'status' => 'pending', // Confirmed when they make first payment
+                            'tracking_data' => $trackingData,
+                        ]);
+
+                        // Increment affiliate's total referrals
+                        $affiliate->increment('total_referrals');
+
+                        Log::info('Affiliate referral recorded', [
+                            'affiliate_id' => $affiliate->id,
+                            'affiliate_code' => $affiliateCode,
+                            'tenant_id' => $tenant->id,
+                        ]);
+
+                        // Clear affiliate session data
+                        session()->forget(['affiliate_code', 'affiliate_id', 'tracking_data', 'referral_timestamp']);
+                    }
+                }
 
                 // Start trial for the selected plan using the tenant method
                 $tenant->startTrial($selectedPlan);

@@ -206,7 +206,7 @@
                         <tbody class="divide-y divide-gray-200">
                             @foreach($affiliate->referrals as $referral)
                             <tr>
-                                <td class="px-4 py-3 text-sm text-gray-900">{{ $referral->tenant->company_name ?? 'N/A' }}</td>
+                                <td class="px-4 py-3 text-sm text-gray-900">{{ $referral->tenant->name ?? 'N/A' }}</td>
                                 <td class="px-4 py-3 text-sm text-gray-900">₦{{ number_format($referral->conversion_value, 2) }}</td>
                                 <td class="px-4 py-3">
                                     <span class="px-2 py-1 text-xs font-semibold rounded-full {{ $referral->status === 'confirmed' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800' }}">

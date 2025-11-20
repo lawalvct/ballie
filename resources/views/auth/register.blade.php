@@ -122,6 +122,17 @@
             </div>
             <h1 class="text-3xl md:text-4xl font-bold text-white mb-2">Join Ballie Today</h1>
             <p class="text-gray-200">Start your 30-day free trial and transform your business</p>
+
+            @if(request('ref') || session('affiliate_code'))
+                <div class="mt-4 inline-block bg-green-100 border-2 border-green-400 rounded-lg px-4 py-2">
+                    <p class="text-green-800 font-semibold flex items-center justify-center">
+                        <svg class="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
+                        </svg>
+                        You're registering via a referral! 🎉
+                    </p>
+                </div>
+            @endif
         </div>
 
         <!-- Step Indicator -->
@@ -136,6 +147,27 @@
         <!-- Registration Form -->
         <div class="bg-white rounded-2xl shadow-2xl p-8 md:p-12">
             <form id="registration-form" method="POST" action="{{ route('register') }}">
+                @csrf
+
+                <!-- Hidden fields for affiliate tracking -->
+                @if(request('ref'))
+                    <input type="hidden" name="ref" value="{{ request('ref') }}">
+                @endif
+                @if(request('utm_source'))
+                    <input type="hidden" name="utm_source" value="{{ request('utm_source') }}">
+                @endif
+                @if(request('utm_medium'))
+                    <input type="hidden" name="utm_medium" value="{{ request('utm_medium') }}">
+                @endif
+                @if(request('utm_campaign'))
+                    <input type="hidden" name="utm_campaign" value="{{ request('utm_campaign') }}">
+                @endif
+                @if(request('utm_term'))
+                    <input type="hidden" name="utm_term" value="{{ request('utm_term') }}">
+                @endif
+                @if(request('utm_content'))
+                    <input type="hidden" name="utm_content" value="{{ request('utm_content') }}">
+                @endif
                 @csrf
                 <input type="hidden" name="selected_plan_id" value="{{ request('plan_id') }}">
 

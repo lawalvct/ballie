@@ -69,6 +69,11 @@ class Affiliate extends Model
         return $this->hasMany(AffiliateReferral::class);
     }
 
+    public function tenants(): HasMany
+    {
+        return $this->hasMany(Tenant::class, 'referred_by_affiliate_id');
+    }
+
     public function commissions(): HasMany
     {
         return $this->hasMany(AffiliateCommission::class);
