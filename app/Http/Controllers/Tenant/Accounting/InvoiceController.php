@@ -1155,7 +1155,7 @@ class InvoiceController extends Controller
                     ->first();
             } else {
                 $defaultAccount = LedgerAccount::where('tenant_id', $tenant->id)
-                    ->where('name', 'Cost of Goods Sold')
+                    ->where('name', 'Inventory')
                     ->first();
             }
 
@@ -1203,6 +1203,68 @@ class InvoiceController extends Controller
                 'debit_amount' => 0,
                 'credit_amount' => $additionalLedger['amount'],
                 'particulars' => $additionalLedger['narration'] ?: ('Additional charge - ' . $voucher->getDisplayNumber()),
+            ]);
+        }
+
+        // COGS ENTRIES: Record Cost of Goods Sold and reduce Inventory
+        // Get COGS and Inventory accounts
+        $cogsAccount = LedgerAccount::where('tenant_id', $tenant->id)
+            ->where('name', 'Cost of Goods Sold')
+            ->orWhere('code', 'COGS')
+            ->first();
+
+        $inventoryAccount = LedgerAccount::where('tenant_id', $tenant->id)
+            ->where('name', 'Inventory')
+            ->orWhere('code', 'INV')
+            ->first();
+
+        if ($cogsAccount && $inventoryAccount) {
+            // Calculate total cost from inventory items
+            $totalCost = 0;
+            foreach ($inventoryItems as $item) {
+                $purchaseRate = $item['purchase_rate'] ?? 0;
+                if ($purchaseRate > 0) {
+                    $totalCost += $purchaseRate * $item['quantity'];
+                }
+            }
+
+            // Only create COGS entries if we have cost data
+            if ($totalCost > 0) {
+                // Entry: Debit COGS (Expense increases)
+                VoucherEntry::create([
+                    'voucher_id' => $voucher->id,
+                    'ledger_account_id' => $cogsAccount->id,
+                    'debit_amount' => $totalCost,
+                    'credit_amount' => 0,
+                    'particulars' => 'Cost of goods sold - ' . $voucher->getDisplayNumber(),
+                ]);
+
+                // Entry: Credit Inventory (Asset decreases)
+                VoucherEntry::create([
+                    'voucher_id' => $voucher->id,
+                    'ledger_account_id' => $inventoryAccount->id,
+                    'debit_amount' => 0,
+                    'credit_amount' => $totalCost,
+                    'particulars' => 'Inventory reduction - ' . $voucher->getDisplayNumber(),
+                ]);
+
+                Log::info('COGS entries created for sales invoice', [
+                    'voucher_id' => $voucher->id,
+                    'total_cost' => $totalCost,
+                    'cogs_account' => $cogsAccount->name,
+                    'inventory_account' => $inventoryAccount->name,
+                ]);
+            } else {
+                Log::warning('COGS not created - no purchase rate data', [
+                    'voucher_id' => $voucher->id,
+                    'items_count' => count($inventoryItems),
+                ]);
+            }
+        } else {
+            Log::warning('COGS not created - accounts not found', [
+                'voucher_id' => $voucher->id,
+                'cogs_account_exists' => $cogsAccount !== null,
+                'inventory_account_exists' => $inventoryAccount !== null,
             ]);
         }
     } elseif ($isPurchase) {
@@ -1305,6 +1367,39 @@ class InvoiceController extends Controller
                     'account_name' => $additionalAccount->name,
                     'current_balance_after' => $additionalAccount->fresh()->current_balance,
                     'calculated_balance' => $additionalBalance
+                ]);
+            }
+        }
+
+        // Update COGS and Inventory account balances (for sales invoices)
+        if ($isSales) {
+            $cogsAccount = LedgerAccount::where('tenant_id', $tenant->id)
+                ->where(function($query) {
+                    $query->where('name', 'Cost of Goods Sold')
+                          ->orWhere('code', 'COGS');
+                })
+                ->first();
+
+            $inventoryAccount = LedgerAccount::where('tenant_id', $tenant->id)
+                ->where(function($query) {
+                    $query->where('name', 'Inventory')
+                          ->orWhere('code', 'INV');
+                })
+                ->first();
+
+            if ($cogsAccount) {
+                $cogsAccount->updateCurrentBalance();
+                Log::info('COGS account balance updated', [
+                    'account_id' => $cogsAccount->id,
+                    'new_balance' => $cogsAccount->fresh()->current_balance,
+                ]);
+            }
+
+            if ($inventoryAccount) {
+                $inventoryAccount->updateCurrentBalance();
+                Log::info('Inventory account balance updated', [
+                    'account_id' => $inventoryAccount->id,
+                    'new_balance' => $inventoryAccount->fresh()->current_balance,
                 ]);
             }
         }

@@ -66,7 +66,9 @@ class ReportsController extends Controller
             }
         }
 
-        // Calculate stock values for the period
+        // Calculate stock values for reference (display only, not in P&L calculation)
+        // Note: Inventory purchases go to Balance Sheet (Asset), not P&L
+        // Only Cost of Goods Sold (COGS) appears in P&L when inventory is sold
         $openingStock = Product::where('tenant_id', $tenant->id)
             ->where('maintain_stock', true)
             ->sum('opening_stock_value');
@@ -75,23 +77,11 @@ class ReportsController extends Controller
             ->where('maintain_stock', true)
             ->sum('current_stock_value');
 
-        // Add stock to P&L calculation
-        if ($openingStock > 0) {
-            $expenseData[] = [
-                'account' => (object)['name' => 'Opening Stock', 'code' => 'OPENING_STOCK'],
-                'amount' => $openingStock,
-            ];
-            $totalExpenses += $openingStock;
-        }
-
-        if ($closingStock > 0) {
-            $incomeData[] = [
-                'account' => (object)['name' => 'Closing Stock', 'code' => 'CLOSING_STOCK'],
-                'amount' => $closingStock,
-            ];
-            $totalIncome += $closingStock;
-        }
-
+        // Calculate Net Profit/Loss
+        // P&L Formula: Total Income - Total Expenses
+        // - Income includes: Sales Revenue, Service Income, etc.
+        // - Expenses include: COGS (when sold), Salaries, Rent, Utilities, etc.
+        // - Inventory purchases are NOT expenses until goods are sold
         $netProfit = $totalIncome - $totalExpenses;
 
         return view('tenant.reports.profit-loss', compact(
