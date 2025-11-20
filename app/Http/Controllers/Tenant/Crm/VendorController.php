@@ -431,15 +431,21 @@ class VendorController extends Controller
             ->limit(20)
             ->get()
             ->map(function($vendor) {
+                $ledgerAccount = $vendor->ledgerAccount;
+
                 return [
                     'id' => $vendor->id,
-                    'ledger_account_id' => $vendor->ledger_account_id,
-                    'display_name' => $vendor->display_name,
+                    'ledger_account_id' => $ledgerAccount?->id,
+                    'ledger_account_name' => $ledgerAccount?->name,
+                    'display_name' => $vendor->company_name ?: trim($vendor->first_name . ' ' . $vendor->last_name),
                     'email' => $vendor->email,
                     'phone' => $vendor->phone,
-                    'ledger_account_name' => $vendor->ledgerAccount ? $vendor->ledgerAccount->name : 'No Ledger',
                 ];
-            });
+            })
+            ->filter(function($vendor) {
+                return !empty($vendor['ledger_account_id']);
+            })
+            ->values();
 
         return response()->json($vendors);
     }

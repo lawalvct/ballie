@@ -314,8 +314,8 @@ class VoucherController extends Controller
             return $voucher;
         });
 
-        // Check if user wants to save and post
-        if ($request->input('action') === 'save_and_post') {
+        // Check if user wants to save and post (including 'save_and_post_return')
+        if ($request->input('action') === 'save_and_post' || $request->input('action') === 'save_and_post_return') {
             // Post the voucher immediately
             $voucher->update([
                 'status' => 'posted',
@@ -329,6 +329,20 @@ class VoucherController extends Controller
             }
 
             $voucherTypeName = $voucher->voucherType->name ?? 'Voucher';
+
+            // If the user asked to save, post and return to the create page, redirect back to create
+            if ($request->input('action') === 'save_and_post_return') {
+                // Redirect to create page with same voucher type pre-selected
+                $typeCode = $voucher->voucherType->code ?? null;
+                $routeParams = ['tenant' => $tenant->slug];
+                if ($typeCode) {
+                    $routeParams['type'] = strtolower($typeCode);
+                }
+
+                return redirect()
+                    ->route('tenant.accounting.vouchers.create', $routeParams)
+                    ->with('success', $voucherTypeName . ' created and posted successfully. You can create another.');
+            }
 
             return redirect()
                 ->route('tenant.accounting.vouchers.show', ['tenant' => $tenant->slug, 'voucher' => $voucher->id])

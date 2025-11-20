@@ -319,16 +319,43 @@
                         </a>
 
                         <button type="submit"
+                                name="action"
+                                value="save_draft"
+                                class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-lg shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition-all duration-200">
+                            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3-3m0 0l-3 3m3-3v12"></path>
+                            </svg>
+                            Save Draft
+                        </button>
+
+                        <button type="submit"
+                                name="action"
+                                value="save_and_post"
                                 x-bind:disabled="!isBalanced || entries.length < 2"
                                 x-bind:class="{
                                     'opacity-50 cursor-not-allowed': !isBalanced || entries.length < 2,
                                     'hover:bg-primary-700': isBalanced && entries.length >= 2
                                 }"
-                                class="inline-flex items-center px-6 py-2 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-primary-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition-all duration-200">
+                                class="inline-flex items-center px-4 py-2 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-primary-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition-all duration-200">
                             <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
                             </svg>
-                            <span x-text="isBalanced && entries.length >= 2 ? 'Create Voucher' : 'Complete Entries'"></span>
+                            Save &amp; Post
+                        </button>
+
+                        <button type="submit"
+                                name="action"
+                                value="save_and_post_return"
+                                x-bind:disabled="!isBalanced || entries.length < 2"
+                                x-bind:class="{
+                                    'opacity-50 cursor-not-allowed': !isBalanced || entries.length < 2,
+                                    'hover:bg-primary-700': isBalanced && entries.length >= 2
+                                }"
+                                class="inline-flex items-center px-4 py-2 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-all duration-200">
+                            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                            </svg>
+                            Save, Post &amp; New
                         </button>
                     </div>
                 </div>
