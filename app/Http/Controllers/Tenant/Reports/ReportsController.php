@@ -7,6 +7,7 @@ use App\Models\LedgerAccount;
 use App\Models\Product;
 use App\Models\Tenant;
 use Illuminate\Http\Request;
+use Barryvdh\DomPDF\Facade\Pdf;
 
 class ReportsController extends Controller
 
@@ -276,7 +277,28 @@ class ReportsController extends Controller
             $viewData['asOfDate'] = $toDate;
         }
 
+        // Handle PDF download
+        if ($request->get('download') === 'pdf') {
+            return $this->generateTrialBalancePDF($viewData);
+        }
+
         return view('tenant.reports.trial-balance', $viewData);
+    }
+
+    private function generateTrialBalancePDF($data)
+    {
+        $pdf = \PDF::loadView('tenant.reports.trial-balance-pdf', $data);
+        
+        // Generate filename
+        $filename = 'trial_balance';
+        if (isset($data['fromDate']) && isset($data['toDate'])) {
+            $filename .= '_' . $data['fromDate'] . '_to_' . $data['toDate'];
+        } else {
+            $filename .= '_' . ($data['asOfDate'] ?? now()->format('Y-m-d'));
+        }
+        $filename .= '.pdf';
+        
+        return $pdf->download($filename);
     }
 
     public function cashFlow(Request $request, Tenant $tenant)
