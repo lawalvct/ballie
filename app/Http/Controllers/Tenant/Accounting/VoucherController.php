@@ -41,99 +41,63 @@ class VoucherController extends Controller
             ->where('tenant_id', $tenant->id)
             ->latest('voucher_date');
 
-        // Apply filters
-        if ($request->filled('voucher_type')) {
-            $query->where('voucher_type_id', $request->voucher_type);
-        }
-
-        if ($request->filled('status')) {
-            $query->where('status', $request->status);
-        }
-
-        if ($request->filled('date_from')) {
-            $query->whereDate('voucher_date', '>=', $request->date_from);
-        }
-
-        if ($request->filled('date_to')) {
-            $query->whereDate('voucher_date', '<=', $request->date_to);
-        }
-
-        if ($request->filled('search')) {
-            $search = $request->search;
-            $query->where(function ($q) use ($search) {
-                $q->where('voucher_number', 'like', "%{$search}%")
-                  ->orWhere('reference_number', 'like', "%{$search}%")
-                  ->orWhere('narration', 'like', "%{$search}%");
-            });
-        }
-
-    $vouchers = $query->paginate(20);
-    $vouchers->appends($request->query());
-
-        $voucherTypes = VoucherType::where('tenant_id', $tenant->id)
-            ->where('is_active', true)
-            ->orderBy('name')
-            ->get();
-
-        // Statistics
-        $stats = [
-            'total_vouchers' => Voucher::where('tenant_id', $tenant->id)->count(),
-            'draft_vouchers' => Voucher::where('tenant_id', $tenant->id)->where('status', 'draft')->count(),
-            'posted_vouchers' => Voucher::where('tenant_id', $tenant->id)->where('status', 'posted')->count(),
-            'total_amount' => Voucher::where('tenant_id', $tenant->id)->where('status', 'posted')->sum('total_amount'),
-        ];
-
-        $primaryVoucherTypes = VoucherType::where('tenant_id', $tenant->id)
-            ->where('is_system_defined', true)
-            ->orderByRaw("FIELD(code, 'JV', 'PV', 'RV', 'SV', 'PUR') DESC")
-            ->orderBy('name')
-            ->get();
+        $this->applyFilters($query, $request);
+        $vouchers = $query->paginate(20)->appends($request->query());
+        [$voucherTypes, $stats, $primaryVoucherTypes] = $this->getIndexData($tenant);
 
         return view('tenant.accounting.vouchers.index', compact(
-            'tenant',
-            'vouchers',
-            'voucherTypes',
-            'stats',
-            'primaryVoucherTypes'
+            'tenant', 'vouchers', 'voucherTypes', 'stats', 'primaryVoucherTypes'
         ));
+    }
+
+    private function applyFilters($query, Request $request)
+    {
+        $query->when($request->filled('voucher_type'), fn($q) => $q->where('voucher_type_id', $request->voucher_type))
+              ->when($request->filled('status'), fn($q) => $q->where('status', $request->status))
+              ->when($request->filled('date_from'), fn($q) => $q->whereDate('voucher_date', '>=', $request->date_from))
+              ->when($request->filled('date_to'), fn($q) => $q->whereDate('voucher_date', '<=', $request->date_to))
+              ->when($request->filled('search'), function($q) use ($request) {
+                  $search = $request->search;
+                  $q->where(function ($query) use ($search) {
+                      $query->where('voucher_number', 'like', "%{$search}%")
+                            ->orWhere('reference_number', 'like', "%{$search}%")
+                            ->orWhere('narration', 'like', "%{$search}%");
+                  });
+              });
+    }
+
+    private function getIndexData(Tenant $tenant)
+    {
+        $baseQuery = Voucher::where('tenant_id', $tenant->id);
+        
+        return [
+            VoucherType::where('tenant_id', $tenant->id)->where('is_active', true)->orderBy('name')->get(),
+            [
+                'total_vouchers' => $baseQuery->count(),
+                'draft_vouchers' => $baseQuery->where('status', 'draft')->count(),
+                'posted_vouchers' => $baseQuery->where('status', 'posted')->count(),
+                'total_amount' => $baseQuery->where('status', 'posted')->sum('total_amount'),
+            ],
+            VoucherType::where('tenant_id', $tenant->id)
+                ->where('is_system_defined', true)
+                ->orderByRaw("FIELD(code, 'JV', 'PV', 'RV', 'SV', 'PUR') DESC")
+                ->orderBy('name')->get()
+        ];
     }
 
     /**
      * Show the form for creating a new voucher.
      */
-   public function create(Request $request, Tenant $tenant, $type = null)
+    public function create(Request $request, Tenant $tenant, $type = null)
     {
+        $typeCode = $type ?? $request->get('type');
+        $selectedType = $typeCode ? $this->getSelectedVoucherType($tenant, $typeCode) : null;
+        
         $voucherTypes = VoucherType::where('tenant_id', $tenant->id)
             ->where('is_active', true)
             ->where('affects_inventory', false)
             ->orderBy('name')
             ->get();
-
-              // Get products for inventory-enabled vouchers
-        $products = Product::where('tenant_id', $tenant->id)
-            ->where('is_active', true)
-            ->with(['primaryUnit', 'category'])
-            ->orderBy('name')
-            ->get();
-
-
-
-
-        $selectedType = null;
-        // Check route parameter first, then query parameter
-        $typeCode = $type ?? $request->get('type');
-
-        if ($typeCode) {
-            $selectedType = VoucherType::where('tenant_id', $tenant->id)
-                ->where('code', strtoupper($typeCode))
-                ->first();
-
-            if (!$selectedType) {
-                return redirect()
-                    ->route('tenant.accounting.vouchers.create', $tenant->slug)
-                    ->with('error', 'Invalid voucher type specified.');
-            }
-        }
 
         $ledgerAccounts = LedgerAccount::with('accountGroup')
             ->where('tenant_id', $tenant->id)
@@ -141,13 +105,28 @@ class VoucherController extends Controller
             ->orderBy('name')
             ->get();
 
-       return view('tenant.accounting.vouchers.create', compact(
-            'tenant',
-            'voucherTypes',
-            'ledgerAccounts',
-            'products',
-            'selectedType'
+        $products = Product::where('tenant_id', $tenant->id)
+            ->where('is_active', true)
+            ->with(['primaryUnit', 'category'])
+            ->orderBy('name')
+            ->get();
+
+        return view('tenant.accounting.vouchers.create', compact(
+            'tenant', 'voucherTypes', 'ledgerAccounts', 'products', 'selectedType'
         ));
+    }
+
+    private function getSelectedVoucherType(Tenant $tenant, $typeCode)
+    {
+        $selectedType = VoucherType::where('tenant_id', $tenant->id)
+            ->where('code', strtoupper($typeCode))
+            ->first();
+            
+        if (!$selectedType) {
+            abort(404, 'Invalid voucher type specified.');
+        }
+        
+        return $selectedType;
     }
 
     /**
@@ -246,7 +225,122 @@ class VoucherController extends Controller
         $totalCredits = collect($request->entries)->sum('credit_amount');
 
         if (abs($totalDebits - $totalCredits) > 0.01) {
-            return back()->withErrors(['entries' => 'Voucher entries must be balanced. Total debits must equal total credits.'])->withInput();
+            return back()->withErrors(['entries' => 'Voucher entries must be balanced.'])->withInput();
+        }
+
+        if ($totalDebits == 0) {
+            return back()->withErrors(['entries' => 'Voucher must have valid entries.'])->withInput();
+        }
+
+        foreach ($request->entries as $index => $entry) {
+            $debit = (float) ($entry['debit_amount'] ?? 0);
+            $credit = (float) ($entry['credit_amount'] ?? 0);
+
+            if ($debit > 0 && $credit > 0) {
+                return back()->withErrors(["entries.{$index}" => 'Entry cannot have both debit and credit amounts.'])->withInput();
+            }
+
+            if ($debit == 0 && $credit == 0) {
+                return back()->withErrors(["entries.{$index}" => 'Entry must have either debit or credit amount.'])->withInput();
+            }
+        }
+
+        try {
+            $voucher = $this->createVoucher($request, $tenant);
+            return $this->handleVoucherAction($request, $tenant, $voucher);
+        } catch (\Exception $e) {
+            Log::error('Voucher creation failed: ' . $e->getMessage());
+            return back()->withErrors(['error' => 'Failed to create voucher.'])->withInput();
+        }
+    }
+
+    private function createVoucher(Request $request, Tenant $tenant)
+    {
+        return DB::transaction(function () use ($request, $tenant) {
+            $voucherType = VoucherType::findOrFail($request->voucher_type_id);
+            
+            $voucher = Voucher::create([
+                'tenant_id' => $tenant->id,
+                'voucher_type_id' => $request->voucher_type_id,
+                'voucher_number' => $voucherType->getNextVoucherNumber(),
+                'voucher_date' => $request->voucher_date,
+                'reference_number' => $request->reference_number,
+                'narration' => $request->narration,
+                'total_amount' => collect($request->entries)->sum('debit_amount'),
+                'status' => 'draft',
+                'created_by' => Auth::id(),
+            ]);
+
+            foreach ($request->entries as $index => $entryData) {
+                $debitAmount = (float) ($entryData['debit_amount'] ?? 0);
+                $creditAmount = (float) ($entryData['credit_amount'] ?? 0);
+
+                if ($debitAmount > 0 || $creditAmount > 0) {
+                    $documentPath = null;
+                    if ($request->hasFile("entries.{$index}.document")) {
+                        $file = $request->file("entries.{$index}.document");
+                        $filename = time() . '_' . $index . '_' . $file->getClientOriginalName();
+                        $documentPath = $file->storeAs('voucher_documents', $filename, 'public');
+                    }
+
+                    VoucherEntry::create([
+                        'voucher_id' => $voucher->id,
+                        'ledger_account_id' => $entryData['ledger_account_id'],
+                        'particulars' => $entryData['particulars'],
+                        'debit_amount' => $debitAmount,
+                        'credit_amount' => $creditAmount,
+                        'document_path' => $documentPath,
+                    ]);
+                }
+            }
+
+            return $voucher;
+        });
+    }
+
+    private function handleVoucherAction(Request $request, Tenant $tenant, Voucher $voucher)
+    {
+        $action = $request->input('action');
+        $voucherTypeName = $voucher->voucherType->name ?? 'Voucher';
+
+        if (in_array($action, ['save_and_post', 'save_and_post_return'])) {
+            $voucher->update([
+                'status' => 'posted',
+                'posted_at' => now(),
+                'posted_by' => Auth::id(),
+            ]);
+
+            foreach ($voucher->entries as $entry) {
+                $entry->updateLedgerAccountBalance();
+            }
+            
+            if ($action === 'save_and_post_return') {
+                $routeParams = ['tenant' => $tenant->slug];
+                if ($typeCode = $voucher->voucherType->code ?? null) {
+                    $routeParams['type'] = strtolower($typeCode);
+                }
+
+                return redirect()
+                    ->route('tenant.accounting.vouchers.create', $routeParams)
+                    ->with('success', $voucherTypeName . ' created and posted successfully. You can create another.');
+            }
+            
+            return redirect()
+                ->route('tenant.accounting.vouchers.show', ['tenant' => $tenant->slug, 'voucher' => $voucher->id])
+                ->with('success', $voucherTypeName . ' created and posted successfully.');
+        }
+
+        return redirect()
+            ->route('tenant.accounting.vouchers.index', $tenant->slug)
+            ->with('success', $voucherTypeName . ' saved as draft successfully.');
+    }
+
+    /**
+     * Continue with remaining validation logic
+     */
+    private function continueValidation()
+    {
+        // Placeholder for remaining original logics.'])->withInput();
         }
 
         if ($totalDebits == 0) {

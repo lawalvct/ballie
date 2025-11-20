@@ -3,7 +3,7 @@
 @section('title', 'Cash Flow Statement - ' . $tenant->name)
 
 @section('content')
-<div class="space-y-6">
+<div class="space-y-6 cash-flow-container">
     <!-- Enhanced Header with Summary Cards -->
     <div class="bg-gradient-to-r from-blue-600 to-blue-800 rounded-lg shadow-lg text-white p-6">
         <div class="flex items-center justify-between">
@@ -106,8 +106,61 @@
         </div>
     </div>
 
-    <!-- Enhanced Controls -->
+    <!-- Simple Summary View (Hidden by default) -->
+    <div id="simple-view" class="bg-white rounded-lg shadow-sm border border-gray-200 p-8" style="display: none;">
+        <div class="text-center mb-6">
+            <h2 class="text-2xl font-bold text-gray-900">Cash Flow Summary</h2>
+            <p class="text-gray-600 mt-2">{{ \Carbon\Carbon::parse($fromDate)->format('M d, Y') }} - {{ \Carbon\Carbon::parse($toDate)->format('M d, Y') }}</p>
+        </div>
+        
+        <div class="max-w-2xl mx-auto space-y-4">
+            <div class="flex justify-between items-center py-4 px-6 bg-gray-50 rounded-lg">
+                <span class="text-lg font-medium text-gray-700">Opening Cash Balance</span>
+                <span class="text-xl font-bold text-gray-900">₦{{ number_format($openingCash, 2) }}</span>
+            </div>
+            
+            <div class="flex justify-between items-center py-4 px-6 bg-green-50 rounded-lg">
+                <span class="text-lg font-medium text-gray-700">Operating Activities</span>
+                <span class="text-xl font-bold {{ $operatingTotal >= 0 ? 'text-green-600' : 'text-red-600' }}">₦{{ number_format($operatingTotal, 2) }}</span>
+            </div>
+            
+            <div class="flex justify-between items-center py-4 px-6 bg-blue-50 rounded-lg">
+                <span class="text-lg font-medium text-gray-700">Investing Activities</span>
+                <span class="text-xl font-bold {{ $investingTotal >= 0 ? 'text-green-600' : 'text-red-600' }}">₦{{ number_format($investingTotal, 2) }}</span>
+            </div>
+            
+            <div class="flex justify-between items-center py-4 px-6 bg-purple-50 rounded-lg">
+                <span class="text-lg font-medium text-gray-700">Financing Activities</span>
+                <span class="text-xl font-bold {{ $financingTotal >= 0 ? 'text-green-600' : 'text-red-600' }}">₦{{ number_format($financingTotal, 2) }}</span>
+            </div>
+            
+            <div class="flex justify-between items-center py-4 px-6 {{ $netCashFlow >= 0 ? 'bg-green-100 border-2 border-green-300' : 'bg-red-100 border-2 border-red-300' }} rounded-lg">
+                <span class="text-lg font-bold text-gray-900">Net Cash Change</span>
+                <span class="text-2xl font-bold {{ $netCashFlow >= 0 ? 'text-green-700' : 'text-red-700' }}">₦{{ number_format($netCashFlow, 2) }}</span>
+            </div>
+            
+            <div class="flex justify-between items-center py-4 px-6 bg-gray-100 rounded-lg border-2 border-gray-300">
+                <span class="text-lg font-bold text-gray-900">Closing Cash Balance</span>
+                <span class="text-2xl font-bold text-gray-900">₦{{ number_format($closingCash, 2) }}</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Detailed View (Visible by default) -->
+    <div id="detailed-view">
+    <!-- Small chart that visualizes the period cash flow contributions -->
     <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+        <div class="flex items-center justify-between mb-3">
+            <h4 class="text-lg font-semibold">Cash Flow Visualization</h4>
+            <div class="text-sm text-gray-500">A quick visual summary of operating, investing and financing</div>
+        </div>
+        <div class="w-full">
+            <canvas id="cashFlowChart" class="w-full h-48"></canvas>
+        </div>
+    </div>
+
+    <!-- Enhanced Controls -->
+    <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 no-print">
         <div class="space-y-4">
             <!-- First Row: Header and Date Range Controls -->
             <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between space-y-4 lg:space-y-0">
@@ -160,15 +213,15 @@
                 <!-- Quick Date Presets -->
                 <div class="flex flex-wrap items-center gap-2">
                     <span class="text-sm font-medium text-gray-600 mr-2">Quick Filters:</span>
-                    <button onclick="setDateRange('this_month')"
+                    <button onclick="setDateRange('this_month', this)"
                             class="px-3 py-1 text-xs font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-md border border-gray-200">
                         This Month
                     </button>
-                    <button onclick="setDateRange('last_month')"
+                    <button onclick="setDateRange('last_month', this)"
                             class="px-3 py-1 text-xs font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-md border border-gray-200">
                         Last Month
                     </button>
-                    <button onclick="setDateRange('this_quarter')"
+                    <button onclick="setDateRange('this_quarter', this)"
                             class="px-3 py-1 text-xs font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-md border border-gray-200">
                         This Quarter
                     </button>
@@ -176,26 +229,33 @@
 
                 <!-- Action Buttons -->
                 <div class="flex flex-wrap items-center gap-2">
-                    <button onclick="window.print()"
+                    <button onclick="printCashFlow()"
                             class="inline-flex items-center px-3 py-2 border border-gray-300 rounded-lg shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500">
                         <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path>
                         </svg>
                         Print
                     </button>
-                    <button onclick="exportToCSV()"
+                    <button onclick="exportToCSV(this)"
                             class="inline-flex items-center px-3 py-2 border border-gray-300 rounded-lg shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500">
                         <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
                         </svg>
                         Export
                     </button>
-                    <button onclick="exportToPDF()"
+                    <a href="{{ route('tenant.reports.cash-flow', ['tenant' => $tenant->slug, 'from_date' => $fromDate, 'to_date' => $toDate, 'download' => 'pdf']) }}"
+                       class="inline-flex items-center px-3 py-2 border border-gray-300 rounded-lg shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500">
+                        <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                        </svg>
+                        Download PDF
+                    </a>
+                    <button onclick="toggleSimpleView()"
                             class="inline-flex items-center px-3 py-2 border border-gray-300 rounded-lg shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500">
                         <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
                         </svg>
-                        PDF
+                        <span id="simple-view-text">Simple View</span>
                     </button>
                     <a href="{{ route('tenant.reports.index', ['tenant' => $tenant->slug]) }}"
                        class="inline-flex items-center px-3 py-2 border border-gray-300 rounded-lg shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500">
@@ -673,6 +733,7 @@
             @endif
         </div>
     </div>
+    </div><!-- End detailed-view -->
 </div>
 
 @push('styles')
@@ -745,6 +806,17 @@
 @endpush
 
 @push('scripts')
+@php
+    $netCashColor = $netCashFlow >= 0 ? 'rgba(16,185,129,0.85)' : 'rgba(239,68,68,0.85)';
+    $chartValues = [$operatingTotal, $investingTotal, $financingTotal, $netCashFlow];
+    $chartColors = [
+        'rgba(34,197,94,0.85)',
+        'rgba(59,130,246,0.85)',
+        'rgba(139,92,246,0.85)',
+        $netCashColor
+    ];
+@endphp
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <script>
 // Enhanced interactivity for cash flow statement - Section collapse/expand
 let sectionsExpanded = {
@@ -752,6 +824,28 @@ let sectionsExpanded = {
     investing: true,
     financing: true
 };
+
+let isSimpleView = false;
+
+function toggleSimpleView() {
+    const simpleView = document.getElementById('simple-view');
+    const detailedView = document.getElementById('detailed-view');
+    const buttonText = document.getElementById('simple-view-text');
+    
+    isSimpleView = !isSimpleView;
+    
+    if (isSimpleView) {
+        simpleView.style.display = 'block';
+        detailedView.style.display = 'none';
+        buttonText.textContent = 'Detailed View';
+        showNotification('Switched to simple view', 'info');
+    } else {
+        simpleView.style.display = 'none';
+        detailedView.style.display = 'block';
+        buttonText.textContent = 'Simple View';
+        showNotification('Switched to detailed view', 'info');
+    }
+}
 
 function toggleSection(sectionName) {
     const content = document.getElementById(sectionName + '-content');
@@ -808,7 +902,7 @@ function updateExpandAllButton() {
 }
 
 // Enhanced CSV export with better formatting
-function exportToCSV() {
+function exportToCSV(el) {
     let csvContent = "data:text/csv;charset=utf-8,";
 
     // Add header with better formatting
@@ -862,16 +956,21 @@ function exportToCSV() {
     document.body.appendChild(link);
 
     // Add visual feedback
-    const button = event.target;
-    const originalText = button.innerHTML;
-    button.innerHTML = '<svg class="animate-spin h-4 w-4 inline mr-2" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" fill="none"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>Exporting...';
-    button.disabled = true;
+    const button = el || (typeof event !== 'undefined' ? event.target : null);
+    let originalText = null;
+    if (button instanceof Element) {
+        originalText = button.innerHTML;
+        button.innerHTML = '<svg class="animate-spin h-4 w-4 inline mr-2" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" fill="none"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>Exporting...';
+        button.disabled = true;
+    }
 
     setTimeout(() => {
         link.click();
         document.body.removeChild(link);
-        button.innerHTML = originalText;
-        button.disabled = false;
+        if (originalText !== null && button instanceof Element) {
+            button.innerHTML = originalText;
+            button.disabled = false;
+        }
 
         // Show success notification
         showNotification('CSV exported successfully!', 'success');
@@ -956,7 +1055,7 @@ function showNotification(message, type = 'info') {
 }
 
 // Quick date presets with animation
-function setQuickDate(preset) {
+function setQuickDate(preset, el) {
     const today = new Date();
     let fromDate, toDate;
 
@@ -994,20 +1093,25 @@ function setQuickDate(preset) {
         document.getElementById('to_date').value = toDate.toISOString().split('T')[0];
 
         // Visual feedback
-        const button = event.target;
-        const originalClasses = button.className;
-        button.className = button.className.replace('text-blue-600', 'text-white').replace('hover:bg-blue-50', 'bg-blue-600');
+        const button = (el instanceof Element) ? el : (typeof event !== 'undefined' ? event.target : null);
+        let originalClasses = null;
+        if (button instanceof Element) {
+            originalClasses = button.className;
+            button.className = button.className.replace('text-blue-600', 'text-white').replace('hover:bg-blue-50', 'bg-blue-600');
+        }
 
         setTimeout(() => {
-            button.className = originalClasses;
+            if (originalClasses !== null && button instanceof Element) {
+                button.className = originalClasses;
+            }
             showNotification(`Date range set to ${preset.replace(/[-_]/g, ' ')}`, 'success');
         }, 200);
     }
 }
 
 // Alias function for compatibility
-function setDateRange(preset) {
-    setQuickDate(preset);
+function setDateRange(preset, el) {
+    setQuickDate(preset, el);
 }
 
 // Enhanced print functionality
@@ -1104,6 +1208,48 @@ document.addEventListener('keydown', function(e) {
         e.preventDefault();
         exportToCSV();
     }
+});
+
+// Initialize the cash flow chart if present
+function initCashFlowChart() {
+    const ctxEl = document.getElementById('cashFlowChart');
+    if (!ctxEl || typeof Chart === 'undefined') return;
+
+    const values = @json($chartValues);
+    const labels = ['Operating', 'Investing', 'Financing', 'Net Change'];
+    const backgroundColors = @json($chartColors);
+
+    const ctx = ctxEl.getContext('2d');
+    new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: 'Cash Flow (₦)',
+                data: values,
+                backgroundColor: backgroundColors,
+                borderRadius: 6
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { display: false },
+                tooltip: { callbacks: { label: function(ctx) { return '₦ ' + Number(ctx.raw).toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:2}); } } }
+            },
+            scales: {
+                x: { grid: { display: false } },
+                y: {
+                    ticks: { callback: function(val){ return '₦ ' + Number(val).toLocaleString(); } }
+                }
+            }
+        }
+    });
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    initCashFlowChart();
 });
 </script>
 @endpush

@@ -306,8 +306,52 @@ class ReportsController extends Controller
         $fromDate = $request->get('from_date', now()->startOfMonth()->toDateString());
         $toDate = $request->get('to_date', now()->toDateString());
 
-        // Get cash and bank accounts (typically asset accounts with 'cash' or 'bank' in name or code)
-        $cashAccounts = LedgerAccount::where('tenant_id', $tenant->id)
+        $cashFlowData = $this->calculateCashFlowData($tenant, $fromDate, $toDate);
+        $viewData = array_merge($cashFlowData, [
+            'tenant' => $tenant,
+            'fromDate' => $fromDate,
+            'toDate' => $toDate,
+        ]);
+
+        if ($request->get('download') === 'pdf') {
+            $pdf = Pdf::loadView('tenant.reports.cash-flow-pdf', $viewData)
+                ->setPaper('a4', 'portrait');
+            return $pdf->download('cash_flow_' . $fromDate . '_to_' . $toDate . '.pdf');
+        }
+
+        return view('tenant.reports.cash-flow', $viewData);
+    }
+
+    private function calculateCashFlowData(Tenant $tenant, string $fromDate, string $toDate): array
+    {
+        $cashAccounts = $this->getCashAccounts($tenant);
+        $operatingData = $this->calculateOperatingActivities($tenant, $fromDate, $toDate);
+        $investingData = $this->calculateInvestingActivities($tenant, $fromDate, $toDate);
+        $financingData = $this->calculateFinancingActivities($tenant, $fromDate, $toDate);
+        
+        $openingCash = $cashAccounts->sum(fn($account) => $this->calculateAccountBalance($account, $fromDate));
+        $closingCash = $cashAccounts->sum(fn($account) => $this->calculateAccountBalance($account, $toDate));
+        
+        $netCashFlow = $operatingData['total'] + $investingData['total'] + $financingData['total'];
+        
+        return [
+            'operatingActivities' => $operatingData['activities'],
+            'investingActivities' => $investingData['activities'],
+            'financingActivities' => $financingData['activities'],
+            'operatingTotal' => $operatingData['total'],
+            'investingTotal' => $investingData['total'],
+            'financingTotal' => $financingData['total'],
+            'netCashFlow' => $netCashFlow,
+            'openingCash' => $openingCash,
+            'closingCash' => $closingCash,
+            'calculatedClosingCash' => $openingCash + $netCashFlow,
+            'cashAccounts' => $cashAccounts,
+        ];
+    }
+
+    private function getCashAccounts(Tenant $tenant)
+    {
+        return LedgerAccount::where('tenant_id', $tenant->id)
             ->where('account_type', 'asset')
             ->where('is_active', true)
             ->where(function($query) {
@@ -317,51 +361,41 @@ class ReportsController extends Controller
                       ->orWhere('code', 'LIKE', '%BANK%');
             })
             ->get();
+    }
 
-        // Calculate cash flow from operating activities
-        $operatingActivities = [];
-        $operatingTotal = 0;
+    private function calculateOperatingActivities(Tenant $tenant, string $fromDate, string $toDate): array
+    {
+        $activities = [];
+        $total = 0;
 
-        // Get income and expense accounts for operating activities
-        $incomeAccounts = LedgerAccount::where('tenant_id', $tenant->id)
-            ->where('account_type', 'income')
+        $accounts = LedgerAccount::where('tenant_id', $tenant->id)
+            ->whereIn('account_type', ['income', 'expense'])
             ->where('is_active', true)
             ->get();
 
-        $expenseAccounts = LedgerAccount::where('tenant_id', $tenant->id)
-            ->where('account_type', 'expense')
-            ->where('is_active', true)
-            ->get();
-
-        // Calculate income for the period
-        foreach ($incomeAccounts as $account) {
+        foreach ($accounts as $account) {
             $periodActivity = $this->calculateAccountBalanceForPeriod($account, $fromDate, $toDate);
             if (abs($periodActivity) >= 0.01) {
-                $operatingActivities[] = [
+                $isIncome = $account->account_type === 'income';
+                $amount = $isIncome ? $periodActivity : -$periodActivity;
+                
+                $activities[] = [
                     'description' => $account->name,
-                    'amount' => $periodActivity,
-                    'type' => 'income'
+                    'amount' => $amount,
+                    'type' => $account->account_type
                 ];
-                $operatingTotal += $periodActivity;
+                
+                $total += $isIncome ? $periodActivity : -$periodActivity;
             }
         }
 
-        // Calculate expenses for the period
-        foreach ($expenseAccounts as $account) {
-            $periodActivity = $this->calculateAccountBalanceForPeriod($account, $fromDate, $toDate);
-            if (abs($periodActivity) >= 0.01) {
-                $operatingActivities[] = [
-                    'description' => $account->name,
-                    'amount' => -$periodActivity, // Expenses reduce cash
-                    'type' => 'expense'
-                ];
-                $operatingTotal -= $periodActivity;
-            }
-        }
+        return ['activities' => $activities, 'total' => $total];
+    }
 
-        // Calculate cash flow from investing activities (typically fixed asset purchases/sales)
-        $investingActivities = [];
-        $investingTotal = 0;
+    private function calculateInvestingActivities(Tenant $tenant, string $fromDate, string $toDate): array
+    {
+        $activities = [];
+        $total = 0;
 
         $fixedAssetAccounts = LedgerAccount::where('tenant_id', $tenant->id)
             ->where('account_type', 'asset')
@@ -378,82 +412,41 @@ class ReportsController extends Controller
         foreach ($fixedAssetAccounts as $account) {
             $periodActivity = $this->calculateAccountBalanceForPeriod($account, $fromDate, $toDate);
             if (abs($periodActivity) >= 0.01) {
-                $investingActivities[] = [
+                $activities[] = [
                     'description' => "Investment in " . $account->name,
-                    'amount' => -$periodActivity, // Asset purchases reduce cash
+                    'amount' => -$periodActivity,
                     'type' => 'investing'
                 ];
-                $investingTotal -= $periodActivity;
+                $total -= $periodActivity;
             }
         }
 
-        // Calculate cash flow from financing activities (loans, capital, etc.)
-        $financingActivities = [];
-        $financingTotal = 0;
+        return ['activities' => $activities, 'total' => $total];
+    }
 
-        // Get liability and equity accounts for financing activities
-        $liabilityAccounts = LedgerAccount::where('tenant_id', $tenant->id)
-            ->where('account_type', 'liability')
+    private function calculateFinancingActivities(Tenant $tenant, string $fromDate, string $toDate): array
+    {
+        $activities = [];
+        $total = 0;
+
+        $accounts = LedgerAccount::where('tenant_id', $tenant->id)
+            ->whereIn('account_type', ['liability', 'equity'])
             ->where('is_active', true)
             ->get();
 
-        $equityAccounts = LedgerAccount::where('tenant_id', $tenant->id)
-            ->where('account_type', 'equity')
-            ->where('is_active', true)
-            ->get();
-
-        foreach ($liabilityAccounts as $account) {
+        foreach ($accounts as $account) {
             $periodActivity = $this->calculateAccountBalanceForPeriod($account, $fromDate, $toDate);
             if (abs($periodActivity) >= 0.01) {
-                $financingActivities[] = [
+                $activities[] = [
                     'description' => $account->name,
-                    'amount' => $periodActivity, // Borrowing increases cash
-                    'type' => 'liability'
+                    'amount' => $periodActivity,
+                    'type' => $account->account_type
                 ];
-                $financingTotal += $periodActivity;
+                $total += $periodActivity;
             }
         }
 
-        foreach ($equityAccounts as $account) {
-            $periodActivity = $this->calculateAccountBalanceForPeriod($account, $fromDate, $toDate);
-            if (abs($periodActivity) >= 0.01) {
-                $financingActivities[] = [
-                    'description' => $account->name,
-                    'amount' => $periodActivity, // Capital injection increases cash
-                    'type' => 'equity'
-                ];
-                $financingTotal += $periodActivity;
-            }
-        }
-
-        // Calculate opening and closing cash positions
-        $openingCash = 0;
-        $closingCash = 0;
-
-        foreach ($cashAccounts as $account) {
-            $openingCash += $this->calculateAccountBalance($account, $fromDate);
-            $closingCash += $this->calculateAccountBalance($account, $toDate);
-        }
-
-        $netCashFlow = $operatingTotal + $investingTotal + $financingTotal;
-        $calculatedClosingCash = $openingCash + $netCashFlow;
-
-        return view('tenant.reports.cash-flow', compact(
-            'tenant',
-            'fromDate',
-            'toDate',
-            'operatingActivities',
-            'investingActivities',
-            'financingActivities',
-            'operatingTotal',
-            'investingTotal',
-            'financingTotal',
-            'netCashFlow',
-            'openingCash',
-            'closingCash',
-            'calculatedClosingCash',
-            'cashAccounts'
-        ));
+        return ['activities' => $activities, 'total' => $total];
     }
 
     public function balanceSheet(Request $request, Tenant $tenant)
@@ -848,5 +841,5 @@ class ReportsController extends Controller
         ]);
     }
 
-    //push go online
+
 }

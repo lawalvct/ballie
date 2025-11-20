@@ -1,17 +1,17 @@
 <div class="bg-white shadow-lg rounded-xl border border-gray-200" x-data="receiptVoucherEntries()">
     <div class="p-6">
-        {{-- Receipt Entries Section (Multiple Entries - Debit) --}}
+        {{-- Receipt Entries Section (Multiple Entries - Credit) --}}
         <div class="mb-8">
             <div class="flex items-center justify-between mb-4">
                 <div class="flex items-center">
-                    <div class="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center mr-3">
-                        <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <div class="w-10 h-10 bg-red-100 rounded-lg flex items-center justify-center mr-3">
+                        <svg class="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"></path>
                         </svg>
                     </div>
                     <div>
                         <h3 class="text-lg font-bold text-gray-900">Receipt Entries</h3>
-                        <p class="text-sm text-gray-500">Debit entries - Money coming in from</p>
+                        <p class="text-sm text-gray-500">Credit entries - Money received from (reduces receivables)</p>
                     </div>
                 </div>
                 <button
@@ -28,7 +28,7 @@
 
             <div class="space-y-4">
                 <template x-for="(entry, index) in receiptEntries" :key="index">
-                    <div class="grid grid-cols-12 gap-4 items-start p-5 bg-gradient-to-br from-green-50 to-emerald-50 rounded-xl border-2 border-green-200 hover:border-green-400 transition-all shadow-sm hover:shadow-md">
+                    <div class="grid grid-cols-12 gap-4 items-start p-5 bg-gradient-to-br from-red-50 to-rose-50 rounded-xl border-2 border-red-200 hover:border-red-400 transition-all shadow-sm hover:shadow-md">
                     {{-- Ledger Account Dropdown --}}
                     <div class="col-span-4">
                         <label class="block text-sm font-medium text-gray-700 mb-1">
@@ -61,31 +61,31 @@
                         >
                     </div>
 
-                    {{-- Debit Amount (User Input) --}}
+                    {{-- Credit Amount (User Input) --}}
                     <div class="col-span-2">
                         <label class="block text-sm font-medium text-gray-700 mb-1">
-                            Debit Amount <span class="text-red-500">*</span>
+                            Credit Amount <span class="text-red-500">*</span>
                         </label>
                         <div class="relative">
                             <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-gray-500">₦</span>
                             <input
                                 type="number"
                                 step="0.01"
-                                x-model.number="entry.debit_amount"
+                                x-model.number="entry.credit_amount"
                                 @input="calculateTotal()"
                                 required
                                 placeholder="0.00"
-                                class="w-full pl-8 rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500 sm:text-sm"
+                                class="w-full pl-8 rounded-md border-gray-300 shadow-sm focus:border-red-500 focus:ring-red-500 sm:text-sm"
                             >
                         </div>
                     </div>
 
-                    {{-- Hidden Credit Amount (always 0 for receipt entries) --}}
+                    {{-- Hidden Debit Amount (always 0 for receipt entries) --}}
                     <input type="hidden" :value="0">
 
                         {{-- Type Badge & Remove Button --}}
                         <div class="col-span-2 flex items-end justify-between pb-2">
-                            <span class="px-3 py-1.5 bg-green-600 text-white text-xs font-bold rounded-lg shadow-sm">Dr.</span>
+                            <span class="px-3 py-1.5 bg-red-600 text-white text-xs font-bold rounded-lg shadow-sm">Cr.</span>
                             <button
                                 type="button"
                                 @click="removeEntry(index)"
@@ -102,28 +102,28 @@
                         {{-- Hidden inputs for receipt entry submission --}}
                         <input type="hidden" :name="`entries[${index}][ledger_account_id]`" :value="entry.ledger_account_id">
                         <input type="hidden" :name="`entries[${index}][particulars]`" :value="entry.particulars">
-                        <input type="hidden" :name="`entries[${index}][debit_amount]`" :value="entry.debit_amount">
-                        <input type="hidden" :name="`entries[${index}][credit_amount]`" value="0">
+                        <input type="hidden" :name="`entries[${index}][debit_amount]`" value="0">
+                        <input type="hidden" :name="`entries[${index}][credit_amount]`" :value="entry.credit_amount">
                     </div>
                 </template>
             </div>
         </div>
 
-        {{-- Bank Account Section (Last Entry - Credit) --}}
+        {{-- Bank Account Section (Last Entry - Debit) --}}
         <div class="mb-8">
             <div class="flex items-center mb-4">
-                <div class="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center mr-3">
-                    <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <div class="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center mr-3">
+                    <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"></path>
                     </svg>
                 </div>
                 <div>
                     <h3 class="text-lg font-bold text-gray-900">Bank Account</h3>
-                    <p class="text-sm text-gray-500">Credit entry - Money coming into bank</p>
+                    <p class="text-sm text-gray-500">Debit entry - Money received into bank (increases cash)</p>
                 </div>
             </div>
 
-            <div class="grid grid-cols-12 gap-4 items-start p-5 bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl border-2 border-blue-200 shadow-sm">
+            <div class="grid grid-cols-12 gap-4 items-start p-5 bg-gradient-to-br from-green-50 to-emerald-50 rounded-xl border-2 border-green-200 shadow-sm">
             {{-- Bank Account Dropdown --}}
             <div class="col-span-4">
                 <label class="block text-sm font-medium text-gray-700 mb-1">
@@ -158,10 +158,10 @@
                 >
             </div>
 
-            {{-- Credit Amount (Auto-calculated, Read-only) --}}
+            {{-- Debit Amount (Auto-calculated, Read-only) --}}
             <div class="col-span-3">
                 <label class="block text-sm font-medium text-gray-700 mb-1">
-                    Credit Amount (Auto)
+                    Debit Amount (Auto)
                 </label>
                 <div class="relative">
                     <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-gray-500">₦</span>
@@ -174,12 +174,12 @@
                 </div>
             </div>
 
-            {{-- Hidden Debit Amount (always 0 for bank in receipt voucher) --}}
+            {{-- Hidden Credit Amount (always 0 for bank in receipt voucher) --}}
             <input type="hidden" :value="0">
 
                 {{-- Type Badge --}}
                 <div class="col-span-1 flex items-end justify-center pb-2">
-                    <span class="px-3 py-1.5 bg-blue-600 text-white text-xs font-bold rounded-lg shadow-sm">Cr.</span>
+                    <span class="px-3 py-1.5 bg-green-600 text-white text-xs font-bold rounded-lg shadow-sm">Dr.</span>
                 </div>
             </div>
 
@@ -189,8 +189,8 @@
             </template>
             <input type="hidden" :name="`entries[${receiptEntries.length}][ledger_account_id]`" :value="bankEntry.ledger_account_id">
             <input type="hidden" :name="`entries[${receiptEntries.length}][particulars]`" :value="bankEntry.particulars">
-            <input type="hidden" :name="`entries[${receiptEntries.length}][debit_amount]`" value="0">
-            <input type="hidden" :name="`entries[${receiptEntries.length}][credit_amount]`" :value="totalReceiptAmount">
+            <input type="hidden" :name="`entries[${receiptEntries.length}][debit_amount]`" :value="totalReceiptAmount">
+            <input type="hidden" :name="`entries[${receiptEntries.length}][credit_amount]`" value="0">
         </div>
 
         {{-- Totals Section --}}
@@ -213,17 +213,17 @@
                 <div class="bg-white rounded-lg p-4 shadow-sm">
                     <div class="text-sm font-semibold text-gray-700 mb-3">Transaction Summary</div>
                     <div class="space-y-2">
-                        <div class="flex justify-between items-center p-2 bg-green-50 rounded-lg">
-                            <span class="text-sm text-gray-700">Receipt Entries</span>
+                        <div class="flex justify-between items-center p-2 bg-red-50 rounded-lg">
+                            <span class="text-sm text-gray-700">Receipt From (Customer/Party)</span>
                             <div class="flex items-center">
-                                <span class="px-2 py-1 bg-green-600 text-white text-xs font-bold rounded mr-2">Dr</span>
+                                <span class="px-2 py-1 bg-red-600 text-white text-xs font-bold rounded mr-2">Cr</span>
                                 <span class="font-semibold text-gray-900">₦<span x-text="formatNumber(totalReceiptAmount)"></span></span>
                             </div>
                         </div>
-                        <div class="flex justify-between items-center p-2 bg-blue-50 rounded-lg">
-                            <span class="text-sm text-gray-700">Bank Account</span>
+                        <div class="flex justify-between items-center p-2 bg-green-50 rounded-lg">
+                            <span class="text-sm text-gray-700">Bank Account (Money In)</span>
                             <div class="flex items-center">
-                                <span class="px-2 py-1 bg-blue-600 text-white text-xs font-bold rounded mr-2">Cr</span>
+                                <span class="px-2 py-1 bg-green-600 text-white text-xs font-bold rounded mr-2">Dr</span>
                                 <span class="font-semibold text-gray-900">₦<span x-text="formatNumber(totalReceiptAmount)"></span></span>
                             </div>
                         </div>
@@ -265,6 +265,17 @@
                 </svg>
                 Save & Post
             </button>
+            <button
+                type="submit"
+                name="action"
+                value="save_and_post_return"
+                class="inline-flex items-center justify-center rounded-lg border border-transparent bg-gradient-to-r from-blue-600 to-indigo-600 px-6 py-3 text-sm font-semibold text-white shadow-lg hover:from-blue-700 hover:to-indigo-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 hover:shadow-xl transition-all transform hover:-translate-y-0.5"
+            >
+                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+                </svg>
+                Save, Post & Create Another
+            </button>
         </div>
     </div>
 </div>
@@ -281,7 +292,7 @@ function receiptVoucherEntries() {
             {
                 ledger_account_id: '',
                 particulars: '',
-                debit_amount: 0
+                credit_amount: 0
             }
         ],
         totalReceiptAmount: 0,
@@ -294,7 +305,7 @@ function receiptVoucherEntries() {
             this.receiptEntries.push({
                 ledger_account_id: '',
                 particulars: '',
-                debit_amount: 0
+                credit_amount: 0
             });
         },
 
@@ -307,7 +318,7 @@ function receiptVoucherEntries() {
 
         calculateTotal() {
             this.totalReceiptAmount = this.receiptEntries.reduce((sum, entry) => {
-                return sum + (parseFloat(entry.debit_amount) || 0);
+                return sum + (parseFloat(entry.credit_amount) || 0);
             }, 0);
         },
 
