@@ -115,12 +115,14 @@
                     <!-- Voucher Date -->
                     <div>
                         <label for="voucher_date" class="block text-sm font-medium text-gray-700 mb-2">
-                            Voucher Date <span class="text-red-500">*</span>
+                            Voucher Date <span class="text-red-500">*</span> <span x-text="dayName" class="ml-2 text-sm text-gray-600 w-24"></span>
                         </label>
                         <input type="date"
                                name="voucher_date"
                                id="voucher_date"
                                value="{{ old('voucher_date', isset($voucher) ? $voucher->voucher_date->format('Y-m-d') : date('Y-m-d')) }}"
+                               x-model="voucherDate"
+                               @change="updateDayName()"
                                class="block w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-primary-500 focus:border-primary-500 @error('voucher_date') border-red-300 @enderror"
                                required>
                         @error('voucher_date')
@@ -393,6 +395,8 @@ function voucherForm() {
         voucherNumberPreview: 'Auto-generated',
         selectedVoucherTypeName: '{{ $selectedType?->name ?? (isset($voucher) ? '' : $voucherTypes->firstWhere('code', 'JV')?->name ?? '') }}',
         voucherTypes: @json($voucherTypes->keyBy('id')),
+        voucherDate: '{{ old('voucher_date', isset($voucher) ? $voucher->voucher_date->format('Y-m-d') : date('Y-m-d')) }}',
+        dayName: '',
 
         init() {
             // Check if voucher_type_id is in URL parameters
@@ -415,6 +419,7 @@ function voucherForm() {
                 });
             }
             this.updateVoucherType();
+            this.updateDayName();
             console.log('✅ Voucher form initialized with type:', this.voucherTypeId);
         },
 
@@ -460,6 +465,17 @@ function voucherForm() {
             } else {
                 this.voucherNumberPreview = 'Auto-generated';
                 this.selectedVoucherTypeName = '';
+            }
+        }
+        ,
+        updateDayName() {
+            if (this.voucherDate) {
+                const date = new Date(this.voucherDate);
+                const timezoneOffset = date.getTimezoneOffset() * 60000;
+                const adjustedDate = new Date(date.getTime() + timezoneOffset);
+                this.dayName = adjustedDate.toLocaleDateString('en-US', { weekday: 'long' });
+            } else {
+                this.dayName = '';
             }
         }
     }
