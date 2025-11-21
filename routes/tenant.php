@@ -187,6 +187,9 @@ Route::middleware(['auth'])->group(function () {
         Route::prefix('accounting')->name('tenant.accounting.')->group(function () {
             Route::get('/', [AccountingController::class, 'index'])->name('index');
 
+            // Chart Data API
+            Route::get('/chart-data', [AccountingController::class, 'getChartDataApi'])->name('chart-data');
+
             // Invoices (moved from root level)
          // Sales Invoices
 Route::prefix('invoices')->name('invoices.')->group(function () {

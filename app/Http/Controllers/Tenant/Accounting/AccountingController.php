@@ -10,6 +10,7 @@ use App\Models\VoucherType;
 use App\Models\Invoice;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Cache;
 
 class AccountingController extends Controller
 {
@@ -21,69 +22,41 @@ class AccountingController extends Controller
         $currentTenant = $tenant;
         $user = auth()->user();
 
-        // Get financial overview data
-        $totalRevenue = $this->getTotalRevenue($tenant);
-        $totalExpenses = $this->getTotalExpenses($tenant);
-        $outstandingInvoices = $this->getOutstandingInvoices($tenant);
-        $pendingInvoicesCount = $this->getPendingInvoicesCount($tenant);
+        // Cache key for dashboard metrics
+        $cacheKey = "dashboard_metrics_{$tenant->id}_" . Carbon::now()->format('Y-m-d-H');
 
-        // Get recent transactions (vouchers)
-        $recentTransactions = $this->getRecentTransactions($tenant);
+        // Get cached or fresh data
+        $dashboardData = Cache::remember($cacheKey, 300, function () use ($tenant) {
+            return [
+                'totalRevenue' => $this->getTotalRevenue($tenant),
+                'totalExpenses' => $this->getTotalExpenses($tenant),
+                'outstandingInvoices' => $this->getOutstandingInvoices($tenant),
+                'pendingInvoicesCount' => $this->getPendingInvoicesCount($tenant),
+                'recentTransactions' => $this->getRecentTransactions($tenant),
+                'voucherSummary' => $this->getVoucherSummary($tenant),
+                'revenueChange' => $this->getRevenueChange($tenant),
+                'expenseChange' => $this->getExpenseChange($tenant),
+                'profitChange' => $this->getProfitChange($tenant),
+                'chartData' => $this->getChartData($tenant),
+            ];
+        });
 
-        // Get voucher summary by type
-        $voucherSummary = $this->getVoucherSummary($tenant);
-
-        return view('tenant.accounting.index', [
+        return view('tenant.accounting.index', array_merge([
             'currentTenant' => $currentTenant,
             'user' => $user,
             'tenant' => $currentTenant,
-            'totalRevenue' => $totalRevenue,
-            'totalExpenses' => $totalExpenses,
-            'outstandingInvoices' => $outstandingInvoices,
-            'pendingInvoicesCount' => $pendingInvoicesCount,
-            'recentTransactions' => $recentTransactions,
-            'voucherSummary' => $voucherSummary,
-        ]);
+        ], $dashboardData));
     }
 
-    private function getTotalRevenue(Tenant $tenant)
+    /**
+     * Get chart data for AJAX requests
+     */
+    public function getChartDataApi(Request $request, Tenant $tenant)
     {
-        // Get revenue from approved vouchers (credit entries for income accounts)
-        return Voucher::forTenant($tenant->id)
-            ->where('status', Voucher::STATUS_POSTED)
-            ->thisMonth()
-            ->whereHas('entries', function($query) {
-                $query->whereHas('account', function($accountQuery) {
-                    $accountQuery->where('account_type', 'income');
-                });
-            })
-            ->with('entries.account')
-            ->get()
-            ->sum(function($voucher) {
-                return $voucher->entries
-                    ->where('account.account_type', 'income')
-                    ->sum('credit_amount');
-            });
-    }
+        $period = $request->get('period', '6m'); // 6m or 1y
+        $chartData = $this->getChartData($tenant, $period);
 
-    private function getTotalExpenses(Tenant $tenant)
-    {
-        // Get expenses from approved vouchers (debit entries for expense accounts)
-        return Voucher::forTenant($tenant->id)
-            ->where('status', Voucher::STATUS_APPROVED)
-            ->thisMonth()
-            ->whereHas('entries', function($query) {
-                $query->whereHas('account', function($accountQuery) {
-                    $accountQuery->where('account_type', 'expense');
-                });
-            })
-            ->with('entries.account')
-            ->get()
-            ->sum(function($voucher) {
-                return $voucher->entries
-                    ->where('account.account_type', 'expense')
-                    ->sum('debit_amount');
-            });
+        return response()->json($chartData);
     }
 
     private function getOutstandingInvoices(Tenant $tenant)
@@ -200,5 +173,144 @@ class AccountingController extends Controller
         ];
 
         return $colors[$code] ?? 'gray';
+    }
+
+    /**
+     * Calculate revenue change percentage compared to last month
+     */
+    private function getRevenueChange(Tenant $tenant)
+    {
+        $currentRevenue = $this->getTotalRevenue($tenant);
+        $lastMonthRevenue = $this->getTotalRevenue($tenant, Carbon::now()->subMonth());
+
+        if ($lastMonthRevenue == 0) {
+            return ['percentage' => 0, 'direction' => 'neutral'];
+        }
+
+        $change = (($currentRevenue - $lastMonthRevenue) / $lastMonthRevenue) * 100;
+
+        return [
+            'percentage' => round(abs($change), 1),
+            'direction' => $change > 0 ? 'up' : ($change < 0 ? 'down' : 'neutral')
+        ];
+    }
+
+    /**
+     * Calculate expense change percentage compared to last month
+     */
+    private function getExpenseChange(Tenant $tenant)
+    {
+        $currentExpenses = $this->getTotalExpenses($tenant);
+        $lastMonthExpenses = $this->getTotalExpenses($tenant, Carbon::now()->subMonth());
+
+        if ($lastMonthExpenses == 0) {
+            return ['percentage' => 0, 'direction' => 'neutral'];
+        }
+
+        $change = (($currentExpenses - $lastMonthExpenses) / $lastMonthExpenses) * 100;
+
+        return [
+            'percentage' => round(abs($change), 1),
+            'direction' => $change > 0 ? 'up' : ($change < 0 ? 'down' : 'neutral')
+        ];
+    }
+
+    /**
+     * Calculate profit change percentage compared to last month
+     */
+    private function getProfitChange(Tenant $tenant)
+    {
+        $currentProfit = $this->getTotalRevenue($tenant) - $this->getTotalExpenses($tenant);
+        $lastMonthProfit = $this->getTotalRevenue($tenant, Carbon::now()->subMonth()) -
+                          $this->getTotalExpenses($tenant, Carbon::now()->subMonth());
+
+        if ($lastMonthProfit == 0) {
+            return ['percentage' => 0, 'direction' => 'neutral'];
+        }
+
+        $change = (($currentProfit - $lastMonthProfit) / abs($lastMonthProfit)) * 100;
+
+        return [
+            'percentage' => round(abs($change), 1),
+            'direction' => $change > 0 ? 'up' : ($change < 0 ? 'down' : 'neutral')
+        ];
+    }
+
+    /**
+     * Get chart data for financial overview
+     */
+    private function getChartData(Tenant $tenant, $period = '6m')
+    {
+        $months = $period === '1y' ? 12 : 6;
+        $data = [
+            'labels' => [],
+            'revenue' => [],
+            'expenses' => [],
+            'profit' => []
+        ];
+
+        for ($i = $months - 1; $i >= 0; $i--) {
+            $date = Carbon::now()->subMonths($i);
+            $data['labels'][] = $date->format('M Y');
+
+            $revenue = $this->getTotalRevenue($tenant, $date);
+            $expenses = $this->getTotalExpenses($tenant, $date);
+
+            $data['revenue'][] = round($revenue, 2);
+            $data['expenses'][] = round($expenses, 2);
+            $data['profit'][] = round($revenue - $expenses, 2);
+        }
+
+        return $data;
+    }
+
+    /**
+     * Modified getTotalRevenue to accept optional date parameter
+     */
+    private function getTotalRevenue(Tenant $tenant, Carbon $date = null)
+    {
+        $date = $date ?? Carbon::now();
+
+        return Voucher::forTenant($tenant->id)
+            ->where('status', Voucher::STATUS_POSTED)
+            ->whereMonth('voucher_date', $date->month)
+            ->whereYear('voucher_date', $date->year)
+            ->whereHas('entries', function($query) {
+                $query->whereHas('account', function($accountQuery) {
+                    $accountQuery->where('account_type', 'income');
+                });
+            })
+            ->with('entries.account')
+            ->get()
+            ->sum(function($voucher) {
+                return $voucher->entries
+                    ->where('account.account_type', 'income')
+                    ->sum('credit_amount');
+            });
+    }
+
+    /**
+     * Modified getTotalExpenses to accept optional date parameter
+     */
+    private function getTotalExpenses(Tenant $tenant, Carbon $date = null)
+    {
+        $date = $date ?? Carbon::now();
+
+        return Voucher::forTenant($tenant->id)
+            ->where('status', Voucher::STATUS_APPROVED)
+            ->whereMonth('voucher_date', $date->month)
+            ->whereYear('voucher_date', $date->year)
+            ->whereHas('entries', function($query) {
+                $query->whereHas('account', function($accountQuery) {
+                    $accountQuery->where('account_type', 'expense');
+                });
+            })
+            ->with('entries.account')
+            ->get()
+            ->sum(function($voucher) {
+                return $voucher->entries
+                    ->where('account.account_type', 'expense')
+                    ->sum('debit_amount');
+            });
     }
 }

@@ -82,15 +82,25 @@
         <div class="bg-white rounded-2xl p-4 sm:p-6 shadow-lg border-l-4 border-blue-500">
             <div class="flex items-center justify-between">
                 <div class="flex-1">
-                    <p class="text-xs sm:text-sm font-medium text-gray-600">Total Revenue</p>
-                    <p class="text-lg sm:text-2xl font-bold text-gray-900">₦{{ number_format($totalRevenue ?? 0, 2) }}</p>
-                    <p class="text-xs sm:text-sm text-green-600 mt-1">
+                    <p class="text-xs font-medium text-gray-600">Total Revenue</p>
+                    <p class="text-base sm:text-xl font-bold text-gray-900">₦{{ number_format($totalRevenue ?? 0, 2) }}</p>
+                    <p class="text-xs sm:text-sm {{ $revenueChange['direction'] === 'up' ? 'text-green-600' : ($revenueChange['direction'] === 'down' ? 'text-red-600' : 'text-gray-600') }} mt-1">
                         <span class="inline-flex items-center">
-                            <svg class="w-3 h-3 sm:w-4 sm:h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path>
-                            </svg>
-                            <span class="hidden sm:inline">+12.5% from last month</span>
-                            <span class="sm:hidden">+12.5%</span>
+                            @if($revenueChange['direction'] === 'up')
+                                <svg class="w-3 h-3 sm:w-4 sm:h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path>
+                                </svg>
+                            @elseif($revenueChange['direction'] === 'down')
+                                <svg class="w-3 h-3 sm:w-4 sm:h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 17h8m0 0V9m0 8l-8-8-4 4-6-6"></path>
+                                </svg>
+                            @else
+                                <svg class="w-3 h-3 sm:w-4 sm:h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12h14"></path>
+                                </svg>
+                            @endif
+                            <span class="hidden sm:inline">{{ $revenueChange['direction'] === 'up' ? '+' : ($revenueChange['direction'] === 'down' ? '-' : '') }}{{ $revenueChange['percentage'] }}% from last month</span>
+                            <span class="sm:hidden">{{ $revenueChange['direction'] === 'up' ? '+' : ($revenueChange['direction'] === 'down' ? '-' : '') }}{{ $revenueChange['percentage'] }}%</span>
                         </span>
                     </p>
                 </div>
@@ -105,15 +115,25 @@
         <div class="bg-white rounded-2xl p-4 sm:p-6 shadow-lg border-l-4 border-green-500">
             <div class="flex items-center justify-between">
                 <div class="flex-1">
-                    <p class="text-xs sm:text-sm font-medium text-gray-600">Total Expenses</p>
-                    <p class="text-lg sm:text-2xl font-bold text-gray-900">₦{{ number_format($totalExpenses ?? 0, 2) }}</p>
-                    <p class="text-xs sm:text-sm text-red-600 mt-1">
+                    <p class="text-xs font-medium text-gray-600">Total Expenses</p>
+                    <p class="text-base sm:text-xl font-bold text-gray-900">₦{{ number_format($totalExpenses ?? 0, 2) }}</p>
+                    <p class="text-xs sm:text-sm {{ $expenseChange['direction'] === 'up' ? 'text-red-600' : ($expenseChange['direction'] === 'down' ? 'text-green-600' : 'text-gray-600') }} mt-1">
                         <span class="inline-flex items-center">
-                            <svg class="w-3 h-3 sm:w-4 sm:h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 17h8m0 0V9m0 8l-8-8-4 4-6-6"></path>
-                            </svg>
-                            <span class="hidden sm:inline">+8.2% from last month</span>
-                            <span class="sm:hidden">+8.2%</span>
+                            @if($expenseChange['direction'] === 'up')
+                                <svg class="w-3 h-3 sm:w-4 sm:h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path>
+                                </svg>
+                            @elseif($expenseChange['direction'] === 'down')
+                                <svg class="w-3 h-3 sm:w-4 sm:h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 17h8m0 0V9m0 8l-8-8-4 4-6-6"></path>
+                                </svg>
+                            @else
+                                <svg class="w-3 h-3 sm:w-4 sm:h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12h14"></path>
+                                </svg>
+                            @endif
+                            <span class="hidden sm:inline">{{ $expenseChange['direction'] === 'up' ? '+' : ($expenseChange['direction'] === 'down' ? '-' : '') }}{{ $expenseChange['percentage'] }}% from last month</span>
+                            <span class="sm:hidden">{{ $expenseChange['direction'] === 'up' ? '+' : ($expenseChange['direction'] === 'down' ? '-' : '') }}{{ $expenseChange['percentage'] }}%</span>
                         </span>
                     </p>
                 </div>
@@ -128,8 +148,8 @@
         <div class="bg-white rounded-2xl p-4 sm:p-6 shadow-lg border-l-4 border-purple-500">
             <div class="flex items-center justify-between">
                 <div class="flex-1">
-                    <p class="text-xs sm:text-sm font-medium text-gray-600">Outstanding Invoices</p>
-                    <p class="text-lg sm:text-2xl font-bold text-gray-900">₦{{ number_format($outstandingInvoices ?? 0, 2) }}</p>
+                    <p class="text-xs font-medium text-gray-600">Outstanding Invoices</p>
+                    <p class="text-base sm:text-xl font-bold text-gray-900">₦{{ number_format($outstandingInvoices ?? 0, 2) }}</p>
                     <p class="text-xs sm:text-sm text-orange-600 mt-1">
                         <span class="inline-flex items-center">
                             <svg class="w-3 h-3 sm:w-4 sm:h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -150,15 +170,25 @@
         <div class="bg-white rounded-2xl p-4 sm:p-6 shadow-lg border-l-4 border-teal-500">
             <div class="flex items-center justify-between">
                 <div class="flex-1">
-                    <p class="text-xs sm:text-sm font-medium text-gray-600">Net Profit</p>
-                    <p class="text-lg sm:text-2xl font-bold text-gray-900">₦{{ number_format(($totalRevenue ?? 0) - ($totalExpenses ?? 0), 2) }}</p>
-                    <p class="text-xs sm:text-sm text-green-600 mt-1">
+                    <p class="text-xs font-medium text-gray-600">Net Profit</p>
+                    <p class="text-base sm:text-xl font-bold text-gray-900">₦{{ number_format(($totalRevenue ?? 0) - ($totalExpenses ?? 0), 2) }}</p>
+                    <p class="text-xs sm:text-sm {{ $profitChange['direction'] === 'up' ? 'text-green-600' : ($profitChange['direction'] === 'down' ? 'text-red-600' : 'text-gray-600') }} mt-1">
                         <span class="inline-flex items-center">
-                            <svg class="w-3 h-3 sm:w-4 sm:h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path>
-                            </svg>
-                            <span class="hidden sm:inline">+15.3% from last month</span>
-                            <span class="sm:hidden">+15.3%</span>
+                            @if($profitChange['direction'] === 'up')
+                                <svg class="w-3 h-3 sm:w-4 sm:h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path>
+                                </svg>
+                            @elseif($profitChange['direction'] === 'down')
+                                <svg class="w-3 h-3 sm:w-4 sm:h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 17h8m0 0V9m0 8l-8-8-4 4-6-6"></path>
+                                </svg>
+                            @else
+                                <svg class="w-3 h-3 sm:w-4 sm:h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12h14"></path>
+                                </svg>
+                            @endif
+                            <span class="hidden sm:inline">{{ $profitChange['direction'] === 'up' ? '+' : ($profitChange['direction'] === 'down' ? '-' : '') }}{{ $profitChange['percentage'] }}% from last month</span>
+                            <span class="sm:hidden">{{ $profitChange['direction'] === 'up' ? '+' : ($profitChange['direction'] === 'down' ? '-' : '') }}{{ $profitChange['percentage'] }}%</span>
                         </span>
                     </p>
                 </div>
@@ -259,28 +289,37 @@
 
     <!-- Monthly Chart -->
     <div class="bg-white rounded-2xl p-4 sm:p-6 shadow-lg">
-        <div class="flex items-center justify-between mb-6">
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6 gap-4">
             <h3 class="text-xl font-bold text-gray-900">Monthly Financial Overview</h3>
             <div class="flex space-x-2">
-                <button class="px-3 sm:px-4 py-2 text-xs sm:text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors duration-200">6M</button>
-                <button class="px-3 sm:px-4 py-2 text-xs sm:text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors duration-200">1Y</button>
+                <button onclick="updateChartPeriod('6m')" id="btn-6m" class="px-3 sm:px-4 py-2 text-xs sm:text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors duration-200">6M</button>
+                <button onclick="updateChartPeriod('1y')" id="btn-1y" class="px-3 sm:px-4 py-2 text-xs sm:text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors duration-200">1Y</button>
             </div>
         </div>
-        <div class="h-64 flex items-center justify-center bg-gray-50 rounded-xl">
-            <div class="text-center">
-                <div class="w-16 h-16 bg-gray-200 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <svg class="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
-                    </svg>
-                </div>
-                <p class="text-gray-500 mb-2">Financial Chart</p>
-                <p class="text-sm text-gray-400">Chart integration coming soon</p>
+        <div class="relative h-64 sm:h-80">
+            <canvas id="financialChart"></canvas>
+        </div>
+
+        <!-- Chart Legend -->
+        <div class="mt-6 flex flex-wrap justify-center gap-4 text-sm">
+            <div class="flex items-center">
+                <div class="w-4 h-4 bg-blue-500 rounded mr-2"></div>
+                <span class="text-gray-700">Revenue</span>
+            </div>
+            <div class="flex items-center">
+                <div class="w-4 h-4 bg-red-500 rounded mr-2"></div>
+                <span class="text-gray-700">Expenses</span>
+            </div>
+            <div class="flex items-center">
+                <div class="w-4 h-4 bg-green-500 rounded mr-2"></div>
+                <span class="text-gray-700">Profit</span>
             </div>
         </div>
     </div>
 </div>
 
 <script src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 
 <style>
 .quick-action-btn {
@@ -478,7 +517,161 @@
 
 @push('scripts')
 <script>
+let financialChart = null;
+let currentPeriod = '6m';
+
+// Initialize chart with data from backend
+const chartData = @json($chartData);
+
+function initializeChart(data) {
+    const ctx = document.getElementById('financialChart');
+    if (!ctx) return;
+
+    // Destroy existing chart if it exists
+    if (financialChart) {
+        financialChart.destroy();
+    }
+
+    financialChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: data.labels,
+            datasets: [
+                {
+                    label: 'Revenue',
+                    data: data.revenue,
+                    borderColor: 'rgb(59, 130, 246)',
+                    backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                    borderWidth: 3,
+                    fill: true,
+                    tension: 0.4,
+                    pointRadius: 4,
+                    pointHoverRadius: 6,
+                    pointBackgroundColor: 'rgb(59, 130, 246)',
+                    pointBorderColor: '#fff',
+                    pointBorderWidth: 2,
+                },
+                {
+                    label: 'Expenses',
+                    data: data.expenses,
+                    borderColor: 'rgb(239, 68, 68)',
+                    backgroundColor: 'rgba(239, 68, 68, 0.1)',
+                    borderWidth: 3,
+                    fill: true,
+                    tension: 0.4,
+                    pointRadius: 4,
+                    pointHoverRadius: 6,
+                    pointBackgroundColor: 'rgb(239, 68, 68)',
+                    pointBorderColor: '#fff',
+                    pointBorderWidth: 2,
+                },
+                {
+                    label: 'Profit',
+                    data: data.profit,
+                    borderColor: 'rgb(34, 197, 94)',
+                    backgroundColor: 'rgba(34, 197, 94, 0.1)',
+                    borderWidth: 3,
+                    fill: true,
+                    tension: 0.4,
+                    pointRadius: 4,
+                    pointHoverRadius: 6,
+                    pointBackgroundColor: 'rgb(34, 197, 94)',
+                    pointBorderColor: '#fff',
+                    pointBorderWidth: 2,
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            interaction: {
+                mode: 'index',
+                intersect: false,
+            },
+            plugins: {
+                legend: {
+                    display: false
+                },
+                tooltip: {
+                    backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                    padding: 12,
+                    titleColor: '#fff',
+                    bodyColor: '#fff',
+                    borderColor: 'rgba(255, 255, 255, 0.1)',
+                    borderWidth: 1,
+                    displayColors: true,
+                    callbacks: {
+                        label: function(context) {
+                            let label = context.dataset.label || '';
+                            if (label) {
+                                label += ': ';
+                            }
+                            label += '₦' + context.parsed.y.toLocaleString('en-NG', {
+                                minimumFractionDigits: 2,
+                                maximumFractionDigits: 2
+                            });
+                            return label;
+                        }
+                    }
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    grid: {
+                        color: 'rgba(0, 0, 0, 0.05)',
+                        drawBorder: false,
+                    },
+                    ticks: {
+                        callback: function(value) {
+                            return '₦' + value.toLocaleString('en-NG');
+                        },
+                        color: '#6B7280',
+                        font: {
+                            size: 11
+                        }
+                    }
+                },
+                x: {
+                    grid: {
+                        display: false,
+                        drawBorder: false,
+                    },
+                    ticks: {
+                        color: '#6B7280',
+                        font: {
+                            size: 11
+                        }
+                    }
+                }
+            }
+        }
+    });
+}
+
+function updateChartPeriod(period) {
+    currentPeriod = period;
+
+    // Update button styles
+    document.getElementById('btn-6m').classList.toggle('bg-blue-600', period === '6m');
+    document.getElementById('btn-6m').classList.toggle('text-white', period === '6m');
+    document.getElementById('btn-6m').classList.toggle('bg-gray-100', period !== '6m');
+    document.getElementById('btn-6m').classList.toggle('text-gray-700', period !== '6m');
+
+    document.getElementById('btn-1y').classList.toggle('bg-blue-600', period === '1y');
+    document.getElementById('btn-1y').classList.toggle('text-white', period === '1y');
+    document.getElementById('btn-1y').classList.toggle('bg-gray-100', period !== '1y');
+    document.getElementById('btn-1y').classList.toggle('text-gray-700', period !== '1y');
+
+    // Fetch new data (you can implement AJAX call here if needed)
+    // For now, we'll use the initial data
+    // In production, you'd want to fetch from: /tenant/{tenant}/accounting/chart-data?period={period}
+}
+
 document.addEventListener('DOMContentLoaded', function() {
+    // Initialize the chart
+    initializeChart(chartData);
+
     // Add smooth hover effects to cards
     const cards = document.querySelectorAll('.bg-white.rounded-2xl');
     cards.forEach(card => {
