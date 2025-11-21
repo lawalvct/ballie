@@ -466,8 +466,7 @@ function voucherForm() {
                 this.voucherNumberPreview = 'Auto-generated';
                 this.selectedVoucherTypeName = '';
             }
-        }
-        ,
+        },
         updateDayName() {
             if (this.voucherDate) {
                 const date = new Date(this.voucherDate);

@@ -123,32 +123,23 @@
             <div class="space-y-4">
                 <template x-for="(entry, index) in paymentEntries" :key="index">
                     <div class="grid grid-cols-12 gap-4 items-start p-5 bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl border-2 border-blue-200 hover:border-blue-400 transition-all shadow-sm hover:shadow-md">
-                    {{-- Ledger Account Searchable --}}
-                    <div class="col-span-3" x-data="{ search: '', showDropdown: false }">
+                    {{-- Ledger Account Dropdown --}}
+                    <div class="col-span-3">
                         <label class="block text-sm font-medium text-gray-700 mb-1">
                             Ledger Account <span class="text-red-500">*</span>
                         </label>
-                        <div class="relative">
-                            <input
-                                type="text"
-                                x-model="search"
-                                @focus="showDropdown = true"
-                                @click.away="showDropdown = false"
-                                placeholder="Search account..."
-                                class="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
-                            >
-                            <div x-show="showDropdown" class="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-auto">
-                                @foreach($ledgerAccounts as $account)
-                                    <div
-                                        x-show="'{{ strtolower($account->name . ' ' . $account->code) }}'.includes(search.toLowerCase())"
-                                        @click="entry.ledger_account_id = {{ $account->id }}; search = '{{ $account->name }} ({{ $account->code }})'; showDropdown = false"
-                                        class="px-3 py-2 hover:bg-blue-50 cursor-pointer text-sm"
-                                    >
-                                        {{ $account->name }} ({{ $account->code }})
-                                    </div>
-                                @endforeach
-                            </div>
-                        </div>
+                        <select
+                            x-model="entry.ledger_account_id"
+                            required
+                            class="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+                        >
+                            <option value="">Select Account</option>
+                            @foreach($ledgerAccounts as $account)
+                                <option value="{{ $account->id }}">
+                                    {{ $account->name }} ({{ $account->code }})
+                                </option>
+                            @endforeach
+                        </select>
                     </div>
 
                     {{-- Particulars --}}
@@ -288,29 +279,35 @@
                 type="submit"
                 name="action"
                 value="save"
-                @click="setTimeout(() => isSubmitting = true, 0)"
                 :disabled="isSubmitting"
                 :class="isSubmitting ? 'opacity-50 cursor-not-allowed' : ''"
                 class="inline-flex items-center justify-center rounded-lg border-2 border-blue-600 bg-white px-6 py-3 text-sm font-semibold text-blue-600 shadow-sm hover:bg-blue-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-all"
             >
-                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg x-show="!isSubmitting" class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"></path>
                 </svg>
-                Save as Draft
+                <svg x-show="isSubmitting" class="animate-spin w-5 h-5 mr-2" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                <span x-text="isSubmitting ? 'Saving...' : 'Save as Draft'"></span>
             </button>
             <button
                 type="submit"
                 name="action"
                 value="save_and_post"
-                @click="setTimeout(() => isSubmitting = true, 0)"
                 :disabled="isSubmitting"
                 :class="isSubmitting ? 'opacity-50 cursor-not-allowed' : ''"
                 class="inline-flex items-center justify-center rounded-lg border border-transparent bg-gradient-to-r from-green-600 to-emerald-600 px-6 py-3 text-sm font-semibold text-white shadow-lg hover:from-green-700 hover:to-emerald-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 hover:shadow-xl transition-all transform hover:-translate-y-0.5"
             >
-                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg x-show="!isSubmitting" class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                 </svg>
-                Save & Post
+                <svg x-show="isSubmitting" class="animate-spin w-5 h-5 mr-2" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                <span x-text="isSubmitting ? 'Posting...' : 'Save & Post'"></span>
             </button>
         </div>
     </div>
@@ -384,7 +381,6 @@
                                     Bank/Cash Account (Will be Credited) <span class="text-red-500">*</span>
                                 </label>
                                 <select x-model="bulkUpload.bankAccountId"
-                                        required
                                         class="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
                                     <option value="">Select Bank/Cash Account</option>
                                     @foreach($ledgerAccounts->where('account_type', 'asset')->concat($ledgerAccounts->where('account_type', 'current asset')) as $account)
@@ -523,6 +519,45 @@ function paymentVoucherEntries() {
 
         init() {
             this.calculateTotal();
+
+            // Listen for form submission
+            const form = this.$el.closest('form');
+            if (form) {
+                form.addEventListener('submit', (e) => {
+                    // Validate before allowing submission
+                    if (!this.validateForm()) {
+                        e.preventDefault();
+                        return false;
+                    }
+                    this.isSubmitting = true;
+                });
+            }
+        },
+
+        validateForm() {
+            // Check if bank account is selected
+            if (!this.bankEntry.ledger_account_id) {
+                alert('Please select a Bank/Cash account');
+                return false;
+            }
+
+            // Check if at least one payment entry has values
+            const hasValidEntry = this.paymentEntries.some(entry =>
+                entry.ledger_account_id && entry.debit_amount > 0
+            );
+
+            if (!hasValidEntry) {
+                alert('Please add at least one payment entry with an account and amount');
+                return false;
+            }
+
+            // Check if total is greater than zero
+            if (this.totalPaymentAmount <= 0) {
+                alert('Total payment amount must be greater than zero');
+                return false;
+            }
+
+            return true;
         },
 
         addEntry() {

@@ -69,7 +69,7 @@ class VoucherController extends Controller
     private function getIndexData(Tenant $tenant)
     {
         $baseQuery = Voucher::where('tenant_id', $tenant->id);
-        
+
         return [
             VoucherType::where('tenant_id', $tenant->id)->where('is_active', true)->orderBy('name')->get(),
             [
@@ -92,7 +92,7 @@ class VoucherController extends Controller
     {
         $typeCode = $type ?? $request->get('type');
         $selectedType = $typeCode ? $this->getSelectedVoucherType($tenant, $typeCode) : null;
-        
+
         $voucherTypes = VoucherType::where('tenant_id', $tenant->id)
             ->where('is_active', true)
             ->where('affects_inventory', false)
@@ -121,11 +121,11 @@ class VoucherController extends Controller
         $selectedType = VoucherType::where('tenant_id', $tenant->id)
             ->where('code', strtoupper($typeCode))
             ->first();
-            
+
         if (!$selectedType) {
             abort(404, 'Invalid voucher type specified.');
         }
-        
+
         return $selectedType;
     }
 
@@ -258,7 +258,7 @@ class VoucherController extends Controller
     {
         return DB::transaction(function () use ($request, $tenant) {
             $voucherType = VoucherType::findOrFail($request->voucher_type_id);
-            
+
             $voucher = Voucher::create([
                 'tenant_id' => $tenant->id,
                 'voucher_type_id' => $request->voucher_type_id,
@@ -313,7 +313,7 @@ class VoucherController extends Controller
             foreach ($voucher->entries as $entry) {
                 $entry->updateLedgerAccountBalance();
             }
-            
+
             if ($action === 'save_and_post_return') {
                 $routeParams = ['tenant' => $tenant->slug];
                 if ($typeCode = $voucher->voucherType->code ?? null) {
@@ -324,7 +324,7 @@ class VoucherController extends Controller
                     ->route('tenant.accounting.vouchers.create', $routeParams)
                     ->with('success', $voucherTypeName . ' created and posted successfully. You can create another.');
             }
-            
+
             return redirect()
                 ->route('tenant.accounting.vouchers.show', ['tenant' => $tenant->slug, 'voucher' => $voucher->id])
                 ->with('success', $voucherTypeName . ' created and posted successfully.');
@@ -335,120 +335,6 @@ class VoucherController extends Controller
             ->with('success', $voucherTypeName . ' saved as draft successfully.');
     }
 
-    /**
-     * Continue with remaining validation logic
-     */
-    private function continueValidation()
-    {
-        // Placeholder for remaining original logics.'])->withInput();
-        }
-
-        if ($totalDebits == 0) {
-            return back()->withErrors(['entries' => 'Voucher must have at least one debit and one credit entry with amounts greater than zero.'])->withInput();
-        }
-
-        // Validate that each entry has either debit or credit (not both)
-        foreach ($request->entries as $index => $entry) {
-            $debit = (float) ($entry['debit_amount'] ?? 0);
-            $credit = (float) ($entry['credit_amount'] ?? 0);
-
-            if ($debit > 0 && $credit > 0) {
-                return back()->withErrors(["entries.{$index}" => 'An entry cannot have both debit and credit amounts.'])->withInput();
-            }
-
-            if ($debit == 0 && $credit == 0) {
-                return back()->withErrors(["entries.{$index}" => 'An entry must have either a debit or credit amount.'])->withInput();
-            }
-        }
-
-        $voucher = DB::transaction(function () use ($request, $tenant) {
-            $voucherType = VoucherType::findOrFail($request->voucher_type_id);
-
-            // Generate voucher number
-            $voucherNumber = $voucherType->getNextVoucherNumber();
-
-            // Create voucher
-            $voucher = Voucher::create([
-                'tenant_id' => $tenant->id,
-                'voucher_type_id' => $request->voucher_type_id,
-                'voucher_number' => $voucherNumber,
-                'voucher_date' => $request->voucher_date,
-                'reference_number' => $request->reference_number,
-                'narration' => $request->narration,
-                'total_amount' => collect($request->entries)->sum('debit_amount'),
-                'status' => 'draft',
-                'created_by' => Auth::id(),
-            ]);
-
-            // Create voucher entries
-            foreach ($request->entries as $index => $entryData) {
-                $debitAmount = (float) ($entryData['debit_amount'] ?? 0);
-                $creditAmount = (float) ($entryData['credit_amount'] ?? 0);
-
-                if ($debitAmount > 0 || $creditAmount > 0) {
-                    // Handle document upload
-                    $documentPath = null;
-                    if ($request->hasFile("entries.{$index}.document")) {
-                        $file = $request->file("entries.{$index}.document");
-                        $filename = time() . '_' . $index . '_' . $file->getClientOriginalName();
-                        $documentPath = $file->storeAs('voucher_documents', $filename, 'public');
-                    }
-
-                    VoucherEntry::create([
-                        'voucher_id' => $voucher->id,
-                        'ledger_account_id' => $entryData['ledger_account_id'],
-                        'particulars' => $entryData['particulars'],
-                        'debit_amount' => $debitAmount,
-                        'credit_amount' => $creditAmount,
-                        'document_path' => $documentPath,
-                    ]);
-                }
-            }
-
-            return $voucher;
-        });
-
-        // Check if user wants to save and post (including 'save_and_post_return')
-        if ($request->input('action') === 'save_and_post' || $request->input('action') === 'save_and_post_return') {
-            // Post the voucher immediately
-            $voucher->update([
-                'status' => 'posted',
-                'posted_at' => now(),
-                'posted_by' => Auth::id(),
-            ]);
-
-            // Update account balances for each voucher entry
-            foreach ($voucher->entries as $entry) {
-                $entry->updateLedgerAccountBalance();
-            }
-
-            $voucherTypeName = $voucher->voucherType->name ?? 'Voucher';
-
-            // If the user asked to save, post and return to the create page, redirect back to create
-            if ($request->input('action') === 'save_and_post_return') {
-                // Redirect to create page with same voucher type pre-selected
-                $typeCode = $voucher->voucherType->code ?? null;
-                $routeParams = ['tenant' => $tenant->slug];
-                if ($typeCode) {
-                    $routeParams['type'] = strtolower($typeCode);
-                }
-
-                return redirect()
-                    ->route('tenant.accounting.vouchers.create', $routeParams)
-                    ->with('success', $voucherTypeName . ' created and posted successfully. You can create another.');
-            }
-
-            return redirect()
-                ->route('tenant.accounting.vouchers.show', ['tenant' => $tenant->slug, 'voucher' => $voucher->id])
-                ->with('success', $voucherTypeName . ' created and posted successfully.');
-        }
-
-        $voucherTypeName = VoucherType::find($request->voucher_type_id)->name ?? 'Voucher';
-
-        return redirect()
-            ->route('tenant.accounting.vouchers.index', $tenant->slug)
-            ->with('success', $voucherTypeName . ' saved as draft successfully.');
-    }
 
     /**
      * Display the specified voucher.

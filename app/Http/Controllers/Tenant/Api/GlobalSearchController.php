@@ -99,6 +99,7 @@ class GlobalSearchController extends Controller
             ['name' => 'tenant.reports.trial-balance', 'title' => 'Trial Balance', 'description' => 'View trial balance', 'icon' => 'fas fa-balance-scale', 'category' => 'Reports'],
             ['name' => 'tenant.reports.profit-loss', 'title' => 'Profit & Loss', 'description' => 'Profit and loss statement', 'icon' => 'fas fa-chart-pie', 'category' => 'Reports'],
             ['name' => 'tenant.reports.balance-sheet', 'title' => 'Balance Sheet', 'description' => 'View balance sheet', 'icon' => 'fas fa-file-invoice-dollar', 'category' => 'Reports'],
+            ['name' => 'tenant.reports.cash-flow', 'title' => 'Cash Flow Statement', 'description' => 'Statement of cash flows from operating, investing, and financing activities', 'icon' => 'fas fa-money-bill-wave', 'category' => 'Reports'],
 
             // Admin
             ['name' => 'tenant.admin.users.index', 'title' => 'User Management', 'description' => 'Manage users and permissions', 'icon' => 'fas fa-users-cog', 'category' => 'Admin'],

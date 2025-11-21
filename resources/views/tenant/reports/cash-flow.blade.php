@@ -4,30 +4,34 @@
 
 @section('content')
 <div class="space-y-6 cash-flow-container">
-    <!-- Enhanced Header with Summary Cards -->
-    <div class="bg-gradient-to-r from-blue-600 to-blue-800 rounded-lg shadow-lg text-white p-6">
-        <div class="flex items-center justify-between">
-            <div>
-                <h1 class="text-3xl font-bold">Cash Flow Statement</h1>
-                <p class="mt-2 text-blue-100">
-                    Comprehensive cash flow analysis from {{ \Carbon\Carbon::parse($fromDate)->format('F d, Y') }} to {{ \Carbon\Carbon::parse($toDate)->format('F d, Y') }}
-                </p>
-            </div>
-            <div class="text-right">
-                <div class="text-sm text-blue-200">Net Cash Flow</div>
-                <div class="text-3xl font-bold {{ $netCashFlow >= 0 ? 'text-green-300' : 'text-red-300' }}">
-                    {{ $netCashFlow >= 0 ? '+' : '' }}{{ number_format($netCashFlow, 2) }}
+    <!-- Professional Header -->
+    <div class="bg-white rounded-lg shadow-sm border-2 border-gray-200 p-8">
+        <div class="text-center mb-6">
+            <h1 class="text-3xl font-bold text-gray-900 uppercase tracking-wide">{{ $tenant->name }}</h1>
+            <h2 class="text-xl font-semibold text-gray-700 mt-2">Statement of Cash Flows</h2>
+            <p class="text-sm text-gray-600 mt-3">
+                For the Period from {{ \Carbon\Carbon::parse($fromDate)->format('F d, Y') }} to {{ \Carbon\Carbon::parse($toDate)->format('F d, Y') }}
+            </p>
+        </div>
+
+        <div class="border-t-2 border-gray-300 pt-4 mt-4">
+            <div class="flex justify-between items-center">
+                <div class="text-sm text-gray-600">
+                    <span class="font-medium">Report Date:</span> {{ now()->format('F d, Y') }}
                 </div>
-                <div class="text-xs text-blue-200">
-                    {{ $netCashFlow >= 0 ? 'Cash Increase' : 'Cash Decrease' }}
+                <div class="text-right">
+                    <div class="text-sm text-gray-600 mb-1">Net Change in Cash and Cash Equivalents</div>
+                    <div class="text-2xl font-bold {{ $netCashFlow >= 0 ? 'text-green-600' : 'text-red-600' }}">
+                        ₦{{ number_format(abs($netCashFlow), 2) }} {{ $netCashFlow >= 0 ? 'Increase' : 'Decrease' }}
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Quick Summary Cards -->
-    <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+    <!-- Executive Summary Cards -->
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-5">
             <div class="flex items-center">
                 <div class="flex-shrink-0">
                     <div class="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
@@ -112,33 +116,33 @@
             <h2 class="text-2xl font-bold text-gray-900">Cash Flow Summary</h2>
             <p class="text-gray-600 mt-2">{{ \Carbon\Carbon::parse($fromDate)->format('M d, Y') }} - {{ \Carbon\Carbon::parse($toDate)->format('M d, Y') }}</p>
         </div>
-        
+
         <div class="max-w-2xl mx-auto space-y-4">
             <div class="flex justify-between items-center py-4 px-6 bg-gray-50 rounded-lg">
                 <span class="text-lg font-medium text-gray-700">Opening Cash Balance</span>
                 <span class="text-xl font-bold text-gray-900">₦{{ number_format($openingCash, 2) }}</span>
             </div>
-            
+
             <div class="flex justify-between items-center py-4 px-6 bg-green-50 rounded-lg">
                 <span class="text-lg font-medium text-gray-700">Operating Activities</span>
                 <span class="text-xl font-bold {{ $operatingTotal >= 0 ? 'text-green-600' : 'text-red-600' }}">₦{{ number_format($operatingTotal, 2) }}</span>
             </div>
-            
+
             <div class="flex justify-between items-center py-4 px-6 bg-blue-50 rounded-lg">
                 <span class="text-lg font-medium text-gray-700">Investing Activities</span>
                 <span class="text-xl font-bold {{ $investingTotal >= 0 ? 'text-green-600' : 'text-red-600' }}">₦{{ number_format($investingTotal, 2) }}</span>
             </div>
-            
+
             <div class="flex justify-between items-center py-4 px-6 bg-purple-50 rounded-lg">
                 <span class="text-lg font-medium text-gray-700">Financing Activities</span>
                 <span class="text-xl font-bold {{ $financingTotal >= 0 ? 'text-green-600' : 'text-red-600' }}">₦{{ number_format($financingTotal, 2) }}</span>
             </div>
-            
+
             <div class="flex justify-between items-center py-4 px-6 {{ $netCashFlow >= 0 ? 'bg-green-100 border-2 border-green-300' : 'bg-red-100 border-2 border-red-300' }} rounded-lg">
                 <span class="text-lg font-bold text-gray-900">Net Cash Change</span>
                 <span class="text-2xl font-bold {{ $netCashFlow >= 0 ? 'text-green-700' : 'text-red-700' }}">₦{{ number_format($netCashFlow, 2) }}</span>
             </div>
-            
+
             <div class="flex justify-between items-center py-4 px-6 bg-gray-100 rounded-lg border-2 border-gray-300">
                 <span class="text-lg font-bold text-gray-900">Closing Cash Balance</span>
                 <span class="text-2xl font-bold text-gray-900">₦{{ number_format($closingCash, 2) }}</span>
@@ -269,24 +273,21 @@
         </div>
     </div>
 
-    <!-- Enhanced Cash Flow Statement -->
-    <div class="bg-white shadow-sm rounded-lg border border-gray-200 overflow-hidden">
-        <div class="px-6 py-4 border-b border-gray-200 bg-gradient-to-r from-gray-50 to-white">
+    <!-- Professional Cash Flow Statement -->
+    <div class="bg-white shadow-sm rounded-lg border-2 border-gray-300 overflow-hidden">
+        <div class="px-8 py-6 border-b-2 border-gray-300 bg-gray-50">
             <div class="flex items-center justify-between">
                 <div>
-                    <h3 class="text-xl font-semibold text-gray-900 flex items-center">
-                        <svg class="w-6 h-6 mr-2 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
-                        </svg>
-                        Cash Flow Statement
+                    <h3 class="text-2xl font-bold text-gray-900 uppercase tracking-wide">
+                        Detailed Cash Flow Analysis
                     </h3>
-                    <p class="mt-1 text-sm text-gray-600">
-                        Statement of cash flows for the period from {{ \Carbon\Carbon::parse($fromDate)->format('F d, Y') }} to {{ \Carbon\Carbon::parse($toDate)->format('F d, Y') }}
+                    <p class="mt-2 text-sm text-gray-600 font-medium">
+                        All amounts in Nigerian Naira (₦)
                     </p>
                 </div>
                 <div class="flex items-center space-x-2">
-                    <button onclick="toggleAllSections()" class="inline-flex items-center px-3 py-1 text-sm font-medium text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded-md transition-colors">
-                        <svg id="expand-all-icon" class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <button onclick="toggleAllSections()" class="inline-flex items-center px-4 py-2 text-sm font-medium text-gray-700 bg-white hover:bg-gray-100 border border-gray-300 rounded-md transition-colors">
+                        <svg id="expand-all-icon" class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"></path>
                         </svg>
                         <span id="expand-all-text">Collapse All</span>
@@ -298,29 +299,21 @@
         <div class="divide-y divide-gray-200">
             <!-- Enhanced Operating Activities -->
             <div id="operating-section" class="transition-all duration-300">
-                <div class="p-6 border-b border-gray-100">
-                    <div class="flex items-center justify-between mb-6">
-                        <button onclick="toggleSection('operating')" class="flex items-center text-lg font-semibold text-gray-900 hover:text-blue-600 transition-colors group section-header-button">
-                            <div class="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center mr-3 group-hover:bg-green-200 transition-colors section-icon">
-                                <svg class="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path>
-                                </svg>
-                            </div>
-                            <span>Cash Flow from Operating Activities</span>
-                            <svg id="operating-chevron" class="w-5 h-5 ml-2 text-gray-400 transform transition-transform duration-200 chevron-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <div class="px-8 py-6 bg-white border-b-2 border-gray-200">
+                    <div class="flex items-center justify-between mb-4">
+                        <button onclick="toggleSection('operating')" class="flex items-center text-xl font-bold text-gray-900 hover:text-blue-600 transition-colors group section-header-button uppercase tracking-wide">
+                            <span>Cash Flows from Operating Activities</span>
+                            <svg id="operating-chevron" class="w-6 h-6 ml-3 text-gray-400 transform transition-transform duration-200 chevron-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
                             </svg>
                         </button>
-                        <div class="flex items-center space-x-3">
-                            <span class="text-sm text-gray-500">{{ count($operatingActivities) }} transactions</span>
-                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {{ $operatingTotal >= 0 ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800' }}">
-                                {{ $operatingTotal >= 0 ? '+' : '' }}{{ number_format($operatingTotal, 2) }}
-                            </span>
+                        <div class="text-sm text-gray-500 font-medium">
+                            {{ count($operatingActivities) }} transaction(s)
                         </div>
                     </div>
                 </div>
 
-                <div id="operating-content" class="p-6 transition-all duration-300 overflow-hidden">
+                <div id="operating-content" class="px-8 py-6 transition-all duration-300 overflow-hidden bg-gray-50">
 
                 @if(count($operatingActivities) > 0)
                     <div class="space-y-3">
@@ -361,11 +354,11 @@
                             </div>
                         @endforeach
 
-                        <div class="border-t-2 border-gray-300 pt-4 mt-6">
-                            <div class="flex justify-between items-center py-3 px-4 rounded-lg {{ $operatingTotal >= 0 ? 'bg-green-50' : 'bg-red-50' }}">
-                                <span class="text-lg font-semibold text-gray-900">Net Cash Flow from Operating Activities</span>
-                                <span class="text-2xl font-mono font-bold {{ $operatingTotal >= 0 ? 'text-green-600' : 'text-red-600' }}">
-                                    {{ $operatingTotal >= 0 ? '+' : '' }}{{ number_format($operatingTotal, 2) }}
+                        <div class="border-t-4 border-gray-900 pt-4 mt-6">
+                            <div class="flex justify-between items-center py-4 px-6 bg-white border-2 border-gray-300 rounded-lg">
+                                <span class="text-lg font-bold text-gray-900 uppercase">Net Cash Provided by (Used in) Operating Activities</span>
+                                <span class="text-2xl font-mono font-bold {{ $operatingTotal >= 0 ? 'text-gray-900' : 'text-red-600' }}">
+                                    {{ $operatingTotal >= 0 ? '' : '(' }}₦{{ number_format(abs($operatingTotal), 2) }}{{ $operatingTotal >= 0 ? '' : ')' }}
                                 </span>
                             </div>
                         </div>
@@ -384,29 +377,21 @@
 
             <!-- Enhanced Investing Activities -->
             <div id="investing-section" class="transition-all duration-300">
-                <div class="p-6 border-b border-gray-100">
-                    <div class="flex items-center justify-between mb-6">
-                        <button onclick="toggleSection('investing')" class="flex items-center text-lg font-semibold text-gray-900 hover:text-blue-600 transition-colors group section-header-button">
-                            <div class="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center mr-3 group-hover:bg-blue-200 transition-colors section-icon">
-                                <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path>
-                                </svg>
-                            </div>
-                            <span>Cash Flow from Investing Activities</span>
-                            <svg id="investing-chevron" class="w-5 h-5 ml-2 text-gray-400 transform transition-transform duration-200 chevron-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <div class="px-8 py-6 bg-white border-b-2 border-gray-200">
+                    <div class="flex items-center justify-between mb-4">
+                        <button onclick="toggleSection('investing')" class="flex items-center text-xl font-bold text-gray-900 hover:text-blue-600 transition-colors group section-header-button uppercase tracking-wide">
+                            <span>Cash Flows from Investing Activities</span>
+                            <svg id="investing-chevron" class="w-6 h-6 ml-3 text-gray-400 transform transition-transform duration-200 chevron-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
                             </svg>
                         </button>
-                        <div class="flex items-center space-x-3">
-                            <span class="text-sm text-gray-500">{{ count($investingActivities) }} transactions</span>
-                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {{ $investingTotal >= 0 ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800' }}">
-                                {{ $investingTotal >= 0 ? '+' : '' }}{{ number_format($investingTotal, 2) }}
-                            </span>
+                        <div class="text-sm text-gray-500 font-medium">
+                            {{ count($investingActivities) }} transaction(s)
                         </div>
                     </div>
                 </div>
 
-                <div id="investing-content" class="p-6 transition-all duration-300 overflow-hidden">
+                <div id="investing-content" class="px-8 py-6 transition-all duration-300 overflow-hidden bg-gray-50">
 
                 @if(count($investingActivities) > 0)
                     <div class="space-y-3">
@@ -441,11 +426,11 @@
                             </div>
                         @endforeach
 
-                        <div class="border-t-2 border-gray-300 pt-4 mt-6">
-                            <div class="flex justify-between items-center py-3 px-4 rounded-lg {{ $investingTotal >= 0 ? 'bg-green-50' : 'bg-red-50' }}">
-                                <span class="text-lg font-semibold text-gray-900">Net Cash Flow from Investing Activities</span>
-                                <span class="text-2xl font-mono font-bold {{ $investingTotal >= 0 ? 'text-green-600' : 'text-red-600' }}">
-                                    {{ $investingTotal >= 0 ? '+' : '' }}{{ number_format($investingTotal, 2) }}
+                        <div class="border-t-4 border-gray-900 pt-4 mt-6">
+                            <div class="flex justify-between items-center py-4 px-6 bg-white border-2 border-gray-300 rounded-lg">
+                                <span class="text-lg font-bold text-gray-900 uppercase">Net Cash Provided by (Used in) Investing Activities</span>
+                                <span class="text-2xl font-mono font-bold {{ $investingTotal >= 0 ? 'text-gray-900' : 'text-red-600' }}">
+                                    {{ $investingTotal >= 0 ? '' : '(' }}₦{{ number_format(abs($investingTotal), 2) }}{{ $investingTotal >= 0 ? '' : ')' }}
                                 </span>
                             </div>
                         </div>
@@ -464,29 +449,21 @@
 
             <!-- Enhanced Financing Activities -->
             <div id="financing-section" class="transition-all duration-300">
-                <div class="p-6 border-b border-gray-100">
-                    <div class="flex items-center justify-between mb-6">
-                        <button onclick="toggleSection('financing')" class="flex items-center text-lg font-semibold text-gray-900 hover:text-blue-600 transition-colors group section-header-button">
-                            <div class="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center mr-3 group-hover:bg-purple-200 transition-colors section-icon">
-                                <svg class="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m-3-6h6M9 10.5h6"></path>
-                                </svg>
-                            </div>
-                            <span>Cash Flow from Financing Activities</span>
-                            <svg id="financing-chevron" class="w-5 h-5 ml-2 text-gray-400 transform transition-transform duration-200 chevron-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <div class="px-8 py-6 bg-white border-b-2 border-gray-200">
+                    <div class="flex items-center justify-between mb-4">
+                        <button onclick="toggleSection('financing')" class="flex items-center text-xl font-bold text-gray-900 hover:text-blue-600 transition-colors group section-header-button uppercase tracking-wide">
+                            <span>Cash Flows from Financing Activities</span>
+                            <svg id="financing-chevron" class="w-6 h-6 ml-3 text-gray-400 transform transition-transform duration-200 chevron-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
                             </svg>
                         </button>
-                        <div class="flex items-center space-x-3">
-                            <span class="text-sm text-gray-500">{{ count($financingActivities) }} transactions</span>
-                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {{ $financingTotal >= 0 ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800' }}">
-                                {{ $financingTotal >= 0 ? '+' : '' }}{{ number_format($financingTotal, 2) }}
-                            </span>
+                        <div class="text-sm text-gray-500 font-medium">
+                            {{ count($financingActivities) }} transaction(s)
                         </div>
                     </div>
                 </div>
 
-                <div id="financing-content" class="p-6 transition-all duration-300 overflow-hidden">
+                <div id="financing-content" class="px-8 py-6 transition-all duration-300 overflow-hidden bg-gray-50">
 
                 @if(count($financingActivities) > 0)
                     <div class="space-y-3">
@@ -527,11 +504,11 @@
                             </div>
                         @endforeach
 
-                        <div class="border-t-2 border-gray-300 pt-4 mt-6 mb-5">
-                            <div class="flex justify-between items-center py-3 px-4 rounded-lg {{ $financingTotal >= 0 ? 'bg-green-50' : 'bg-red-50' }}">
-                                <span class="text-lg font-semibold text-gray-900">Net Cash Flow from Financing Activities</span>
-                                <span class="text-2xl font-mono font-bold {{ $financingTotal >= 0 ? 'text-green-600' : 'text-red-600' }}">
-                                    {{ $financingTotal >= 0 ? '+' : '' }}{{ number_format($financingTotal, 2) }}
+                        <div class="border-t-4 border-gray-900 pt-4 mt-6 mb-5">
+                            <div class="flex justify-between items-center py-4 px-6 bg-white border-2 border-gray-300 rounded-lg">
+                                <span class="text-lg font-bold text-gray-900 uppercase">Net Cash Provided by (Used in) Financing Activities</span>
+                                <span class="text-2xl font-mono font-bold {{ $financingTotal >= 0 ? 'text-gray-900' : 'text-red-600' }}">
+                                    {{ $financingTotal >= 0 ? '' : '(' }}₦{{ number_format(abs($financingTotal), 2) }}{{ $financingTotal >= 0 ? '' : ')' }}
                                 </span>
                             </div>
                         </div>
@@ -549,185 +526,107 @@
             </div>
         </div>
 
-            <!-- Enhanced Net Cash Flow Summary -->
-            <div class="border-t-2 border-gray-300 pt-6">
-                <div class="bg-gradient-to-r from-gray-50 to-white rounded-lg p-6 space-y-4">
-                    <h4 class="text-lg font-semibold text-gray-900 flex items-center mb-4">
-                        <svg class="w-5 h-5 mr-2 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path>
-                        </svg>
-                        Cash Flow Summary
+            <!-- Professional Net Cash Flow Summary -->
+            <div class="border-t-4 border-gray-900 mt-8">
+                <div class="bg-white px-8 py-6 space-y-6">
+                    <h4 class="text-xl font-bold text-gray-900 uppercase tracking-wide border-b-2 border-gray-300 pb-3">
+                        Reconciliation of Cash and Cash Equivalents
                     </h4>
 
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <div class="flex justify-between items-center py-3 px-4 rounded-lg bg-white border border-gray-200 hover:shadow-md transition-shadow">
-                            <div>
-                                <span class="text-sm font-medium text-gray-700">Operating Activities</span>
-                                <div class="text-xs text-gray-500">Core business operations</div>
-                            </div>
-                            <span class="text-lg font-mono font-semibold {{ $operatingTotal >= 0 ? 'text-green-600' : 'text-red-600' }}">
-                                {{ $operatingTotal >= 0 ? '+' : '' }}{{ number_format($operatingTotal, 2) }}
+                    <div class="space-y-3">
+                        <div class="flex justify-between items-center py-3 px-6 bg-gray-50 border-l-4 border-blue-500">
+                            <span class="text-base font-semibold text-gray-900">Net Cash from Operating Activities</span>
+                            <span class="text-lg font-mono font-bold {{ $operatingTotal >= 0 ? 'text-gray-900' : 'text-red-600' }}">
+                                {{ $operatingTotal >= 0 ? '' : '(' }}₦{{ number_format(abs($operatingTotal), 2) }}{{ $operatingTotal >= 0 ? '' : ')' }}
                             </span>
                         </div>
 
-                        <div class="flex justify-between items-center py-3 px-4 rounded-lg bg-white border border-gray-200 hover:shadow-md transition-shadow">
-                            <div>
-                                <span class="text-sm font-medium text-gray-700">Investing Activities</span>
-                                <div class="text-xs text-gray-500">Asset investments</div>
-                            </div>
-                            <span class="text-lg font-mono font-semibold {{ $investingTotal >= 0 ? 'text-green-600' : 'text-red-600' }}">
-                                {{ $investingTotal >= 0 ? '+' : '' }}{{ number_format($investingTotal, 2) }}
+                        <div class="flex justify-between items-center py-3 px-6 bg-gray-50 border-l-4 border-purple-500">
+                            <span class="text-base font-semibold text-gray-900">Net Cash from Investing Activities</span>
+                            <span class="text-lg font-mono font-bold {{ $investingTotal >= 0 ? 'text-gray-900' : 'text-red-600' }}">
+                                {{ $investingTotal >= 0 ? '' : '(' }}₦{{ number_format(abs($investingTotal), 2) }}{{ $investingTotal >= 0 ? '' : ')' }}
                             </span>
                         </div>
 
-                        <div class="flex justify-between items-center py-3 px-4 rounded-lg bg-white border border-gray-200 hover:shadow-md transition-shadow">
-                            <div>
-                                <span class="text-sm font-medium text-gray-700">Financing Activities</span>
-                                <div class="text-xs text-gray-500">Capital structure</div>
-                            </div>
-                            <span class="text-lg font-mono font-semibold {{ $financingTotal >= 0 ? 'text-green-600' : 'text-red-600' }}">
-                                {{ $financingTotal >= 0 ? '+' : '' }}{{ number_format($financingTotal, 2) }}
+                        <div class="flex justify-between items-center py-3 px-6 bg-gray-50 border-l-4 border-orange-500">
+                            <span class="text-base font-semibold text-gray-900">Net Cash from Financing Activities</span>
+                            <span class="text-lg font-mono font-bold {{ $financingTotal >= 0 ? 'text-gray-900' : 'text-red-600' }}">
+                                {{ $financingTotal >= 0 ? '' : '(' }}₦{{ number_format(abs($financingTotal), 2) }}{{ $financingTotal >= 0 ? '' : ')' }}
                             </span>
                         </div>
                     </div>
 
-                    <div class="border-t-2 border-gray-300 pt-4">
-                        <div class="flex justify-between items-center py-4 px-6 rounded-lg {{ $netCashFlow >= 0 ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200' }} border-2">
-                            <div>
-                                <span class="text-xl font-bold text-gray-900">Net Change in Cash</span>
-                                <div class="text-sm text-gray-600">
-                                    @if($netCashFlow > 0)
-                                        Cash position improved
-                                    @elseif($netCashFlow == 0)
-                                        No change in cash position
-                                    @else
-                                        Cash position declined
-                                    @endif
+                    <div class="border-t-4 border-gray-900 pt-4 mt-4">
+                        <div class="flex justify-between items-center py-5 px-6 bg-gray-100 border-2 border-gray-400 rounded-lg">
+                            <span class="text-xl font-bold text-gray-900 uppercase">Net Increase (Decrease) in Cash and Cash Equivalents</span>
+                            <span class="text-3xl font-mono font-bold {{ $netCashFlow >= 0 ? 'text-gray-900' : 'text-red-600' }}">
+                                {{ $netCashFlow >= 0 ? '' : '(' }}₦{{ number_format(abs($netCashFlow), 2) }}{{ $netCashFlow >= 0 ? '' : ')' }}
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Professional Cash Position Statement -->
+            <div class="border-t-2 border-gray-300 mt-6">
+                <div class="bg-white px-8 py-6">
+                    <div class="space-y-4">
+                        <div class="flex justify-between items-center py-4 px-6 bg-gray-50 border-2 border-gray-300 rounded-lg">
+                            <span class="text-lg font-bold text-gray-900">Cash and Cash Equivalents at Beginning of Period</span>
+                            <span class="text-2xl font-mono font-bold text-gray-900">₦{{ number_format($openingCash, 2) }}</span>
+                        </div>
+
+                        <div class="flex justify-between items-center py-4 px-6 bg-blue-50 border-2 border-blue-300 rounded-lg">
+                            <span class="text-lg font-bold text-gray-900">Net Increase (Decrease) in Cash and Cash Equivalents</span>
+                            <span class="text-2xl font-mono font-bold {{ $netCashFlow >= 0 ? 'text-gray-900' : 'text-red-600' }}">
+                                {{ $netCashFlow >= 0 ? '' : '(' }}₦{{ number_format(abs($netCashFlow), 2) }}{{ $netCashFlow >= 0 ? '' : ')' }}
+                            </span>
+                        </div>
+
+                        <div class="flex justify-between items-center py-5 px-6 bg-green-50 border-4 border-green-600 rounded-lg shadow-md">
+                            <span class="text-xl font-bold text-gray-900 uppercase">Cash and Cash Equivalents at End of Period</span>
+                            <span class="text-3xl font-mono font-bold text-green-700">₦{{ number_format($closingCash, 2) }}</span>
+                        </div>
+                    </div>
+
+                    <!-- Professional Note -->
+                    <div class="mt-6 p-4 bg-gray-50 border-l-4 border-blue-600 rounded">
+                        <p class="text-sm text-gray-700">
+                            <span class="font-semibold">Note:</span> This statement has been prepared using the indirect method and shows the cash flows from operating, investing, and financing activities for the period from {{ \Carbon\Carbon::parse($fromDate)->format('F d, Y') }} to {{ \Carbon\Carbon::parse($toDate)->format('F d, Y') }}.
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Professional Cash Accounts Detail -->
+            @if(count($cashAccounts) > 0)
+                <div class="border-t-2 border-gray-300 mt-6">
+                    <div class="bg-white px-8 py-6">
+                        <h4 class="text-lg font-bold text-gray-900 uppercase tracking-wide mb-6 border-b-2 border-gray-300 pb-3">
+                            Supplemental Disclosure - Cash and Cash Equivalents
+                        </h4>
+                        <div class="space-y-3">
+                            @foreach($cashAccounts as $account)
+                                <div class="flex justify-between items-center py-3 px-6 bg-gray-50 border-l-4 border-blue-500 rounded-lg hover:bg-gray-100 transition-colors">
+                                    <div>
+                                        <span class="text-base font-semibold text-gray-900">{{ $account->name }}</span>
+                                        <span class="text-sm text-gray-600 ml-2">(Account #{{ $account->code }})</span>
+                                    </div>
+                                    <span class="text-lg font-mono font-bold text-gray-900">
+                                        ₦{{ number_format($account->current_balance ?? 0, 2) }}
+                                    </span>
+                                </div>
+                            @endforeach
+
+                            <div class="border-t-2 border-gray-400 pt-3 mt-4">
+                                <div class="flex justify-between items-center py-3 px-6 bg-blue-50 border-2 border-blue-400 rounded-lg">
+                                    <span class="text-lg font-bold text-gray-900 uppercase">Total Cash and Cash Equivalents</span>
+                                    <span class="text-2xl font-mono font-bold text-blue-700">
+                                        ₦{{ number_format($cashAccounts->sum('current_balance'), 2) }}
+                                    </span>
                                 </div>
                             </div>
-                            <span class="text-3xl font-mono font-bold {{ $netCashFlow >= 0 ? 'text-green-600' : 'text-red-600' }}">
-                                {{ $netCashFlow >= 0 ? '+' : '' }}{{ number_format($netCashFlow, 2) }}
-                            </span>
                         </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Enhanced Cash Position -->
-            <div class="border-t border-gray-200 pt-6">
-                <h4 class="text-lg font-semibold text-gray-900 mb-6 flex items-center">
-                    <svg class="w-5 h-5 mr-2 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m-3-6h6M9 10.5h6"></path>
-                    </svg>
-                    Cash Position Analysis
-                </h4>
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    <div class="bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl p-6 border border-blue-200 hover:shadow-lg transition-all duration-300">
-                        <div class="flex items-center justify-between mb-3">
-                            <div class="w-10 h-10 bg-blue-500 rounded-lg flex items-center justify-center">
-                                <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                                </svg>
-                            </div>
-                            <span class="text-sm font-medium text-blue-600 bg-blue-200 px-2 py-1 rounded-full">Opening</span>
-                        </div>
-                        <div class="text-sm font-medium text-blue-900 mb-1">Cash at Start</div>
-                        <div class="text-2xl font-bold text-blue-700 font-mono mb-2">{{ number_format($openingCash, 2) }}</div>
-                        <div class="text-xs text-blue-600">As of {{ \Carbon\Carbon::parse($fromDate)->format('M d, Y') }}</div>
-                    </div>
-
-                    <div class="bg-gradient-to-br from-{{ $netCashFlow >= 0 ? 'green' : 'red' }}-50 to-{{ $netCashFlow >= 0 ? 'green' : 'red' }}-100 rounded-xl p-6 border border-{{ $netCashFlow >= 0 ? 'green' : 'red' }}-200 hover:shadow-lg transition-all duration-300">
-                        <div class="flex items-center justify-between mb-3">
-                            <div class="w-10 h-10 bg-{{ $netCashFlow >= 0 ? 'green' : 'red' }}-500 rounded-lg flex items-center justify-center">
-                                <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    @if($netCashFlow >= 0)
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path>
-                                    @else
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 17h8m0 0V9m0 8l-8-8-4 4-6-6"></path>
-                                    @endif
-                                </svg>
-                            </div>
-                            <span class="text-sm font-medium text-{{ $netCashFlow >= 0 ? 'green' : 'red' }}-600 bg-{{ $netCashFlow >= 0 ? 'green' : 'red' }}-200 px-2 py-1 rounded-full">
-                                {{ $netCashFlow >= 0 ? 'Inflow' : 'Outflow' }}
-                            </span>
-                        </div>
-                        <div class="text-sm font-medium text-{{ $netCashFlow >= 0 ? 'green' : 'red' }}-900 mb-1">Net Cash Flow</div>
-                        <div class="text-2xl font-bold text-{{ $netCashFlow >= 0 ? 'green' : 'red' }}-700 font-mono mb-2">
-                            {{ $netCashFlow >= 0 ? '+' : '' }}{{ number_format($netCashFlow, 2) }}
-                        </div>
-                        <div class="text-xs text-{{ $netCashFlow >= 0 ? 'green' : 'red' }}-600">For the period</div>
-                    </div>
-
-                    <div class="bg-gradient-to-br from-purple-50 to-purple-100 rounded-xl p-6 border border-purple-200 hover:shadow-lg transition-all duration-300">
-                        <div class="flex items-center justify-between mb-3">
-                            <div class="w-10 h-10 bg-purple-500 rounded-lg flex items-center justify-center">
-                                <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z"></path>
-                                </svg>
-                            </div>
-                            <span class="text-sm font-medium text-purple-600 bg-purple-200 px-2 py-1 rounded-full">Closing</span>
-                        </div>
-                        <div class="text-sm font-medium text-purple-900 mb-1">Cash at End</div>
-                        <div class="text-2xl font-bold text-purple-700 font-mono mb-2">{{ number_format($closingCash, 2) }}</div>
-                        <div class="text-xs text-purple-600">As of {{ \Carbon\Carbon::parse($toDate)->format('M d, Y') }}</div>
-                    </div>
-                </div>
-
-                <!-- Cash Flow Health Indicator -->
-                <div class="mt-6 p-4 rounded-lg border-2 {{ $netCashFlow > 0 ? 'border-green-200 bg-green-50' : ($netCashFlow == 0 ? 'border-yellow-200 bg-yellow-50' : 'border-red-200 bg-red-50') }}">
-                    <div class="flex items-center justify-between">
-                        <div class="flex items-center">
-                            <div class="w-8 h-8 rounded-full flex items-center justify-center mr-3 {{ $netCashFlow > 0 ? 'bg-green-500' : ($netCashFlow == 0 ? 'bg-yellow-500' : 'bg-red-500') }}">
-                                <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    @if($netCashFlow > 0)
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4"></path>
-                                    @elseif($netCashFlow == 0)
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01"></path>
-                                    @else
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-                                    @endif
-                                </svg>
-                            </div>
-                            <div>
-                                <h5 class="text-lg font-semibold {{ $netCashFlow > 0 ? 'text-green-800' : ($netCashFlow == 0 ? 'text-yellow-800' : 'text-red-800') }}">
-                                    @if($netCashFlow > 0) Healthy Cash Flow
-                                    @elseif($netCashFlow == 0) Balanced Cash Flow
-                                    @else Declining Cash Flow
-                                    @endif
-                                </h5>
-                                <p class="text-sm {{ $netCashFlow > 0 ? 'text-green-600' : ($netCashFlow == 0 ? 'text-yellow-600' : 'text-red-600') }}">
-                                    @if($netCashFlow > 0)
-                                        Your business generated positive cash flow this period, indicating strong operational performance.
-                                    @elseif($netCashFlow == 0)
-                                        Cash inflows exactly matched outflows for this period, maintaining stable liquidity.
-                                    @else
-                                        Cash outflows exceeded inflows this period. Consider reviewing operational efficiency and cash management.
-                                    @endif
-                                </p>
-                            </div>
-                        </div>
-                        <div class="text-right">
-                            <div class="text-sm font-medium {{ $netCashFlow > 0 ? 'text-green-700' : ($netCashFlow == 0 ? 'text-yellow-700' : 'text-red-700') }}">
-                                Change: {{ number_format(($closingCash > 0 ? ($netCashFlow / $closingCash) : 0) * 100, 1) }}%
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Cash Accounts Detail -->
-            @if(count($cashAccounts) > 0)
-                <div class="border-t border-gray-200 pt-6">
-                    <h4 class="text-md font-semibold text-gray-900 mb-4">Cash Accounts Detail</h4>
-                    <div class="space-y-2">
-                        @foreach($cashAccounts as $account)
-                            <div class="flex justify-between items-center py-2 px-3 bg-gray-50 rounded">
-                                <span class="text-sm text-gray-900">{{ $account->name }} ({{ $account->code }})</span>
-                                <span class="text-sm font-mono text-gray-700">
-                                    {{ number_format($account->current_balance ?? 0, 2) }}
-                                </span>
-                            </div>
-                        @endforeach
                     </div>
                 </div>
             @endif
@@ -831,9 +730,9 @@ function toggleSimpleView() {
     const simpleView = document.getElementById('simple-view');
     const detailedView = document.getElementById('detailed-view');
     const buttonText = document.getElementById('simple-view-text');
-    
+
     isSimpleView = !isSimpleView;
-    
+
     if (isSimpleView) {
         simpleView.style.display = 'block';
         detailedView.style.display = 'none';
