@@ -332,6 +332,31 @@ class PosController extends Controller
         return view('tenant.pos.customer-display', compact('tenant'));
     }
 
+    public function transactions(Tenant $tenant)
+    {
+        $sales = Sale::where('tenant_id', $tenant->id)
+            ->with(['customer', 'user', 'cashRegister'])
+            ->latest()
+            ->paginate(20);
+
+        return view('tenant.pos.transactions', compact('tenant', 'sales'));
+    }
+
+    public function reports(Tenant $tenant)
+    {
+        return view('tenant.pos.reports', compact('tenant'));
+    }
+
+    public function dailySalesReport(Tenant $tenant)
+    {
+        return view('tenant.pos.reports.daily-sales', compact('tenant'));
+    }
+
+    public function topProductsReport(Tenant $tenant)
+    {
+        return view('tenant.pos.reports.top-products', compact('tenant'));
+    }
+
     private function getActiveCashRegisterSession($tenant)
     {
         return CashRegisterSession::where('user_id', Auth::id())

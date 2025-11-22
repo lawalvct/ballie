@@ -163,56 +163,10 @@
                 </div>
             </div>
             <div class="space-y-2">
-                <a href="#" class="block text-sm text-blue-600 hover:text-blue-800">• Daily Sales</a>
-                <a href="#" class="block text-sm text-blue-600 hover:text-blue-800">• Product Performance</a>
-                <a href="#" class="block text-sm text-blue-600 hover:text-blue-800">• Payment Methods</a>
-                <a href="#" class="block text-sm text-blue-600 hover:text-blue-800">• Cashier Performance</a>
-            </div>
-        </div>
-    </div>
-
-    <!-- Quick Report Generation -->
-    <div class="bg-white rounded-2xl p-6 shadow-lg">
-        <h3 class="text-xl font-bold text-gray-900 mb-6">Quick Report Generation</h3>
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div class="space-y-4">
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-2">Report Type</label>
-                    <select class="w-full rounded-xl border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
-                        <option>Profit & Loss</option>
-                        <option>Sales Summary</option>
-                        <option>Customer Report</option>
-                        <option>Inventory Report</option>
-                    </select>
-                </div>
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-2">Date Range</label>
-                    <select class="w-full rounded-xl border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
-                        <option>This Month</option>
-                        <option>Last Month</option>
-                        <option>This Quarter</option>
-                        <option>This Year</option>
-                        <option>Custom Range</option>
-                    </select>
-                </div>
-            </div>
-            <div class="space-y-4">
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-2">Format</label>
-                    <select class="w-full rounded-xl border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
-                        <option>PDF</option>
-                        <option>Excel</option>
-                        <option>CSV</option>
-                    </select>
-                </div>
-                <div class="flex space-x-3 pt-6">
-                    <button class="flex-1 bg-gradient-to-r from-blue-600 to-blue-700 text-white px-4 py-2 rounded-xl hover:from-blue-700 hover:to-blue-800 transition-all duration-200">
-                        Generate Report
-                    </button>
-                    <button class="px-4 py-2 border border-gray-300 text-gray-700 rounded-xl hover:bg-gray-50 transition-all duration-200">
-                        Preview
-                    </button>
-                </div>
+                <a href="{{ route('tenant.pos.reports.daily-sales', $tenant->slug) }}" class="block text-sm text-blue-600 hover:text-blue-800 hover:underline">• Daily Sales</a>
+                <a href="{{ route('tenant.pos.reports.top-products', $tenant->slug) }}" class="block text-sm text-blue-600 hover:text-blue-800 hover:underline">• Product Performance</a>
+                <a href="{{ route('tenant.pos.transactions', $tenant->slug) }}" class="block text-sm text-blue-600 hover:text-blue-800 hover:underline">• Transaction History</a>
+                <a href="{{ route('tenant.pos.reports', $tenant->slug) }}" class="block text-sm text-blue-600 hover:text-blue-800 hover:underline">• POS Overview</a>
             </div>
         </div>
     </div>
