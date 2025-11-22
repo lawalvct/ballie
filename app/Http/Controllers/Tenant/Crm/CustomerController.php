@@ -325,7 +325,6 @@ class CustomerController extends Controller
         // Update ledger account's opening balance voucher reference
         $customer->ledgerAccount->update([
             'opening_balance_voucher_id' => $voucher->id,
-            'opening_balance' => $type === 'debit' ? $amount : -$amount,
         ]);
 
         // Update customer's ledger account balance
@@ -344,7 +343,10 @@ class CustomerController extends Controller
             abort(404);
         }
 
-        return view('tenant.crm.customers.show', compact('customer', 'tenant'));
+        $customer->load('ledgerAccount');
+        $outstandingBalance = $customer->ledgerAccount ? $customer->ledgerAccount->getCurrentBalance() : 0;
+
+        return view('tenant.crm.customers.show', compact('customer', 'tenant', 'outstandingBalance'));
     }
 
     /**

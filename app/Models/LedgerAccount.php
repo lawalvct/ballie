@@ -182,10 +182,10 @@ class LedgerAccount extends Model
             }
 
             if (in_array($accountType, ['asset', 'expense'])) {
-                $currentBalance = $this->opening_balance + $totalDebits - $totalCredits;
+                $currentBalance = $totalDebits - $totalCredits;
             } else {
                 // liability, equity, income
-                $currentBalance = $this->opening_balance + $totalCredits - $totalDebits;
+                $currentBalance = $totalCredits - $totalDebits;
             }
 
             // Update current_balance if no date specified and not using cache

@@ -250,7 +250,6 @@ class CustomersImport implements ToCollection, WithHeadingRow, SkipsEmptyRows
         // Update ledger account's opening balance voucher reference
         $customer->ledgerAccount->update([
             'opening_balance_voucher_id' => $voucher->id,
-            'opening_balance' => $type === 'debit' ? $amount : -$amount,
         ]);
 
         // Update customer's ledger account balance

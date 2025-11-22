@@ -161,7 +161,7 @@
                 </div>
                 <div>
                     <label class="text-sm font-medium text-gray-500">Outstanding Balance</label>
-                    <p class="text-xl font-semibold text-orange-600">₦{{ number_format($customer->outstanding_balance ?? 0, 2) }}</p>
+                    <p class="text-xl font-semibold text-orange-600">₦{{ number_format($outstandingBalance, 2) }}</p>
                 </div>
                 @if($customer->currency)
                 <div>
