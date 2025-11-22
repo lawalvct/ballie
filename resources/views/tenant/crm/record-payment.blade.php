@@ -47,26 +47,22 @@
             <!-- Customer/Vendor Selection -->
             <div>
                 <div x-show="partyType === 'customer'">
-                    <label for="customer_id" class="block text-sm font-medium text-gray-700 mb-2">Select Customer <span class="text-red-500">*</span></label>
-                    <select id="customer_id" x-model="selectedParty" class="block w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-green-500 focus:border-green-500">
-                        <option value="">-- Select Customer --</option>
-                        @foreach($customers as $customer)
-                            @if($customer->ledgerAccount)
-                                <option value="{{ $customer->ledgerAccount->id }}">{{ $customer->full_name }}</option>
-                            @endif
-                        @endforeach
+                    <label for="customer_search" class="block text-sm font-medium text-gray-700 mb-2">Select Customer <span class="text-red-500">*</span></label>
+                    <input type="text" id="customer_search" x-model="customerSearch" @input="filterCustomers" placeholder="Search customer..." class="block w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-green-500 focus:border-green-500 mb-2">
+                    <select id="customer_id" x-model="selectedParty" size="5" class="block w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-green-500 focus:border-green-500">
+                        <template x-for="customer in filteredCustomers" :key="customer.id">
+                            <option :value="customer.id" x-text="customer.name"></option>
+                        </template>
                     </select>
                 </div>
 
                 <div x-show="partyType === 'vendor'">
-                    <label for="vendor_id" class="block text-sm font-medium text-gray-700 mb-2">Select Vendor <span class="text-red-500">*</span></label>
-                    <select id="vendor_id" x-model="selectedParty" class="block w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-green-500 focus:border-green-500">
-                        <option value="">-- Select Vendor --</option>
-                        @foreach($vendors as $vendor)
-                            @if($vendor->ledgerAccount)
-                                <option value="{{ $vendor->ledgerAccount->id }}">{{ $vendor->full_name }}</option>
-                            @endif
-                        @endforeach
+                    <label for="vendor_search" class="block text-sm font-medium text-gray-700 mb-2">Select Vendor <span class="text-red-500">*</span></label>
+                    <input type="text" id="vendor_search" x-model="vendorSearch" @input="filterVendors" placeholder="Search vendor..." class="block w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-green-500 focus:border-green-500 mb-2">
+                    <select id="vendor_id" x-model="selectedParty" size="5" class="block w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-green-500 focus:border-green-500">
+                        <template x-for="vendor in filteredVendors" :key="vendor.id">
+                            <option :value="vendor.id" x-text="vendor.name"></option>
+                        </template>
                     </select>
                 </div>
                 
@@ -90,8 +86,9 @@
                 <label for="amount" class="block text-sm font-medium text-gray-700 mb-2">Amount <span class="text-red-500">*</span></label>
                 <div class="relative">
                     <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-gray-500 font-semibold">₦</span>
-                    <input type="number" step="0.01" name="amount" id="amount" value="{{ old('amount') }}" placeholder="0.00" class="block w-full pl-8 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-green-500 focus:border-green-500 @error('amount') border-red-300 @enderror" required>
+                    <input type="number" step="0.01" name="amount" id="amount" x-model="amount" @input="formatAmount" value="{{ old('amount') }}" placeholder="0.00" class="block w-full pl-8 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-green-500 focus:border-green-500 @error('amount') border-red-300 @enderror" required>
                 </div>
+                <p x-show="amount > 0" class="mt-1 text-sm text-green-600 font-semibold">₦<span x-text="formattedAmount"></span></p>
                 @error('amount')
                     <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                 @enderror
@@ -143,7 +140,42 @@
 function paymentForm() {
     return {
         partyType: '{{ old('party_type', 'customer') }}',
-        selectedParty: '{{ old('party_ledger_id') }}'
+        selectedParty: '{{ old('party_ledger_id') }}',
+        amount: '{{ old('amount') }}',
+        formattedAmount: '',
+        customerSearch: '',
+        vendorSearch: '',
+        customers: @json($customers->filter(fn($c) => $c->ledgerAccount)->map(fn($c) => ['id' => $c->ledgerAccount->id, 'name' => $c->full_name])->values()),
+        vendors: @json($vendors->filter(fn($v) => $v->ledgerAccount)->map(fn($v) => ['id' => $v->ledgerAccount->id, 'name' => $v->full_name])->values()),
+        filteredCustomers: [],
+        filteredVendors: [],
+        
+        init() {
+            this.filteredCustomers = this.customers;
+            this.filteredVendors = this.vendors;
+        },
+        
+        filterCustomers() {
+            const search = this.customerSearch.toLowerCase();
+            this.filteredCustomers = this.customers.filter(c => 
+                c.name.toLowerCase().includes(search)
+            );
+        },
+        
+        filterVendors() {
+            const search = this.vendorSearch.toLowerCase();
+            this.filteredVendors = this.vendors.filter(v => 
+                v.name.toLowerCase().includes(search)
+            );
+        },
+        
+        formatAmount() {
+            const value = parseFloat(this.amount) || 0;
+            this.formattedAmount = value.toLocaleString('en-NG', {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2
+            });
+        }
     }
 }
 </script>
