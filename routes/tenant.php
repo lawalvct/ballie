@@ -529,6 +529,20 @@ Route::prefix('ledger-accounts')->name('ledger-accounts.')->group(function () {
             Route::get('reports', [CrmController::class, 'reports'])->name('reports');
         });
 
+        // Procurement - Purchase Orders (LPO)
+        Route::prefix('procurement')->name('tenant.procurement.')->group(function () {
+            Route::prefix('purchase-orders')->name('purchase-orders.')->group(function () {
+                Route::get('/', [\App\Http\Controllers\Tenant\Procurement\PurchaseOrderController::class, 'index'])->name('index');
+                Route::get('/create', [\App\Http\Controllers\Tenant\Procurement\PurchaseOrderController::class, 'create'])->name('create');
+                Route::post('/', [\App\Http\Controllers\Tenant\Procurement\PurchaseOrderController::class, 'store'])->name('store');
+                Route::get('/{purchaseOrder}', [\App\Http\Controllers\Tenant\Procurement\PurchaseOrderController::class, 'show'])->name('show');
+                Route::get('/{purchaseOrder}/pdf', [\App\Http\Controllers\Tenant\Procurement\PurchaseOrderController::class, 'pdf'])->name('pdf');
+                Route::post('/{purchaseOrder}/email', [\App\Http\Controllers\Tenant\Procurement\PurchaseOrderController::class, 'email'])->name('email');
+                Route::get('/search/vendors', [\App\Http\Controllers\Tenant\Procurement\PurchaseOrderController::class, 'searchVendors'])->name('search.vendors');
+                Route::get('/search/products', [\App\Http\Controllers\Tenant\Procurement\PurchaseOrderController::class, 'searchProducts'])->name('search.products');
+            });
+        });
+
         // Banking - Bank Account Management
         Route::prefix('banking')->name('tenant.banking.')->group(function () {
             // Bank Accounts

@@ -350,4 +350,51 @@
             </a>
         </div>
     </div>
+
+    <!-- Purchase Orders (LPO) Section -->
+    <div class="mb-8">
+        <h4 class="text-xl font-semibold text-white mb-6 flex items-center">
+            <div class="w-8 h-8 bg-orange-600 rounded-lg flex items-center justify-center mr-3">
+                <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                </svg>
+            </div>
+            Purchase Orders (LPO)
+        </h4>
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <!-- Create LPO Card -->
+            <a href="{{ route('tenant.procurement.purchase-orders.create', ['tenant' => $tenant->slug]) }}"
+               class="action-card bg-gradient-to-br from-orange-600 to-orange-800 hover:from-orange-500 hover:to-orange-700 border border-orange-500 rounded-xl p-4 transition-all duration-300 hover:shadow-lg hover:scale-105 group">
+                <div class="flex items-center mb-3">
+                    <div class="w-10 h-10 bg-orange-500 bg-opacity-30 rounded-lg flex items-center justify-center mr-3 group-hover:scale-110 transition-transform duration-300">
+                        <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                        </svg>
+                    </div>
+                    <div>
+                        <h5 class="font-semibold text-white group-hover:text-orange-200 transition-colors duration-300">Create LPO</h5>
+                        <p class="text-xs text-orange-200">New purchase order</p>
+                    </div>
+                </div>
+                <p class="text-xs text-orange-200">Create local purchase orders for vendors.</p>
+            </a>
+
+            <!-- LPO List Card -->
+            <a href="{{ route('tenant.procurement.purchase-orders.index', ['tenant' => $tenant->slug]) }}"
+               class="action-card bg-gradient-to-br from-amber-600 to-amber-800 hover:from-amber-500 hover:to-amber-700 border border-amber-500 rounded-xl p-4 transition-all duration-300 hover:shadow-lg hover:scale-105 group">
+                <div class="flex items-center mb-3">
+                    <div class="w-10 h-10 bg-amber-500 bg-opacity-30 rounded-lg flex items-center justify-center mr-3 group-hover:scale-110 transition-transform duration-300">
+                        <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
+                        </svg>
+                    </div>
+                    <div>
+                        <h5 class="font-semibold text-white group-hover:text-amber-200 transition-colors duration-300">LPO List</h5>
+                        <p class="text-xs text-amber-200">View all orders</p>
+                    </div>
+                </div>
+                <p class="text-xs text-amber-200">Browse and manage all purchase orders.</p>
+            </a>
+        </div>
+    </div>
 </div>
