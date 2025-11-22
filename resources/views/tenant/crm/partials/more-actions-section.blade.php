@@ -90,7 +90,7 @@
             </a>
 
             <!-- Customer Reports Card -->
-            <a href="#"
+            <a href="{{ route('tenant.reports.customer-sales', ['tenant' => $tenant->slug]) }}"
                class="action-card bg-gradient-to-br from-indigo-600 to-indigo-800 hover:from-indigo-500 hover:to-indigo-700 border border-indigo-500 rounded-xl p-4 transition-all duration-300 hover:shadow-lg hover:scale-105 group">
                 <div class="flex items-center mb-3">
                     <div class="w-10 h-10 bg-indigo-500 bg-opacity-30 rounded-lg flex items-center justify-center mr-3 group-hover:scale-110 transition-transform duration-300">
