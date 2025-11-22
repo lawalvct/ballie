@@ -142,10 +142,10 @@
                 </div>
             </div>
             <div class="space-y-2">
-                <a href="#" class="block text-sm text-blue-600 hover:text-blue-800">• Customer Overview</a>
-                <a href="#" class="block text-sm text-blue-600 hover:text-blue-800">• Lead Conversion</a>
-                <a href="#" class="block text-sm text-blue-600 hover:text-blue-800">• Sales Performance</a>
-                <a href="#" class="block text-sm text-blue-600 hover:text-blue-800">• Activity Summary</a>
+                <a href="{{ route('tenant.crm.customers.statements', $tenant->slug) }}" class="block text-sm text-blue-600 hover:text-blue-800 hover:underline">• Customer Statements</a>
+                <a href="{{ route('tenant.crm.payment-reports', $tenant->slug) }}" class="block text-sm text-blue-600 hover:text-blue-800 hover:underline">• Payment Reports</a>
+                <a href="{{ route('tenant.reports.customer-sales', $tenant->slug) }}" class="block text-sm text-blue-600 hover:text-blue-800 hover:underline">• Customer Sales Analysis</a>
+                <a href="{{ route('tenant.crm.activities.index', $tenant->slug) }}" class="block text-sm text-blue-600 hover:text-blue-800 hover:underline">• Activity Summary</a>
             </div>
         </div>
 
