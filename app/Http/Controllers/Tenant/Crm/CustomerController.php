@@ -34,8 +34,7 @@ class CustomerController extends Controller
                   ->orWhere('last_name', 'like', "%{$search}%")
                   ->orWhere('company_name', 'like', "%{$search}%")
                   ->orWhere('email', 'like', "%{$search}%")
-                  ->orWhere('phone', 'like', "%{$search}%")
-                  ->orWhere('customer_code', 'like', "%{$search}%");
+                  ->orWhere('phone', 'like', "%{$search}%");
             });
         }
 
@@ -46,7 +45,8 @@ class CustomerController extends Controller
 
         // Filter by status
         if ($request->filled('status')) {
-            $query->where('status', $request->get('status'));
+            $isActive = $request->get('status') === 'active';
+            $query->where('is_active', $isActive);
         }
 
         // Sorting
