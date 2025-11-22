@@ -211,6 +211,31 @@ Route::prefix('invoices')->name('invoices.')->group(function () {
             // Invoice API routes
             Route::get('/api/customers/search', [InvoiceController::class, 'searchCustomers'])->name('api.customers.search');
 
+            // Quotations (Proforma Invoices)
+            Route::prefix('quotations')->name('quotations.')->group(function () {
+                Route::get('/', [\App\Http\Controllers\Tenant\Accounting\QuotationController::class, 'index'])->name('index');
+                Route::get('/create', [\App\Http\Controllers\Tenant\Accounting\QuotationController::class, 'create'])->name('create');
+                Route::post('/', [\App\Http\Controllers\Tenant\Accounting\QuotationController::class, 'store'])->name('store');
+                Route::get('/{quotation}', [\App\Http\Controllers\Tenant\Accounting\QuotationController::class, 'show'])->name('show');
+                Route::get('/{quotation}/edit', [\App\Http\Controllers\Tenant\Accounting\QuotationController::class, 'edit'])->name('edit');
+                Route::put('/{quotation}', [\App\Http\Controllers\Tenant\Accounting\QuotationController::class, 'update'])->name('update');
+                Route::delete('/{quotation}', [\App\Http\Controllers\Tenant\Accounting\QuotationController::class, 'destroy'])->name('destroy');
+
+                // Quotation Actions
+                Route::post('/{quotation}/convert', [\App\Http\Controllers\Tenant\Accounting\QuotationController::class, 'convertToInvoice'])->name('convert');
+                Route::post('/{quotation}/send', [\App\Http\Controllers\Tenant\Accounting\QuotationController::class, 'markAsSent'])->name('send');
+                Route::post('/{quotation}/accept', [\App\Http\Controllers\Tenant\Accounting\QuotationController::class, 'markAsAccepted'])->name('accept');
+                Route::post('/{quotation}/reject', [\App\Http\Controllers\Tenant\Accounting\QuotationController::class, 'markAsRejected'])->name('reject');
+                Route::post('/{quotation}/duplicate', [\App\Http\Controllers\Tenant\Accounting\QuotationController::class, 'duplicate'])->name('duplicate');
+                Route::get('/{quotation}/print', [\App\Http\Controllers\Tenant\Accounting\QuotationController::class, 'print'])->name('print');
+                Route::get('/{quotation}/pdf', [\App\Http\Controllers\Tenant\Accounting\QuotationController::class, 'pdf'])->name('pdf');
+                Route::post('/{quotation}/email', [\App\Http\Controllers\Tenant\Accounting\QuotationController::class, 'email'])->name('email');
+
+                // AJAX Search Endpoints
+                Route::get('/search/customers', [\App\Http\Controllers\Tenant\Accounting\QuotationController::class, 'searchCustomers'])->name('search.customers');
+                Route::get('/search/products', [\App\Http\Controllers\Tenant\Accounting\QuotationController::class, 'searchProducts'])->name('search.products');
+            });
+
             // Account Groups
            Route::prefix('account-groups')->name('account-groups.')->group(function () {
     Route::get('/', [AccountGroupController::class, 'index'])->name('index');
