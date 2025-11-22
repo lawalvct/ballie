@@ -236,6 +236,12 @@ Route::prefix('invoices')->name('invoices.')->group(function () {
                 Route::get('/search/products', [\App\Http\Controllers\Tenant\Accounting\QuotationController::class, 'searchProducts'])->name('search.products');
             });
 
+            // Short alias routes for quotations (supports /quotes/*)
+            Route::prefix('quotes')->name('quotes.')->group(function () {
+                Route::get('/', [\App\Http\Controllers\Tenant\Accounting\QuotationController::class, 'index'])->name('index');
+                Route::get('/create', [\App\Http\Controllers\Tenant\Accounting\QuotationController::class, 'create'])->name('create');
+            });
+
             // Account Groups
            Route::prefix('account-groups')->name('account-groups.')->group(function () {
     Route::get('/', [AccountGroupController::class, 'index'])->name('index');

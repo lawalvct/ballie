@@ -135,9 +135,24 @@
                 </div>
                 <p class="text-xs text-emerald-200">Create new invoices for customer transactions.</p>
             </a>
-
-            <!-- New Quote Card -->
+ <!-- Invoice List Card -->
             <a href="#"
+               class="action-card bg-gradient-to-br from-sky-600 to-sky-800 hover:from-sky-500 hover:to-sky-700 border border-sky-500 rounded-xl p-4 transition-all duration-300 hover:shadow-lg hover:scale-105 group">
+                <div class="flex items-center mb-3">
+                    <div class="w-10 h-10 bg-sky-500 bg-opacity-30 rounded-lg flex items-center justify-center mr-3 group-hover:scale-110 transition-transform duration-300">
+                        <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"></path>
+                        </svg>
+                    </div>
+                    <div>
+                        <h5 class="font-semibold text-white group-hover:text-sky-200 transition-colors duration-300">Customer Invoices</h5>
+                        <p class="text-xs text-sky-200">List all invoices</p>
+                    </div>
+                </div>
+                <p class="text-xs text-sky-200">View and manage all customer invoices.</p>
+            </a>
+            <!-- New Quote Card -->
+                <a href="{{ route('tenant.accounting.quotes.create', ['tenant' => $tenant->slug]) }}"
                class="action-card bg-gradient-to-br from-teal-600 to-teal-800 hover:from-teal-500 hover:to-teal-700 border border-teal-500 rounded-xl p-4 transition-all duration-300 hover:shadow-lg hover:scale-105 group">
                 <div class="flex items-center mb-3">
                     <div class="w-10 h-10 bg-teal-500 bg-opacity-30 rounded-lg flex items-center justify-center mr-3 group-hover:scale-110 transition-transform duration-300">
@@ -154,7 +169,7 @@
             </a>
 
             <!-- Quote List Card -->
-            <a href="#"
+                <a href="{{ route('tenant.accounting.quotes.index', ['tenant' => $tenant->slug]) }}"
                class="action-card bg-gradient-to-br from-cyan-600 to-cyan-800 hover:from-cyan-500 hover:to-cyan-700 border border-cyan-500 rounded-xl p-4 transition-all duration-300 hover:shadow-lg hover:scale-105 group">
                 <div class="flex items-center mb-3">
                     <div class="w-10 h-10 bg-cyan-500 bg-opacity-30 rounded-lg flex items-center justify-center mr-3 group-hover:scale-110 transition-transform duration-300">
@@ -170,22 +185,7 @@
                 <p class="text-xs text-cyan-200">Browse and manage all customer quotes.</p>
             </a>
 
-            <!-- Invoice List Card -->
-            <a href="#"
-               class="action-card bg-gradient-to-br from-sky-600 to-sky-800 hover:from-sky-500 hover:to-sky-700 border border-sky-500 rounded-xl p-4 transition-all duration-300 hover:shadow-lg hover:scale-105 group">
-                <div class="flex items-center mb-3">
-                    <div class="w-10 h-10 bg-sky-500 bg-opacity-30 rounded-lg flex items-center justify-center mr-3 group-hover:scale-110 transition-transform duration-300">
-                        <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"></path>
-                        </svg>
-                    </div>
-                    <div>
-                        <h5 class="font-semibold text-white group-hover:text-sky-200 transition-colors duration-300">Customer Invoices</h5>
-                        <p class="text-xs text-sky-200">List all invoices</p>
-                    </div>
-                </div>
-                <p class="text-xs text-sky-200">View and manage all customer invoices.</p>
-            </a>
+
         </div>
     </div>
 
