@@ -169,11 +169,13 @@
                                         @foreach($roles as $role)
                                             <option value="{{ $role->id }}"
                                                     {{ old('role_id') == $role->id ? 'selected' : '' }}
-                                                    data-description="{{ $role->description }}">
+                                                    data-description="{{ $role->description }}"
+                                                    data-permissions-count="{{ $role->permissions->count() }}">
                                                 {{ $role->name }}
                                                 @if($role->is_default)
                                                     (Default)
                                                 @endif
+                                                - {{ $role->permissions->count() }} permissions
                                             </option>
                                         @endforeach
                                     @else
@@ -185,6 +187,14 @@
                                 <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
                             @enderror
                             <p id="role-description" class="mt-2 text-sm text-gray-500">Choose the role that determines user permissions.</p>
+                            
+                            {{-- Role Permissions Preview --}}
+                            <div id="role-permissions-preview" class="mt-3 hidden">
+                                <div class="bg-purple-50 border border-purple-200 rounded-lg p-3">
+                                    <h5 class="text-xs font-semibold text-purple-900 mb-2">Role Permissions:</h5>
+                                    <div id="permissions-list" class="text-xs text-purple-700 space-y-1"></div>
+                                </div>
+                            </div>
                         </div>
 
                         {{-- Status --}}
@@ -308,14 +318,17 @@
             }
         });
 
-        // Role selection - show description
+        // Role selection - show description and permissions
         const roleSelect = document.getElementById('role_id');
         const roleDescription = document.getElementById('role-description');
+        const permissionsPreview = document.getElementById('role-permissions-preview');
+        const permissionsList = document.getElementById('permissions-list');
 
         if (roleSelect && roleDescription) {
-            roleSelect.addEventListener('change', function() {
+            roleSelect.addEventListener('change', async function() {
                 const selectedOption = this.options[this.selectedIndex];
                 const description = selectedOption.getAttribute('data-description');
+                const roleId = this.value;
 
                 if (description && description !== 'null') {
                     roleDescription.textContent = description;
@@ -325,6 +338,36 @@
                     roleDescription.textContent = 'Choose the role that determines user permissions.';
                     roleDescription.classList.add('text-gray-500');
                     roleDescription.classList.remove('text-blue-600', 'font-medium');
+                }
+
+                // Fetch and display role permissions
+                if (roleId && permissionsPreview && permissionsList) {
+                    try {
+                        const response = await fetch(`/{{ tenant('slug') }}/admin/roles/${roleId}/permissions`);
+                        const data = await response.json();
+                        
+                        if (data.permissions && data.permissions.length > 0) {
+                            permissionsList.innerHTML = data.permissions
+                                .slice(0, 10)
+                                .map(p => `<div>• ${p.display_name}</div>`)
+                                .join('');
+                            
+                            if (data.permissions.length > 10) {
+                                permissionsList.innerHTML += `<div class="text-purple-600 font-medium mt-1">+ ${data.permissions.length - 10} more permissions</div>`;
+                            }
+                            
+                            permissionsPreview.classList.remove('hidden');
+                        } else {
+                            permissionsPreview.classList.add('hidden');
+                        }
+                    } catch (error) {
+                        console.error('Error fetching permissions:', error);
+                        permissionsPreview.classList.add('hidden');
+                    }
+                } else {
+                    if (permissionsPreview) {
+                        permissionsPreview.classList.add('hidden');
+                    }
                 }
             });
         }

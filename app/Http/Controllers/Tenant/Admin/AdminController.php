@@ -744,6 +744,25 @@ class AdminController extends Controller
         return response()->json($permissions);
     }
 
+    /**
+     * Get role permissions (API endpoint)
+     */
+    public function getRolePermissions($tenant, $roleId)
+    {
+        $role = Role::with('permissions')->findOrFail($roleId);
+        
+        return response()->json([
+            'permissions' => $role->permissions->map(function($permission) {
+                return [
+                    'id' => $permission->id,
+                    'name' => $permission->name,
+                    'display_name' => $permission->display_name,
+                    'module' => $permission->module,
+                ];
+            })
+        ]);
+    }
+
     // ==================== SECURITY & ACCESS MANAGEMENT ====================
 
     /**

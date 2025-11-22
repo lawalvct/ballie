@@ -22,6 +22,9 @@ use Database\Seeders\DefaultBanksSeeder;
 use Database\Seeders\DefaultProductCategoriesSeeder;
 use Database\Seeders\DefaultUnitsSeeder;
 use Database\Seeders\DefaultShiftsSeeder;
+use Database\Seeders\PermissionsSeeder;
+use App\Models\Tenant\Role;
+use App\Models\Tenant\Permission;
 
 class OnboardingController extends Controller
 {
@@ -325,12 +328,51 @@ class OnboardingController extends Controller
                 DefaultShiftsSeeder::seedForTenant($tenant->id);
             }, "Default shifts seeding for tenant: {$tenant->id}");
 
+            // Seed Permissions and assign to Owner role
+            Log::info("Starting permissions seeding", [
+                'tenant_id' => $tenant->id
+            ]);
+
+            $this->retryOperation(function() use ($tenant) {
+                // Run permissions seeder
+                (new PermissionsSeeder())->run();
+
+                // Get or create Owner role
+                $ownerRole = Role::firstOrCreate(
+                    [
+                        'slug' => 'owner',
+                        'tenant_id' => $tenant->id
+                    ],
+                    [
+                        'name' => 'Owner',
+                        'description' => 'Full system access with all permissions',
+                        'is_active' => true,
+                        'is_default' => false,
+                        'color' => '#dc2626',
+                        'priority' => 1
+                    ]
+                );
+
+                // Get all permissions and assign to owner
+                $allPermissions = Permission::all();
+                $ownerRole->permissions()->sync($allPermissions->pluck('id'));
+
+                Log::info("Owner role created and permissions assigned", [
+                    'tenant_id' => $tenant->id,
+                    'role_id' => $ownerRole->id,
+                    'permissions_count' => $allPermissions->count()
+                ]);
+            }, "Permissions seeding and owner role setup for tenant: {$tenant->id}");
+
             // Final verification
             $accountGroupsCount = \App\Models\AccountGroup::where('tenant_id', $tenant->id)->count();
             $voucherTypesCount = \App\Models\VoucherType::where('tenant_id', $tenant->id)->count();
             $categoriesCount = \App\Models\ProductCategory::where('tenant_id', $tenant->id)->count();
             $unitsCount = \App\Models\Unit::where('tenant_id', $tenant->id)->count();
             $shiftsCount = \App\Models\ShiftSchedule::where('tenant_id', $tenant->id)->count();
+            $permissionsCount = Permission::count();
+            $ownerRole = Role::where('slug', 'owner')->where('tenant_id', $tenant->id)->first();
+            $ownerPermissionsCount = $ownerRole ? $ownerRole->permissions()->count() : 0;
 
             Log::info("All default data seeded successfully", [
                 'tenant_id' => $tenant->id,
@@ -342,6 +384,8 @@ class OnboardingController extends Controller
                 'product_categories' => $categoriesCount,
                 'units' => $unitsCount,
                 'shifts' => $shiftsCount,
+                'permissions' => $permissionsCount,
+                'owner_permissions' => $ownerPermissionsCount,
                 'total' => $accountGroupsCount + $voucherTypesCount + $ledgerCount + $banksCount + $categoriesCount + $unitsCount + $shiftsCount
             ]);
 
@@ -782,6 +826,23 @@ class OnboardingController extends Controller
 
             // Seed default data for the tenant first
             $this->seedDefaultData($tenant);
+
+            // Assign owner role to the current user
+            if (auth()->check()) {
+                $ownerRole = Role::where('slug', 'owner')
+                    ->where('tenant_id', $tenant->id)
+                    ->first();
+
+                if ($ownerRole) {
+                    auth()->user()->roles()->syncWithoutDetaching([$ownerRole->id]);
+                    
+                    Log::info("Owner role assigned to user", [
+                        'tenant_id' => $tenant->id,
+                        'user_id' => auth()->id(),
+                        'role_id' => $ownerRole->id
+                    ]);
+                }
+            }
 
             // Update completion status using safe method (field by field)
             $completionData = [

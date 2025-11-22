@@ -866,6 +866,7 @@ Route::prefix('ledger-accounts')->name('ledger-accounts.')->group(function () {
                 Route::get('/', [AdminController::class, 'roles'])->name('index');
                 Route::get('/create', [AdminController::class, 'createRole'])->name('create');
                 Route::post('/', [AdminController::class, 'storeRole'])->name('store');
+                Route::get('/{role}/permissions', [AdminController::class, 'getRolePermissions']);
                 Route::get('/{role}', [AdminController::class, 'showRole'])->name('show');
                 Route::get('/{role}/edit', [AdminController::class, 'editRole'])->name('edit');
                 Route::put('/{role}', [AdminController::class, 'updateRole'])->name('update');
