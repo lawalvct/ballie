@@ -345,8 +345,15 @@ class CustomerController extends Controller
 
         $customer->load('ledgerAccount');
         $outstandingBalance = $customer->ledgerAccount ? $customer->ledgerAccount->getCurrentBalance() : 0;
+        
+        // Get recent activities for this customer
+        $activities = \App\Models\CustomerActivity::where('customer_id', $customer->id)
+            ->with('user')
+            ->orderBy('activity_date', 'desc')
+            ->limit(10)
+            ->get();
 
-        return view('tenant.crm.customers.show', compact('customer', 'tenant', 'outstandingBalance'));
+        return view('tenant.crm.customers.show', compact('customer', 'tenant', 'outstandingBalance', 'activities'));
     }
 
     /**

@@ -295,6 +295,59 @@
         </div>
     </div>
 
+    <!-- Recent Activities -->
+    <div class="bg-white rounded-2xl p-6 shadow-lg">
+        <div class="flex justify-between items-center mb-6">
+            <h3 class="text-lg font-semibold text-gray-900">Recent Activities</h3>
+            <a href="{{ route('tenant.crm.activities.create', $tenant->slug) }}?customer_id={{ $customer->id }}" class="text-blue-600 hover:text-blue-800 text-sm font-medium">Log New Activity</a>
+        </div>
+        @if($activities->count() > 0)
+            <div class="space-y-4">
+                @foreach($activities as $activity)
+                    <div class="flex items-start space-x-3 p-3 hover:bg-gray-50 rounded-lg">
+                        <div class="flex-shrink-0">
+                            <span class="h-8 w-8 rounded-full flex items-center justify-center
+                                @if($activity->activity_type == 'call') bg-blue-100 text-blue-600
+                                @elseif($activity->activity_type == 'email') bg-green-100 text-green-600
+                                @elseif($activity->activity_type == 'meeting') bg-purple-100 text-purple-600
+                                @elseif($activity->activity_type == 'note') bg-yellow-100 text-yellow-600
+                                @elseif($activity->activity_type == 'task') bg-red-100 text-red-600
+                                @else bg-orange-100 text-orange-600 @endif">
+                                <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    @if($activity->activity_type == 'call')
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"></path>
+                                    @elseif($activity->activity_type == 'email')
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 4.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
+                                    @else
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
+                                    @endif
+                                </svg>
+                            </span>
+                        </div>
+                        <div class="flex-1 min-w-0">
+                            <p class="text-sm font-medium text-gray-900">{{ $activity->subject }}</p>
+                            <p class="text-xs text-gray-500 mt-1">{{ ucfirst(str_replace('_', ' ', $activity->activity_type)) }} • {{ $activity->user->name }} • {{ $activity->activity_date->format('M d, Y H:i') }}</p>
+                            @if($activity->description)
+                                <p class="text-sm text-gray-600 mt-1">{{ Str::limit($activity->description, 100) }}</p>
+                            @endif
+                        </div>
+                        <span class="px-2 py-1 text-xs rounded-full
+                            @if($activity->status == 'completed') bg-green-100 text-green-800
+                            @elseif($activity->status == 'pending') bg-yellow-100 text-yellow-800
+                            @else bg-red-100 text-red-800 @endif">
+                            {{ ucfirst($activity->status) }}
+                        </span>
+                    </div>
+                @endforeach
+            </div>
+            <div class="mt-4 text-center">
+                <a href="{{ route('tenant.crm.activities.index', $tenant->slug) }}?customer_id={{ $customer->id }}" class="text-blue-600 hover:text-blue-800 text-sm font-medium">View All Activities →</a>
+            </div>
+        @else
+            <p class="text-gray-500 text-center py-8">No activities logged yet. <a href="{{ route('tenant.crm.activities.create', $tenant->slug) }}?customer_id={{ $customer->id }}" class="text-blue-600 hover:text-blue-800">Log your first activity</a></p>
+        @endif
+    </div>
+
     <!-- Customer Timeline -->
     <div class="bg-white rounded-2xl p-6 shadow-lg">
         <h3 class="text-lg font-semibold text-gray-900 mb-6">Customer Timeline</h3>

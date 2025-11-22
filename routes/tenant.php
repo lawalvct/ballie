@@ -510,6 +510,9 @@ Route::prefix('ledger-accounts')->name('ledger-accounts.')->group(function () {
             Route::get('activities', [\App\Http\Controllers\Tenant\CustomerActivityController::class, 'index'])->name('activities.index');
             Route::get('activities/create', [\App\Http\Controllers\Tenant\CustomerActivityController::class, 'create'])->name('activities.create');
             Route::post('activities', [\App\Http\Controllers\Tenant\CustomerActivityController::class, 'store'])->name('activities.store');
+            Route::get('activities/{activity}/edit', [\App\Http\Controllers\Tenant\CustomerActivityController::class, 'edit'])->name('activities.edit');
+            Route::put('activities/{activity}', [\App\Http\Controllers\Tenant\CustomerActivityController::class, 'update'])->name('activities.update');
+            Route::delete('activities/{activity}', [\App\Http\Controllers\Tenant\CustomerActivityController::class, 'destroy'])->name('activities.destroy');
             
             // Record Payment
             Route::get('record-payment', [VoucherController::class, 'recordPayment'])->name('record-payment');
