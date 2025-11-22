@@ -1,5 +1,76 @@
 <div class="bg-white shadow-lg rounded-xl border border-gray-200" x-data="receiptVoucherEntries()">
     <div class="p-6">
+        {{-- Customer/Vendor Selection Section --}}
+        <div class="mb-8">
+            <div class="flex items-center mb-4">
+                <div class="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center mr-3">
+                    <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+                    </svg>
+                </div>
+                <div>
+                    <h3 class="text-lg font-bold text-gray-900">Payment From</h3>
+                    <p class="text-sm text-gray-500">Select customer or vendor making the payment</p>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 p-5 bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl border-2 border-blue-200 shadow-sm">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">
+                        Customer
+                    </label>
+                    <select
+                        x-model="selectedCustomer"
+                        @change="selectCustomer()"
+                        class="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+                    >
+                        <option value="">Select Customer</option>
+                        @php
+                            $customers = \App\Models\Customer::where('tenant_id', $tenant->id)
+                                ->where('status', 'active')
+                                ->with('ledgerAccount')
+                                ->orderBy('first_name')
+                                ->get();
+                        @endphp
+                        @foreach($customers as $customer)
+                            @if($customer->ledgerAccount)
+                                <option value="{{ $customer->ledgerAccount->id }}" data-name="{{ $customer->full_name }}">
+                                    {{ $customer->full_name }}
+                                </option>
+                            @endif
+                        @endforeach
+                    </select>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">
+                        Vendor
+                    </label>
+                    <select
+                        x-model="selectedVendor"
+                        @change="selectVendor()"
+                        class="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+                    >
+                        <option value="">Select Vendor</option>
+                        @php
+                            $vendors = \App\Models\Vendor::where('tenant_id', $tenant->id)
+                                ->where('status', 'active')
+                                ->with('ledgerAccount')
+                                ->orderBy('first_name')
+                                ->get();
+                        @endphp
+                        @foreach($vendors as $vendor)
+                            @if($vendor->ledgerAccount)
+                                <option value="{{ $vendor->ledgerAccount->id }}" data-name="{{ $vendor->full_name }}">
+                                    {{ $vendor->full_name }}
+                                </option>
+                            @endif
+                        @endforeach
+                    </select>
+                </div>
+            </div>
+        </div>
+
         {{-- Receipt Entries Section (Multiple Entries - Credit) --}}
         <div class="mb-8">
             <div class="flex items-center justify-between mb-4">
@@ -305,6 +376,8 @@
 <script>
 function receiptVoucherEntries() {
     return {
+        selectedCustomer: '',
+        selectedVendor: '',
         bankEntry: {
             ledger_account_id: '',
             particulars: ''
@@ -321,6 +394,32 @@ function receiptVoucherEntries() {
 
         init() {
             this.calculateTotal();
+        },
+
+        selectCustomer() {
+            if (this.selectedCustomer) {
+                this.selectedVendor = '';
+                if (this.receiptEntries.length > 0) {
+                    this.receiptEntries[0].ledger_account_id = this.selectedCustomer;
+                    const selectEl = event.target;
+                    const selectedOption = selectEl.options[selectEl.selectedIndex];
+                    const customerName = selectedOption.getAttribute('data-name');
+                    this.receiptEntries[0].particulars = `Payment received from ${customerName}`;
+                }
+            }
+        },
+
+        selectVendor() {
+            if (this.selectedVendor) {
+                this.selectedCustomer = '';
+                if (this.receiptEntries.length > 0) {
+                    this.receiptEntries[0].ledger_account_id = this.selectedVendor;
+                    const selectEl = event.target;
+                    const selectedOption = selectEl.options[selectEl.selectedIndex];
+                    const vendorName = selectedOption.getAttribute('data-name');
+                    this.receiptEntries[0].particulars = `Payment received from ${vendorName}`;
+                }
+            }
         },
 
         addEntry() {

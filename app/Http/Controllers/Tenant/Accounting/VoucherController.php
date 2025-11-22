@@ -778,6 +778,102 @@ class VoucherController extends Controller
     }
 
     /**
+     * Show simple payment recording form
+     */
+    public function recordPayment(Tenant $tenant)
+    {
+        $customers = \App\Models\Customer::where('tenant_id', $tenant->id)
+            ->where('status', 'active')
+            ->with('ledgerAccount')
+            ->orderBy('first_name')
+            ->get();
+
+        $vendors = \App\Models\Vendor::where('tenant_id', $tenant->id)
+            ->where('status', 'active')
+            ->with('ledgerAccount')
+            ->orderBy('first_name')
+            ->get();
+
+        $bankAccounts = LedgerAccount::where('tenant_id', $tenant->id)
+            ->where('is_active', true)
+            ->where(function($q) {
+                $q->where('name', 'like', '%bank%')
+                  ->orWhere('name', 'like', '%cash%');
+            })
+            ->orderBy('name')
+            ->get();
+
+        return view('tenant.crm.record-payment', compact('tenant', 'customers', 'vendors', 'bankAccounts'));
+    }
+
+    /**
+     * Store payment from simple form
+     */
+    public function storePayment(Request $request, Tenant $tenant)
+    {
+        $request->validate([
+            'party_type' => 'required|in:customer,vendor',
+            'party_ledger_id' => 'required|exists:ledger_accounts,id',
+            'receipt_date' => 'required|date',
+            'amount' => 'required|numeric|min:0.01',
+            'bank_account_id' => 'required|exists:ledger_accounts,id',
+            'reference_number' => 'nullable|string|max:255',
+            'notes' => 'nullable|string',
+        ]);
+
+        $voucherType = VoucherType::where('tenant_id', $tenant->id)
+            ->where('code', 'RV')
+            ->first();
+
+        if (!$voucherType) {
+            return back()->withErrors(['error' => 'Receipt voucher type not found.'])->withInput();
+        }
+
+        $entries = [
+            [
+                'ledger_account_id' => $request->party_ledger_id,
+                'particulars' => $request->notes ?? 'Payment received',
+                'debit_amount' => 0,
+                'credit_amount' => $request->amount,
+            ],
+            [
+                'ledger_account_id' => $request->bank_account_id,
+                'particulars' => $request->notes ?? 'Payment received',
+                'debit_amount' => $request->amount,
+                'credit_amount' => 0,
+            ]
+        ];
+
+        $request->merge([
+            'voucher_type_id' => $voucherType->id,
+            'voucher_date' => $request->receipt_date,
+            'narration' => $request->notes,
+            'entries' => $entries,
+        ]);
+
+        try {
+            $voucher = $this->createVoucher($request, $tenant);
+            
+            $voucher->update([
+                'status' => 'posted',
+                'posted_at' => now(),
+                'posted_by' => Auth::id(),
+            ]);
+
+            foreach ($voucher->entries as $entry) {
+                $entry->updateLedgerAccountBalance();
+            }
+
+            return redirect()
+                ->route('tenant.crm.record-payment', $tenant->slug)
+                ->with('success', 'Payment recorded successfully.');
+        } catch (\Exception $e) {
+            Log::error('Payment recording failed: ' . $e->getMessage());
+            return back()->withErrors(['error' => 'Failed to record payment.'])->withInput();
+        }
+    }
+
+    /**
      * Download bulk payment entries template
      */
     public function downloadBulkPaymentTemplate(Tenant $tenant)

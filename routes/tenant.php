@@ -506,6 +506,10 @@ Route::prefix('ledger-accounts')->name('ledger-accounts.')->group(function () {
 
         // CRM - Customer & Vendor Management
         Route::prefix('crm')->name('tenant.crm.')->group(function () {
+            // Record Payment
+            Route::get('record-payment', [VoucherController::class, 'recordPayment'])->name('record-payment');
+            Route::post('record-payment', [VoucherController::class, 'storePayment'])->name('store-payment');
+
             // Customers
             Route::get('customers/statements', [CustomerController::class, 'statements'])->name('customers.statements');
             Route::get('customers/{customer}/statement', [CustomerController::class, 'showStatement'])->name('customers.statement');
