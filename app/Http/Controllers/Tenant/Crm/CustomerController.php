@@ -822,12 +822,13 @@ class CustomerController extends Controller
 
         $openingBalanceAmount = ($openingBalance->total_debits ?? 0) - ($openingBalance->total_credits ?? 0);
 
-        // Get transactions within date range
+        // Get transactions within date range (exclude opening balance vouchers)
         $transactions = VoucherEntry::with(['voucher.voucherType'])
             ->where('ledger_account_id', $ledgerAccount->id)
-            ->whereHas('voucher', function($query) use ($startDate, $endDate, $tenant) {
+            ->whereHas('voucher', function($query) use ($startDate, $endDate, $tenant, $ledgerAccount) {
                 $query->where('tenant_id', $tenant->id)
                       ->where('status', Voucher::STATUS_POSTED)
+                      ->where('id', '!=', $ledgerAccount->opening_balance_voucher_id)
                       ->whereBetween('voucher_date', [$startDate, $endDate]);
             })
             ->orderBy('id')
