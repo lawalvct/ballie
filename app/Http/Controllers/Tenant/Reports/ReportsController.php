@@ -67,16 +67,27 @@ class ReportsController extends Controller
             }
         }
 
-        // Calculate stock values for reference (display only, not in P&L calculation)
-        // Note: Inventory purchases go to Balance Sheet (Asset), not P&L
-        // Only Cost of Goods Sold (COGS) appears in P&L when inventory is sold
-        $openingStock = Product::where('tenant_id', $tenant->id)
-            ->where('maintain_stock', true)
-            ->sum('opening_stock_value');
+        // Calculate stock values for the period (like Tally ERP)
+        // Opening Stock: Stock value as of the day before period start
+        // Closing Stock: Stock value as of period end
+        $openingStockDate = date('Y-m-d', strtotime($fromDate . ' -1 day'));
 
-        $closingStock = Product::where('tenant_id', $tenant->id)
+        $products = Product::where('tenant_id', $tenant->id)
             ->where('maintain_stock', true)
-            ->sum('current_stock_value');
+            ->get();
+
+        $openingStock = 0;
+        $closingStock = 0;
+
+        foreach ($products as $product) {
+            // Calculate opening stock value (day before period start)
+            $openingStockData = $product->getStockValueAsOfDate($openingStockDate, 'weighted_average');
+            $openingStock += $openingStockData['value'] ?? 0;
+
+            // Calculate closing stock value (period end date)
+            $closingStockData = $product->getStockValueAsOfDate($toDate, 'weighted_average');
+            $closingStock += $closingStockData['value'] ?? 0;
+        }
 
         // Calculate Net Profit/Loss
         // P&L Formula: Total Income - Total Expenses
@@ -288,7 +299,7 @@ class ReportsController extends Controller
     private function generateTrialBalancePDF($data)
     {
         $pdf = \PDF::loadView('tenant.reports.trial-balance-pdf', $data);
-        
+
         // Generate filename
         $filename = 'trial_balance';
         if (isset($data['fromDate']) && isset($data['toDate'])) {
@@ -297,7 +308,7 @@ class ReportsController extends Controller
             $filename .= '_' . ($data['asOfDate'] ?? now()->format('Y-m-d'));
         }
         $filename .= '.pdf';
-        
+
         return $pdf->download($filename);
     }
 
@@ -328,12 +339,12 @@ class ReportsController extends Controller
         $operatingData = $this->calculateOperatingActivities($tenant, $fromDate, $toDate);
         $investingData = $this->calculateInvestingActivities($tenant, $fromDate, $toDate);
         $financingData = $this->calculateFinancingActivities($tenant, $fromDate, $toDate);
-        
+
         $openingCash = $cashAccounts->sum(fn($account) => $this->calculateAccountBalance($account, $fromDate));
         $closingCash = $cashAccounts->sum(fn($account) => $this->calculateAccountBalance($account, $toDate));
-        
+
         $netCashFlow = $operatingData['total'] + $investingData['total'] + $financingData['total'];
-        
+
         return [
             'operatingActivities' => $operatingData['activities'],
             'investingActivities' => $investingData['activities'],
@@ -378,13 +389,13 @@ class ReportsController extends Controller
             if (abs($periodActivity) >= 0.01) {
                 $isIncome = $account->account_type === 'income';
                 $amount = $isIncome ? $periodActivity : -$periodActivity;
-                
+
                 $activities[] = [
                     'description' => $account->name,
                     'amount' => $amount,
                     'type' => $account->account_type
                 ];
-                
+
                 $total += $isIncome ? $periodActivity : -$periodActivity;
             }
         }
