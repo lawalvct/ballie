@@ -506,9 +506,21 @@ Route::prefix('ledger-accounts')->name('ledger-accounts.')->group(function () {
 
         // CRM - Customer & Vendor Management
         Route::prefix('crm')->name('tenant.crm.')->group(function () {
+            // Customer Activities
+            Route::get('activities', [\App\Http\Controllers\Tenant\CustomerActivityController::class, 'index'])->name('activities.index');
+            Route::get('activities/create', [\App\Http\Controllers\Tenant\CustomerActivityController::class, 'create'])->name('activities.create');
+            Route::post('activities', [\App\Http\Controllers\Tenant\CustomerActivityController::class, 'store'])->name('activities.store');
+            
             // Record Payment
             Route::get('record-payment', [VoucherController::class, 'recordPayment'])->name('record-payment');
             Route::post('record-payment', [VoucherController::class, 'storePayment'])->name('store-payment');
+            
+            // Payment Reminders
+            Route::get('payment-reminders', [CustomerController::class, 'paymentReminders'])->name('payment-reminders');
+            Route::post('payment-reminders/send', [CustomerController::class, 'sendPaymentReminders'])->name('payment-reminders.send');
+            
+            // Payment Reports
+            Route::get('payment-reports', [CustomerController::class, 'paymentReports'])->name('payment-reports');
 
             // Customers
             Route::get('customers/statements', [CustomerController::class, 'statements'])->name('customers.statements');

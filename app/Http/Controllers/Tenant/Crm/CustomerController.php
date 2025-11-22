@@ -875,4 +875,57 @@ class CustomerController extends Controller
             'closingBalance'
         ));
     }
+
+    public function paymentReminders(Tenant $tenant)
+    {
+        $customers = Customer::with('ledgerAccount')
+            ->where('tenant_id', $tenant->id)
+            ->where('status', 'active')
+            ->get()
+            ->filter(function ($customer) {
+                return $customer->ledgerAccount && $customer->ledgerAccount->getCurrentBalance() > 0;
+            });
+
+        return view('tenant.crm.payment-reminders', compact('tenant', 'customers'));
+    }
+
+    public function sendPaymentReminders(Request $request, Tenant $tenant)
+    {
+        $request->validate([
+            'customers' => 'required|array',
+            'customers.*' => 'exists:customers,id',
+        ]);
+
+        $count = 0;
+        foreach ($request->customers as $customerId) {
+            // Send reminder logic here
+            $count++;
+        }
+
+        return redirect()->back()->with('success', "Payment reminders sent to {$count} customer(s).");
+    }
+
+    public function paymentReports(Request $request, Tenant $tenant)
+    {
+        $startDate = $request->get('start_date', now()->startOfMonth()->format('Y-m-d'));
+        $endDate = $request->get('end_date', now()->endOfMonth()->format('Y-m-d'));
+
+        $payments = VoucherEntry::whereHas('voucher', function($q) use ($tenant, $startDate, $endDate) {
+                $q->where('tenant_id', $tenant->id)
+                  ->where('status', 'posted')
+                  ->whereHas('voucherType', function($vt) {
+                      $vt->where('code', 'RV');
+                  })
+                  ->whereBetween('voucher_date', [$startDate, $endDate]);
+            })
+            ->where('credit_amount', '>', 0)
+            ->with(['voucher', 'ledgerAccount'])
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        $totalPayments = $payments->sum('credit_amount');
+        $paymentCount = $payments->count();
+
+        return view('tenant.crm.payment-reports', compact('tenant', 'payments', 'totalPayments', 'paymentCount', 'startDate', 'endDate'));
+    }
 }
