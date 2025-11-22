@@ -1422,7 +1422,10 @@ function productSearch(itemIndex) {
                 const item = invoiceItemsComponent.items[this.itemIndex];
                 item.product_id = product.id;
                 item.product_name = product.name;
-                item.rate = parseFloat(product.sales_rate) || 0;
+
+                // Use purchase_rate for purchase invoices, sales_rate for sales invoices
+                const isPurchase = invoiceItemsComponent.isPurchaseInvoice();
+                item.rate = isPurchase ? (parseFloat(product.purchase_rate) || 0) : (parseFloat(product.sales_rate) || 0);
                 item.purchase_rate = parseFloat(product.purchase_rate) || 0;
                 item.current_stock = parseFloat(product.current_stock) || 0;
                 item.unit = product.unit || 'Pcs';
@@ -1768,12 +1771,16 @@ window.addEventListener('product-created', function(e) {
     if (invoiceItemsEl && invoiceItemsEl.__x) {
         const component = invoiceItemsEl.__x.$data;
         if (component.items && component.items[index]) {
+            // Use purchase_rate for purchase invoices, sales_rate for sales invoices
+            const isPurchase = component.isPurchaseInvoice();
+            const rate = isPurchase ? product.purchase_rate : product.sales_rate;
+
             // Update the item with the new product
             component.items[index] = {
                 ...component.items[index],
                 product_id: product.id,
                 name: product.name,
-                rate: product.sales_rate,
+                rate: rate,
                 purchase_rate: product.purchase_rate,
                 current_stock: product.current_stock,
                 unit: product.unit_name
