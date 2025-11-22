@@ -69,6 +69,16 @@ class QuotationItem extends Model
     }
 
     /**
+     * Get the total amount for this item
+     */
+    public function getTotal(): float
+    {
+        $itemTotal = ($this->quantity * $this->rate) - $this->discount;
+        $taxAmount = $itemTotal * ($this->tax / 100);
+        return round($itemTotal + $taxAmount, 2);
+    }
+
+    /**
      * Auto-calculate totals before saving
      */
     protected static function boot()
