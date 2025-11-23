@@ -59,6 +59,7 @@
     <nav class="py-6 overflow-y-auto h-[calc(100vh-10rem)] custom-scrollbar">
         <ul class="space-y-2 px-4">
             <!-- Dashboard -->
+            @permission('dashboard.view')
             <li>
                 <a href="{{ route('tenant.dashboard', ['tenant' => tenant()->slug]) }}"
                    class="menu-item flex items-center px-4 py-3 rounded-xl group {{ request()->routeIs('tenant.dashboard') ? 'active' : '' }}"
@@ -71,8 +72,10 @@
                     <span class="menu-title whitespace-nowrap font-medium">Dashboard</span>
                 </a>
             </li>
+            @endpermission
 
             <!-- Accounting -->
+            @permission('accounting.view')
             <li>
                 <a href="{{ route('tenant.accounting.index', ['tenant' => tenant()->slug]) }}"
                    class="menu-item flex items-center px-4 py-3 rounded-xl group {{ request()->routeIs('tenant.accounting.*') ? 'active' : '' }}"
@@ -85,9 +88,11 @@
                     <span class="menu-title whitespace-nowrap font-medium">Accounting</span>
                 </a>
             </li>
+            @endpermission
 
 
             <!-- Inventory -->
+            @permission('inventory.view')
             <li>
                 <a href="{{ route('tenant.inventory.index', ['tenant' => tenant()->slug]) }}"
                    class="menu-item flex items-center px-4 py-3 rounded-xl group {{ request()->routeIs('tenant.inventory.*') ? 'active' : '' }}"
@@ -100,10 +105,12 @@
                     <span class="menu-title whitespace-nowrap font-medium">Inventory</span>
                 </a>
             </li>
+            @endpermission
 
 
 
             <!-- CRM -->
+            @permission('crm.view')
             <li>
                 <a href="{{ route('tenant.crm.index', ['tenant' => tenant()->slug]) }}"
                    class="menu-item flex items-center px-4 py-3 rounded-xl group {{ request()->routeIs('tenant.crm.*') ? 'active' : '' }}"
@@ -116,10 +123,12 @@
                     <span class="menu-title whitespace-nowrap font-medium">CRM</span>
                 </a>
             </li>
+            @endpermission
 
 
 
             <!-- POS -->
+            @permission('pos.access')
             <li>
                 <a href="{{ route('tenant.pos.index', ['tenant' => tenant()->slug]) }}"
                    class="menu-item flex items-center px-4 py-3 rounded-xl group {{ request()->routeIs('tenant.pos.*') ? 'active' : '' }}"
@@ -132,8 +141,10 @@
                     <span class="menu-title whitespace-nowrap font-medium">POS</span>
                 </a>
             </li>
+            @endpermission
 
             <!-- Payroll -->
+            @permission('payroll.view')
             <li>
                 <a href="{{ route('tenant.payroll.index', ['tenant' => tenant()->slug]) }}"
                    class="menu-item flex items-center px-4 py-3 rounded-xl group {{ request()->routeIs('tenant.payroll.*') ? 'active' : '' }}"
@@ -146,8 +157,10 @@
                     <span class="menu-title whitespace-nowrap font-medium">Payroll</span>
                 </a>
             </li>
+            @endpermission
 
             <!-- Admin Management -->
+            @hasAnyPermission('admin.users.manage', 'admin.roles.manage', 'admin.permissions.manage')
             <li>
                 <a href="{{ route('tenant.admin.index', ['tenant' => tenant()->slug]) }}"
                    class="menu-item flex items-center px-4 py-3 rounded-xl group {{ request()->routeIs('tenant.admin.*') ? 'active' : '' }}"
@@ -160,8 +173,10 @@
                     <span class="menu-title whitespace-nowrap font-medium">Admin Management</span>
                 </a>
             </li>
+            @endhasAnyPermission
 
             <!-- Reports -->
+            @permission('reports.view')
             <li>
                 <a href="{{ route('tenant.reports.index', ['tenant' => tenant()->slug]) }}"
                    class="menu-item flex items-center px-4 py-3 rounded-xl group {{ request()->routeIs('tenant.reports.*') ? 'active' : '' }}"
@@ -174,8 +189,10 @@
                     <span class="menu-title whitespace-nowrap font-medium">Reports</span>
                 </a>
             </li>
+            @endpermission
 
             <!-- Statutory (Tax) -->
+            @permission('statutory.view')
             <li>
                 <a href="{{ route('tenant.statutory.index', ['tenant' => tenant()->slug]) }}"
                    class="menu-item flex items-center px-4 py-3 rounded-xl group {{ request()->routeIs('tenant.statutory.*') ? 'active' : '' }}"
@@ -188,8 +205,10 @@
                     <span class="menu-title whitespace-nowrap font-medium">Statutory (Tax)</span>
                 </a>
             </li>
+            @endpermission
 
             <!-- Audit -->
+            @permission('audit.view')
             <li>
                 <a href="{{ route('tenant.audit.index', ['tenant' => tenant()->slug]) }}"
                    class="menu-item flex items-center px-4 py-3 rounded-xl group {{ request()->routeIs('tenant.audit.*') ? 'active' : '' }}"
@@ -202,6 +221,7 @@
                     <span class="menu-title whitespace-nowrap font-medium">Audit</span>
                 </a>
             </li>
+            @endpermission
 
             <!-- Subscription/Plan Management -->
             <li>
@@ -218,6 +238,7 @@
             </li>
 
             <!-- Settings -->
+            @permission('settings.view')
             <li>
                 <a href="{{ route('tenant.settings.company', ['tenant' => tenant()->slug]) }}"
                    class="menu-item flex items-center px-4 py-3 rounded-xl group {{ request()->routeIs('tenant.settings.*') && !request()->routeIs('tenant.settings.cash-registers.*') ? 'active' : '' }}"
@@ -231,8 +252,10 @@
                     <span class="menu-title whitespace-nowrap font-medium">Settings</span>
                 </a>
             </li>
+            @endpermission
 
             <!-- Cash Registers -->
+            @permission('settings.registers.manage')
             <li>
                 <a href="{{ route('tenant.settings.cash-registers.index', ['tenant' => tenant()->slug]) }}"
                    class="menu-item flex items-center px-4 py-3 rounded-xl group {{ request()->routeIs('tenant.settings.cash-registers.*') ? 'active' : '' }}"
@@ -245,6 +268,7 @@
                     <span class="menu-title whitespace-nowrap font-medium">Cash Registers</span>
                 </a>
             </li>
+            @endpermission
         </ul>
 
         <!-- User Profile Section -->

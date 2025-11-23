@@ -29,11 +29,19 @@ class AdminController extends Controller
     {
         $this->adminService = $adminService;
         $this->middleware('auth');
-        // TODO: Implement permission middleware later
-        // $this->middleware('permission:view_admin_dashboard')->only(['index']);
-        // $this->middleware('permission:manage_users')->only(['users', 'createUser', 'storeUser', 'showUser', 'editUser', 'updateUser', 'destroyUser']);
-        // $this->middleware('permission:manage_roles')->only(['roles', 'createRole', 'storeRole', 'showRole', 'editRole', 'updateRole', 'destroyRole']);
-        // $this->middleware('permission:manage_permissions')->only(['permissions', 'createPermission', 'storePermission', 'showPermission', 'editPermission', 'updatePermission', 'destroyPermission']);
+        
+        // Apply permission middleware
+        $this->middleware('permission:admin.users.manage')->only([
+            'users', 'createUser', 'storeUser', 'showUser', 'editUser', 'updateUser', 'destroyUser', 'toggleUserStatus'
+        ]);
+        
+        $this->middleware('permission:admin.roles.manage')->only([
+            'roles', 'createRole', 'storeRole', 'showRole', 'editRole', 'updateRole', 'destroyRole', 'cloneRole', 'permissionMatrix'
+        ]);
+        
+        $this->middleware('permission:admin.permissions.manage')->only([
+            'permissions', 'createPermission', 'storePermission', 'showPermission', 'editPermission', 'updatePermission', 'destroyPermission'
+        ]);
     }
 
     /**
