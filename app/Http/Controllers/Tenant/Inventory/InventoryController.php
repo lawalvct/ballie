@@ -29,7 +29,7 @@ class InventoryController extends Controller
 
         foreach ($products as $product) {
             $currentStock = $product->current_stock; // Uses calculated stock from movements
-            $stockValue = $product->stock_value; // Uses calculated stock value
+            $stockValue = $currentStock * ($product->purchase_rate ?? 0); // Calculate using purchase rate
 
             $totalStockValue += $stockValue;
 

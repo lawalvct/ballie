@@ -76,7 +76,9 @@ class InventoryReportsController extends Controller
 
         // Calculate summary statistics
         $totalProducts = $products->count();
-        $totalStockValue = $products->sum('calculated_value');
+        $totalStockValue = $products->sum(function($product) {
+            return $product->calculated_stock * ($product->purchase_rate ?? 0);
+        });
         $totalStockQuantity = $products->sum('calculated_stock');
         $outOfStockCount = $products->where('status_flag', 'out_of_stock')->count();
         $lowStockCount = $products->where('status_flag', 'low_stock')->count();
