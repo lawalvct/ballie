@@ -328,7 +328,7 @@ class OnboardingController extends Controller
                 DefaultShiftsSeeder::seedForTenant($tenant->id);
             }, "Default shifts seeding for tenant: {$tenant->id}");
 
-            // Seed Permissions and assign to Owner role
+            // Seed Permissions and create default roles
             Log::info("Starting permissions seeding", [
                 'tenant_id' => $tenant->id
             ]);
@@ -337,35 +337,13 @@ class OnboardingController extends Controller
                 // Run permissions seeder
                 (new PermissionsSeeder())->run();
 
-                // Check if Owner role already exists for this tenant
-                $ownerRole = Role::where('tenant_id', $tenant->id)
-                    ->where('name', 'Owner')
-                    ->first();
+                // Create default roles for tenant
+                $this->createDefaultRoles($tenant);
 
-                if (!$ownerRole) {
-                    // Create Owner role with tenant-specific slug
-                    $ownerRole = Role::create([
-                        'slug' => 'owner-' . $tenant->id,
-                        'tenant_id' => $tenant->id,
-                        'name' => 'Owner',
-                        'description' => 'Full system access with all permissions',
-                        'is_active' => true,
-                        'is_default' => false,
-                        'color' => '#dc2626',
-                        'priority' => 1
-                    ]);
-                }
-
-                // Get all permissions and assign to owner
-                $allPermissions = Permission::all();
-                $ownerRole->permissions()->sync($allPermissions->pluck('id'));
-
-                Log::info("Owner role created and permissions assigned", [
-                    'tenant_id' => $tenant->id,
-                    'role_id' => $ownerRole->id,
-                    'permissions_count' => $allPermissions->count()
+                Log::info("Default roles created and permissions assigned", [
+                    'tenant_id' => $tenant->id
                 ]);
-            }, "Permissions seeding and owner role setup for tenant: {$tenant->id}");
+            }, "Permissions seeding and roles setup for tenant: {$tenant->id}");
 
             // Final verification
             $accountGroupsCount = \App\Models\AccountGroup::where('tenant_id', $tenant->id)->count();
@@ -374,8 +352,7 @@ class OnboardingController extends Controller
             $unitsCount = \App\Models\Unit::where('tenant_id', $tenant->id)->count();
             $shiftsCount = \App\Models\ShiftSchedule::where('tenant_id', $tenant->id)->count();
             $permissionsCount = Permission::count();
-            $ownerRole = Role::where('slug', 'owner')->where('tenant_id', $tenant->id)->first();
-            $ownerPermissionsCount = $ownerRole ? $ownerRole->permissions()->count() : 0;
+            $rolesCount = Role::where('tenant_id', $tenant->id)->count();
 
             Log::info("All default data seeded successfully", [
                 'tenant_id' => $tenant->id,
@@ -388,7 +365,7 @@ class OnboardingController extends Controller
                 'units' => $unitsCount,
                 'shifts' => $shiftsCount,
                 'permissions' => $permissionsCount,
-                'owner_permissions' => $ownerPermissionsCount,
+                'roles' => $rolesCount,
                 'total' => $accountGroupsCount + $voucherTypesCount + $ledgerCount + $banksCount + $categoriesCount + $unitsCount + $shiftsCount
             ]);
 
@@ -795,6 +772,80 @@ class OnboardingController extends Controller
             'tenant_id' => $tenant->id,
             'member_data' => $memberData
         ]);
+    }
+
+    private function createDefaultRoles($tenant)
+    {
+        $defaultRoles = [
+            [
+                'name' => 'Owner',
+                'description' => 'Full system access with all permissions',
+                'color' => '#dc2626',
+                'priority' => 100,
+                'permissions' => 'all',
+            ],
+            [
+                'name' => 'Admin',
+                'description' => 'Administrative access to most system features',
+                'color' => '#7c3aed',
+                'priority' => 90,
+                'permissions' => ['dashboard.view', 'admin.users.manage', 'admin.roles.manage', 'admin.teams.manage', 'settings.view', 'settings.company.manage', 'reports.view', 'reports.export', 'audit.view'],
+            ],
+            [
+                'name' => 'Manager',
+                'description' => 'Management access to business operations',
+                'color' => '#059669',
+                'priority' => 80,
+                'permissions' => ['dashboard.view', 'accounting.view', 'accounting.invoices.manage', 'inventory.view', 'inventory.products.manage', 'crm.view', 'crm.customers.manage', 'crm.vendors.manage', 'reports.view'],
+            ],
+            [
+                'name' => 'Accountant',
+                'description' => 'Access to financial and accounting features',
+                'color' => '#2563eb',
+                'priority' => 70,
+                'permissions' => ['dashboard.view', 'accounting.view', 'accounting.invoices.manage', 'accounting.vouchers.manage', 'accounting.reports.view', 'payroll.view', 'payroll.process', 'banking.view', 'reports.view'],
+            ],
+            [
+                'name' => 'Sales Representative',
+                'description' => 'Access to sales and customer management features',
+                'color' => '#ea580c',
+                'priority' => 60,
+                'permissions' => ['dashboard.view', 'crm.view', 'crm.customers.manage', 'accounting.invoices.manage', 'pos.access', 'pos.sales.process', 'inventory.view'],
+            ],
+            [
+                'name' => 'Employee',
+                'description' => 'Basic access for regular employees',
+                'color' => '#64748b',
+                'priority' => 30,
+                'permissions' => ['dashboard.view'],
+            ],
+        ];
+
+        foreach ($defaultRoles as $roleData) {
+            $permissions = $roleData['permissions'];
+            unset($roleData['permissions']);
+
+            $role = Role::firstOrCreate(
+                [
+                    'name' => $roleData['name'],
+                    'tenant_id' => $tenant->id
+                ],
+                array_merge($roleData, [
+                    'slug' => \Illuminate\Support\Str::slug($roleData['name']) . '-' . $tenant->id,
+                    'tenant_id' => $tenant->id,
+                    'is_active' => true,
+                    'is_default' => true,
+                ])
+            );
+
+            if ($permissions === 'all') {
+                $allPermissions = Permission::all();
+                $role->permissions()->sync($allPermissions->pluck('id')->toArray());
+            } else {
+                $permissionIds = Permission::whereIn('slug', $permissions)->pluck('id')->toArray();
+                $role->permissions()->sync($permissionIds);
+            }
+        }
     }
 
     private function getCurrentTenant()
