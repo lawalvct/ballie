@@ -1,12 +1,14 @@
 @extends('layouts.tenant')
 
 @section('title', 'Help & Documentation')
+@section('page-title', 'Help & Documentation')
+@section('page-description', 'Find guides, FAQs, and support to help you get the most out of Ballie.')
+
 
 @push('styles')
 <style>
 [v-cloak] { display: none; }
-.help-sidebar { width: 280px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
-.help-content { width: calc(100% - 280px); }
+.help-sidebar { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
 .menu-item { cursor: pointer; transition: all 0.2s; color: rgba(255,255,255,0.9); }
 .menu-item:hover { background: rgba(255,255,255,0.15); }
 .menu-item.active { background: rgba(255,255,255,0.25); color: white; font-weight: 600; }
@@ -14,13 +16,34 @@
 .submenu-item:hover { background: rgba(255,255,255,0.1); }
 .submenu-item.active { background: rgba(255,255,255,0.2); color: white; font-weight: 500; }
 .help-sidebar h2 { color: white; }
+.mobile-menu-btn { display: none; }
+@media (max-width: 768px) {
+    .help-sidebar { position: fixed; left: 0; top: 0; bottom: 0; width: 280px; z-index: 50; transform: translateX(-100%); transition: transform 0.3s; }
+    .help-sidebar.open { transform: translateX(0); }
+    .help-content { width: 100%; }
+    .mobile-menu-btn { display: block; }
+    .mobile-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 40; }
+    .mobile-overlay.show { display: block; }
+}
 </style>
 @endpush
 
 @section('content')
-<div id="helpApp" v-cloak class="flex gap-6">
-    <!-- Sidebar -->
-    <div class="help-sidebar rounded-lg shadow p-4">
+<div id="helpApp" v-cloak>
+    <!-- Mobile Menu Button -->
+    <button @click="toggleSidebar" class="mobile-menu-btn mb-4 bg-purple-600 text-white px-4 py-2 rounded-lg flex items-center gap-2">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
+        </svg>
+        Menu
+    </button>
+
+    <!-- Mobile Overlay -->
+    <div @click="closeSidebar" class="mobile-overlay" :class="{ 'show': sidebarOpen }"></div>
+
+    <div class="flex gap-6">
+        <!-- Sidebar -->
+        <div class="help-sidebar rounded-lg shadow p-4 md:w-72" :class="{ 'open': sidebarOpen }">
         <h2 class="text-xl font-bold mb-4">Documentation</h2>
         <nav>
             <div v-for="menu in menus" :key="menu.id" class="mb-2">
@@ -47,7 +70,7 @@
     </div>
 
     <!-- Content Area -->
-    <div class="help-content bg-white rounded-lg shadow p-8">
+    <div class="help-content bg-white rounded-lg shadow p-4 md:p-8 flex-1">
         <component :is="currentComponent"></component>
     </div>
 </div>
@@ -61,6 +84,7 @@ const { createApp } = Vue;
 createApp({
     data() {
         return {
+            sidebarOpen: false,
             activeMenu: 'getting-started',
             activeSubmenu: null,
             openMenus: ['getting-started'],
@@ -112,6 +136,13 @@ createApp({
         selectSubmenu(menuId, subId) {
             this.activeMenu = menuId;
             this.activeSubmenu = subId;
+            this.closeSidebar();
+        },
+        toggleSidebar() {
+            this.sidebarOpen = !this.sidebarOpen;
+        },
+        closeSidebar() {
+            this.sidebarOpen = false;
         }
     },
     components: {
