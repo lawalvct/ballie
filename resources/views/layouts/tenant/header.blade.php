@@ -184,12 +184,77 @@
         </div>
 
         <!-- Notifications -->
-        <button class="relative p-2 rounded-xl hover:bg-gray-100 transition-colors duration-200">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
-            </svg>
-            <span class="absolute -top-1 -right-1 h-4 w-4 bg-red-500 rounded-full flex items-center justify-center text-xs text-white pulse-animation">3</span>
-        </button>
+        <div class="relative" x-data="{ open: false, unreadCount: {{ auth()->user()->unreadNotifications->count() }}, notifications: [] }" 
+             x-init="
+                fetch('{{ route('tenant.notifications.index', tenant()->slug) }}?ajax=1')
+                    .then(res => res.json())
+                    .then(data => notifications = data.data.slice(0, 5));
+             ">
+            <button @click="open = !open" @click.away="open = false" class="relative p-2 rounded-xl hover:bg-gray-100 transition-colors duration-200">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                </svg>
+                <span x-show="unreadCount > 0" x-text="unreadCount" class="absolute -top-1 -right-1 h-4 w-4 bg-red-500 rounded-full flex items-center justify-center text-xs text-white pulse-animation"></span>
+            </button>
+
+            <!-- Notifications Dropdown -->
+            <div x-show="open" 
+                 x-transition:enter="transition ease-out duration-200"
+                 x-transition:enter-start="opacity-0 scale-95"
+                 x-transition:enter-end="opacity-1 scale-100"
+                 x-transition:leave="transition ease-in duration-75"
+                 x-transition:leave-start="opacity-1 scale-100"
+                 x-transition:leave-end="opacity-0 scale-95"
+                 class="absolute right-0 mt-2 w-80 bg-white rounded-xl shadow-lg border border-gray-200 z-50"
+                 style="display: none;">
+                
+                <!-- Header -->
+                <div class="px-4 py-3 border-b border-gray-200 flex items-center justify-between">
+                    <h3 class="text-sm font-semibold text-gray-900">Notifications</h3>
+                    <button @click="fetch('{{ route('tenant.notifications.mark-all-read', tenant()->slug) }}', {method: 'POST', headers: {'X-CSRF-TOKEN': '{{ csrf_token() }}'}}).then(() => {unreadCount = 0; notifications.forEach(n => n.read_at = new Date())})" 
+                            class="text-xs text-blue-600 hover:text-blue-800">Mark all read</button>
+                </div>
+
+                <!-- Notifications List -->
+                <div class="max-h-96 overflow-y-auto">
+                    <template x-if="notifications.length === 0">
+                        <div class="px-4 py-8 text-center text-gray-500 text-sm">
+                            <svg class="w-12 h-12 mx-auto mb-2 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path>
+                            </svg>
+                            No notifications yet
+                        </div>
+                    </template>
+                    
+                    <template x-for="notification in notifications" :key="notification.id">
+                        <div @click="if(!notification.read_at) { fetch(`{{ url(tenant()->slug . '/notifications') }}/${notification.id}/mark-read`, {method: 'POST', headers: {'X-CSRF-TOKEN': '{{ csrf_token() }}'}}).then(() => {notification.read_at = new Date(); unreadCount = Math.max(0, unreadCount - 1)}); } if(notification.data.action_url) window.location.href = notification.data.action_url;"
+                             :class="notification.read_at ? 'bg-white' : 'bg-blue-50'" 
+                             class="px-4 py-3 border-b border-gray-100 hover:bg-gray-50 cursor-pointer transition-colors">
+                            <div class="flex items-start space-x-3">
+                                <div class="flex-shrink-0 w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
+                                    <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                    </svg>
+                                </div>
+                                <div class="flex-1 min-w-0">
+                                    <p class="text-sm font-medium text-gray-900" x-text="notification.data.title"></p>
+                                    <p class="text-xs text-gray-600 mt-1" x-text="notification.data.message"></p>
+                                    <p class="text-xs text-gray-400 mt-1" x-text="new Date(notification.created_at).toLocaleDateString()"></p>
+                                </div>
+                                <template x-if="!notification.read_at">
+                                    <div class="flex-shrink-0 w-2 h-2 bg-blue-600 rounded-full"></div>
+                                </template>
+                            </div>
+                        </div>
+                    </template>
+                </div>
+
+                <!-- Footer -->
+                <div class="px-4 py-3 border-t border-gray-200 text-center">
+                    <a href="{{ route('tenant.notifications.index', tenant()->slug) }}" class="text-sm text-blue-600 hover:text-blue-800 font-medium">View all notifications</a>
+                </div>
+            </div>
+        </div>
 
         <!-- User Menu -->
         <div class="relative" x-data="{ open: false }">

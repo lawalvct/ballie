@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Password;
 use App\Models\User;
 use Illuminate\Auth\Events\Registered;
+use App\Notifications\WelcomeNotification;
 
 class AuthController extends Controller
 {
@@ -70,6 +71,10 @@ class AuthController extends Controller
         ]);
 
         event(new Registered($user));
+
+        // Send welcome notification
+        $verificationCode = rand(100000, 999999);
+        $user->notify(new WelcomeNotification($verificationCode));
 
         Auth::login($user);
 

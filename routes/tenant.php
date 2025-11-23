@@ -999,6 +999,15 @@ Route::prefix('ledger-accounts')->name('ledger-accounts.')->group(function () {
         // Help & Documentation
         Route::get('/help', [HelpController::class, 'index'])->name('tenant.help');
 
+        // Notifications
+        Route::prefix('notifications')->name('tenant.notifications.')->group(function () {
+            Route::get('/', [\App\Http\Controllers\Tenant\NotificationController::class, 'index'])->name('index');
+            Route::get('/unread-count', [\App\Http\Controllers\Tenant\NotificationController::class, 'getUnreadCount'])->name('unread-count');
+            Route::post('/{id}/mark-read', [\App\Http\Controllers\Tenant\NotificationController::class, 'markAsRead'])->name('mark-read');
+            Route::post('/mark-all-read', [\App\Http\Controllers\Tenant\NotificationController::class, 'markAllAsRead'])->name('mark-all-read');
+            Route::delete('/{id}', [\App\Http\Controllers\Tenant\NotificationController::class, 'destroy'])->name('destroy');
+        });
+
         // Settings & Configuration Module
         Route::prefix('settings')->name('tenant.settings.')->group(function () {
             Route::get('/', [SettingsController::class, 'index'])->name('index');

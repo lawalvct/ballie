@@ -13,12 +13,7 @@ class NotificationController extends Controller
      */
     public function index(Request $request)
     {
-        $user = Auth::user();
-        $notifications = $user->notifications()
-            ->where(function ($query) {
-                $query->whereNull('tenant_id')
-                      ->orWhere('tenant_id', tenant()->id);
-            })
+        $notifications = Auth::user()->notifications()
             ->orderBy('created_at', 'desc')
             ->paginate(20);
 
@@ -34,14 +29,10 @@ class NotificationController extends Controller
      */
     public function markAsRead($id)
     {
-        $user = Auth::user();
-        $notification = $user->notifications()->findOrFail($id);
+        $notification = Auth::user()->notifications()->findOrFail($id);
         $notification->markAsRead();
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Notification marked as read'
-        ]);
+        return response()->json(['success' => true]);
     }
 
     /**
@@ -49,18 +40,9 @@ class NotificationController extends Controller
      */
     public function markAllAsRead()
     {
-        $user = Auth::user();
-        $user->unreadNotifications()
-            ->where(function ($query) {
-                $query->whereNull('tenant_id')
-                      ->orWhere('tenant_id', tenant()->id);
-            })
-            ->update(['read_at' => now()]);
+        Auth::user()->unreadNotifications->markAsRead();
 
-        return response()->json([
-            'success' => true,
-            'message' => 'All notifications marked as read'
-        ]);
+        return response()->json(['success' => true]);
     }
 
     /**
@@ -68,13 +50,7 @@ class NotificationController extends Controller
      */
     public function getUnreadCount()
     {
-        $user = Auth::user();
-        $count = $user->unreadNotifications()
-            ->where(function ($query) {
-                $query->whereNull('tenant_id')
-                      ->orWhere('tenant_id', tenant()->id);
-            })
-            ->count();
+        $count = Auth::user()->unreadNotifications->count();
 
         return response()->json(['count' => $count]);
     }
@@ -84,13 +60,8 @@ class NotificationController extends Controller
      */
     public function destroy($id)
     {
-        $user = Auth::user();
-        $notification = $user->notifications()->findOrFail($id);
-        $notification->delete();
+        Auth::user()->notifications()->findOrFail($id)->delete();
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Notification deleted'
-        ]);
+        return response()->json(['success' => true]);
     }
 }
