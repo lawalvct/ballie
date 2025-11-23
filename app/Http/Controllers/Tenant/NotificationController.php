@@ -13,13 +13,18 @@ class NotificationController extends Controller
      */
     public function index(Request $request)
     {
+        if ($request->ajax() || $request->has('ajax')) {
+            $notifications = Auth::user()->notifications()
+                ->orderBy('created_at', 'desc')
+                ->limit(10)
+                ->get();
+            
+            return response()->json(['data' => $notifications]);
+        }
+
         $notifications = Auth::user()->notifications()
             ->orderBy('created_at', 'desc')
             ->paginate(20);
-
-        if ($request->ajax()) {
-            return response()->json($notifications);
-        }
 
         return view('tenant.notifications.index', compact('notifications'));
     }

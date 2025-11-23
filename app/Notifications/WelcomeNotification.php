@@ -53,7 +53,7 @@ class WelcomeNotification extends Notification
         return [
             'title' => 'Welcome to Ballie! 🎉',
             'message' => 'Your account has been created successfully. Start managing your business with ease.',
-            'action_url' => route('tenant.dashboard', ['tenant' => $notifiable->tenants->first()->slug ?? 'default']),
+            'action_url' => route('tenant.dashboard', ['tenant' => $notifiable->tenant->slug ?? 'default']),
             'action_text' => 'Go to Dashboard',
             'type' => 'welcome',
         ];
