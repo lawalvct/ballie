@@ -8,69 +8,51 @@
 <div class="space-y-6">
     <!-- Header with Actions -->
     <div class="flex items-center justify-between">
-        <div class="flex items-center space-x-4">
-            <a href="{{ route('tenant.inventory.index', ['tenant' => $tenant->slug]) }}"
-               class="inline-flex items-center p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors duration-200">
-                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
+           <div class="mt-4 lg:mt-0 flex flex-wrap gap-3">
+            <a href="{{ route('tenant.inventory.stock-journal.create.type', ['tenant' => $tenant->slug, 'type' => 'consumption']) }}"
+               class="inline-flex items-center px-4 py-2 bg-green-600 border border-transparent rounded-lg font-semibold text-xs text-white uppercase tracking-widest hover:bg-green-700 focus:bg-green-700 active:bg-green-900 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition ease-in-out duration-150">
+                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
                 </svg>
-                Back to Inventory
+               Material Consumption
             </a>
+
+              <a href="{{ route('tenant.inventory.stock-journal.create.type', ['tenant' => $tenant->slug, 'type' => 'production']) }}"
+               class="inline-flex items-center px-4 py-2 bg-primary-600 border border-transparent rounded-lg font-semibold text-xs text-white uppercase tracking-widest hover:bg-primary-700 focus:bg-primary-700 active:bg-primary-900 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 transition ease-in-out duration-150">
+                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                </svg>
+               Product Receipt
+            </a>
+                   <a href="{{ route('tenant.inventory.stock-journal.create.type', ['tenant' => $tenant->slug, 'type' => 'adjustment']) }}"
+               class="inline-flex items-center px-4 py-2 bg-red-600 border border-transparent rounded-lg font-semibold text-xs text-white uppercase tracking-widest hover:bg-red-700 focus:bg-red-700 active:bg-red-900 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 transition ease-in-out duration-150">
+                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                </svg>
+                Stock Adjustment
+            </a>
+
+            <a href="{{ route('tenant.inventory.stock-journal.create.type', ['tenant' => $tenant->slug, 'type' => 'transfer']) }}"
+               class="inline-flex items-center px-4 py-2 bg-white border border-gray-300 rounded-lg font-semibold text-xs text-gray-700 uppercase tracking-widest shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 transition ease-in-out duration-150">
+                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path>
+                </svg>
+               Stock Transfer
+            </a>
+
+
         </div>
         <div class="flex items-center space-x-3">
-            <!-- Quick Create Dropdown -->
-            <div class="relative" x-data="{ open: false }">
-                <button @click="open = !open"
-                        class="inline-flex items-center px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500">
-                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
-                    </svg>
-                    New Journal Entry
-                    <svg class="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
-                    </svg>
-                </button>
+              <a href="{{ route('tenant.inventory.index', ['tenant' => $tenant->slug, 'type' => 'transfer']) }}"
+               class="inline-flex items-center px-4 py-2 bg-white border border-gray-300 rounded-lg font-semibold text-xs text-gray-700 uppercase tracking-widest shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 transition ease-in-out duration-150">
+          <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
+</svg>
 
-                <div x-show="open" @click.away="open = false"
-                     x-transition:enter="transition ease-out duration-100"
-                     x-transition:enter-start="transform opacity-0 scale-95"
-                     x-transition:enter-end="transform opacity-100 scale-100"
-                     x-transition:leave="transition ease-in duration-75"
-                     x-transition:leave-start="transform opacity-100 scale-100"
-                     x-transition:leave-end="transform opacity-0 scale-95"
-                     class="absolute right-0 mt-2 w-56 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 z-10">
-                    <div class="py-1">
-                        <a href="{{ route('tenant.inventory.stock-journal.create.type', ['tenant' => $tenant->slug, 'type' => 'consumption']) }}"
-                           class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
-                            <div class="flex items-center">
-                                <div class="w-2 h-2 bg-red-500 rounded-full mr-3"></div>
-                                Material Consumption
-                            </div>
-                        </a>
-                        <a href="{{ route('tenant.inventory.stock-journal.create.type', ['tenant' => $tenant->slug, 'type' => 'production']) }}"
-                           class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
-                            <div class="flex items-center">
-                                <div class="w-2 h-2 bg-green-500 rounded-full mr-3"></div>
-                                Production Receipt
-                            </div>
-                        </a>
-                        <a href="{{ route('tenant.inventory.stock-journal.create.type', ['tenant' => $tenant->slug, 'type' => 'adjustment']) }}"
-                           class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
-                            <div class="flex items-center">
-                                <div class="w-2 h-2 bg-blue-500 rounded-full mr-3"></div>
-                                Stock Adjustment
-                            </div>
-                        </a>
-                        <a href="{{ route('tenant.inventory.stock-journal.create.type', ['tenant' => $tenant->slug, 'type' => 'transfer']) }}"
-                           class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
-                            <div class="flex items-center">
-                                <div class="w-2 h-2 bg-purple-500 rounded-full mr-3"></div>
-                                Stock Transfer
-                            </div>
-                        </a>
-                    </div>
-                </div>
-            </div>
+
+               Back
+            </a>
+
         </div>
     </div>
 

@@ -172,7 +172,7 @@
                                     <select :name="`items[${index}][movement_type]`" x-model="item.movement_type"
                                             @change="calculateAmount(index)"
                                             class="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-green-500 focus:border-green-500">
-                                        <option value="in" x-show="entryType === 'production' || entryType === 'adjustment'">In</option>
+                                        <option value="in" x-show="entryType === 'production' || entryType === 'adjustment' || entryType === 'consumption'">In</option>
                                         <option value="out" x-show="entryType === 'consumption' || entryType === 'adjustment' || entryType === 'transfer'">Out</option>
                                     </select>
                                 </td>
