@@ -20,6 +20,15 @@ use Barryvdh\DomPDF\Facade\Pdf;
 
 class QuotationController extends Controller
 {
+    public function __construct()
+    {
+        $this->middleware('auth');
+        $this->middleware('permission:accounting.quotations.manage')
+            ->except(['index', 'show']);
+        $this->middleware('permission:accounting.view')
+            ->only(['index', 'show']);
+    }
+
     public function index(Request $request, Tenant $tenant)
     {
         $query = Quotation::where('tenant_id', $tenant->id)

@@ -29,6 +29,10 @@ class VoucherController extends Controller
     public function __construct(VoucherTypeService $voucherTypeService)
     {
         $this->middleware(['auth', 'tenant']);
+        $this->middleware('permission:accounting.vouchers.manage')
+            ->except(['index', 'show', 'ledgerStatement']);
+        $this->middleware('permission:accounting.view')
+            ->only(['index', 'show', 'ledgerStatement']);
         $this->voucherTypeService = $voucherTypeService;
     }
 

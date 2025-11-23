@@ -996,6 +996,9 @@ Route::prefix('ledger-accounts')->name('ledger-accounts.')->group(function () {
             Route::put('/settings', [\App\Http\Controllers\Tenant\StatutoryController::class, 'updateSettings'])->name('settings.update');
         });
 
+        // Help & Documentation
+        Route::get('/help', [HelpController::class, 'index'])->name('tenant.help');
+
         // Settings & Configuration Module
         Route::prefix('settings')->name('tenant.settings.')->group(function () {
             Route::get('/', [SettingsController::class, 'index'])->name('index');

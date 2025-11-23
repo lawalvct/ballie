@@ -14,10 +14,10 @@
 ## 📋 TO PROTECT REMAINING MODULES
 
 ### Accounting Module
-- [ ] InvoiceController - Add middleware
-- [ ] VoucherController - Add middleware
+- [x] InvoiceController - Add middleware ✅
+- [x] VoucherController - Add middleware ✅
 - [ ] LedgerAccountController - Add middleware
-- [ ] QuotationController - Add middleware
+- [x] QuotationController - Add middleware ✅
 - [ ] Views: Hide create/edit/delete buttons based on permissions
 
 ### Inventory Module
@@ -46,7 +46,7 @@
 - [ ] Views: Hide settings sections based on permissions
 
 ### Navigation
-- [ ] Sidebar menu - Hide menu items based on permissions
+- [x] Sidebar menu - Hide menu items based on permissions ✅
 - [ ] Top navigation - Hide action buttons
 - [ ] Dashboard widgets - Show/hide based on permissions
 
@@ -136,8 +136,8 @@ For each module you protect:
 
 | Module | Controller | Views | Navigation | Tested |
 |--------|-----------|-------|------------|--------|
-| Admin | ✅ | ⬜ | ⬜ | ⬜ |
-| Accounting | ⬜ | ⬜ | ⬜ | ⬜ |
+| Admin | ✅ | ⬜ | ✅ | ⬜ |
+| Accounting | 🟡 | ⬜ | ✅ | ⬜ |
 | Inventory | ⬜ | ⬜ | ⬜ | ⬜ |
 | CRM | ⬜ | ⬜ | ⬜ | ⬜ |
 | Payroll | ⬜ | ⬜ | ⬜ | ⬜ |

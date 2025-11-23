@@ -3,23 +3,12 @@
 namespace App\Http\Controllers\Tenant;
 
 use App\Http\Controllers\Controller;
-use Illuminate\Http\Request;
+use App\Models\Tenant;
 
 class HelpController extends Controller
 {
-    /**
-     * Display video tutorials
-     */
-    public function videos()
+    public function index(Tenant $tenant)
     {
-        return view('tenant.help.videos');
-    }
-
-    /**
-     * Display help articles
-     */
-    public function articles()
-    {
-        return view('tenant.help.articles');
+        return view('tenant.help.index', compact('tenant'));
     }
 }

@@ -23,6 +23,15 @@ use Barryvdh\DomPDF\Facade\Pdf;
 
 class InvoiceController extends Controller
 {
+    public function __construct()
+    {
+        $this->middleware('auth');
+        $this->middleware('permission:accounting.invoices.manage')
+            ->except(['index', 'show']);
+        $this->middleware('permission:accounting.view')
+            ->only(['index', 'show']);
+    }
+
     public function index(Request $request, Tenant $tenant)
     {
         $query = Voucher::where('tenant_id', $tenant->id)
