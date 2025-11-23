@@ -1,7 +1,8 @@
 @extends('layouts.tenant')
 
 @section('title', 'Roles Management')
-
+@section('page-title', 'Roles Management')
+@section('page-description', 'Manage roles and permissions for your organization')
 @section('content')
     {{-- Page Header --}}
     @include('tenant.admin.partials.header', [
@@ -119,6 +120,13 @@
             ]
         ])
             @slot('headerActions')
+                <a href="{{ route('tenant.admin.users.create', tenant('slug')) }}"
+                   class="inline-flex items-center px-3 py-2 border border-transparent shadow-sm text-sm leading-4 font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                    </svg>
+                    Add User
+                </a>
                 <a href="{{ route('tenant.admin.roles.create', tenant('slug')) }}"
                    class="inline-flex items-center px-3 py-2 border border-transparent shadow-sm text-sm leading-4 font-medium rounded-md text-white bg-purple-600 hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500">
                     <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -187,7 +195,7 @@
                         @endif
                     </td>
                     <td class="px-6 py-4 whitespace-nowrap">
-                        @if($role->status === 'active')
+                        @if($role->is_active === true)
                             <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">
                                 Active
                             </span>

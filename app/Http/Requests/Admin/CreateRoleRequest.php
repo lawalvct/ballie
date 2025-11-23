@@ -11,7 +11,19 @@ class CreateRoleRequest extends FormRequest
      */
     public function authorize(): bool
     {
-        return auth()->check() && auth()->user()->can('admin.roles.manage');
+        if (!auth()->check()) {
+            return false;
+        }
+        
+        $user = auth()->user();
+        
+        // Owner role has all permissions
+        if ($user->roles()->where('name', 'Owner')->exists()) {
+            return true;
+        }
+        
+        // Check for explicit permission
+        return $user->can('admin.roles.manage');
     }
 
     /**
