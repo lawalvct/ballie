@@ -30,8 +30,8 @@
                     </div>
                     <div class="text-white">
                         <h3 class="text-2xl md:text-3xl font-bold mb-2">Welcome to Ballie! 🎉</h3>
-                        <p class="text-blue-100 text-base md:text-lg mb-1">New to the platform? Let us show you around!</p>
-                        <p class="text-blue-200 text-sm">Take a quick 2-minute tour to learn all the features.</p>
+                        <p class="text-blue-100 text-base md:text-lg mb-1">Need help getting started?</p>
+                        <p class="text-blue-200 text-sm">Check out our comprehensive documentation and guides.</p>
                     </div>
                 </div>
                 <div class="flex flex-col sm:flex-row gap-3">
@@ -41,8 +41,8 @@
                             Maybe Later
                         </button>
                     </form>
-                    <a href="{{ route('tenant.tour.start', $tenant->slug) }}" class="px-8 py-3 bg-white text-indigo-600 font-bold rounded-xl hover:bg-blue-50 transition-all">
-                        Start Tour Now
+                    <a href="{{ route('tenant.help', $tenant->slug) }}" class="px-8 py-3 bg-white text-indigo-600 font-bold rounded-xl hover:bg-blue-50 transition-all">
+                        Help & Documentation
                     </a>
                 </div>
             </div>
