@@ -337,21 +337,24 @@ class OnboardingController extends Controller
                 // Run permissions seeder
                 (new PermissionsSeeder())->run();
 
-                // Get or create Owner role
-                $ownerRole = Role::firstOrCreate(
-                    [
-                        'slug' => 'owner',
-                        'tenant_id' => $tenant->id
-                    ],
-                    [
+                // Check if Owner role already exists for this tenant
+                $ownerRole = Role::where('tenant_id', $tenant->id)
+                    ->where('name', 'Owner')
+                    ->first();
+
+                if (!$ownerRole) {
+                    // Create Owner role with tenant-specific slug
+                    $ownerRole = Role::create([
+                        'slug' => 'owner-' . $tenant->id,
+                        'tenant_id' => $tenant->id,
                         'name' => 'Owner',
                         'description' => 'Full system access with all permissions',
                         'is_active' => true,
                         'is_default' => false,
                         'color' => '#dc2626',
                         'priority' => 1
-                    ]
-                );
+                    ]);
+                }
 
                 // Get all permissions and assign to owner
                 $allPermissions = Permission::all();
@@ -829,7 +832,7 @@ class OnboardingController extends Controller
 
             // Assign owner role to the current user
             if (auth()->check()) {
-                $ownerRole = Role::where('slug', 'owner')
+                $ownerRole = Role::where('name', 'Owner')
                     ->where('tenant_id', $tenant->id)
                     ->first();
 

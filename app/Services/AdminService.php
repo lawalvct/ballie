@@ -49,11 +49,9 @@ class AdminService
      */
     private function getRecentLoginsCount()
     {
-        // This would typically come from a login_logs table
-        // For now, we'll use cache or implement a simple tracking
-        return Cache::remember('recent_logins_count_' . tenant()->id, 3600, function () {
-            return rand(10, 50); // Placeholder
-        });
+        return User::where('tenant_id', tenant()->id)
+            ->where('last_login_at', '>=', now()->subHours(24))
+            ->count();
     }
 
     /**
@@ -61,10 +59,8 @@ class AdminService
      */
     private function getFailedLoginsToday()
     {
-        // This would typically come from a failed_login_attempts table
-        return Cache::remember('failed_logins_today_' . tenant()->id, 3600, function () {
-            return rand(0, 5); // Placeholder
-        });
+        // Placeholder until failed_login_attempts table is implemented
+        return 0;
     }
 
     /**
@@ -74,21 +70,16 @@ class AdminService
     {
         // Check if using database sessions
         if (config('session.driver') === 'database') {
-            return Cache::remember('active_sessions_' . tenant()->id, 300, function () {
-                return DB::table('sessions')
-                    ->where('user_id', '!=', null)
-                    ->where('last_activity', '>=', now()->subMinutes(30)->timestamp)
-                    ->count();
-            });
+            return DB::table('sessions')
+                ->where('user_id', '!=', null)
+                ->where('last_activity', '>=', now()->subMinutes(30)->timestamp)
+                ->count();
         }
 
-        // For file-based sessions, return a placeholder or calculate differently
-        return Cache::remember('active_sessions_' . tenant()->id, 300, function () {
-            // Return count of users active in last 30 minutes based on updated_at
-            return User::where('tenant_id', tenant()->id)
-                ->where('updated_at', '>=', now()->subMinutes(30))
-                ->count();
-        });
+        // For file-based sessions, count users active in last 30 minutes
+        return User::where('tenant_id', tenant()->id)
+            ->where('last_login_at', '>=', now()->subMinutes(30))
+            ->count();
     }
 
     /**
@@ -155,12 +146,21 @@ class AdminService
      */
     private function getActivitySummary()
     {
-        // This would typically come from an activity_logs table
+        $tenantId = tenant()->id;
+        
         return [
-            'user_registrations' => rand(1, 10),
-            'role_assignments' => rand(1, 5),
-            'permission_changes' => rand(0, 3),
-            'login_attempts' => rand(20, 100),
+            'user_registrations' => User::where('tenant_id', $tenantId)
+                ->whereDate('created_at', today())
+                ->count(),
+            'role_assignments' => DB::table('role_user')
+                ->join('users', 'role_user.user_id', '=', 'users.id')
+                ->where('users.tenant_id', $tenantId)
+                ->whereDate('role_user.created_at', today())
+                ->count(),
+            'permission_changes' => 0, // Placeholder until activity logging is implemented
+            'login_attempts' => User::where('tenant_id', $tenantId)
+                ->whereDate('last_login_at', today())
+                ->count(),
         ];
     }
 

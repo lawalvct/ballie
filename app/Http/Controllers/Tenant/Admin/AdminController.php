@@ -443,7 +443,14 @@ class AdminController extends Controller
             ->latest()
             ->paginate(15);
 
-        return view('tenant.admin.roles.index', compact('roles'));
+        $stats = [
+            'total_roles' => Role::where('tenant_id', tenant()->id)->count(),
+            'active_roles' => Role::where('tenant_id', tenant()->id)->where('is_active', true)->count(),
+            'users_with_roles' => User::where('tenant_id', tenant()->id)->whereHas('roles')->count(),
+            'total_permissions' => Permission::count(),
+        ];
+
+        return view('tenant.admin.roles.index', compact('roles', 'stats'));
     }
 
     /**
@@ -477,7 +484,7 @@ class AdminController extends Controller
 
             DB::commit();
 
-            return redirect()->route('tenant.admin.roles.index')
+            return redirect()->route('tenant.admin.roles.index', tenant('slug'))
                 ->with('success', 'Role created successfully!');
 
         } catch (Exception $e) {
@@ -490,17 +497,21 @@ class AdminController extends Controller
     /**
      * Show role details
      */
-    public function showRole(Role $role)
+    public function showRole($tenant, $roleId)
     {
-        $role->load(['permissions', 'users']);
+        $role = Role::where('tenant_id', tenant()->id)
+            ->with(['permissions', 'users'])
+            ->findOrFail($roleId);
         return view('tenant.admin.roles.show', compact('role'));
     }
 
     /**
      * Show edit role form
      */
-    public function editRole(Role $role)
+    public function editRole($tenant, $roleId)
     {
+        $role = Role::where('tenant_id', tenant()->id)
+            ->findOrFail($roleId);
         $permissions = Permission::all()->groupBy('module');
         $role->load('permissions');
 
@@ -510,8 +521,11 @@ class AdminController extends Controller
     /**
      * Update role
      */
-    public function updateRole(UpdateRoleRequest $request, Role $role)
+    public function updateRole(UpdateRoleRequest $request, $tenant, $roleId)
     {
+        $role = Role::where('tenant_id', tenant()->id)
+            ->findOrFail($roleId);
+
         try {
             DB::beginTransaction();
 
@@ -530,7 +544,7 @@ class AdminController extends Controller
 
             DB::commit();
 
-            return redirect()->route('tenant.admin.roles.index')
+            return redirect()->route('tenant.admin.roles.index', tenant('slug'))
                 ->with('success', 'Role updated successfully!');
 
         } catch (Exception $e) {
@@ -543,8 +557,11 @@ class AdminController extends Controller
     /**
      * Delete role
      */
-    public function destroyRole(Role $role)
+    public function destroyRole($tenant, $roleId)
     {
+        $role = Role::where('tenant_id', tenant()->id)
+            ->findOrFail($roleId);
+
         try {
             if ($role->users()->count() > 0) {
                 return back()->with('error', 'Cannot delete role with assigned users!');
@@ -552,7 +569,7 @@ class AdminController extends Controller
 
             $role->delete();
 
-            return redirect()->route('tenant.admin.roles.index')
+            return redirect()->route('tenant.admin.roles.index', tenant('slug'))
                 ->with('success', 'Role deleted successfully!');
 
         } catch (Exception $e) {
@@ -563,8 +580,12 @@ class AdminController extends Controller
     /**
      * Clone role
      */
-    public function cloneRole(Role $role)
+    public function cloneRole($tenant, $roleId)
     {
+        $role = Role::where('tenant_id', tenant()->id)
+            ->with('permissions')
+            ->findOrFail($roleId);
+
         try {
             DB::beginTransaction();
 
@@ -582,7 +603,7 @@ class AdminController extends Controller
             return response()->json([
                 'success' => true,
                 'message' => 'Role cloned successfully!',
-                'redirect' => route('tenant.admin.roles.edit', $newRole)
+                'redirect' => route('tenant.admin.roles.edit', [tenant('slug'), $newRole->id])
             ]);
 
         } catch (Exception $e) {

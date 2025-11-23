@@ -11,7 +11,7 @@ class CreateRoleRequest extends FormRequest
      */
     public function authorize(): bool
     {
-        return auth()->check() && (auth()->user()->can('create_roles') || auth()->user()->can('manage_roles'));
+        return auth()->check() && auth()->user()->can('admin.roles.manage');
     }
 
     /**

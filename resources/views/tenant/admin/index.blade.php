@@ -11,12 +11,17 @@
 <div class="space-y-6">
     <!-- Header -->
     <div class="flex justify-between items-center">
-
         <div class="flex space-x-3">
-            <button type="button" class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500">
-                <i class="fas fa-download mr-2"></i>
-                Export Users
-            </button>
+            <a href="{{ route('tenant.admin.users.index', tenant('slug')) }}" class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500">
+                <i class="fas fa-users mr-2"></i>
+                Manage Users
+            </a>
+            <a href="{{ route('tenant.admin.roles.index', tenant('slug')) }}" class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500">
+                <i class="fas fa-user-shield mr-2"></i>
+                Manage Roles
+            </a>
+        </div>
+        <div>
             <a href="{{ route('tenant.admin.users.create', tenant('slug')) }}" class="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-purple-600 hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500">
                 <i class="fas fa-plus mr-2"></i>
                 Add User
