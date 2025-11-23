@@ -86,15 +86,12 @@ class AdminController extends Controller
 
         $users = $query->latest()->paginate(15);
 
-        // Get both default roles and tenant-specific roles for filter dropdown
-        $roles = Role::where(function($query) {
-            $query->where('tenant_id', tenant()->id)
-                  ->orWhere('tenant_id', 'default');
-        })
-        ->where('is_active', true)
-        ->orderBy('priority', 'asc')
-        ->orderBy('name', 'asc')
-        ->get();
+        // Get tenant-specific roles for filter dropdown
+        $roles = Role::where('tenant_id', tenant()->id)
+            ->where('is_active', true)
+            ->orderBy('priority', 'asc')
+            ->orderBy('name', 'asc')
+            ->get();
 
         // Calculate statistics
         $stats = [
@@ -112,15 +109,12 @@ class AdminController extends Controller
      */
     public function createUser()
     {
-        // Get both default roles and tenant-specific roles
-        $roles = Role::where(function($query) {
-            $query->where('tenant_id', tenant()->id)
-                  ->orWhere('tenant_id', 'default');
-        })
-        ->where('is_active', true)
-        ->orderBy('priority', 'asc')
-        ->orderBy('name', 'asc')
-        ->get();
+        // Get tenant-specific roles
+        $roles = Role::where('tenant_id', tenant()->id)
+            ->where('is_active', true)
+            ->orderBy('priority', 'asc')
+            ->orderBy('name', 'asc')
+            ->get();
 
         return view('tenant.admin.users.create', compact('roles'));
     }
@@ -222,15 +216,12 @@ class AdminController extends Controller
 
         // $this->authorize('update', $user);
 
-        // Get both default roles and tenant-specific roles
-        $roles = Role::where(function($query) {
-            $query->where('tenant_id', tenant()->id)
-                  ->orWhere('tenant_id', 'default');
-        })
-        ->where('is_active', true)
-        ->orderBy('priority', 'asc')
-        ->orderBy('name', 'asc')
-        ->get();
+        // Get tenant-specific roles
+        $roles = Role::where('tenant_id', tenant()->id)
+            ->where('is_active', true)
+            ->orderBy('priority', 'asc')
+            ->orderBy('name', 'asc')
+            ->get();
 
         $user->load('roles');
 

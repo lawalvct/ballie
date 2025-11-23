@@ -84,8 +84,8 @@ class User extends Authenticatable
 
     public function hasPermission($permission): bool
     {
-        // Owner has all permissions
-        if ($this->isOwner()) {
+        // Check if user has Owner role (has all permissions)
+        if ($this->roles()->where('name', 'Owner')->exists()) {
             return true;
         }
 
