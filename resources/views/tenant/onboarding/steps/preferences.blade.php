@@ -36,17 +36,6 @@
                 <div class="w-10 h-10 bg-gray-200 text-gray-500 rounded-full flex items-center justify-center font-semibold">
                     3
                 </div>
-                <span class="ml-3 text-sm font-medium text-gray-500 whitespace-nowrap">Team Setup</span>
-            </div>
-
-            <!-- Connector -->
-            <div class="w-8 md:w-16 h-1 bg-gray-200 rounded hidden sm:block"></div>
-
-            <!-- Step 4 -->
-            <div class="flex items-center flex-shrink-0">
-                <div class="w-10 h-10 bg-gray-200 text-gray-500 rounded-full flex items-center justify-center font-semibold">
-                    4
-                </div>
                 <span class="ml-3 text-sm font-medium text-gray-500 whitespace-nowrap">Complete</span>
             </div>
         </div>
@@ -159,204 +148,70 @@
                     </div>
 
                     <div>
-                        <label for="invoice_prefix" class="block text-sm font-medium text-gray-700 mb-2">
-                            Invoice Number Prefix
+                        <label for="default_tax_rate" class="block text-sm font-medium text-gray-700 mb-2">
+                            Default VAT Rate (%) <span class="text-red-500">*</span>
                         </label>
-                        <input type="text" id="invoice_prefix" name="invoice_prefix"
-                        value="{{ old('invoice_prefix', $currentTenant->settings['invoice_prefix'] ?? 'INV') }}"
-                        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-blue focus:border-transparent transition-colors"
-                        placeholder="INV" maxlength="10">
-                 <p class="text-xs text-gray-500 mt-1">Example: INV-001, BILL-001</p>
-             </div>
-         </div>
+                        <input type="number" id="default_tax_rate" name="default_tax_rate"
+                               value="{{ old('default_tax_rate', $currentTenant->settings['default_tax_rate'] ?? '7.5') }}"
+                               class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-blue focus:border-transparent transition-colors"
+                               step="0.01" min="0" max="100" required>
+                        <p class="text-xs text-gray-500 mt-1">Current Nigerian VAT rate is 7.5%</p>
+                    </div>
+                </div>
 
-         <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
-             <div>
-                 <label for="quote_prefix" class="block text-sm font-medium text-gray-700 mb-2">
-                     Quote Number Prefix
-                 </label>
-                 <input type="text" id="quote_prefix" name="quote_prefix"
-                        value="{{ old('quote_prefix', $currentTenant->settings['quote_prefix'] ?? 'QUO') }}"
-                        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-blue focus:border-transparent transition-colors"
-                        placeholder="QUO" maxlength="10">
-             </div>
+                <div class="mt-6">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">
+                        Tax Inclusive Pricing <span class="text-red-500">*</span>
+                    </label>
+                    <div class="space-y-2">
+                        <label class="flex items-center">
+                            <input type="radio" name="tax_inclusive" value="1"
+                                   {{ old('tax_inclusive', $currentTenant->settings['tax_inclusive'] ?? '0') == '1' ? 'checked' : '' }}
+                                   class="text-brand-blue focus:ring-brand-blue">
+                            <span class="ml-2 text-sm text-gray-700">Prices include tax</span>
+                        </label>
+                        <label class="flex items-center">
+                            <input type="radio" name="tax_inclusive" value="0"
+                                   {{ old('tax_inclusive', $currentTenant->settings['tax_inclusive'] ?? '0') == '0' ? 'checked' : '' }}
+                                   class="text-brand-blue focus:ring-brand-blue">
+                            <span class="ml-2 text-sm text-gray-700">Prices exclude tax</span>
+                        </label>
+                    </div>
+                </div>
+            </div>
 
-             <div>
-                 <label for="receipt_prefix" class="block text-sm font-medium text-gray-700 mb-2">
-                     Receipt Number Prefix
-                 </label>
-                 <input type="text" id="receipt_prefix" name="receipt_prefix"
-                        value="{{ old('receipt_prefix', $currentTenant->settings['receipt_prefix'] ?? 'REC') }}"
-                        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-blue focus:border-transparent transition-colors"
-                        placeholder="REC" maxlength="10">
-             </div>
-         </div>
-     </div>
+            <!-- Form Actions -->
+            <div class="flex flex-col sm:flex-row items-center justify-between pt-6 border-t border-gray-200 space-y-4 sm:space-y-0">
+                <div class="text-sm text-gray-500">
+                    Step 2 of 3 - Business Preferences
+                </div>
 
-     <!-- Tax Settings -->
-     <div class="bg-green-50 rounded-lg p-6">
-         <h3 class="text-lg font-semibold text-gray-900 mb-4 flex items-center">
-             <svg class="w-5 h-5 mr-2 text-brand-green" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path>
-             </svg>
-             Tax Configuration
-         </h3>
-
-         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-             <div>
-                 <label for="default_tax_rate" class="block text-sm font-medium text-gray-700 mb-2">
-                     Default VAT Rate (%)
-                 </label>
-                 <input type="number" id="default_tax_rate" name="default_tax_rate"
-                        value="{{ old('default_tax_rate', $currentTenant->settings['default_tax_rate'] ?? '7.5') }}"
-                        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-blue focus:border-transparent transition-colors"
-                        step="0.01" min="0" max="100">
-                 <p class="text-xs text-gray-500 mt-1">Current Nigerian VAT rate is 7.5%</p>
-             </div>
-
-             <div>
-                 <label class="block text-sm font-medium text-gray-700 mb-2">
-                     Tax Inclusive Pricing
-                 </label>
-                 <div class="space-y-2">
-                     <label class="flex items-center">
-                         <input type="radio" name="tax_inclusive" value="1"
-                                {{ old('tax_inclusive', $currentTenant->settings['tax_inclusive'] ?? '0') == '1' ? 'checked' : '' }}
-                                class="text-brand-blue focus:ring-brand-blue">
-                         <span class="ml-2 text-sm text-gray-700">Prices include tax</span>
-                     </label>
-                     <label class="flex items-center">
-                         <input type="radio" name="tax_inclusive" value="0"
-                                {{ old('tax_inclusive', $currentTenant->settings['tax_inclusive'] ?? '0') == '0' ? 'checked' : '' }}
-                                class="text-brand-blue focus:ring-brand-blue">
-                         <span class="ml-2 text-sm text-gray-700">Prices exclude tax</span>
-                     </label>
-                 </div>
-             </div>
-         </div>
-     </div>
-
-     <!-- Notification Settings -->
-     <div class="bg-purple-50 rounded-lg p-6">
-         <h3 class="text-lg font-semibold text-gray-900 mb-4 flex items-center">
-             <svg class="w-5 h-5 mr-2 text-brand-purple" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-5 5v-5zM4 19h6v-2H4v2zM4 15h8v-2H4v2zM4 11h10V9H4v2zM4 7h12V5H4v2z"></path>
-             </svg>
-             Notifications & Reminders
-         </h3>
-
-         <div class="space-y-4">
-             <label class="flex items-center">
-                 <input type="checkbox" name="email_notifications" value="1"
-                        {{ old('email_notifications', $currentTenant->settings['email_notifications'] ?? '1') == '1' ? 'checked' : '' }}
-                        class="text-brand-blue focus:ring-brand-blue rounded">
-                 <span class="ml-3 text-sm text-gray-700">Send email notifications for important events</span>
-             </label>
-
-             <label class="flex items-center">
-                 <input type="checkbox" name="payment_reminders" value="1"
-                        {{ old('payment_reminders', $currentTenant->settings['payment_reminders'] ?? '1') == '1' ? 'checked' : '' }}
-                        class="text-brand-blue focus:ring-brand-blue rounded">
-                 <span class="ml-3 text-sm text-gray-700">Automatic payment reminders to customers</span>
-             </label>
-
-             <label class="flex items-center">
-                 <input type="checkbox" name="low_stock_alerts" value="1"
-                        {{ old('low_stock_alerts', $currentTenant->settings['low_stock_alerts'] ?? '1') == '1' ? 'checked' : '' }}
-                        class="text-brand-blue focus:ring-brand-blue rounded">
-                 <span class="ml-3 text-sm text-gray-700">Low stock level alerts</span>
-             </label>
-
-             <label class="flex items-center">
-                 <input type="checkbox" name="backup_reminders" value="1"
-                        {{ old('backup_reminders', $currentTenant->settings['backup_reminders'] ?? '1') == '1' ? 'checked' : '' }}
-                        class="text-brand-blue focus:ring-brand-blue rounded">
-                 <span class="ml-3 text-sm text-gray-700">Weekly backup reminders</span>
-             </label>
-         </div>
-     </div>
-
-     <!-- Form Actions -->
-     <div class="flex flex-col sm:flex-row items-center justify-between pt-6 border-t border-gray-200 space-y-4 sm:space-y-0">
-         <div class="text-sm text-gray-500">
-             Step 2 of 4 - Business Preferences
-         </div>
-
-         <div class="flex space-x-4">
-             <a href="{{ route('tenant.onboarding.step', ['tenant' => $currentTenant->slug, 'step' => 'company']) }}"
-                class="px-6 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium">
-                 Back
-             </a>
-             <button type="submit"
-                     class="px-8 py-3 bg-brand-blue text-white rounded-lg hover:bg-brand-dark-purple transition-colors font-medium flex items-center">
-                 Continue
-                 <svg class="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
-                 </svg>
-             </button>
-         </div>
-     </div>
- </form>
-</div>
-</div>
-
-<!-- Help Section -->
-<div class="mt-8 bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-<div class="flex items-start">
- <div class="w-10 h-10 bg-brand-teal bg-opacity-10 rounded-lg flex items-center justify-center mr-4 flex-shrink-0">
-     <svg class="w-5 h-5 text-brand-teal" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-     </svg>
- </div>
- <div>
-     <h3 class="text-lg font-semibold text-gray-900 mb-2">Configuration Tips</h3>
-     <ul class="text-gray-600 space-y-2 text-sm">
-         <li>• <strong>Currency:</strong> Choose your primary business currency. You can add more currencies later.</li>
-         <li>• <strong>Financial Year:</strong> Most Nigerian businesses use January 1st as their financial year start.</li>
-         <li>• <strong>VAT Rate:</strong> The current Nigerian VAT rate is 7.5%. This can be updated if rates change.</li>
-         <li>• <strong>Prefixes:</strong> Use short, meaningful prefixes for your document numbers (e.g., INV, QUO, REC).</li>
-     </ul>
- </div>
-</div>
+                <div class="flex space-x-4">
+                    <a href="{{ route('tenant.onboarding.step', ['tenant' => $currentTenant->slug, 'step' => 'company']) }}"
+                       class="px-6 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium">
+                        Back
+                    </a>
+                    <button type="submit"
+                            class="px-8 py-3 bg-brand-blue text-white rounded-lg hover:bg-brand-dark-purple transition-colors font-medium flex items-center">
+                        Complete Setup
+                        <svg class="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
 </div>
 @endsection
 
 @push('scripts')
 <script>
-// Preview currency format
-document.getElementById('currency').addEventListener('change', function() {
-const currency = this.value;
-const symbols = {
- 'NGN': '₦',
- 'USD': '$',
- 'GBP': '£',
- 'EUR': '€'
-};
-
-// You can add preview functionality here
-console.log('Currency changed to:', currency, symbols[currency]);
-});
-
 // Validate tax rate
 document.getElementById('default_tax_rate').addEventListener('input', function() {
-const value = parseFloat(this.value);
-if (value < 0) this.value = 0;
-if (value > 100) this.value = 100;
-});
-
-// Form validation
-document.querySelector('form').addEventListener('submit', function(e) {
-const currency = document.getElementById('currency').value;
-const timezone = document.getElementById('timezone').value;
-const dateFormat = document.getElementById('date_format').value;
-const timeFormat = document.getElementById('time_format').value;
-const financialYear = document.getElementById('fiscal_year_start').value;
-
-if (!currency || !timezone || !dateFormat || !timeFormat || !financialYear) {
- e.preventDefault();
- alert('Please fill in all required fields.');
- return false;
-}
+    const value = parseFloat(this.value);
+    if (value < 0) this.value = 0;
+    if (value > 100) this.value = 100;
 });
 </script>
 @endpush

@@ -34,17 +34,6 @@
                 <div class="w-10 h-10 bg-gray-200 text-gray-500 rounded-full flex items-center justify-center font-semibold">
                     3
                 </div>
-                <span class="ml-3 text-sm font-medium text-gray-500 whitespace-nowrap">Team Setup</span>
-            </div>
-
-            <!-- Connector -->
-            <div class="w-8 md:w-16 h-1 bg-gray-200 rounded hidden sm:block"></div>
-
-            <!-- Step 4 -->
-            <div class="flex items-center flex-shrink-0">
-                <div class="w-10 h-10 bg-gray-200 text-gray-500 rounded-full flex items-center justify-center font-semibold">
-                    4
-                </div>
                 <span class="ml-3 text-sm font-medium text-gray-500 whitespace-nowrap">Complete</span>
             </div>
         </div>
@@ -302,7 +291,7 @@
             <!-- Form Actions -->
             <div class="flex flex-col sm:flex-row items-center justify-between pt-6 border-t border-gray-200 space-y-4 sm:space-y-0">
                 <div class="text-sm text-gray-500">
-                    Step 1 of 4 - Company Information
+                    Step 1 of 3 - Company Information
                 </div>
 
                 <div class="flex space-x-4">

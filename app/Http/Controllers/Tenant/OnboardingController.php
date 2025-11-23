@@ -566,7 +566,7 @@ class OnboardingController extends Controller
             return redirect()->route('tenant.dashboard', ['tenant' => $tenant->slug]);
         }
 
-        $validSteps = ['company', 'preferences', 'team', 'complete'];
+        $validSteps = ['company', 'preferences', 'complete'];
 
         if (!in_array($step, $validSteps)) {
             return redirect()->route('tenant.onboarding.index', ['tenant' => $tenant->slug]);
@@ -582,8 +582,6 @@ class OnboardingController extends Controller
                 return $this->saveCompanyStep($request, $tenant);
             case 'preferences':
                 return $this->savePreferencesStep($request, $tenant);
-            case 'team':
-                return $this->saveTeamStep($request, $tenant);
             default:
                 return redirect()->route('tenant.onboarding.index', ['tenant' => $tenant->slug]);
         }
@@ -707,7 +705,7 @@ class OnboardingController extends Controller
 
         return redirect()->route('tenant.onboarding.step', [
             'tenant' => $tenant->slug,
-            'step' => 'team'
+            'step' => 'complete'
         ])->with('success', 'Preferences saved successfully!');
     }
 
