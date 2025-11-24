@@ -831,6 +831,10 @@ Route::prefix('ledger-accounts')->name('ledger-accounts.')->group(function () {
                 Route::post('/{announcement}/send', [\App\Http\Controllers\Tenant\Payroll\AnnouncementController::class, 'send'])->name('send');
                 Route::post('/preview-recipients', [\App\Http\Controllers\Tenant\Payroll\AnnouncementController::class, 'previewRecipients'])->name('preview-recipients');
             });
+
+            // Payroll Settings
+            Route::get('/settings', [PayrollController::class, 'settings'])->name('settings');
+            Route::put('/settings', [PayrollController::class, 'updateSettings'])->name('settings.update');
         });
 
         // Admin Management Module

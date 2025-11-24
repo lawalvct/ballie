@@ -21,7 +21,7 @@ class Employee extends Model
         'confirmation_date', 'employment_type', 'pay_frequency', 'status',
         'attendance_deduction_exempt', 'attendance_exemption_reason',
         'bank_name', 'bank_code', 'account_number', 'account_name',
-        'tin', 'annual_relief', 'pension_pin', 'pfa_name', 'avatar'
+        'tin', 'annual_relief', 'pension_pin', 'pfa_name', 'avatar', 'employee_number_format'
     ];
 
     protected $casts = [
@@ -156,20 +156,36 @@ class Employee extends Model
     // Methods
     public static function generateEmployeeNumber($tenantId): string
     {
-        $prefix = 'EMP-' . date('Y') . '-';
+        $tenant = Tenant::find($tenantId);
+        $format = $tenant->employee_number_format ?? 'EMP-{YYYY}-{####}';
+
+        // Extract number placeholder pattern
+        preg_match('/\{(#{2,})\}/', $format, $matches);
+        $numberPlaceholder = $matches[0] ?? '{####}';
+        $padding = strlen($matches[1] ?? '####');
+
+        // Replace date placeholders
+        $prefix = str_replace(
+            ['{YYYY}', '{YY}', '{MM}'],
+            [date('Y'), date('y'), date('m')],
+            $format
+        );
+
+        // Remove number placeholder for search
+        $searchPrefix = str_replace($numberPlaceholder, '', $prefix);
+
         $lastEmployee = static::where('tenant_id', $tenantId)
-            ->where('employee_number', 'like', $prefix . '%')
+            ->where('employee_number', 'like', $searchPrefix . '%')
             ->orderBy('id', 'desc')
             ->first();
 
+        $newNumber = 1;
         if ($lastEmployee) {
-            $lastNumber = intval(substr($lastEmployee->employee_number, strlen($prefix)));
+            $lastNumber = intval(substr($lastEmployee->employee_number, strlen($searchPrefix)));
             $newNumber = $lastNumber + 1;
-        } else {
-            $newNumber = 1;
         }
 
-        return $prefix . str_pad($newNumber, 4, '0', STR_PAD_LEFT);
+        return str_replace($numberPlaceholder, str_pad($newNumber, $padding, '0', STR_PAD_LEFT), $prefix);
     }
 
     public function calculateMonthlyGross(): float

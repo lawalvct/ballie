@@ -242,7 +242,7 @@ class PayrollController extends Controller
             $validated = $request->validate([
                 'first_name' => 'required|string|max:255',
                 'last_name' => 'required|string|max:255',
-                'email' => 'required|email|unique:employees,email',
+                'email' => 'required|email|unique:employees,email,NULL,id,tenant_id,' . $tenant->id,
                 'phone' => 'nullable|string|max:20',
                 'department_id' => 'required|exists:departments,id',
                 'position_id' => 'nullable|exists:positions,id',
@@ -2287,5 +2287,27 @@ class PayrollController extends Controller
                 ->back()
                 ->with('error', 'Failed to reset payroll generation: ' . $e->getMessage());
         }
+    }
+
+    /**
+     * Show payroll settings page
+     */
+    public function settings(Tenant $tenant)
+    {
+        return view('tenant.payroll.settings', compact('tenant'));
+    }
+
+    /**
+     * Update payroll settings
+     */
+    public function updateSettings(Request $request, Tenant $tenant)
+    {
+        $validated = $request->validate([
+            'employee_number_format' => 'required|string|max:50',
+        ]);
+
+        $tenant->update($validated);
+
+        return redirect()->back()->with('success', 'Payroll settings updated successfully.');
     }
 }
