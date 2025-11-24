@@ -154,12 +154,20 @@
                         $actionRoute = $isDowngrade ? route('tenant.subscription.downgrade.process', ['tenant' => tenant()->slug, 'plan' => $plan->id]) : route('tenant.subscription.upgrade.process', ['tenant' => tenant()->slug, 'plan' => $plan->id]);
                     @endphp
                     @if($isCurrent)
-                        <button class="w-full bg-gradient-to-r from-gray-200 to-gray-300 text-gray-600 py-3 px-4 rounded-lg cursor-not-allowed flex items-center justify-center gap-2 font-medium" disabled aria-disabled="true">
-                            <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
-                            </svg>
-                            {{ $actionLabel }}
-                        </button>
+                        <div class="space-y-2">
+                            <button class="w-full bg-gradient-to-r from-gray-200 to-gray-300 text-gray-600 py-3 px-4 rounded-lg cursor-not-allowed flex items-center justify-center gap-2 font-medium" disabled aria-disabled="true">
+                                <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+                                </svg>
+                                {{ $actionLabel }}
+                            </button>
+                            <a href="{{ route('tenant.subscription.renew', tenant()->slug) }}" class="w-full bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white py-3 px-4 rounded-lg flex items-center justify-center gap-2 font-medium transition-all duration-200 transform hover:scale-105">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+                                </svg>
+                                Renew Plan
+                            </a>
+                        </div>
                     @else
                         <form method="POST" action="{{ $actionRoute }}" class="inline-block w-full" onsubmit="this.querySelector('[name=billing_cycle]').value = window.__billingCycle || 'monthly'; this.querySelector('button').innerHTML = '<svg class=\'w-4 h-4 animate-spin mr-2\' fill=\'none\' viewBox=\'0 0 24 24\'><circle class=\'opacity-25\' cx=\'12\' cy=\'12\' r=\'10\' stroke=\'currentColor\' stroke-width=\'4\'></circle><path class=\'opacity-75\' fill=\'currentColor\' d=\'M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z\'></path></svg>Processing...'; this.querySelector('button').disabled = true;">
                             @csrf
@@ -168,6 +176,7 @@
                                 class="w-full py-3 px-4 rounded-lg transition-all duration-200 inline-flex items-center justify-center gap-2 text-sm font-medium transform hover:scale-105 focus:scale-105 focus:outline-none focus:ring-2 focus:ring-offset-2
                                     {{ $isUpgrade ? 'bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white focus:ring-blue-500' : '' }}
                                     {{ $isDowngrade ? 'bg-gradient-to-r from-orange-600 to-orange-700 hover:from-orange-700 hover:to-orange-800 text-white focus:ring-orange-500' : '' }}
+                                    {{ !$isUpgrade && !$isDowngrade ? 'bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 text-white focus:ring-purple-500' : '' }}
                                     {{ (!$isUpgrade && !$isDowngrade) ? 'bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white focus:ring-blue-500' : '' }}"
                                 aria-label="{{ $actionLabel }} with selected billing cycle">
                                 @if($isUpgrade)

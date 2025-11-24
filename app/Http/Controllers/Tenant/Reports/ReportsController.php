@@ -81,12 +81,12 @@ class ReportsController extends Controller
 
         foreach ($products as $product) {
             // Calculate opening stock value (day before period start)
-            $openingStockData = $product->getStockValueAsOfDate($openingStockDate, 'weighted_average');
-            $openingStock += $openingStockData['value'] ?? 0;
+            $openingStockQty = $product->getStockAsOfDate($openingStockDate);
+            $openingStock += $openingStockQty * ($product->purchase_rate ?? 0);
 
             // Calculate closing stock value (period end date)
-            $closingStockData = $product->getStockValueAsOfDate($toDate, 'weighted_average');
-            $closingStock += $closingStockData['value'] ?? 0;
+            $closingStockQty = $product->getStockAsOfDate($toDate);
+            $closingStock += $closingStockQty * ($product->purchase_rate ?? 0);
         }
 
         // Calculate Net Profit/Loss
