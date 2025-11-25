@@ -604,6 +604,72 @@
                             <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                         @enderror
                     </div>
+
+                    <!-- Pension Information -->
+                    <div class="md:col-span-2 mt-6 pt-6 border-t border-purple-200">
+                        <h4 class="text-md font-medium text-purple-900 mb-4 flex items-center">
+                            <svg class="w-5 h-5 mr-2 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path>
+                            </svg>
+                            Pension Information
+                        </h4>
+
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div>
+                                <label for="pfa_provider" class="block text-sm font-medium text-gray-700 mb-1">
+                                    PFA Provider
+                                </label>
+                                <select name="pfa_provider" id="pfa_provider"
+                                    class="mt-1 focus:ring-purple-500 focus:border-purple-500 block w-full shadow-sm sm:text-sm rounded-md border-gray-300">
+                                    <option value="">Select PFA Provider</option>
+                                    <option value="Stanbic IBTC Pension" {{ old('pfa_provider') === 'Stanbic IBTC Pension' ? 'selected' : '' }}>Stanbic IBTC Pension</option>
+                                    <option value="ARM Pension" {{ old('pfa_provider') === 'ARM Pension' ? 'selected' : '' }}>ARM Pension</option>
+                                    <option value="Leadway Pensure" {{ old('pfa_provider') === 'Leadway Pensure' ? 'selected' : '' }}>Leadway Pensure</option>
+                                    <option value="AIICO Pension" {{ old('pfa_provider') === 'AIICO Pension' ? 'selected' : '' }}>AIICO Pension</option>
+                                    <option value="PAL Pension" {{ old('pfa_provider') === 'PAL Pension' ? 'selected' : '' }}>PAL Pension</option>
+                                    <option value="Premium Pension" {{ old('pfa_provider') === 'Premium Pension' ? 'selected' : '' }}>Premium Pension</option>
+                                    <option value="Other" {{ old('pfa_provider') === 'Other' ? 'selected' : '' }}>Other</option>
+                                </select>
+                                @error('pfa_provider')
+                                    <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                                @enderror
+                            </div>
+
+                            <div>
+                                <label for="rsa_pin" class="block text-sm font-medium text-gray-700 mb-1">
+                                    RSA PIN
+                                </label>
+                                <input type="text" name="rsa_pin" id="rsa_pin"
+                                    class="mt-1 focus:ring-purple-500 focus:border-purple-500 block w-full shadow-sm sm:text-sm rounded-md border-gray-300"
+                                    value="{{ old('rsa_pin') }}" placeholder="PEN123456789012">
+                                @error('rsa_pin')
+                                    <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                                @enderror
+                            </div>
+
+                            <div class="md:col-span-2">
+                                <div class="bg-purple-50 border border-purple-200 rounded-lg p-4">
+                                    <label class="flex items-start cursor-pointer">
+                                        <input type="checkbox" name="pension_exempt" id="pension_exempt"
+                                               value="1"
+                                               {{ old('pension_exempt') ? 'checked' : '' }}
+                                               class="mt-1 w-4 h-4 text-purple-600 border-gray-300 rounded focus:ring-purple-500">
+                                        <span class="ml-3">
+                                            <span class="text-sm font-medium text-gray-900">
+                                                <svg class="inline w-4 h-4 text-purple-600 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"></path>
+                                                </svg>
+                                                Exempt from Pension Contributions
+                                            </span>
+                                            <p class="text-xs text-gray-600 mt-1">
+                                                Check this if the employee is exempt from pension contributions (e.g., contractors, temporary staff, or employees under special agreements).
+                                            </p>
+                                        </span>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>

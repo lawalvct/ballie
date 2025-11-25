@@ -995,6 +995,9 @@ Route::prefix('ledger-accounts')->name('ledger-accounts.')->group(function () {
             Route::get('/vat/input', [\App\Http\Controllers\Tenant\StatutoryController::class, 'vatInput'])->name('vat.input');
             Route::get('/vat/report', [\App\Http\Controllers\Tenant\StatutoryController::class, 'vatReport'])->name('vat.report');
 
+            // Pension Management
+            Route::get('/pension/report', [\App\Http\Controllers\Tenant\StatutoryController::class, 'pensionReport'])->name('pension.report');
+
             // Tax Settings
             Route::get('/settings', [\App\Http\Controllers\Tenant\StatutoryController::class, 'settings'])->name('settings');
             Route::put('/settings', [\App\Http\Controllers\Tenant\StatutoryController::class, 'updateSettings'])->name('settings.update');

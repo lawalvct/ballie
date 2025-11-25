@@ -21,7 +21,7 @@ class Employee extends Model
         'confirmation_date', 'employment_type', 'pay_frequency', 'status',
         'attendance_deduction_exempt', 'attendance_exemption_reason',
         'bank_name', 'bank_code', 'account_number', 'account_name',
-        'tin', 'annual_relief', 'pension_pin', 'pfa_name', 'avatar', 'employee_number_format'
+        'tin', 'annual_relief', 'pension_pin', 'pfa_name', 'pfa_provider', 'rsa_pin', 'pension_exempt', 'avatar', 'employee_number_format'
     ];
 
     protected $casts = [
@@ -31,6 +31,7 @@ class Employee extends Model
         'portal_token_expires_at' => 'datetime',
         'annual_relief' => 'decimal:2',
         'attendance_deduction_exempt' => 'boolean',
+        'pension_exempt' => 'boolean',
     ];
 
     protected static function boot()

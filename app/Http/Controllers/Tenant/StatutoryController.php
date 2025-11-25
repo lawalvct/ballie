@@ -7,6 +7,7 @@ use App\Models\Tenant;
 use App\Models\LedgerAccount;
 use App\Models\VoucherEntry;
 use App\Models\Voucher;
+use App\Models\PayrollRun;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
@@ -51,11 +52,20 @@ class StatutoryController extends Controller
 
         $netVatPayable = $vatOutput - $vatInput;
 
+        // Calculate pension contributions for current month
+        $pensionTotal = PayrollRun::whereHas('payrollPeriod', function($q) use ($tenant, $startOfMonth, $endOfMonth) {
+                $q->where('tenant_id', $tenant->id)
+                  ->whereBetween('start_date', [$startOfMonth, $endOfMonth]);
+            })
+            ->where('payment_status', '!=', 'cancelled')
+            ->sum(DB::raw('pension_employee + pension_employer'));
+
         return view('tenant.statutory.index', compact(
             'tenant',
             'vatOutput',
             'vatInput',
             'netVatPayable',
+            'pensionTotal',
             'vatOutputAccount',
             'vatInputAccount'
         ));
@@ -204,5 +214,41 @@ class StatutoryController extends Controller
         ]);
 
         return redirect()->back()->with('success', 'Tax settings updated successfully.');
+    }
+
+    public function pensionReport(Request $request, Tenant $tenant)
+    {
+        $startDate = $request->input('start_date', Carbon::now()->startOfMonth()->format('Y-m-d'));
+        $endDate = $request->input('end_date', Carbon::now()->endOfMonth()->format('Y-m-d'));
+
+        $payrollRuns = PayrollRun::whereHas('payrollPeriod', function($q) use ($tenant, $startDate, $endDate) {
+                $q->where('tenant_id', $tenant->id)
+                  ->whereBetween('start_date', [$startDate, $endDate]);
+            })
+            ->with(['employee', 'payrollPeriod'])
+            ->where('payment_status', '!=', 'cancelled')
+            ->get();
+
+        $groupedByPFA = $payrollRuns->groupBy(function($run) {
+            return $run->employee->pfa_provider ?? 'Not Assigned';
+        });
+
+        $summary = [
+            'total_employee_contribution' => $payrollRuns->sum('pension_employee'),
+            'total_employer_contribution' => $payrollRuns->sum('pension_employer'),
+            'total_contribution' => $payrollRuns->sum(function($run) {
+                return $run->pension_employee + $run->pension_employer;
+            }),
+            'employee_count' => $payrollRuns->unique('employee_id')->count(),
+        ];
+
+        return view('tenant.statutory.pension-report', compact(
+            'tenant',
+            'payrollRuns',
+            'groupedByPFA',
+            'summary',
+            'startDate',
+            'endDate'
+        ));
     }
 }

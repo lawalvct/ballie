@@ -1,7 +1,8 @@
 @extends('layouts.tenant')
 
 @section('title', 'Employee Details')
-
+@section('page-title', 'Employee Details')
+@section('page-description', 'Employee Details and Information')
 @section('content')
 <div class="bg-gray-50 min-h-screen">
     <!-- Header with Employee Info -->

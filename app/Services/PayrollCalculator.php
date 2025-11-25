@@ -47,6 +47,9 @@ class PayrollCalculator
             $this->calculations['nsitf_contribution'] = 0;
         }
 
+        // Step 4.5: Calculate Pension (8% employee, 10% employer)
+        $this->calculatePension();
+
         // Step 5: Calculate other deductions
         $this->calculateOtherDeductions();
 
@@ -290,6 +293,42 @@ class PayrollCalculator
         $this->calculations['nsitf_contribution'] = $nsitf;
     }
 
+    private function calculatePension(): void
+    {
+        // Skip pension if employee is exempt
+        if ($this->employee->pension_exempt) {
+            $this->calculations['pension_employee'] = 0;
+            $this->calculations['pension_employer'] = 0;
+            $this->calculations['pension_total'] = 0;
+            return;
+        }
+
+        $basicSalary = $this->calculations['basic_salary'];
+        
+        // Employee contribution: 8% of basic salary
+        $employeeContribution = $basicSalary * 0.08;
+        
+        // Employer contribution: 10% of basic salary
+        $employerContribution = $basicSalary * 0.10;
+        
+        $this->calculations['pension_employee'] = $employeeContribution;
+        $this->calculations['pension_employer'] = $employerContribution;
+        $this->calculations['pension_total'] = $employeeContribution + $employerContribution;
+        
+        // Add employee pension as deduction
+        if (!isset($this->calculations['deductions'])) {
+            $this->calculations['deductions'] = [];
+        }
+        
+        $this->calculations['deductions'][] = [
+            'salary_component_id' => null,
+            'component_name' => 'Pension (Employee 8%)',
+            'component_type' => 'deduction',
+            'amount' => $employeeContribution,
+            'is_taxable' => false,
+        ];
+    }
+
     private function calculateOtherDeductions(): void
     {
         $salary = $this->employee->currentSalary;
@@ -361,6 +400,8 @@ class PayrollCalculator
             'annual_tax' => $this->calculations['annual_tax'],
             'monthly_tax' => $this->calculations['monthly_tax'],
             'nsitf_contribution' => $this->calculations['nsitf_contribution'],
+            'pension_employee' => $this->calculations['pension_employee'] ?? 0,
+            'pension_employer' => $this->calculations['pension_employer'] ?? 0,
             'other_deductions' => $this->calculations['other_deductions'],
             'total_deductions' => $this->calculations['total_deductions'],
             'net_salary' => $this->calculations['net_salary'],

@@ -636,6 +636,71 @@
                             <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                         @enderror
                     </div>
+
+                    <!-- Pension Information -->
+                    <div class="md:col-span-2 mt-6 pt-6 border-t border-gray-200">
+                        <h4 class="text-md font-medium text-gray-900 mb-4 flex items-center">
+                            <i class="fas fa-piggy-bank mr-2 text-purple-500"></i>
+                            Pension Information
+                        </h4>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div class="form-group">
+                                <label for="pfa_provider" class="block text-sm font-medium text-gray-700 mb-2">
+                                    PFA Provider
+                                </label>
+                                <select name="pfa_provider" id="pfa_provider"
+                                    class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-200">
+                                    <option value="">Select PFA Provider</option>
+                                    <option value="Stanbic IBTC Pension" {{ old('pfa_provider', $employee->pfa_provider) === 'Stanbic IBTC Pension' ? 'selected' : '' }}>Stanbic IBTC Pension</option>
+                                    <option value="ARM Pension" {{ old('pfa_provider', $employee->pfa_provider) === 'ARM Pension' ? 'selected' : '' }}>ARM Pension</option>
+                                    <option value="Leadway Pensure" {{ old('pfa_provider', $employee->pfa_provider) === 'Leadway Pensure' ? 'selected' : '' }}>Leadway Pensure</option>
+                                    <option value="AIICO Pension" {{ old('pfa_provider', $employee->pfa_provider) === 'AIICO Pension' ? 'selected' : '' }}>AIICO Pension</option>
+                                    <option value="PAL Pension" {{ old('pfa_provider', $employee->pfa_provider) === 'PAL Pension' ? 'selected' : '' }}>PAL Pension</option>
+                                    <option value="Premium Pension" {{ old('pfa_provider', $employee->pfa_provider) === 'Premium Pension' ? 'selected' : '' }}>Premium Pension</option>
+                                    <option value="Other" {{ old('pfa_provider', $employee->pfa_provider) === 'Other' ? 'selected' : '' }}>Other</option>
+                                </select>
+                                @error('pfa_provider')
+                                    <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                                @enderror
+                            </div>
+
+                            <div class="form-group">
+                                <label for="rsa_pin" class="block text-sm font-medium text-gray-700 mb-2">
+                                    RSA PIN
+                                </label>
+                                <input type="text" name="rsa_pin" id="rsa_pin"
+                                       value="{{ old('rsa_pin', $employee->rsa_pin) }}"
+                                       class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                                       placeholder="Enter RSA PIN">
+                                <p class="mt-1 text-xs text-gray-500">Retirement Savings Account PIN</p>
+                                @error('rsa_pin')
+                                    <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                                @enderror
+                            </div>
+
+                            <div class="form-group md:col-span-2">
+                                <div class="bg-purple-50 border border-purple-200 rounded-lg p-4">
+                                    <label class="flex items-start cursor-pointer">
+                                        <input type="checkbox" name="pension_exempt" id="pension_exempt"
+                                               value="1"
+                                               {{ old('pension_exempt', $employee->pension_exempt) ? 'checked' : '' }}
+                                               class="mt-1 w-4 h-4 text-purple-600 border-gray-300 rounded focus:ring-purple-500">
+                                        <span class="ml-3">
+                                            <span class="text-sm font-medium text-gray-900">
+                                                <i class="fas fa-user-shield text-purple-600 mr-1"></i>
+                                                Exempt from Pension Contributions
+                                            </span>
+                                            <p class="text-xs text-gray-600 mt-1">
+                                                When enabled, this employee will NOT have pension deductions (8% employee + 10% employer).
+                                                <br>
+                                                <strong>Use for:</strong> Contract workers, interns, or employees with special pension arrangements.
+                                            </p>
+                                        </span>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
