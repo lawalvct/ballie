@@ -619,17 +619,18 @@
                                 <label for="pfa_provider" class="block text-sm font-medium text-gray-700 mb-1">
                                     PFA Provider
                                 </label>
-                                <select name="pfa_provider" id="pfa_provider"
-                                    class="mt-1 focus:ring-purple-500 focus:border-purple-500 block w-full shadow-sm sm:text-sm rounded-md border-gray-300">
-                                    <option value="">Select PFA Provider</option>
-                                    <option value="Stanbic IBTC Pension" {{ old('pfa_provider') === 'Stanbic IBTC Pension' ? 'selected' : '' }}>Stanbic IBTC Pension</option>
-                                    <option value="ARM Pension" {{ old('pfa_provider') === 'ARM Pension' ? 'selected' : '' }}>ARM Pension</option>
-                                    <option value="Leadway Pensure" {{ old('pfa_provider') === 'Leadway Pensure' ? 'selected' : '' }}>Leadway Pensure</option>
-                                    <option value="AIICO Pension" {{ old('pfa_provider') === 'AIICO Pension' ? 'selected' : '' }}>AIICO Pension</option>
-                                    <option value="PAL Pension" {{ old('pfa_provider') === 'PAL Pension' ? 'selected' : '' }}>PAL Pension</option>
-                                    <option value="Premium Pension" {{ old('pfa_provider') === 'Premium Pension' ? 'selected' : '' }}>Premium Pension</option>
-                                    <option value="Other" {{ old('pfa_provider') === 'Other' ? 'selected' : '' }}>Other</option>
-                                </select>
+                                <div class="flex gap-2">
+                                    <select name="pfa_provider" id="pfa_provider"
+                                        class="flex-1 mt-1 focus:ring-purple-500 focus:border-purple-500 block w-full shadow-sm sm:text-sm rounded-md border-gray-300">
+                                        <option value="">Select PFA Provider</option>
+                                        @foreach(\App\Models\Pfa::where('tenant_id', $tenant->id)->where('is_active', true)->orderBy('name')->get() as $pfa)
+                                            <option value="{{ $pfa->name }}" {{ old('pfa_provider') === $pfa->name ? 'selected' : '' }}>{{ $pfa->name }}</option>
+                                        @endforeach
+                                    </select>
+                                    <a href="{{ route('tenant.payroll.pfas.index', ['tenant' => $tenant->slug]) }}" target="_blank" class="mt-1 px-3 py-2 bg-purple-100 text-purple-700 rounded-md hover:bg-purple-200 text-sm">
+                                        <i class="fas fa-cog"></i>
+                                    </a>
+                                </div>
                                 @error('pfa_provider')
                                     <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                                 @enderror

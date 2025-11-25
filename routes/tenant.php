@@ -832,6 +832,9 @@ Route::prefix('ledger-accounts')->name('ledger-accounts.')->group(function () {
                 Route::post('/preview-recipients', [\App\Http\Controllers\Tenant\Payroll\AnnouncementController::class, 'previewRecipients'])->name('preview-recipients');
             });
 
+            // PFA Management
+            Route::resource('pfas', \App\Http\Controllers\Tenant\PfaController::class)->except(['show']);
+
             // Payroll Settings
             Route::get('/settings', [PayrollController::class, 'settings'])->name('settings');
             Route::put('/settings', [PayrollController::class, 'updateSettings'])->name('settings.update');
