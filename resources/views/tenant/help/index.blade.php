@@ -89,21 +89,55 @@ createApp({
             activeSubmenu: null,
             openMenus: ['getting-started'],
             menus: [
-                { id: 'getting-started', title: 'Getting Started', component: 'getting-started' },
+                { id: 'getting-started', title: '🚀 Getting Started', component: 'getting-started' },
                 {
-                    id: 'modules',
-                    title: 'Modules',
+                    id: 'accounting',
+                    title: '💰 Accounting',
                     submenu: [
-                        { id: 'accounting', title: 'Accounting', component: 'module-accounting' },
-                        { id: 'inventory', title: 'Inventory', component: 'module-inventory' },
-                        { id: 'crm', title: 'CRM', component: 'module-crm' },
-                        { id: 'pos', title: 'POS', component: 'module-pos' },
-                        { id: 'payroll', title: 'Payroll', component: 'module-payroll' },
-                        { id: 'admin', title: 'Admin', component: 'module-admin' }
+                        { id: 'invoices', title: 'Invoices & Quotations', component: 'accounting-invoices' },
+                        { id: 'vouchers', title: 'Vouchers & Journal Entries', component: 'accounting-vouchers' },
+                        { id: 'ledger', title: 'Chart of Accounts', component: 'accounting-ledger' },
+                        { id: 'banking', title: 'Banking & Reconciliation', component: 'accounting-banking' },
+                        { id: 'reports', title: 'Financial Reports', component: 'accounting-reports' }
                     ]
                 },
-                { id: 'faq', title: 'FAQ', component: 'faq-section' },
-                { id: 'support', title: 'Support', component: 'support-section' }
+                {
+                    id: 'inventory',
+                    title: '📦 Inventory',
+                    submenu: [
+                        { id: 'products', title: 'Product Management', component: 'inventory-products' },
+                        { id: 'stock', title: 'Stock Management', component: 'inventory-stock' },
+                        { id: 'categories', title: 'Categories & Units', component: 'inventory-categories' },
+                        { id: 'reports', title: 'Inventory Reports', component: 'inventory-reports' }
+                    ]
+                },
+                {
+                    id: 'crm',
+                    title: '👥 CRM',
+                    submenu: [
+                        { id: 'customers', title: 'Customer Management', component: 'crm-customers' },
+                        { id: 'vendors', title: 'Vendor Management', component: 'crm-vendors' },
+                        { id: 'activities', title: 'Activities & Follow-ups', component: 'crm-activities' }
+                    ]
+                },
+                {
+                    id: 'payroll',
+                    title: '💼 Payroll',
+                    submenu: [
+                        { id: 'employees', title: 'Employee Management', component: 'payroll-employees' },
+                        { id: 'salary', title: 'Salary Components', component: 'payroll-salary' },
+                        { id: 'processing', title: 'Payroll Processing', component: 'payroll-processing' },
+                        { id: 'pension', title: 'Pension & PFA', component: 'payroll-pension' },
+                        { id: 'attendance', title: 'Attendance & Leave', component: 'payroll-attendance' },
+                        { id: 'loans', title: 'Loans & Advances', component: 'payroll-loans' }
+                    ]
+                },
+                { id: 'pos', title: '🛒 Point of Sale', component: 'module-pos' },
+                { id: 'statutory', title: '📋 Statutory & Tax', component: 'module-statutory' },
+                { id: 'reports', title: '📊 Reports', component: 'module-reports' },
+                { id: 'admin', title: '⚙️ Admin & Settings', component: 'module-admin' },
+                { id: 'faq', title: '❓ FAQ', component: 'faq-section' },
+                { id: 'support', title: '💬 Support', component: 'support-section' }
             ]
         }
     },
@@ -149,80 +183,42 @@ createApp({
         @include('tenant.help.components.getting-started')
         @include('tenant.help.components.faq-section')
         @include('tenant.help.components.support-section')
-        'module-accounting': {
-            template: `
-                <div>
-                    <h1 class="text-3xl font-bold mb-4">Accounting Module</h1>
-                    <p class="text-gray-700 mb-4">Manage your financial transactions, invoices, and reports.</p>
-                    <div class="space-y-4">
-                        <div class="border-l-4 border-green-500 pl-4">
-                            <h3 class="font-semibold text-lg mb-2">Creating Invoices</h3>
-                            <p class="text-gray-700">Learn how to create and manage invoices for your customers.</p>
-                        </div>
-                        <div class="border-l-4 border-green-500 pl-4">
-                            <h3 class="font-semibold text-lg mb-2">Managing Vouchers</h3>
-                            <p class="text-gray-700">Record journal entries and financial transactions.</p>
-                        </div>
-                    </div>
-                </div>
-            `
-        },
-        'module-inventory': {
-            template: `
-                <div>
-                    <h1 class="text-3xl font-bold mb-4">Inventory Module</h1>
-                    <p class="text-gray-700 mb-4">Track and manage your stock levels and products.</p>
-                    <div class="space-y-4">
-                        <div class="border-l-4 border-purple-500 pl-4">
-                            <h3 class="font-semibold text-lg mb-2">Product Management</h3>
-                            <p class="text-gray-700">Add and organize your products and services.</p>
-                        </div>
-                        <div class="border-l-4 border-purple-500 pl-4">
-                            <h3 class="font-semibold text-lg mb-2">Stock Tracking</h3>
-                            <p class="text-gray-700">Monitor stock movements and inventory levels.</p>
-                        </div>
-                    </div>
-                </div>
-            `
-        },
-        'module-crm': {
-            template: `
-                <div>
-                    <h1 class="text-3xl font-bold mb-4">CRM Module</h1>
-                    <p class="text-gray-700 mb-4">Manage customer and vendor relationships.</p>
-                    <div class="space-y-4">
-                        <div class="border-l-4 border-pink-500 pl-4">
-                            <h3 class="font-semibold text-lg mb-2">Customer Management</h3>
-                            <p class="text-gray-700">Add and track customer information and transactions.</p>
-                        </div>
-                    </div>
-                </div>
-            `
-        },
-        'module-pos': {
-            template: `
-                <div>
-                    <h1 class="text-3xl font-bold mb-4">POS Module</h1>
-                    <p class="text-gray-700 mb-4">Process sales transactions quickly and efficiently.</p>
-                </div>
-            `
-        },
-        'module-payroll': {
-            template: `
-                <div>
-                    <h1 class="text-3xl font-bold mb-4">Payroll Module</h1>
-                    <p class="text-gray-700 mb-4">Manage employee salaries and payroll processing.</p>
-                </div>
-            `
-        },
-        'module-admin': {
-            template: `
-                <div>
-                    <h1 class="text-3xl font-bold mb-4">Admin Module</h1>
-                    <p class="text-gray-700 mb-4">Manage users, roles, and system permissions.</p>
-                </div>
-            `
-        }
+        
+        // Accounting Components
+        'accounting-invoices': { template: `<div><h1 class="text-3xl font-bold mb-4">📄 Invoices & Quotations</h1><p class="text-gray-600 mb-6">Learn how to create, manage, and track invoices and quotations.</p><div class="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-6"><p class="text-sm text-yellow-700">🚧 Documentation coming soon...</p></div></div>` },
+        'accounting-vouchers': { template: `<div><h1 class="text-3xl font-bold mb-4">📝 Vouchers & Journal Entries</h1><p class="text-gray-600 mb-6">Record financial transactions using vouchers and journal entries.</p><div class="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-6"><p class="text-sm text-yellow-700">🚧 Documentation coming soon...</p></div></div>` },
+        'accounting-ledger': { template: `<div><h1 class="text-3xl font-bold mb-4">📖 Chart of Accounts</h1><p class="text-gray-600 mb-6">Manage your ledger accounts and account groups.</p><div class="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-6"><p class="text-sm text-yellow-700">🚧 Documentation coming soon...</p></div></div>` },
+        'accounting-banking': { template: `<div><h1 class="text-3xl font-bold mb-4">🏦 Banking & Reconciliation</h1><p class="text-gray-600 mb-6">Manage bank accounts and reconcile statements.</p><div class="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-6"><p class="text-sm text-yellow-700">🚧 Documentation coming soon...</p></div></div>` },
+        'accounting-reports': { template: `<div><h1 class="text-3xl font-bold mb-4">📊 Financial Reports</h1><p class="text-gray-600 mb-6">Generate P&L, Balance Sheet, Trial Balance, and Cash Flow reports.</p><div class="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-6"><p class="text-sm text-yellow-700">🚧 Documentation coming soon...</p></div></div>` },
+        
+        // Inventory Components
+        'inventory-products': { template: `<div><h1 class="text-3xl font-bold mb-4">📦 Product Management</h1><p class="text-gray-600 mb-6">Add, edit, and organize your products and services.</p><div class="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-6"><p class="text-sm text-yellow-700">🚧 Documentation coming soon...</p></div></div>` },
+        'inventory-stock': { template: `<div><h1 class="text-3xl font-bold mb-4">📊 Stock Management</h1><p class="text-gray-600 mb-6">Track stock movements, adjustments, and physical stock verification.</p><div class="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-6"><p class="text-sm text-yellow-700">🚧 Documentation coming soon...</p></div></div>` },
+        'inventory-categories': { template: `<div><h1 class="text-3xl font-bold mb-4">📊 Categories & Units</h1><p class="text-gray-600 mb-6">Organize products into categories and define measurement units.</p><div class="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-6"><p class="text-sm text-yellow-700">🚧 Documentation coming soon...</p></div></div>` },
+        'inventory-reports': { template: `<div><h1 class="text-3xl font-bold mb-4">📊 Inventory Reports</h1><p class="text-gray-600 mb-6">Generate stock reports, valuation, and movement analysis.</p><div class="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-6"><p class="text-sm text-yellow-700">🚧 Documentation coming soon...</p></div></div>` },
+        
+        // CRM Components
+        'crm-customers': { template: `<div><h1 class="text-3xl font-bold mb-4">👥 Customer Management</h1><p class="text-gray-600 mb-6">Manage customer information, statements, and transactions.</p><div class="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-6"><p class="text-sm text-yellow-700">🚧 Documentation coming soon...</p></div></div>` },
+        'crm-vendors': { template: `<div><h1 class="text-3xl font-bold mb-4">👥 Vendor Management</h1><p class="text-gray-600 mb-6">Manage vendor information and purchase transactions.</p><div class="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-6"><p class="text-sm text-yellow-700">🚧 Documentation coming soon...</p></div></div>` },
+        'crm-activities': { template: `<div><h1 class="text-3xl font-bold mb-4">📝 Activities & Follow-ups</h1><p class="text-gray-600 mb-6">Track customer activities and schedule follow-ups.</p><div class="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-6"><p class="text-sm text-yellow-700">🚧 Documentation coming soon...</p></div></div>` },
+        
+        // Payroll Components
+        'payroll-employees': { template: `<div><h1 class="text-3xl font-bold mb-4">👥 Employee Management</h1><p class="text-gray-600 mb-6">Add and manage employee records, departments, and positions.</p><div class="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-6"><p class="text-sm text-yellow-700">🚧 Documentation coming soon...</p></div></div>` },
+        'payroll-salary': { template: `<div><h1 class="text-3xl font-bold mb-4">💵 Salary Components</h1><p class="text-gray-600 mb-6">Configure earnings, deductions, and employer contributions.</p><div class="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-6"><p class="text-sm text-yellow-700">🚧 Documentation coming soon...</p></div></div>` },
+        'payroll-processing': { template: `<div><h1 class="text-3xl font-bold mb-4">⚙️ Payroll Processing</h1><p class="text-gray-600 mb-6">Process monthly payroll, generate payslips, and manage payments.</p><div class="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-6"><p class="text-sm text-yellow-700">🚧 Documentation coming soon...</p></div></div>` },
+        'payroll-pension': { template: `<div><h1 class="text-3xl font-bold mb-4">🏦 Pension & PFA</h1><p class="text-gray-600 mb-6">Manage pension contributions and PFA providers.</p><div class="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-6"><p class="text-sm text-yellow-700">🚧 Documentation coming soon...</p></div></div>` },
+        'payroll-attendance': { template: `<div><h1 class="text-3xl font-bold mb-4">📅 Attendance & Leave</h1><p class="text-gray-600 mb-6">Track employee attendance, leave requests, and overtime.</p><div class="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-6"><p class="text-sm text-yellow-700">🚧 Documentation coming soon...</p></div></div>` },
+        'payroll-loans': { template: `<div><h1 class="text-3xl font-bold mb-4">💰 Loans & Advances</h1><p class="text-gray-600 mb-6">Manage employee loans and salary advances.</p><div class="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-6"><p class="text-sm text-yellow-700">🚧 Documentation coming soon...</p></div></div>` },
+        
+        // Other Modules
+        'module-pos': { template: `<div><h1 class="text-3xl font-bold mb-4">🛒 Point of Sale</h1><p class="text-gray-600 mb-6">Process sales transactions, manage cash register, and print receipts.</p><div class="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-6"><p class="text-sm text-yellow-700">🚧 Documentation coming soon...</p></div></div>` },
+        'module-statutory': { template: `<div><h1 class="text-3xl font-bold mb-4">📋 Statutory & Tax</h1><p class="text-gray-600 mb-6">Manage VAT, PAYE tax, and pension contributions.</p><div class="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-6"><p class="text-sm text-yellow-700">🚧 Documentation coming soon...</p></div></div>` },
+        'module-reports': { template: `<div><h1 class="text-3xl font-bold mb-4">📊 Reports</h1><p class="text-gray-600 mb-6">Generate comprehensive business reports and analytics.</p><div class="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-6"><p class="text-sm text-yellow-700">🚧 Documentation coming soon...</p></div></div>` },
+        'module-admin': { template: `<div><h1 class="text-3xl font-bold mb-4">⚙️ Admin & Settings</h1><p class="text-gray-600 mb-6">Manage users, roles, permissions, and system settings.</p><div class="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-6"><p class="text-sm text-yellow-700">🚧 Documentation coming soon...</p></div></div>` },
+        'module-payroll': { template: `<div><h1 class="text-3xl font-bold mb-4">💼 Payroll Module</h1><p class="text-gray-600 mb-6">Manage employee salaries and payroll processing.</p><div class="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-6"><p class="text-sm text-yellow-700">🚧 Documentation coming soon...</p></div></div>` },
+        'module-crm': { template: `<div><h1 class="text-3xl font-bold mb-4">👥 CRM Module</h1><p class="text-gray-600 mb-6">Manage customer and vendor relationships.</p><div class="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-6"><p class="text-sm text-yellow-700">🚧 Documentation coming soon...</p></div></div>` },
+        'module-inventory': { template: `<div><h1 class="text-3xl font-bold mb-4">📦 Inventory Module</h1><p class="text-gray-600 mb-6">Track and manage your stock levels and products.</p><div class="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-6"><p class="text-sm text-yellow-700">🚧 Documentation coming soon...</p></div></div>` },
+        'module-accounting': { template: `<div><h1 class="text-3xl font-bold mb-4">💰 Accounting Module</h1><p class="text-gray-600 mb-6">Manage your financial transactions, invoices, and reports.</p><div class="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-6"><p class="text-sm text-yellow-700">🚧 Documentation coming soon...</p></div></div>` }
     }
 }).mount('#helpApp');
 </script>

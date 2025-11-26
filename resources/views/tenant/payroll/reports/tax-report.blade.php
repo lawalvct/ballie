@@ -1,6 +1,8 @@
 @extends('layouts.tenant')
 
 @section('title', 'Tax Report')
+@section('page-title', 'Tax Report')
+@section('page-description', 'Employee tax summary and PAYE reports')
 
 @section('content')
 <div class="bg-gray-50 min-h-screen">
