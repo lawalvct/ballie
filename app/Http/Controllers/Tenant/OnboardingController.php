@@ -22,6 +22,7 @@ use Database\Seeders\DefaultBanksSeeder;
 use Database\Seeders\DefaultProductCategoriesSeeder;
 use Database\Seeders\DefaultUnitsSeeder;
 use Database\Seeders\DefaultShiftsSeeder;
+use Database\Seeders\DefaultPfasSeeder;
 use Database\Seeders\PermissionsSeeder;
 use App\Models\Tenant\Role;
 use App\Models\Tenant\Permission;
@@ -328,6 +329,11 @@ class OnboardingController extends Controller
                 DefaultShiftsSeeder::seedForTenant($tenant->id);
             }, "Default shifts seeding for tenant: {$tenant->id}");
 
+            // Seed Default PFAs with retry mechanism
+            $this->retryOperation(function() use ($tenant) {
+                DefaultPfasSeeder::seedForTenant($tenant->id);
+            }, "Default PFAs seeding for tenant: {$tenant->id}");
+
             // Seed Permissions and create default roles
             Log::info("Starting permissions seeding", [
                 'tenant_id' => $tenant->id
@@ -351,6 +357,7 @@ class OnboardingController extends Controller
             $categoriesCount = \App\Models\ProductCategory::where('tenant_id', $tenant->id)->count();
             $unitsCount = \App\Models\Unit::where('tenant_id', $tenant->id)->count();
             $shiftsCount = \App\Models\ShiftSchedule::where('tenant_id', $tenant->id)->count();
+            $pfasCount = \App\Models\Pfa::where('tenant_id', $tenant->id)->count();
             $permissionsCount = Permission::count();
             $rolesCount = Role::where('tenant_id', $tenant->id)->count();
 
@@ -364,9 +371,10 @@ class OnboardingController extends Controller
                 'product_categories' => $categoriesCount,
                 'units' => $unitsCount,
                 'shifts' => $shiftsCount,
+                'pfas' => $pfasCount,
                 'permissions' => $permissionsCount,
                 'roles' => $rolesCount,
-                'total' => $accountGroupsCount + $voucherTypesCount + $ledgerCount + $banksCount + $categoriesCount + $unitsCount + $shiftsCount
+                'total' => $accountGroupsCount + $voucherTypesCount + $ledgerCount + $banksCount + $categoriesCount + $unitsCount + $shiftsCount + $pfasCount
             ]);
 
             // Restore original timeout
