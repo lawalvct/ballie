@@ -1,70 +1,15 @@
 @extends('layouts.tenant')
 
 @section('title', 'Create Ledger Account')
+@section('page-title', 'Create Ledger Account')
+@section('page-description')
+    <span class="hidden md:inline">
+        Add a new account to your chart of accounts
+    </span>
+@endsection
 
 @section('content')
 <div class="space-y-6">
-    <!-- Header -->
-    <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between">
-        <div>
-            <h1 class="text-3xl font-bold text-gray-900">Create Ledger Account</h1>
-            <p class="mt-2 text-gray-600">Add a new account to your chart of accounts</p>
-
-            <!-- Breadcrumb -->
-            <nav class="flex mt-3" aria-label="Breadcrumb">
-                <ol class="inline-flex items-center space-x-1 md:space-x-3">
-                    <li class="inline-flex items-center">
-                        <a href="{{ route('tenant.dashboard', $tenant) }}"
-                           class="inline-flex items-center text-sm font-medium text-gray-700 hover:text-primary-600">
-                            <svg class="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
-                                <path d="M10.707 2.293a1 1 0 00-1.414 0l-9 9a1 1 0 001.414 1.414L8 5.414V17a1 1 0 102 0V5.414l6.293 6.293a1 1 0 001.414-1.414l-9-9z"></path>
-                            </svg>
-                            Dashboard
-                        </a>
-                    </li>
-                    <li>
-                        <div class="flex items-center">
-                            <svg class="w-6 h-6 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
-                                <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd"></path>
-                            </svg>
-                            <a href="{{ route('tenant.accounting.index', $tenant) }}"
-                               class="ml-1 text-sm font-medium text-gray-700 hover:text-primary-600 md:ml-2">
-                                Accounting
-                            </a>
-                        </div>
-                    </li>
-                    <li>
-                        <div class="flex items-center">
-                            <svg class="w-6 h-6 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
-                                <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd"></path>
-                            </svg>
-                            <a href="{{ route('tenant.accounting.ledger-accounts.index', $tenant) }}"
-                               class="ml-1 text-sm font-medium text-gray-700 hover:text-primary-600 md:ml-2">
-                                Ledger Accounts
-                            </a>
-                        </div>
-                    </li>
-                    <li aria-current="page">
-                        <div class="flex items-center">
-                            <svg class="w-6 h-6 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
-                                <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd"></path>
-                            </svg>
-                            <span class="ml-1 text-sm font-medium text-gray-500 md:ml-2">Create</span>
-                        </div>
-                    </li>
-                </ol>
-            </nav>
-        </div>
-        <div class="mt-4 lg:mt-0">
-            <a href="{{ route('tenant.accounting.ledger-accounts.index', $tenant) }}"
-               class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-lg shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500">
-                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
-                </svg>
-                Back to List
-            </a>
-        </div>
-    </div>
 
     <!-- Form -->
     <form action="{{ route('tenant.accounting.ledger-accounts.store', $tenant) }}"
@@ -539,7 +484,7 @@
                         <button type="submit"
                                 class="w-full inline-flex justify-center items-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg shadow-sm text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 disabled:opacity-50 disabled:cursor-not-allowed"
                                 :disabled="isSubmitting"
-                                x-text="isSubmitting ? 'Creating Account...' : 'Create Account'">
+                                x-text="isSubmitting ? 'Creating...' : 'Create Account'">
                             <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" x-show="!isSubmitting">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
                             </svg>
@@ -550,12 +495,22 @@
                         </button>
 
                         <button type="button"
-                                onclick="resetForm()"
-                                class="w-full inline-flex justify-center items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-lg shadow-sm text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500">
+                                onclick="saveAndContinue()"
+                                class="w-full inline-flex justify-center items-center px-4 py-2 border border-green-300 text-sm font-medium rounded-lg shadow-sm text-green-700 bg-green-50 hover:bg-green-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
                             <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
                             </svg>
-                            Reset Form
+                            Save & Create Another
+                        </button>
+
+                        <button type="button"
+                                onclick="saveAndView()"
+                                class="w-full inline-flex justify-center items-center px-4 py-2 border border-blue-300 text-sm font-medium rounded-lg shadow-sm text-blue-700 bg-blue-50 hover:bg-blue-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
+                            </svg>
+                            Save & View
                         </button>
 
                         <a href="{{ route('tenant.accounting.ledger-accounts.index', $tenant) }}"
@@ -565,28 +520,6 @@
                             </svg>
                             Cancel
                         </a>
-                    </div>
-                </div>
-
-                <!-- Save & Continue -->
-                <div class="bg-gradient-to-br from-green-50 to-emerald-50 border border-green-200 rounded-lg p-6">
-                    <div class="flex items-center mb-3">
-                   <svg class="w-5 h-5 text-green-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
-                        </svg>
-                        <h4 class="text-sm font-medium text-green-900">Quick Save Options</h4>
-                    </div>
-                    <div class="space-y-2">
-                        <button type="button"
-                                onclick="saveAndContinue()"
-                                class="w-full text-left px-3 py-2 text-sm text-green-700 hover:bg-green-100 rounded-md transition-colors">
-                            Save & Create Another
-                        </button>
-                        <button type="button"
-                                onclick="saveAndView()"
-                                class="w-full text-left px-3 py-2 text-sm text-green-700 hover:bg-green-100 rounded-md transition-colors">
-                            Save & View Account
-                        </button>
                     </div>
                 </div>
             </div>

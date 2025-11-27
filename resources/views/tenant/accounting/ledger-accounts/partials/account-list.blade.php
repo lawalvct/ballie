@@ -1,64 +1,11 @@
 @if($accounts->count() > 0)
-    <!-- Bulk Actions -->
-    <div class="px-6 py-3 border-b border-gray-200 bg-gray-50" x-data="{ selectedItems: [], showBulkActions: false }" x-init="$watch('selectedItems', value => showBulkActions = value.length > 0)">
-        <div class="flex items-center justify-between">
-            <div class="flex items-center space-x-4">
-                <input type="checkbox"
-                       @change="selectedItems = $event.target.checked ? Array.from(document.querySelectorAll('input[name=\'accounts[]\']')).map(cb => cb.value) : []"
-                       class="form-checkbox h-4 w-4 text-primary-600 rounded">
-                <span class="text-sm text-gray-700">Select All</span>
-            </div>
 
-            <div x-show="showBulkActions" x-transition class="flex items-center space-x-2">
-                <span class="text-sm text-gray-700" x-text="`${selectedItems.length} selected`"></span>
-                <form method="POST" action="#" class="inline">
-                    @csrf
-                    <input type="hidden" name="action" value="activate">
-                    <template x-for="id in selectedItems" :key="id">
-                        <input type="hidden" name="accounts[]" :value="id">
-                    </template>
-                    <button type="submit"
-                            class="inline-flex items-center px-3 py-1 border border-transparent text-xs font-medium rounded text-green-700 bg-green-100 hover:bg-green-200">
-                        Activate
-                    </button>
-                </form>
-
-                <form method="POST" action="#" class="inline">
-                    @csrf
-                    <input type="hidden" name="action" value="deactivate">
-                    <template x-for="id in selectedItems" :key="id">
-                        <input type="hidden" name="accounts[]" :value="id">
-                    </template>
-                    <button type="submit"
-                            class="inline-flex items-center px-3 py-1 border border-transparent text-xs font-medium rounded text-yellow-700 bg-yellow-100 hover:bg-yellow-200">
-                        Deactivate
-                    </button>
-                </form>
-
-                <form method="POST" action="#" class="inline"
-                      onsubmit="return confirm('Are you sure you want to delete the selected accounts?')">
-                    @csrf
-                    <input type="hidden" name="action" value="delete">
-                    <template x-for="id in selectedItems" :key="id">
-                        <input type="hidden" name="accounts[]" :value="id">
-                    </template>
-                    <button type="submit"
-                            class="inline-flex items-center px-3 py-1 border border-transparent text-xs font-medium rounded text-red-700 bg-red-100 hover:bg-red-200">
-                        Delete
-                    </button>
-                </form>
-            </div>
-        </div>
-    </div>
 
     <!-- Table -->
     <div class="overflow-x-auto">
         <table class="min-w-full divide-y divide-gray-200">
             <thead class="bg-gray-50">
                 <tr>
-                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        <input type="checkbox" class="form-checkbox h-4 w-4 text-primary-600 rounded">
-                    </th>
                     <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                         Account
                     </th>
@@ -85,13 +32,6 @@
             <tbody class="bg-white divide-y divide-gray-200">
                 @foreach($accounts as $account)
                     <tr class="hover:bg-gray-50">
-                        <td class="px-6 py-4 whitespace-nowrap">
-                            <input type="checkbox"
-                                   name="accounts[]"
-                                   value="{{ $account->id }}"
-                                   @change="$event.target.checked ? selectedItems.push('{{ $account->id }}') : selectedItems = selectedItems.filter(id => id !== '{{ $account->id }}')"
-                                   class="form-checkbox h-4 w-4 text-primary-600 rounded">
-                        </td>
                         <td class="px-6 py-4 whitespace-nowrap">
                             <div class="flex items-center">
                                 <div class="flex-shrink-0 h-10 w-10">
@@ -222,34 +162,6 @@
 @endif
 
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-    // Handle select all checkbox
-    const selectAllCheckbox = document.querySelector('thead input[type="checkbox"]');
-    const itemCheckboxes = document.querySelectorAll('tbody input[type="checkbox"]');
-
-    if (selectAllCheckbox) {
-        selectAllCheckbox.addEventListener('change', function() {
-            itemCheckboxes.forEach(checkbox => {
-                checkbox.checked = this.checked;
-                checkbox.dispatchEvent(new Event('change'));
-            });
-        });
-    }
-
-    // Update select all checkbox state when individual checkboxes change
-    itemCheckboxes.forEach(checkbox => {
-        checkbox.addEventListener('change', function() {
-            const checkedCount = document.querySelectorAll('tbody input[type="checkbox"]:checked').length;
-            const totalCount = itemCheckboxes.length;
-
-            if (selectAllCheckbox) {
-                selectAllCheckbox.checked = checkedCount === totalCount;
-                selectAllCheckbox.indeterminate = checkedCount > 0 && checkedCount < totalCount;
-            }
-        });
-    });
-});
-
 function confirmDelete(accountId, accountName) {
     if (confirm(`Are you sure you want to delete the account "${accountName}"?`)) {
         // Create and submit delete form
