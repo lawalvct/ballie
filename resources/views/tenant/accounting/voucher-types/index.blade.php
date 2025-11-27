@@ -2,15 +2,19 @@
 
 @section('title', 'Voucher Types')
 @section('page-title', 'Voucher Types')
-@section('page-description', 'Voucher Types')
-
+@section('page-description', 'Manage your accounting voucher types and numbering sequences')
 @section('content')
 <div class="space-y-6">
-    <!-- Header -->     
-    <div class="flex flex-col lg:fle   x-row lg:items-center lg:justify-between">
+    <!-- Header -->
+    <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between">
         <div>
-            <h1 class="text-3xl font-bold text-gray-900">Voucher Types</h1>
-            <p class="mt-2 text-gray-600">Manage your accounting voucher types and numbering sequences</p>
+            <a href="{{ route('tenant.accounting.voucher-types.create', ['tenant' => $tenant->slug]) }}"
+               class="inline-flex items-center px-4 py-2 bg-primary-600 border border-transparent rounded-lg font-semibold text-xs text-white uppercase tracking-widest hover:bg-primary-700 focus:bg-primary-700 active:bg-primary-900 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 transition ease-in-out duration-150">
+                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                </svg>
+                Create Voucher Type
+            </a>
         </div>
         <div class="mt-4 lg:mt-0">
             <a href="{{ route('tenant.accounting.voucher-types.create', ['tenant' => $tenant->slug]) }}"
