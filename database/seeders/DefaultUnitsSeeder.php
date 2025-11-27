@@ -3,6 +3,7 @@
 namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\Log;
 use App\Models\Unit;
 
 class DefaultUnitsSeeder extends Seeder
@@ -20,6 +21,16 @@ class DefaultUnitsSeeder extends Seeder
      */
     public static function seedForTenant($tenantId)
     {
+        // Check if units already exist for this tenant
+        $existingUnits = Unit::where('tenant_id', $tenantId)->count();
+        if ($existingUnits > 0) {
+            Log::info("Units already exist for tenant, skipping seeding", [
+                'tenant_id' => $tenantId,
+                'existing_count' => $existingUnits
+            ]);
+            return; // Skip seeding if units already exist
+        }
+
         $units = [
             // Basic Units
             [

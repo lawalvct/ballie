@@ -1,70 +1,15 @@
 @extends('layouts.tenant')
 
 @section('title', 'Add Bank Account')
+@section('page-title', 'Add Bank Account')
+@section('page-description', 'Set up a new bank account for your business')
+
+@php
+    $breadcrumbs = [];
+@endphp
 
 @section('content')
 <div class="space-y-6">
-    <!-- Header -->
-    <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between">
-        <div>
-            <h1 class="text-3xl font-bold text-gray-900">Add Bank Account</h1>
-            <p class="mt-2 text-gray-600">Set up a new bank account for your business</p>
-
-            <!-- Breadcrumb -->
-            <nav class="flex mt-3" aria-label="Breadcrumb">
-                <ol class="inline-flex items-center space-x-1 md:space-x-3">
-                    <li class="inline-flex items-center">
-                        <a href="{{ route('tenant.dashboard', $tenant) }}"
-                           class="inline-flex items-center text-sm font-medium text-gray-700 hover:text-emerald-600">
-                            <svg class="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
-                                <path d="M10.707 2.293a1 1 0 00-1.414 0l-9 9a1 1 0 001.414 1.414L8 5.414V17a1 1 0 102 0V5.414l6.293 6.293a1 1 0 001.414-1.414l-9-9z"></path>
-                            </svg>
-                            Dashboard
-                        </a>
-                    </li>
-                    <li>
-                        <div class="flex items-center">
-                            <svg class="w-6 h-6 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
-                                <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd"></path>
-                            </svg>
-                            <a href="{{ route('tenant.accounting.index', $tenant) }}"
-                               class="ml-1 text-sm font-medium text-gray-700 hover:text-emerald-600 md:ml-2">
-                                Accounting
-                            </a>
-                        </div>
-                    </li>
-                    <li>
-                        <div class="flex items-center">
-                            <svg class="w-6 h-6 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
-                                <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd"></path>
-                            </svg>
-                            <a href="{{ route('tenant.banking.banks.index', $tenant) }}"
-                               class="ml-1 text-sm font-medium text-gray-700 hover:text-emerald-600 md:ml-2">
-                                Bank Accounts
-                            </a>
-                        </div>
-                    </li>
-                    <li aria-current="page">
-                        <div class="flex items-center">
-                            <svg class="w-6 h-6 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
-                                <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd"></path>
-                            </svg>
-                            <span class="ml-1 text-sm font-medium text-gray-500 md:ml-2">Add New</span>
-                        </div>
-                    </li>
-                </ol>
-            </nav>
-        </div>
-        <div class="mt-4 lg:mt-0">
-            <a href="{{ route('tenant.banking.banks.index', $tenant) }}"
-               class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-lg shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500">
-                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
-                </svg>
-                Back to List
-            </a>
-        </div>
-    </div>
 
     <!-- Form -->
     <form action="{{ route('tenant.banking.banks.store', $tenant) }}"

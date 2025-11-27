@@ -2,7 +2,11 @@
 
 @section('title', 'Bank Accounts')
 @section('page-title', 'Bank Accounts')
-@section('page-description', 'Manage your business bank accounts.')
+@section('page-description', 'Manage your business bank accounts and track balances.')
+
+@php
+    $breadcrumbs = [];
+@endphp
 
 
 @section('content')

@@ -3,6 +3,7 @@
 namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\Log;
 use App\Models\ShiftSchedule;
 
 class DefaultShiftsSeeder extends Seeder
@@ -20,6 +21,16 @@ class DefaultShiftsSeeder extends Seeder
      */
     public static function seedForTenant($tenantId)
     {
+        // Check if shifts already exist for this tenant
+        $existingShifts = ShiftSchedule::where('tenant_id', $tenantId)->count();
+        if ($existingShifts > 0) {
+            Log::info("Shifts already exist for tenant, skipping seeding", [
+                'tenant_id' => $tenantId,
+                'existing_count' => $existingShifts
+            ]);
+            return; // Skip seeding if shifts already exist
+        }
+
         $shifts = [
             [
                 'name' => 'Morning Shift',

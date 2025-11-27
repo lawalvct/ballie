@@ -3,6 +3,7 @@
 namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\Log;
 use App\Models\ProductCategory;
 use Illuminate\Support\Str;
 
@@ -21,6 +22,16 @@ class DefaultProductCategoriesSeeder extends Seeder
      */
     public static function seedForTenant($tenantId)
     {
+        // Check if categories already exist for this tenant
+        $existingCategories = ProductCategory::where('tenant_id', $tenantId)->count();
+        if ($existingCategories > 0) {
+            Log::info("Product categories already exist for tenant, skipping seeding", [
+                'tenant_id' => $tenantId,
+                'existing_count' => $existingCategories
+            ]);
+            return; // Skip seeding if categories already exist
+        }
+
         $categories = [
             // Physical Product Categories
             [

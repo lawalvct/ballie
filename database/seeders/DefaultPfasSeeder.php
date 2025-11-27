@@ -10,6 +10,16 @@ class DefaultPfasSeeder extends Seeder
 {
     public static function seedForTenant($tenantId)
     {
+        // Check if PFAs already exist for this tenant
+        $existingPfas = Pfa::where('tenant_id', $tenantId)->count();
+        if ($existingPfas > 0) {
+            Log::info("PFAs already exist for tenant, skipping seeding", [
+                'tenant_id' => $tenantId,
+                'existing_count' => $existingPfas
+            ]);
+            return; // Skip seeding if PFAs already exist
+        }
+
         $pfas = [
             ['name' => 'Stanbic IBTC Pension', 'code' => 'SIBTC', 'contact_person' => null, 'email' => null, 'phone' => null, 'address' => null],
             ['name' => 'ARM Pension', 'code' => 'ARM', 'contact_person' => null, 'email' => null, 'phone' => null, 'address' => null],
