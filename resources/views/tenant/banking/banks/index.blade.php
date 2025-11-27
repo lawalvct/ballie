@@ -9,16 +9,26 @@
 <div class="min-h-screen bg-gray-50 py-8">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
 
-        <!-- Header -->
-        <div class="flex justify-between items-center mb-8">
-            <div>
-                <h1 class="text-3xl font-bold text-gray-900">Bank Accounts</h1>
-                <p class="text-gray-600 mt-1">Manage your business bank accounts</p>
-            </div>
+        <!-- Action Buttons -->
+        <div class="flex justify-end items-center gap-3 mb-6">
             <a href="{{ route('tenant.banking.banks.create', ['tenant' => $tenant->slug]) }}"
-               class="bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-3 rounded-lg transition-colors duration-200 flex items-center">
+               class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg transition-colors flex items-center">
                 <i class="fas fa-plus mr-2"></i> Add Bank Account
             </a>
+            <button onclick="window.print()"
+                    class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg transition-colors flex items-center">
+                <i class="fas fa-file-pdf mr-2"></i> PDF
+            </button>
+            <form method="GET" action="{{ route('tenant.banking.banks.index', ['tenant' => $tenant->slug]) }}" class="inline">
+                <input type="hidden" name="export" value="excel">
+                @foreach(request()->except('export') as $key => $value)
+                    <input type="hidden" name="{{ $key }}" value="{{ $value }}">
+                @endforeach
+                <button type="submit"
+                        class="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg transition-colors flex items-center">
+                    <i class="fas fa-file-excel mr-2"></i> Export
+                </button>
+            </form>
         </div>
 
         <!-- Success/Error Messages -->

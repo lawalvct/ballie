@@ -8,6 +8,8 @@ use App\Models\Tenant;
 use App\Models\AccountGroup;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
+use Maatwebsite\Excel\Facades\Excel;
+use App\Exports\BanksExport;
 
 class BankController extends Controller
 {
@@ -44,6 +46,11 @@ class BankController extends Controller
         $sortBy = $request->get('sort_by', 'created_at');
         $sortOrder = $request->get('sort_order', 'desc');
         $query->orderBy($sortBy, $sortOrder);
+
+        // Export to Excel
+        if ($request->has('export') && $request->export === 'excel') {
+            return Excel::download(new BanksExport($query->get()), 'bank-accounts-' . now()->format('Y-m-d') . '.xlsx');
+        }
 
         $banks = $query->paginate(20)->withQueryString();
 
