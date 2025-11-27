@@ -172,8 +172,74 @@
                 </div>
             </div>
 
+            <!-- Managing Invoices -->
+            <div class="mt-12 bg-blue-50 border-l-4 border-blue-600 p-6 rounded-r-lg">
+                <h2 class="text-2xl font-bold text-gray-900 mb-4">📋 Managing Your Invoices</h2>
+                
+                <h3 class="text-lg font-semibold text-gray-900 mb-3">Viewing Invoice List</h3>
+                <p class="text-gray-700 mb-3">
+                    To view all your invoices, go to <strong>Accounting → Sales Invoices</strong> or press <kbd class="px-2 py-1 bg-white border border-gray-300 rounded text-xs font-mono">Ctrl+K</kbd> and type "Sales Invoices".
+                </p>
+                <div class="bg-white border border-gray-200 rounded-lg p-4 mb-4">
+                    <img src="{{ asset('images/help/accounting_invoice_list.png') }}" alt="Invoice List" class="w-full rounded-lg shadow-md">
+                </div>
+                <p class="text-gray-700 mb-4">
+                    The invoice list shows all your invoices with their status, customer name, amount, and due date.
+                </p>
+
+                <h3 class="text-lg font-semibold text-gray-900 mb-3 mt-6">Invoice Actions</h3>
+                <p class="text-gray-700 mb-3">
+                    Click the <strong>eye icon (👁️)</strong> next to any invoice to view details and access more actions:
+                </p>
+                <div class="bg-white border border-gray-200 rounded-lg p-4 mb-4">
+                    <img src="{{ asset('images/help/accounting_invoice_show.png') }}" alt="Invoice Details" class="w-full rounded-lg shadow-md">
+                </div>
+                
+                <div class="grid md:grid-cols-2 gap-4 mt-4">
+                    <div class="bg-white border border-gray-200 rounded-lg p-4">
+                        <h4 class="font-semibold text-gray-900 mb-2 flex items-center gap-2">
+                            <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/>
+                            </svg>
+                            Print Invoice
+                        </h4>
+                        <p class="text-sm text-gray-700">Generate a printable PDF version of the invoice.</p>
+                    </div>
+                    
+                    <div class="bg-white border border-gray-200 rounded-lg p-4">
+                        <h4 class="font-semibold text-gray-900 mb-2 flex items-center gap-2">
+                            <svg class="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
+                            </svg>
+                            Download Invoice
+                        </h4>
+                        <p class="text-sm text-gray-700">Download the invoice as a PDF file to your computer.</p>
+                    </div>
+                    
+                    <div class="bg-white border border-gray-200 rounded-lg p-4">
+                        <h4 class="font-semibold text-gray-900 mb-2 flex items-center gap-2">
+                            <svg class="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+                            </svg>
+                            Email to Customer
+                        </h4>
+                        <p class="text-sm text-gray-700">Send the invoice directly to the customer's email address.</p>
+                    </div>
+                    
+                    <div class="bg-white border border-gray-200 rounded-lg p-4">
+                        <h4 class="font-semibold text-gray-900 mb-2 flex items-center gap-2">
+                            <svg class="w-5 h-5 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"/>
+                            </svg>
+                            Record Payment
+                        </h4>
+                        <p class="text-sm text-gray-700">Record a payment received from the customer for this invoice.</p>
+                    </div>
+                </div>
+            </div>
+
             <!-- Quick Tips -->
-            <div class="mt-12 bg-gradient-to-r from-purple-50 to-blue-50 p-6 rounded-lg border border-purple-200">
+            <div class="mt-8 bg-gradient-to-r from-purple-50 to-blue-50 p-6 rounded-lg border border-purple-200">
                 <h3 class="text-xl font-semibold text-gray-900 mb-4">💡 Quick Tips</h3>
                 <ul class="space-y-2 text-gray-700">
                     <li>✅ Always verify customer details before posting</li>
@@ -185,7 +251,7 @@
             </div>
 
             <!-- Related Topics -->
-            <div class="mt-8 bg-gray-50 p-6 rounded-lg border border-gray-200">
+            <div class="mt-6 bg-gray-50 p-6 rounded-lg border border-gray-200">
                 <h3 class="text-lg font-semibold text-gray-900 mb-3">📚 Related Topics</h3>
                 <div class="space-y-2">
                     <a href="#" class="block text-blue-600 hover:text-blue-800">→ How to add customers</a>

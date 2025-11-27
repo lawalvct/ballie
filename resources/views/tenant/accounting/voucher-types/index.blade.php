@@ -1,11 +1,13 @@
 @extends('layouts.tenant')
 
 @section('title', 'Voucher Types')
+@section('page-title', 'Voucher Types')
+@section('page-description', 'Voucher Types')
 
 @section('content')
 <div class="space-y-6">
-    <!-- Header -->
-    <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between">
+    <!-- Header -->     
+    <div class="flex flex-col lg:fle   x-row lg:items-center lg:justify-between">
         <div>
             <h1 class="text-3xl font-bold text-gray-900">Voucher Types</h1>
             <p class="mt-2 text-gray-600">Manage your accounting voucher types and numbering sequences</p>
