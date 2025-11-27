@@ -183,9 +183,9 @@ createApp({
         @include('tenant.help.components.getting-started')
         @include('tenant.help.components.faq-section')
         @include('tenant.help.components.support-section')
+        @include('tenant.help.components.accounting-invoices')
         
-        // Accounting Components
-        'accounting-invoices': { template: `<div><h1 class="text-3xl font-bold mb-4">📄 Invoices & Quotations</h1><p class="text-gray-600 mb-6">Learn how to create, manage, and track invoices and quotations.</p><div class="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-6"><p class="text-sm text-yellow-700">🚧 Documentation coming soon...</p></div></div>` },
+        // Accounting Components-yellow-400 p-4 mb-6"><p class="text-sm text-yellow-700">🚧 Documentation coming soon...</p></div></div>` },
         'accounting-vouchers': { template: `<div><h1 class="text-3xl font-bold mb-4">📝 Vouchers & Journal Entries</h1><p class="text-gray-600 mb-6">Record financial transactions using vouchers and journal entries.</p><div class="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-6"><p class="text-sm text-yellow-700">🚧 Documentation coming soon...</p></div></div>` },
         'accounting-ledger': { template: `<div><h1 class="text-3xl font-bold mb-4">📖 Chart of Accounts</h1><p class="text-gray-600 mb-6">Manage your ledger accounts and account groups.</p><div class="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-6"><p class="text-sm text-yellow-700">🚧 Documentation coming soon...</p></div></div>` },
         'accounting-banking': { template: `<div><h1 class="text-3xl font-bold mb-4">🏦 Banking & Reconciliation</h1><p class="text-gray-600 mb-6">Manage bank accounts and reconcile statements.</p><div class="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-6"><p class="text-sm text-yellow-700">🚧 Documentation coming soon...</p></div></div>` },
