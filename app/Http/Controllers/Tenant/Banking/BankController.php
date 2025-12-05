@@ -400,4 +400,67 @@ class BankController extends Controller
             'closingBalance'
         ));
     }
+
+    /**
+     * Print bank statement
+     */
+    public function statementPrint(Request $request, Tenant $tenant, $bankId)
+    {
+        $bank = Bank::with(['ledgerAccount'])
+            ->where('tenant_id', $tenant->id)
+            ->findOrFail($bankId);
+
+        if (!$bank->ledgerAccount) {
+            return redirect()->back()
+                ->with('error', 'Bank does not have an associated ledger account.');
+        }
+
+        $ledgerAccount = $bank->ledgerAccount;
+        $startDate = $request->get('start_date', now()->startOfMonth()->format('Y-m-d'));
+        $endDate = $request->get('end_date', now()->endOfMonth()->format('Y-m-d'));
+        $openingBalanceAmount = $ledgerAccount->getBalanceAsOf(date('Y-m-d', strtotime($startDate . ' -1 day')));
+
+        $transactions = $ledgerAccount->voucherEntries()
+            ->with(['voucher.voucherType'])
+            ->whereHas('voucher', function($q) use ($startDate, $endDate) {
+                $q->where('status', 'posted')
+                  ->whereBetween('voucher_date', [$startDate, $endDate]);
+            })
+            ->get();
+
+        $runningBalance = $openingBalanceAmount;
+        $transactionsWithBalance = [];
+
+        foreach ($transactions as $transaction) {
+            $debit = $transaction->debit_amount ?? 0;
+            $credit = $transaction->credit_amount ?? 0;
+            $runningBalance += ($debit - $credit);
+
+            $transactionsWithBalance[] = [
+                'date' => $transaction->voucher->voucher_date,
+                'particulars' => $transaction->particulars ?? $transaction->voucher->voucherType->name,
+                'voucher_type' => $transaction->voucher->voucherType->name,
+                'voucher_number' => $transaction->voucher->voucher_number,
+                'debit' => $debit,
+                'credit' => $credit,
+                'running_balance' => $runningBalance,
+            ];
+        }
+
+        $totalDebits = collect($transactionsWithBalance)->sum('debit');
+        $totalCredits = collect($transactionsWithBalance)->sum('credit');
+        $closingBalance = $runningBalance;
+
+        return view('tenant.banking.banks.statement-print', compact(
+            'tenant',
+            'bank',
+            'startDate',
+            'endDate',
+            'openingBalanceAmount',
+            'transactionsWithBalance',
+            'totalDebits',
+            'totalCredits',
+            'closingBalance'
+        ));
+    }
 }

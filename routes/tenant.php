@@ -566,6 +566,7 @@ Route::prefix('ledger-accounts')->name('ledger-accounts.')->group(function () {
         Route::prefix('banking')->name('tenant.banking.')->group(function () {
             // Bank Accounts
             Route::get('banks/{bank}/statement', [\App\Http\Controllers\Tenant\Banking\BankController::class, 'statement'])->name('banks.statement');
+            Route::get('banks/{bank}/statement/print', [\App\Http\Controllers\Tenant\Banking\BankController::class, 'statementPrint'])->name('banks.statement.print');
             Route::resource('banks', \App\Http\Controllers\Tenant\Banking\BankController::class);
 
             // Bank Reconciliation
