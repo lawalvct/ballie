@@ -41,38 +41,73 @@
                 Cash Flow
             </a>
         </div>
-        <div class="mt-4 sm:mt-0">
+        <div class="mt-4 sm:mt-0 flex flex-wrap gap-2">
+            <button onclick="window.print()" class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-lg shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50">
+                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path>
+                </svg>
+                Print
+            </button>
+            <a href="#" onclick="alert('PDF export coming soon'); return false;" class="inline-flex items-center px-4 py-2 border border-red-300 rounded-lg shadow-sm text-sm font-medium text-red-700 bg-white hover:bg-red-50">
+                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path>
+                </svg>
+                PDF
+            </a>
+            <a href="#" onclick="alert('Excel export coming soon'); return false;" class="inline-flex items-center px-4 py-2 border border-green-300 rounded-lg shadow-sm text-sm font-medium text-green-700 bg-white hover:bg-green-50">
+                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                </svg>
+                Excel
+            </a>
             <a href="{{ route('tenant.accounting.profit-loss-table', ['tenant' => $tenant->slug, 'from_date' => $fromDate, 'to_date' => $toDate]) }}"
                class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-lg shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50">
                 <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M3 14h18m-9-4v8m-7 0h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"></path>
                 </svg>
-                Tabular View
+                Table
             </a>
         </div>
     </div>
 
     <!-- Date Range Filter -->
     <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-        <form method="GET" class="flex flex-wrap items-end gap-4">
-            <div class="flex-1 min-w-[200px]">
-                <label for="from_date" class="block text-sm font-medium text-gray-700 mb-1">From Date</label>
-                <input type="date" name="from_date" id="from_date" value="{{ $fromDate }}"
-                       class="block w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-emerald-500 focus:border-emerald-500">
+        <form method="GET" id="dateFilterForm">
+            <!-- Quick Date Presets -->
+            <div class="mb-4">
+                <label class="block text-sm font-medium text-gray-700 mb-2">Quick Presets</label>
+                <div class="flex flex-wrap gap-2">
+                    <button type="button" onclick="setDateRange('today')" class="px-3 py-1.5 text-xs font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors">Today</button>
+                    <button type="button" onclick="setDateRange('this_month')" class="px-3 py-1.5 text-xs font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors">This Month</button>
+                    <button type="button" onclick="setDateRange('last_month')" class="px-3 py-1.5 text-xs font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors">Last Month</button>
+                    <button type="button" onclick="setDateRange('this_quarter')" class="px-3 py-1.5 text-xs font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors">This Quarter</button>
+                    <button type="button" onclick="setDateRange('last_quarter')" class="px-3 py-1.5 text-xs font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors">Last Quarter</button>
+                    <button type="button" onclick="setDateRange('this_year')" class="px-3 py-1.5 text-xs font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors">This Year</button>
+                    <button type="button" onclick="setDateRange('last_year')" class="px-3 py-1.5 text-xs font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors">Last Year</button>
+                </div>
             </div>
-            <div class="flex-1 min-w-[200px]">
-                <label for="to_date" class="block text-sm font-medium text-gray-700 mb-1">To Date</label>
-                <input type="date" name="to_date" id="to_date" value="{{ $toDate }}"
-                       class="block w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-emerald-500 focus:border-emerald-500">
+            
+            <!-- Date Inputs -->
+            <div class="flex flex-wrap items-end gap-4">
+                <div class="flex-1 min-w-[200px]">
+                    <label for="from_date" class="block text-sm font-medium text-gray-700 mb-1">From Date</label>
+                    <input type="date" name="from_date" id="from_date" value="{{ $fromDate }}"
+                           class="block w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-emerald-500 focus:border-emerald-500">
+                </div>
+                <div class="flex-1 min-w-[200px]">
+                    <label for="to_date" class="block text-sm font-medium text-gray-700 mb-1">To Date</label>
+                    <input type="date" name="to_date" id="to_date" value="{{ $toDate }}"
+                           class="block w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-emerald-500 focus:border-emerald-500">
+                </div>
+                <button type="submit" class="px-6 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 font-medium">
+                    Generate Report
+                </button>
             </div>
-            <button type="submit" class="px-6 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 font-medium">
-                Generate Report
-            </button>
         </form>
     </div>
 
     <!-- Summary Cards -->
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <div class="bg-gradient-to-br from-emerald-50 to-emerald-100 rounded-xl p-6 border border-emerald-200">
             <div class="text-sm font-medium text-emerald-600 mb-1">Total Income</div>
             <div class="text-3xl font-bold text-emerald-700">₦{{ number_format($totalIncome, 2) }}</div>
@@ -84,6 +119,16 @@
         <div class="bg-gradient-to-br {{ $netProfit >= 0 ? 'from-blue-50 to-blue-100 border-blue-200' : 'from-orange-50 to-orange-100 border-orange-200' }} rounded-xl p-6 border">
             <div class="text-sm font-medium {{ $netProfit >= 0 ? 'text-blue-600' : 'text-orange-600' }} mb-1">Net {{ $netProfit >= 0 ? 'Profit' : 'Loss' }}</div>
             <div class="text-3xl font-bold {{ $netProfit >= 0 ? 'text-blue-700' : 'text-orange-700' }}">₦{{ number_format(abs($netProfit), 2) }}</div>
+        </div>
+        <div class="bg-gradient-to-br from-purple-50 to-purple-100 rounded-xl p-6 border border-purple-200">
+            <div class="text-sm font-medium text-purple-600 mb-1">Profit Margin</div>
+            <div class="text-3xl font-bold text-purple-700">
+                @if($totalIncome > 0)
+                    {{ number_format(($netProfit / $totalIncome) * 100, 2) }}%
+                @else
+                    0.00%
+                @endif
+            </div>
         </div>
     </div>
 
@@ -190,4 +235,57 @@
         </div>
     </div>
 </div>
+
+<script>
+function setDateRange(preset) {
+    const today = new Date();
+    let fromDate, toDate;
+    
+    switch(preset) {
+        case 'today':
+            fromDate = toDate = today;
+            break;
+        case 'this_month':
+            fromDate = new Date(today.getFullYear(), today.getMonth(), 1);
+            toDate = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+            break;
+        case 'last_month':
+            fromDate = new Date(today.getFullYear(), today.getMonth() - 1, 1);
+            toDate = new Date(today.getFullYear(), today.getMonth(), 0);
+            break;
+        case 'this_quarter':
+            const quarter = Math.floor(today.getMonth() / 3);
+            fromDate = new Date(today.getFullYear(), quarter * 3, 1);
+            toDate = new Date(today.getFullYear(), quarter * 3 + 3, 0);
+            break;
+        case 'last_quarter':
+            const lastQuarter = Math.floor(today.getMonth() / 3) - 1;
+            const year = lastQuarter < 0 ? today.getFullYear() - 1 : today.getFullYear();
+            const q = lastQuarter < 0 ? 3 : lastQuarter;
+            fromDate = new Date(year, q * 3, 1);
+            toDate = new Date(year, q * 3 + 3, 0);
+            break;
+        case 'this_year':
+            fromDate = new Date(today.getFullYear(), 0, 1);
+            toDate = new Date(today.getFullYear(), 11, 31);
+            break;
+        case 'last_year':
+            fromDate = new Date(today.getFullYear() - 1, 0, 1);
+            toDate = new Date(today.getFullYear() - 1, 11, 31);
+            break;
+    }
+    
+    document.getElementById('from_date').value = fromDate.toISOString().split('T')[0];
+    document.getElementById('to_date').value = toDate.toISOString().split('T')[0];
+    document.getElementById('dateFilterForm').submit();
+}
+</script>
+
+<style>
+@media print {
+    .no-print {
+        display: none !important;
+    }
+}
+</style>
 @endsection
