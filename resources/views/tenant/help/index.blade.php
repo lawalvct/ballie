@@ -186,8 +186,8 @@ createApp({
         @include('tenant.help.components.accounting-invoices')
         @include('tenant.help.components.accounting-vouchers')
         @include('tenant.help.components.accounting-ledger')
+        @include('tenant.help.components.accounting-banking')
         
-        'accounting-banking': { template: `<div><h1 class="text-3xl font-bold mb-4">🏦 Banking & Reconciliation</h1><p class="text-gray-600 mb-6">Manage bank accounts and reconcile statements.</p><div class="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-6"><p class="text-sm text-yellow-700">🚧 Documentation coming soon...</p></div></div>` },
         'accounting-reports': { template: `<div><h1 class="text-3xl font-bold mb-4">📊 Financial Reports</h1><p class="text-gray-600 mb-6">Generate P&L, Balance Sheet, Trial Balance, and Cash Flow reports.</p><div class="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-6"><p class="text-sm text-yellow-700">🚧 Documentation coming soon...</p></div></div>` },
         
         // Inventory Components
