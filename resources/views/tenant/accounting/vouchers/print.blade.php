@@ -270,6 +270,65 @@
         </div>
     </div>
 
+    @php
+        function convertChunkToWords($chunk, $ones, $tens) {
+            $words = '';
+            $hundreds = intval($chunk / 100);
+            $remainder = $chunk % 100;
+            if ($hundreds > 0) {
+                $words .= $ones[$hundreds] . ' hundred';
+                if ($remainder > 0) $words .= ' ';
+            }
+            if ($remainder >= 20) {
+                $tensDigit = intval($remainder / 10);
+                $onesDigit = $remainder % 10;
+                $words .= $tens[$tensDigit];
+                if ($onesDigit > 0) $words .= '-' . $ones[$onesDigit];
+            } elseif ($remainder > 0) {
+                $words .= $ones[$remainder];
+            }
+            return $words;
+        }
+
+        function convertIntegerToWords($integer, $ones, $tens, $scales) {
+            $words = '';
+            $scaleIndex = 0;
+            while ($integer > 0) {
+                $chunk = $integer % 1000;
+                if ($chunk > 0) {
+                    $chunkWords = convertChunkToWords($chunk, $ones, $tens);
+                    if ($scaleIndex > 0) $chunkWords .= ' ' . $scales[$scaleIndex];
+                    $words = $chunkWords . ' ' . $words;
+                }
+                $integer = intval($integer / 1000);
+                $scaleIndex++;
+            }
+            return trim($words);
+        }
+
+        function numberToWords($number) {
+            $ones = ['', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten', 'eleven', 'twelve', 'thirteen', 'fourteen', 'fifteen', 'sixteen', 'seventeen', 'eighteen', 'nineteen'];
+            $tens = ['', '', 'twenty', 'thirty', 'forty', 'fifty', 'sixty', 'seventy', 'eighty', 'ninety'];
+            $scales = ['', 'thousand', 'million', 'billion'];
+            if ($number == 0) return 'zero';
+            $number = number_format($number, 2, '.', '');
+            list($integer, $fraction) = explode('.', $number);
+            $words = '';
+            if ($integer > 0) {
+                $words .= convertIntegerToWords($integer, $ones, $tens, $scales);
+            }
+            if ($fraction > 0) {
+                $words .= ' and ' . convertIntegerToWords($fraction, $ones, $tens, $scales) . ' kobo';
+            }
+            return ucfirst(trim($words)) . ' Naira Only';
+        }
+    @endphp
+
+    <!-- Amount in Words -->
+    <div style="margin-bottom: 20px; padding: 10px; background-color: #f0f0f0; border: 1px solid #ddd; border-radius: 4px;">
+        <strong>Amount in Words:</strong> {{ numberToWords($voucher->total_amount) }}
+    </div>
+
     <!-- Voucher Entries -->
     <table class="entries-table">
         <thead>
@@ -326,23 +385,16 @@
     <div class="signatures">
         <div class="signature-box">
             <div class="signature-line">
-                Prepared By<br>
-                <strong>{{ $voucher->createdBy->name }}</strong><br>
-                {{ $voucher->created_at->format('d M Y') }}
+                Signature<br>
+                Name: ___________________<br>
+                Date: ___________________
             </div>
         </div>
         <div class="signature-box">
             <div class="signature-line">
-                Reviewed By<br>
-                <br>
-                Date: ___________
-            </div>
-        </div>
-        <div class="signature-box">
-            <div class="signature-line">
-                Approved By<br>
-                <br>
-                Date: ___________
+                Admin Signature<br>
+                Name: ___________________<br>
+                Date: ___________________
             </div>
         </div>
     </div>

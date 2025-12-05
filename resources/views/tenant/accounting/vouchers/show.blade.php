@@ -35,108 +35,60 @@
                 {{ $voucher->voucherType->name }} • Created {{ $voucher->created_at->format('M d, Y \a\t g:i A') }}
             </p>
         </div>
-        <div class="flex flex-col sm:flex-row items-stretch sm:items-center space-y-2 sm:space-y-0 sm:space-x-3">
+        <div class="flex flex-wrap items-center gap-2">
             <a href="{{ route('tenant.accounting.vouchers.index', ['tenant' => $tenant->slug]) }}"
-               class="inline-flex items-center justify-center px-4 py-2 border border-gray-300 rounded-lg shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500">
-                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
-                </svg>
-                <span class="hidden sm:inline">Back to Vouchers</span>
-                <span class="sm:hidden">Back</span>
+               class="inline-flex items-center px-3 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 bg-white hover:bg-gray-50">
+                <i class="fas fa-arrow-left mr-2"></i> Back
             </a>
 
-            <!-- Actions Dropdown -->
-            <div class="relative" x-data="{ open: false }">
-                <button @click="open = !open"
-                        class="inline-flex items-center justify-center w-full sm:w-auto px-4 py-2 border border-gray-300 rounded-lg shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500">
-                    Actions
-                    <svg class="ml-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
-                    </svg>
-                </button>
-                <div x-show="open"
-                     @click.away="open = false"
-                     x-transition:enter="transition ease-out duration-100"
-                     x-transition:enter-start="transform opacity-0 scale-95"
-                     x-transition:enter-end="transform opacity-100 scale-100"
-                     x-transition:leave="transition ease-in duration-75"
-                     x-transition:leave-start="transform opacity-100 scale-100"
-                     x-transition:leave-end="transform opacity-0 scale-95"
-                     class="origin-top-right absolute right-0 mt-2 w-56 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 z-10">
-                    <div class="py-1">
-                        @if($voucher->status === 'draft')
-                            <a href="{{ route('tenant.accounting.vouchers.edit', ['tenant' => $tenant->slug, 'voucher' => $voucher->id]) }}"
-                               class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
-                                <svg class="w-4 h-4 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
-                                </svg>
-                                Edit Voucher
-                            </a>
-                        @endif
+            @if($voucher->status === 'draft')
+                <a href="{{ route('tenant.accounting.vouchers.edit', ['tenant' => $tenant->slug, 'voucher' => $voucher->id]) }}"
+                   class="inline-flex items-center px-3 py-2 border border-blue-300 rounded-lg text-sm font-medium text-blue-700 bg-blue-50 hover:bg-blue-100">
+                    <i class="fas fa-edit mr-2"></i> Edit
+                </a>
+            @endif
 
-                        <a href="{{ route('tenant.accounting.vouchers.duplicate', ['tenant' => $tenant->slug, 'voucher' => $voucher->id]) }}"
-                           class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
-                            <svg class="w-4 h-4 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path>
-                            </svg>
-                            Duplicate Voucher
-                        </a>
+            <a href="{{ route('tenant.accounting.vouchers.print', ['tenant' => $tenant->slug, 'voucher' => $voucher->id]) }}"
+               class="inline-flex items-center px-3 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 bg-white hover:bg-gray-50" target="_blank">
+                <i class="fas fa-print mr-2"></i> Print
+            </a>
 
-                        <a href="{{ route('tenant.accounting.vouchers.pdf', ['tenant' => $tenant->slug, 'voucher' => $voucher->id]) }}"
-                           class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100" target="_blank">
-                            <svg class="w-4 h-4 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-                            </svg>
-                            Download PDF
-                        </a>
+            <a href="{{ route('tenant.accounting.vouchers.pdf', ['tenant' => $tenant->slug, 'voucher' => $voucher->id]) }}"
+               class="inline-flex items-center px-3 py-2 border border-red-300 rounded-lg text-sm font-medium text-red-700 bg-red-50 hover:bg-red-100" target="_blank">
+                <i class="fas fa-file-pdf mr-2"></i> PDF
+            </a>
 
-                        <div class="border-t border-gray-100"></div>
+            @if($voucher->status === 'draft')
+                <form method="POST" action="{{ route('tenant.accounting.vouchers.post', ['tenant' => $tenant->slug, 'voucher' => $voucher->id]) }}" class="inline">
+                    @csrf
+                    <button type="submit"
+                            class="inline-flex items-center px-3 py-2 border border-green-300 rounded-lg text-sm font-medium text-green-700 bg-green-50 hover:bg-green-100"
+                            onclick="return confirm('Are you sure you want to post this voucher? This action cannot be undone.')">
+                        <i class="fas fa-check mr-2"></i> Post
+                    </button>
+                </form>
 
-                        @if($voucher->status === 'draft')
-                            <form method="POST" action="{{ route('tenant.accounting.vouchers.post', ['tenant' => $tenant->slug, 'voucher' => $voucher->id]) }}" class="inline w-full">
-                                @csrf
-                                <button type="submit"
-                                        class="flex items-center w-full px-4 py-2 text-sm text-green-700 hover:bg-green-50"
-                                        onclick="return confirm('Are you sure you want to post this voucher? This action cannot be undone.')">
-                                    <svg class="w-4 h-4 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                                    </svg>
-                                    Post Voucher
-                                </button>
-                            </form>
-                        @else
-                            <form method="POST" action="{{ route('tenant.accounting.vouchers.unpost', ['tenant' => $tenant->slug, 'voucher' => $voucher->id]) }}" class="inline w-full">
-                                @csrf
-                                <button type="submit"
-                                        class="flex items-center w-full px-4 py-2 text-sm text-orange-700 hover:bg-orange-50"
-                                        onclick="return confirm('Are you sure you want to unpost this voucher?')">
-                                    <svg class="w-4 h-4 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z"></path>
-                                    </svg>
-                                    Unpost Voucher
-                                </button>
-                            </form>
-                        @endif
-
-                        @if($voucher->status === 'draft')
-                            <div class="border-t border-gray-100"></div>
-                            <form method="POST" action="{{ route('tenant.accounting.vouchers.destroy', ['tenant' => $tenant->slug, 'voucher' => $voucher->id]) }}" class="inline w-full">
-                                @csrf
-                                @method('DELETE')
-                                <button type="submit"
-                                        class="flex items-center w-full px-4 py-2 text-sm text-red-700 hover:bg-red-50"
-                                        onclick="return confirm('Are you sure you want to delete this voucher? This action cannot be undone.')">
-                                    <svg class="w-4 h-4 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
-                                    </svg>
-                                    Delete Voucher
-                                </button>
-                            </form>
-                        @endif
-                    </div>
-                </div>
-            </div>
+                <form method="POST" action="{{ route('tenant.accounting.vouchers.destroy', ['tenant' => $tenant->slug, 'voucher' => $voucher->id]) }}" class="inline">
+                    @csrf
+                    @method('DELETE')
+                    <button type="submit"
+                            class="inline-flex items-center px-3 py-2 border border-red-300 rounded-lg text-sm font-medium text-red-700 bg-red-50 hover:bg-red-100"
+                            onclick="return confirm('Are you sure you want to delete this voucher? This action cannot be undone.')">
+                        <i class="fas fa-trash mr-2"></i> Delete
+                    </button>
+                </form>
+            @else
+                <form method="POST" action="{{ route('tenant.accounting.vouchers.unpost', ['tenant' => $tenant->slug, 'voucher' => $voucher->id]) }}" class="inline">
+                    @csrf
+                    <button type="submit"
+                            class="inline-flex items-center px-3 py-2 border border-orange-300 rounded-lg text-sm font-medium text-orange-700 bg-orange-50 hover:bg-orange-100"
+                            onclick="return confirm('Are you sure you want to unpost this voucher?')">
+                        <i class="fas fa-undo mr-2"></i> Unpost
+                    </button>
+                </form>
+            @endif
         </div>
+
     </div>
 
     <!-- Voucher Summary Card -->
@@ -525,5 +477,6 @@
             </div>
         </div>
     @endif
+
 </div>
 @endsection
