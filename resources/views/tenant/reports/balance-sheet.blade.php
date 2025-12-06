@@ -1,69 +1,121 @@
 @extends('layouts.tenant')
 
+@section('title', 'Balance Sheet')
+@section('page-title', 'Balance Sheet')
+@section('page-description', 'View your company\'s financial position as of a specific date')
+
 @section('content')
 <div class="min-h-screen bg-gray-50 py-6">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <!-- Modern Header -->
-        <div class="bg-white rounded-2xl shadow-lg border border-gray-200 p-8 mb-8">
-            <div class="flex items-center justify-between">
-                <div class="flex items-center space-x-4">
-                    <div class="flex items-center justify-center w-16 h-16 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl">
-                        <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
-                        </svg>
-                    </div>
-                    <div>
-                        <h1 class="text-3xl font-bold text-gray-900">Balance Sheet</h1>
-                        <p class="text-lg text-gray-600">
-                            {{ $tenant->name }}
-                        </p>
-                        <p class="text-sm text-gray-500">
-                            As of {{ \Carbon\Carbon::parse($asOfDate ?? now())->format('F d, Y') }}
-                        </p>
+        <!-- Financial Reports Navigation -->
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6">
+            <div class="flex flex-wrap gap-2">
+                <a href="{{ route('tenant.reports.profit-loss', ['tenant' => $tenant->slug]) }}"
+                   class="inline-flex items-center px-4 py-2 border border-emerald-200 rounded-lg shadow-sm text-sm font-medium text-white bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500 transition-all duration-200 transform hover:scale-105">
+                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path>
+                    </svg>
+                    Profit & Loss
+                </a>
+                <a href="{{ route('tenant.reports.balance-sheet', ['tenant' => $tenant->slug]) }}"
+                   class="inline-flex items-center px-4 py-2 border border-blue-200 rounded-lg shadow-sm text-sm font-medium text-white bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200 transform hover:scale-105">
+                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path>
+                    </svg>
+                    Balance Sheet
+                </a>
+                <a href="{{ route('tenant.reports.trial-balance', ['tenant' => $tenant->slug]) }}"
+                   class="inline-flex items-center px-4 py-2 border border-purple-200 rounded-lg shadow-sm text-sm font-medium text-white bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 transition-all duration-200 transform hover:scale-105">
+                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M3 14h18m-9-4v8m-7 0V4a1 1 0 011-1h3M7 3v18"></path>
+                    </svg>
+                    Trial Balance
+                </a>
+                <a href="{{ route('tenant.reports.cash-flow', ['tenant' => $tenant->slug]) }}"
+                   class="inline-flex items-center px-4 py-2 border border-indigo-200 rounded-lg shadow-sm text-sm font-medium text-white bg-gradient-to-r from-indigo-500 to-indigo-600 hover:from-indigo-600 hover:to-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-all duration-200 transform hover:scale-105">
+                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m-3-6h6M9 10.5h6"></path>
+                    </svg>
+                    Cash Flow
+                </a>
+            </div>
+            <div class="mt-4 sm:mt-0 flex flex-wrap gap-2">
+                <button onclick="window.print()" class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-lg shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50">
+                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path>
+                    </svg>
+                    Print
+                </button>
+                <a href="{{ route('tenant.accounting.balance-sheet-pdf', ['tenant' => $tenant->slug, 'as_of_date' => $asOfDate ?? now()->toDateString()]) }}" class="inline-flex items-center px-4 py-2 border border-red-300 rounded-lg shadow-sm text-sm font-medium text-red-700 bg-white hover:bg-red-50">
+                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path>
+                    </svg>
+                    PDF
+                </a>
+                <a href="{{ route('tenant.accounting.balance-sheet-excel', ['tenant' => $tenant->slug, 'as_of_date' => $asOfDate ?? now()->toDateString()]) }}" class="inline-flex items-center px-4 py-2 border border-green-300 rounded-lg shadow-sm text-sm font-medium text-green-700 bg-white hover:bg-green-50">
+                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                    </svg>
+                    Excel
+                </a>
+                <a href="{{ route('tenant.accounting.balance-sheet-table', ['tenant' => $tenant->slug, 'as_of_date' => $asOfDate ?? now()->toDateString()]) }}"
+                   class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-lg shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50">
+                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M3 14h18m-9-4v8m-7 0h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"></path>
+                    </svg>
+                    Table
+                </a>
+            </div>
+        </div>
+
+        <!-- Date Filter & Quick Presets -->
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6">
+            <form method="GET" id="dateFilterForm">
+                <!-- Quick Date Presets -->
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Quick Presets</label>
+                    <div class="flex flex-wrap gap-2">
+                        <button type="button" onclick="setBalanceSheetDate('today')" class="px-3 py-1.5 text-xs font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors">Today</button>
+                        <button type="button" onclick="setBalanceSheetDate('end_of_month')" class="px-3 py-1.5 text-xs font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors">End of This Month</button>
+                        <button type="button" onclick="setBalanceSheetDate('end_of_last_month')" class="px-3 py-1.5 text-xs font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors">End of Last Month</button>
+                        <button type="button" onclick="setBalanceSheetDate('end_of_quarter')" class="px-3 py-1.5 text-xs font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors">End of This Quarter</button>
+                        <button type="button" onclick="setBalanceSheetDate('end_of_last_quarter')" class="px-3 py-1.5 text-xs font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors">End of Last Quarter</button>
+                        <button type="button" onclick="setBalanceSheetDate('end_of_year')" class="px-3 py-1.5 text-xs font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors">End of This Year</button>
+                        <button type="button" onclick="setBalanceSheetDate('end_of_last_year')" class="px-3 py-1.5 text-xs font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors">End of Last Year</button>
                     </div>
                 </div>
-
-                <div class="flex items-center space-x-3">
-                    <!-- Date Filter -->
-                    <form method="GET" class="flex items-center space-x-2">
-                        <input type="date"
-                               name="as_of_date"
-                               value="{{ $asOfDate ?? now()->toDateString() }}"
-                               class="rounded-lg border-gray-300 focus:border-blue-500 focus:ring-blue-500 text-sm">
-                        <button type="submit"
-                                class="inline-flex items-center px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors">
-                            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
-                            </svg>
-                            Update
-                        </button>
-                    </form>
-
-                    <button onclick="window.print()"
-                            class="inline-flex items-center px-4 py-2 bg-gray-600 text-white text-sm font-medium rounded-lg hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 transition-colors">
-                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path>
-                        </svg>
-                        Print
+                
+                <!-- Date Input & Compare -->
+                <div class="flex flex-wrap items-end gap-4">
+                    <div class="flex-1 min-w-[200px]">
+                        <label for="as_of_date" class="block text-sm font-medium text-gray-700 mb-1">As of Date</label>
+                        <input type="date" name="as_of_date" id="as_of_date" value="{{ $asOfDate ?? now()->toDateString() }}"
+                               class="block w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500">
+                    </div>
+                    <div class="flex items-center">
+                        <label class="flex items-center cursor-pointer">
+                            <input type="checkbox" name="compare" value="1" {{ $compare ?? false ? 'checked' : '' }} class="rounded border-gray-300 text-blue-600 focus:ring-blue-500">
+                            <span class="ml-2 text-sm text-gray-700">Compare with Previous Period</span>
+                        </label>
+                    </div>
+                    <button type="submit" class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium">
+                        Generate Report
                     </button>
+                </div>
+            </form>
+        </div>
 
-                    <a href="{{ route('tenant.accounting.index', ['tenant' => $tenant->slug]) }}"
-                       class="inline-flex items-center px-4 py-2 bg-white border border-gray-300 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors">
-                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
-                        </svg>
-                        Back
-                    </a>
-                    <a href="{{ route('tenant.accounting.balance-sheet-table', ['tenant' => $tenant->slug, 'as_of_date' => $asOfDate ?? now()->toDateString()]) }}"
-                       class="inline-flex items-center px-4 py-2 border border-blue-300 rounded-lg shadow-sm text-sm font-medium text-blue-700 bg-white hover:bg-blue-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
-                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16"></path>
-                        </svg>
-                        Standard Table View
-                    </a>
+        @if($compare ?? false && isset($compareData))
+        <!-- Comparison Banner -->
+        <div class="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-6">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h4 class="text-sm font-semibold text-blue-800 mb-1">Comparing with Previous Period</h4>
+                    <p class="text-xs text-blue-600">As of {{ date('M d, Y', strtotime($compareData['asOfDate'])) }}</p>
                 </div>
             </div>
         </div>
+        @endif
 
         <!-- Balance Sheet Content -->
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
@@ -621,8 +673,43 @@
 </style>
 
 <script>
+function setBalanceSheetDate(preset) {
+    const today = new Date();
+    let asOfDate;
+    
+    switch(preset) {
+        case 'today':
+            asOfDate = today;
+            break;
+        case 'end_of_month':
+            asOfDate = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+            break;
+        case 'end_of_last_month':
+            asOfDate = new Date(today.getFullYear(), today.getMonth(), 0);
+            break;
+        case 'end_of_quarter':
+            const quarter = Math.floor(today.getMonth() / 3);
+            asOfDate = new Date(today.getFullYear(), quarter * 3 + 3, 0);
+            break;
+        case 'end_of_last_quarter':
+            const lastQuarter = Math.floor(today.getMonth() / 3) - 1;
+            const year = lastQuarter < 0 ? today.getFullYear() - 1 : today.getFullYear();
+            const q = lastQuarter < 0 ? 3 : lastQuarter;
+            asOfDate = new Date(year, q * 3 + 3, 0);
+            break;
+        case 'end_of_year':
+            asOfDate = new Date(today.getFullYear(), 11, 31);
+            break;
+        case 'end_of_last_year':
+            asOfDate = new Date(today.getFullYear() - 1, 11, 31);
+            break;
+    }
+    
+    document.getElementById('as_of_date').value = asOfDate.toISOString().split('T')[0];
+    document.getElementById('dateFilterForm').submit();
+}
+
 document.addEventListener('DOMContentLoaded', function() {
-    // Add smooth animations
     const cards = document.querySelectorAll('.bg-white');
     cards.forEach((card, index) => {
         card.style.opacity = '0';

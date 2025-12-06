@@ -25,6 +25,7 @@ class ReportsController extends Controller
     {
         $fromDate = $request->get('from_date', now()->startOfMonth()->toDateString());
         $toDate = $request->get('to_date', now()->toDateString());
+        $compare = $request->get('compare', false);
 
         // Get income accounts
         $incomeAccounts = LedgerAccount::where('tenant_id', $tenant->id)
@@ -89,12 +90,34 @@ class ReportsController extends Controller
             $closingStock += $closingStockQty * ($product->purchase_rate ?? 0);
         }
 
-        // Calculate Net Profit/Loss
-        // P&L Formula: Total Income - Total Expenses
-        // - Income includes: Sales Revenue, Service Income, etc.
-        // - Expenses include: COGS (when sold), Salaries, Rent, Utilities, etc.
-        // - Inventory purchases are NOT expenses until goods are sold
         $netProfit = $totalIncome - $totalExpenses;
+
+        // Comparison data
+        $compareData = null;
+        if ($compare) {
+            $days = (strtotime($toDate) - strtotime($fromDate)) / 86400;
+            $compareFromDate = date('Y-m-d', strtotime($fromDate . ' -' . ($days + 1) . ' days'));
+            $compareToDate = date('Y-m-d', strtotime($fromDate . ' -1 day'));
+
+            $compareIncome = 0;
+            $compareExpenses = 0;
+
+            foreach ($incomeAccounts as $account) {
+                $compareIncome += abs($this->calculateAccountBalanceForPeriod($account, $compareFromDate, $compareToDate));
+            }
+
+            foreach ($expenseAccounts as $account) {
+                $compareExpenses += abs($this->calculateAccountBalanceForPeriod($account, $compareFromDate, $compareToDate));
+            }
+
+            $compareData = [
+                'fromDate' => $compareFromDate,
+                'toDate' => $compareToDate,
+                'totalIncome' => $compareIncome,
+                'totalExpenses' => $compareExpenses,
+                'netProfit' => $compareIncome - $compareExpenses,
+            ];
+        }
 
         return view('tenant.reports.profit-loss', compact(
             'incomeData',
@@ -105,7 +128,9 @@ class ReportsController extends Controller
             'fromDate',
             'toDate',
             'openingStock',
-            'closingStock'
+            'closingStock',
+            'compare',
+            'compareData'
         ));
     }
 
@@ -532,6 +557,7 @@ class ReportsController extends Controller
     public function balanceSheet(Request $request, Tenant $tenant)
     {
         $asOfDate = $request->get('as_of_date', now()->toDateString());
+        $compare = $request->get('compare', false);
 
         // Get asset accounts
         $assetAccounts = LedgerAccount::where('tenant_id', $tenant->id)
@@ -625,6 +651,40 @@ class ReportsController extends Controller
         $totalLiabilitiesAndEquity = $totalLiabilities + $totalEquity;
         $balanceCheck = abs($totalAssets - $totalLiabilitiesAndEquity) < 0.01;
 
+        $compareData = null;
+        if ($compare) {
+            $compareDate = date('Y-m-d', strtotime($asOfDate . ' -1 year'));
+            $compareAssets = 0;
+            $compareLiabilities = 0;
+            $compareEquity = 0;
+
+            foreach ($assetAccounts as $account) {
+                $compareAssets += $this->calculateAccountBalance($account, $compareDate);
+            }
+            foreach ($liabilityAccounts as $account) {
+                $compareLiabilities += $this->calculateAccountBalance($account, $compareDate);
+            }
+            foreach ($equityAccounts as $account) {
+                $compareEquity += $this->calculateAccountBalance($account, $compareDate);
+            }
+
+            $compareIncome = 0;
+            $compareExpenses = 0;
+            foreach ($incomeAccounts as $account) {
+                $compareIncome += $this->calculateAccountBalance($account, $compareDate);
+            }
+            foreach ($expenseAccounts as $account) {
+                $compareExpenses += $this->calculateAccountBalance($account, $compareDate);
+            }
+
+            $compareData = [
+                'asOfDate' => $compareDate,
+                'totalAssets' => $compareAssets,
+                'totalLiabilities' => $compareLiabilities,
+                'totalEquity' => $compareEquity + ($compareIncome - $compareExpenses),
+            ];
+        }
+
         return view('tenant.reports.balance-sheet', [
             'tenant' => $tenant,
             'asOfDate' => $asOfDate,
@@ -637,7 +697,89 @@ class ReportsController extends Controller
             'totalLiabilitiesAndEquity' => $totalLiabilitiesAndEquity,
             'retainedEarnings' => $retainedEarnings,
             'balanceCheck' => $balanceCheck,
+            'compare' => $compare,
+            'compareData' => $compareData,
         ]);
+    }
+
+    public function balanceSheetPdf(Request $request, Tenant $tenant)
+    {
+        $asOfDate = $request->get('as_of_date', now()->toDateString());
+        $data = $this->getBalanceSheetData($tenant, $asOfDate);
+        $pdf = Pdf::loadView('tenant.reports.balance-sheet-pdf', $data);
+        return $pdf->download('balance_sheet_' . $asOfDate . '.pdf');
+    }
+
+    public function balanceSheetExcel(Request $request, Tenant $tenant)
+    {
+        $asOfDate = $request->get('as_of_date', now()->toDateString());
+        $data = $this->getBalanceSheetData($tenant, $asOfDate);
+        return \Excel::download(new \App\Exports\BalanceSheetExport($data), 'balance_sheet_' . $asOfDate . '.xlsx');
+    }
+
+    private function getBalanceSheetData(Tenant $tenant, string $asOfDate): array
+    {
+        $assetAccounts = LedgerAccount::where('tenant_id', $tenant->id)->where('account_type', 'asset')->where('is_active', true)->orderBy('code')->get();
+        $liabilityAccounts = LedgerAccount::where('tenant_id', $tenant->id)->where('account_type', 'liability')->where('is_active', true)->orderBy('code')->get();
+        $equityAccounts = LedgerAccount::where('tenant_id', $tenant->id)->where('account_type', 'equity')->where('is_active', true)->orderBy('code')->get();
+
+        $assets = [];
+        $liabilities = [];
+        $equity = [];
+        $totalAssets = 0;
+        $totalLiabilities = 0;
+        $totalEquity = 0;
+
+        foreach ($assetAccounts as $account) {
+            $balance = $this->calculateAccountBalance($account, $asOfDate);
+            if (abs($balance) >= 0.01) {
+                $assets[] = ['account' => $account, 'balance' => $balance];
+                $totalAssets += $balance;
+            }
+        }
+
+        foreach ($liabilityAccounts as $account) {
+            $balance = $this->calculateAccountBalance($account, $asOfDate);
+            if (abs($balance) >= 0.01) {
+                $liabilities[] = ['account' => $account, 'balance' => $balance];
+                $totalLiabilities += $balance;
+            }
+        }
+
+        foreach ($equityAccounts as $account) {
+            $balance = $this->calculateAccountBalance($account, $asOfDate);
+            if (abs($balance) >= 0.01) {
+                $equity[] = ['account' => $account, 'balance' => $balance];
+                $totalEquity += $balance;
+            }
+        }
+
+        $incomeAccounts = LedgerAccount::where('tenant_id', $tenant->id)->where('account_type', 'income')->where('is_active', true)->get();
+        $expenseAccounts = LedgerAccount::where('tenant_id', $tenant->id)->where('account_type', 'expense')->where('is_active', true)->get();
+
+        $totalIncome = 0;
+        $totalExpenses = 0;
+        foreach ($incomeAccounts as $account) {
+            $totalIncome += $this->calculateAccountBalance($account, $asOfDate);
+        }
+        foreach ($expenseAccounts as $account) {
+            $totalExpenses += $this->calculateAccountBalance($account, $asOfDate);
+        }
+
+        $retainedEarnings = $totalIncome - $totalExpenses;
+        $totalEquity += $retainedEarnings;
+
+        return [
+            'tenant' => $tenant,
+            'asOfDate' => $asOfDate,
+            'assets' => $assets,
+            'liabilities' => $liabilities,
+            'equity' => $equity,
+            'totalAssets' => $totalAssets,
+            'totalLiabilities' => $totalLiabilities,
+            'totalEquity' => $totalEquity,
+            'retainedEarnings' => $retainedEarnings,
+        ];
     }
 
     /**

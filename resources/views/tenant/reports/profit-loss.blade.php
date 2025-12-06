@@ -99,6 +99,12 @@
                     <input type="date" name="to_date" id="to_date" value="{{ $toDate }}"
                            class="block w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-emerald-500 focus:border-emerald-500">
                 </div>
+                <div class="flex items-center">
+                    <label class="flex items-center cursor-pointer">
+                        <input type="checkbox" name="compare" value="1" {{ $compare ? 'checked' : '' }} class="rounded border-gray-300 text-emerald-600 focus:ring-emerald-500">
+                        <span class="ml-2 text-sm text-gray-700">Compare</span>
+                    </label>
+                </div>
                 <button type="submit" class="px-6 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 font-medium">
                     Generate Report
                 </button>
@@ -108,17 +114,52 @@
 
     <!-- Summary Cards -->
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        @if($compare && $compareData)
+        <div class="col-span-full bg-blue-50 border border-blue-200 rounded-xl p-4">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h4 class="text-sm font-semibold text-blue-800 mb-1">Comparing with Previous Period</h4>
+                    <p class="text-xs text-blue-600">{{ date('M d, Y', strtotime($compareData['fromDate'])) }} to {{ date('M d, Y', strtotime($compareData['toDate'])) }}</p>
+                </div>
+            </div>
+        </div>
+        @endif
         <div class="bg-gradient-to-br from-emerald-50 to-emerald-100 rounded-xl p-6 border border-emerald-200">
             <div class="text-sm font-medium text-emerald-600 mb-1">Total Income</div>
             <div class="text-3xl font-bold text-emerald-700">₦{{ number_format($totalIncome, 2) }}</div>
+            @if($compare && $compareData)
+            @php
+                $change = $compareData['totalIncome'] > 0 ? (($totalIncome - $compareData['totalIncome']) / $compareData['totalIncome']) * 100 : 0;
+            @endphp
+            <div class="mt-2 text-xs {{ $change >= 0 ? 'text-emerald-600' : 'text-red-600' }} font-medium">
+                {{ $change >= 0 ? '↑' : '↓' }} {{ number_format(abs($change), 1) }}% vs previous
+            </div>
+            @endif
         </div>
         <div class="bg-gradient-to-br from-red-50 to-red-100 rounded-xl p-6 border border-red-200">
             <div class="text-sm font-medium text-red-600 mb-1">Total Expenses</div>
             <div class="text-3xl font-bold text-red-700">₦{{ number_format($totalExpenses, 2) }}</div>
+            @if($compare && $compareData)
+            @php
+                $change = $compareData['totalExpenses'] > 0 ? (($totalExpenses - $compareData['totalExpenses']) / $compareData['totalExpenses']) * 100 : 0;
+            @endphp
+            <div class="mt-2 text-xs {{ $change <= 0 ? 'text-emerald-600' : 'text-red-600' }} font-medium">
+                {{ $change >= 0 ? '↑' : '↓' }} {{ number_format(abs($change), 1) }}% vs previous
+            </div>
+            @endif
         </div>
         <div class="bg-gradient-to-br {{ $netProfit >= 0 ? 'from-blue-50 to-blue-100 border-blue-200' : 'from-orange-50 to-orange-100 border-orange-200' }} rounded-xl p-6 border">
             <div class="text-sm font-medium {{ $netProfit >= 0 ? 'text-blue-600' : 'text-orange-600' }} mb-1">Net {{ $netProfit >= 0 ? 'Profit' : 'Loss' }}</div>
             <div class="text-3xl font-bold {{ $netProfit >= 0 ? 'text-blue-700' : 'text-orange-700' }}">₦{{ number_format(abs($netProfit), 2) }}</div>
+            @if($compare && $compareData)
+            @php
+                $prevProfit = $compareData['netProfit'];
+                $change = $prevProfit != 0 ? (($netProfit - $prevProfit) / abs($prevProfit)) * 100 : 0;
+            @endphp
+            <div class="mt-2 text-xs {{ $change >= 0 ? 'text-emerald-600' : 'text-red-600' }} font-medium">
+                {{ $change >= 0 ? '↑' : '↓' }} {{ number_format(abs($change), 1) }}% vs previous
+            </div>
+            @endif
         </div>
         <div class="bg-gradient-to-br from-purple-50 to-purple-100 rounded-xl p-6 border border-purple-200">
             <div class="text-sm font-medium text-purple-600 mb-1">Profit Margin</div>

@@ -399,6 +399,8 @@ Route::prefix('ledger-accounts')->name('ledger-accounts.')->group(function () {
 
             // Balance Sheet
             Route::get('/balance-sheet', [ReportsController::class, 'balanceSheet'])->name('balance-sheet');
+            Route::get('/balance-sheet-pdf', [ReportsController::class, 'balanceSheetPdf'])->name('balance-sheet-pdf');
+            Route::get('/balance-sheet-excel', [ReportsController::class, 'balanceSheetExcel'])->name('balance-sheet-excel');
             // Standard Table Balance Sheet
             Route::get('/balance-sheet-table', [ReportsController::class, 'balanceSheetTable'])->name('balance-sheet-table');
             // DR/CR Balance Sheet
