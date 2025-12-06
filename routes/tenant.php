@@ -407,6 +407,8 @@ Route::prefix('ledger-accounts')->name('ledger-accounts.')->group(function () {
             // Profit & Loss
             Route::get('/profit-loss', [ReportsController::class, 'profitLoss'])->name('profit-loss');
             Route::get('/profit-loss-table', [ReportsController::class, 'profitLossTable'])->name('profit-loss-table');
+            Route::get('/profit-loss-pdf', [ReportsController::class, 'profitLossPdf'])->name('profit-loss-pdf');
+            Route::get('/profit-loss-excel', [ReportsController::class, 'profitLossExcel'])->name('profit-loss-excel');
 
             // Cash Flow
             Route::get('/cash-flow', [ReportsController::class, 'cashFlow'])->name('cash-flow');
