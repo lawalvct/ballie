@@ -122,7 +122,6 @@ class StockJournalController extends Controller
 
         DB::beginTransaction();
         try {
-            // Create the journal entry
             $journalEntry = StockJournalEntry::create([
                 'tenant_id' => $tenant->id,
                 'journal_date' => $request->journal_date,
@@ -133,11 +132,8 @@ class StockJournalController extends Controller
                 'created_by' => Auth::id(),
             ]);
 
-            // Create journal entry items
             foreach ($request->items as $itemData) {
                 $product = Product::findOrFail($itemData['product_id']);
-
-                // Get current stock using date-based calculation
                 $stockBefore = $product->getStockAsOfDate(now());
 
                 StockJournalEntryItem::create([
@@ -153,11 +149,18 @@ class StockJournalController extends Controller
                 ]);
             }
 
+            if ($request->action === 'save_and_post') {
+                $journalEntry->post(Auth::id());
+                $message = 'Stock journal entry created and posted successfully.';
+            } else {
+                $message = 'Stock journal entry created successfully.';
+            }
+
             DB::commit();
 
             return redirect()
                 ->route('tenant.inventory.stock-journal.show', ['tenant' => $tenant->slug, 'stockJournal' => $journalEntry->id])
-                ->with('success', 'Stock journal entry created successfully.');
+                ->with('success', $message);
 
         } catch (\Exception $e) {
             DB::rollback();

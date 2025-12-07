@@ -90,7 +90,7 @@
             </a>
 
             <!-- Product Export Card -->
-            <a href="#"
+            <a href="{{ route('tenant.inventory.products.export', ['tenant' => $tenant->slug]) }}"
                class="action-card bg-gradient-to-br from-pink-600 to-pink-800 hover:from-pink-500 hover:to-pink-700 border border-pink-500 rounded-xl p-4 transition-all duration-300 hover:shadow-lg hover:scale-105 group">
                 <div class="flex items-center mb-3">
                     <div class="w-10 h-10 bg-pink-500 bg-opacity-30 rounded-lg flex items-center justify-center mr-3 group-hover:scale-110 transition-transform duration-300">
@@ -154,7 +154,7 @@
             </a>
 
             <!-- Low Stock Alert Card -->
-            <a href="#"
+            <a href="{{ route('tenant.inventory.low-stock', ['tenant' => $tenant->slug]) }}"
                class="action-card bg-gradient-to-br from-red-600 to-red-800 hover:from-red-500 hover:to-red-700 border border-red-500 rounded-xl p-4 transition-all duration-300 hover:shadow-lg hover:scale-105 group">
                 <div class="flex items-center mb-3">
                     <div class="w-10 h-10 bg-red-500 bg-opacity-30 rounded-lg flex items-center justify-center mr-3 group-hover:scale-110 transition-transform duration-300">
@@ -282,7 +282,7 @@
         </h4>
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             <!-- Inventory Report Card -->
-            <a href="#"
+            <a href="{{ route('tenant.inventory.reports', ['tenant' => $tenant->slug]) }}"
                class="action-card bg-gradient-to-br from-gray-600 to-gray-800 hover:from-gray-500 hover:to-gray-700 border border-gray-500 rounded-xl p-4 transition-all duration-300 hover:shadow-lg hover:scale-105 group">
                 <div class="flex items-center mb-3">
                     <div class="w-10 h-10 bg-gray-500 bg-opacity-30 rounded-lg flex items-center justify-center mr-3 group-hover:scale-110 transition-transform duration-300">
@@ -299,7 +299,7 @@
             </a>
 
             <!-- Stock Movement Report Card -->
-            <a href="#"
+            <a href="{{ route('tenant.inventory.movements', ['tenant' => $tenant->slug]) }}"
                class="action-card bg-gradient-to-br from-slate-600 to-slate-800 hover:from-slate-500 hover:to-slate-700 border border-slate-500 rounded-xl p-4 transition-all duration-300 hover:shadow-lg hover:scale-105 group">
                 <div class="flex items-center mb-3">
                     <div class="w-10 h-10 bg-slate-500 bg-opacity-30 rounded-lg flex items-center justify-center mr-3 group-hover:scale-110 transition-transform duration-300">
@@ -315,39 +315,9 @@
                 <p class="text-xs text-slate-200">Analyze stock movement patterns.</p>
             </a>
 
-            <!-- Valuation Report Card -->
-            <a href="#"
-               class="action-card bg-gradient-to-br from-zinc-600 to-zinc-800 hover:from-zinc-500 hover:to-zinc-700 border border-zinc-500 rounded-xl p-4 transition-all duration-300 hover:shadow-lg hover:scale-105 group">
-                <div class="flex items-center mb-3">
-                    <div class="w-10 h-10 bg-zinc-500 bg-opacity-30 rounded-lg flex items-center justify-center mr-3 group-hover:scale-110 transition-transform duration-300">
-                        <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"></path>
-                        </svg>
-                    </div>
-                    <div>
-                        <h5 class="font-semibold text-white group-hover:text-zinc-200 transition-colors duration-300">Valuation Report</h5>
-                        <p class="text-xs text-zinc-200">Asset valuation</p>
-                    </div>
-                </div>
-                <p class="text-xs text-zinc-200">Calculate inventory asset values.</p>
-            </a>
+          
 
-            <!-- ABC Analysis Card -->
-            <a href="#"
-               class="action-card bg-gradient-to-br from-stone-600 to-stone-800 hover:from-stone-500 hover:to-stone-700 border border-stone-500 rounded-xl p-4 transition-all duration-300 hover:shadow-lg hover:scale-105 group">
-                <div class="flex items-center mb-3">
-                    <div class="w-10 h-10 bg-stone-500 bg-opacity-30 rounded-lg flex items-center justify-center mr-3 group-hover:scale-110 transition-transform duration-300">
-                        <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z"></path>
-                        </svg>
-                    </div>
-                    <div>
-                        <h5 class="font-semibold text-white group-hover:text-stone-200 transition-colors duration-300">ABC Analysis</h5>
-                        <p class="text-xs text-stone-200">Product analysis</p>
-                    </div>
-                </div>
-                <p class="text-xs text-stone-200">Analyze product performance and importance.</p>
-            </a>
+
         </div>
     </div>
 </div>

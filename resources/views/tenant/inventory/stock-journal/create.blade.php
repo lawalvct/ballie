@@ -118,7 +118,15 @@
             </div>
         </div>
 
-        <!-- Line Items Card (Tally-like interface) -->
+        <!-- Conditional Entry Type Display -->
+        <template x-if="entryType === 'production'">
+            <div x-data="productionEntryForm()" x-init="init()">
+                @include('tenant.inventory.stock-journal.partials.production-entries')
+            </div>
+        </template>
+
+        <!-- Line Items Card (Tally-like interface) - For other entry types -->
+        <template x-if="entryType !== 'production'">
         <div class="bg-white rounded-lg shadow p-6">
             <div class="flex items-center justify-between mb-6">
                 <h3 class="text-lg font-semibold text-gray-900">Journal Entry Items</h3>
@@ -257,8 +265,10 @@
                 </div>
             </div>
         </div>
+        </template>
 
-        <!-- Action Buttons -->
+        <!-- Action Buttons - Only for non-production entries -->
+        <template x-if="entryType !== 'production'">
         <div class="flex items-center justify-between">
             <div class="flex space-x-3">
                 <a href="{{ route('tenant.inventory.stock-journal.index', ['tenant' => $tenant->slug]) }}"
@@ -287,12 +297,101 @@
                 @endif
             </div>
         </div>
+        </template>
     </form>
 </div>
 
 @push('scripts')
 <script src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
 <script>
+function productionEntryForm() {
+    return {
+        consumptionItems: [],
+        productionItems: [],
+        consumptionTotal: 0,
+        productionTotal: 0,
+
+        addConsumptionItem() {
+            this.consumptionItems.push({
+                product_id: '',
+                current_stock: 0,
+                quantity: 0,
+                rate: 0,
+                amount: 0
+            });
+        },
+
+        addProductionItem() {
+            this.productionItems.push({
+                product_id: '',
+                current_stock: 0,
+                quantity: 0,
+                rate: 0,
+                amount: 0
+            });
+        },
+
+        removeConsumptionItem(index) {
+            this.consumptionItems.splice(index, 1);
+            this.calculateConsumptionTotal();
+        },
+
+        removeProductionItem(index) {
+            this.productionItems.splice(index, 1);
+            this.calculateProductionTotal();
+        },
+
+        updateConsumptionStock(index, productId) {
+            const select = event.target;
+            const option = select.options[select.selectedIndex];
+            this.consumptionItems[index].current_stock = parseFloat(option.dataset.stock || 0);
+            this.consumptionItems[index].rate = parseFloat(option.dataset.rate || 0);
+            this.calculateConsumptionAmount(index);
+        },
+
+        updateProductionStock(index, productId) {
+            const select = event.target;
+            const option = select.options[select.selectedIndex];
+            this.productionItems[index].current_stock = parseFloat(option.dataset.stock || 0);
+            this.productionItems[index].rate = parseFloat(option.dataset.rate || 0);
+            this.calculateProductionAmount(index);
+        },
+
+        calculateConsumptionAmount(index) {
+            const item = this.consumptionItems[index];
+            item.amount = (parseFloat(item.quantity) || 0) * (parseFloat(item.rate) || 0);
+            this.calculateConsumptionTotal();
+        },
+
+        calculateProductionAmount(index) {
+            const item = this.productionItems[index];
+            item.amount = (parseFloat(item.quantity) || 0) * (parseFloat(item.rate) || 0);
+            this.calculateProductionTotal();
+        },
+
+        calculateConsumptionTotal() {
+            this.consumptionTotal = this.consumptionItems.reduce((sum, item) => sum + (parseFloat(item.amount) || 0), 0);
+        },
+
+        calculateProductionTotal() {
+            this.productionTotal = this.productionItems.reduce((sum, item) => sum + (parseFloat(item.amount) || 0), 0);
+        },
+
+        consumptionItemIndex(index) {
+            return index;
+        },
+
+        productionItemIndex(index) {
+            return this.consumptionItems.length + index;
+        },
+
+        init() {
+            this.addConsumptionItem();
+            this.addProductionItem();
+        }
+    }
+}
+
 function journalEntryForm() {
     return {
         entryType: '{{ old("entry_type", $entryType ?? "consumption") }}',
