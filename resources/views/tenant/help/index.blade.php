@@ -189,9 +189,9 @@ createApp({
         @include('tenant.help.components.accounting-banking')
         @include('tenant.help.components.accounting-reports')
         @include('tenant.help.components.inventory-products')
+        @include('tenant.help.components.inventory-stock')
         
         // Inventory Components
-        'inventory-stock': { template: `<div><h1 class="text-3xl font-bold mb-4">📊 Stock Management</h1><p class="text-gray-600 mb-6">Track stock movements, adjustments, and physical stock verification.</p><div class="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-6"><p class="text-sm text-yellow-700">🚧 Documentation coming soon...</p></div></div>` },
         'inventory-categories': { template: `<div><h1 class="text-3xl font-bold mb-4">📊 Categories & Units</h1><p class="text-gray-600 mb-6">Organize products into categories and define measurement units.</p><div class="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-6"><p class="text-sm text-yellow-700">🚧 Documentation coming soon...</p></div></div>` },
         'inventory-reports': { template: `<div><h1 class="text-3xl font-bold mb-4">📊 Inventory Reports</h1><p class="text-gray-600 mb-6">Generate stock reports, valuation, and movement analysis.</p><div class="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-6"><p class="text-sm text-yellow-700">🚧 Documentation coming soon...</p></div></div>` },
         

@@ -112,7 +112,7 @@
                 <label for="narration" class="block text-sm font-medium text-gray-700 mb-1">
                     Narration
                 </label>
-                <textarea name="narration" id="narration" rows="3"
+                <textarea name="narration" id="narration" rows="2"
                           class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-green-500 focus:border-green-500"
                           placeholder="Enter narration or description for this journal entry">{{ old('narration', isset($stockJournal) ? $stockJournal->narration : '') }}</textarea>
             </div>
@@ -125,8 +125,14 @@
             </div>
         </template>
 
+        <template x-if="entryType === 'transfer'">
+            <div x-data="transferEntryForm()" x-init="init()">
+                @include('tenant.inventory.stock-journal.partials.transfer-entries')
+            </div>
+        </template>
+
         <!-- Line Items Card (Tally-like interface) - For other entry types -->
-        <template x-if="entryType !== 'production'">
+        <template x-if="entryType !== 'production' && entryType !== 'transfer'">
         <div class="bg-white rounded-lg shadow p-6">
             <div class="flex items-center justify-between mb-6">
                 <h3 class="text-lg font-semibold text-gray-900">Journal Entry Items</h3>
@@ -180,7 +186,7 @@
                                     <select :name="`items[${index}][movement_type]`" x-model="item.movement_type"
                                             @change="calculateAmount(index)"
                                             class="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-green-500 focus:border-green-500">
-                                        <option value="in" x-show="entryType === 'production' || entryType === 'adjustment' || entryType === 'consumption'">In</option>
+                                        <option value="in" x-show="entryType === 'production' || entryType === 'adjustment' ">In</option>
                                         <option value="out" x-show="entryType === 'consumption' || entryType === 'adjustment' || entryType === 'transfer'">Out</option>
                                     </select>
                                 </td>
@@ -267,8 +273,8 @@
         </div>
         </template>
 
-        <!-- Action Buttons - Only for non-production entries -->
-        <template x-if="entryType !== 'production'">
+        <!-- Action Buttons - Only for non-production and non-transfer entries -->
+        <template x-if="entryType !== 'production' && entryType !== 'transfer'">
         <div class="flex items-center justify-between">
             <div class="flex space-x-3">
                 <a href="{{ route('tenant.inventory.stock-journal.index', ['tenant' => $tenant->slug]) }}"
@@ -388,6 +394,96 @@ function productionEntryForm() {
         init() {
             this.addConsumptionItem();
             this.addProductionItem();
+        }
+    }
+}
+
+function transferEntryForm() {
+    return {
+        fromLocation: '',
+        toLocation: '',
+        fromItems: [],
+        toItems: [],
+        fromTotal: 0,
+        toTotal: 0,
+
+        get difference() {
+            return this.fromTotal - this.toTotal;
+        },
+
+        get isBalanced() {
+            return Math.abs(this.difference) < 0.01;
+        },
+
+        addFromItem() {
+            this.fromItems.push({
+                product_id: '',
+                current_stock: 0,
+                quantity: 0,
+                rate: 0,
+                amount: 0
+            });
+        },
+
+        addToItem() {
+            this.toItems.push({
+                product_id: '',
+                current_stock: 0,
+                quantity: 0,
+                rate: 0,
+                amount: 0
+            });
+        },
+
+        removeFromItem(index) {
+            this.fromItems.splice(index, 1);
+            this.calculateFromTotal();
+        },
+
+        removeToItem(index) {
+            this.toItems.splice(index, 1);
+            this.calculateToTotal();
+        },
+
+        updateFromProductInfo(index) {
+            const select = event.target;
+            const option = select.options[select.selectedIndex];
+            this.fromItems[index].current_stock = parseFloat(option.dataset.stock || 0);
+            this.fromItems[index].rate = parseFloat(option.dataset.rate || 0);
+            this.calculateFromAmount(index);
+        },
+
+        updateToProductInfo(index) {
+            const select = event.target;
+            const option = select.options[select.selectedIndex];
+            this.toItems[index].current_stock = parseFloat(option.dataset.stock || 0);
+            this.toItems[index].rate = parseFloat(option.dataset.rate || 0);
+            this.calculateToAmount(index);
+        },
+
+        calculateFromAmount(index) {
+            const item = this.fromItems[index];
+            item.amount = (parseFloat(item.quantity) || 0) * (parseFloat(item.rate) || 0);
+            this.calculateFromTotal();
+        },
+
+        calculateToAmount(index) {
+            const item = this.toItems[index];
+            item.amount = (parseFloat(item.quantity) || 0) * (parseFloat(item.rate) || 0);
+            this.calculateToTotal();
+        },
+
+        calculateFromTotal() {
+            this.fromTotal = this.fromItems.reduce((sum, item) => sum + (parseFloat(item.amount) || 0), 0);
+        },
+
+        calculateToTotal() {
+            this.toTotal = this.toItems.reduce((sum, item) => sum + (parseFloat(item.amount) || 0), 0);
+        },
+
+        init() {
+            this.addFromItem();
+            this.addToItem();
         }
     }
 }
