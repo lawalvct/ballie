@@ -203,9 +203,10 @@ class RegisteredUserController extends Controller
 
             Log::info('Registration completed successfully');
 
-            // Redirect to verification notice page
-            return redirect()->route('verification.notice')
-                ->with('success', 'Registration successful! Please check your email for a verification code.');
+            // Redirect to onboarding (users can verify email later)
+            // A verification email has been sent, but it's not required to proceed
+            return redirect()->route('tenant.onboarding.index', ['tenant' => $tenant->slug])
+                ->with('success', 'Welcome! Please complete your business setup. A verification email has been sent to ' . $user->email);
 
         } catch (\Exception $e) {
             Log::error('Registration failed', [

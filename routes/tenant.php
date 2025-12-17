@@ -139,7 +139,9 @@ Route::middleware(['auth'])->group(function () {
     });
 
     // Routes that require completed onboarding and active subscription
-    Route::middleware(['email.verified', 'onboarding.completed', 'subscription.check'])->group(function () {
+    // Note: email.verified middleware removed - users can access dashboard without verifying email
+    // They will receive notifications to verify within 7 days
+    Route::middleware(['onboarding.completed', 'subscription.check'])->group(function () {
         // Global Search API
         Route::prefix('api')->name('tenant.api.')->group(function () {
             Route::get('/global-search', [GlobalSearchController::class, 'search'])->name('global-search');
@@ -517,15 +519,15 @@ Route::prefix('ledger-accounts')->name('ledger-accounts.')->group(function () {
             Route::get('activities/{activity}/edit', [\App\Http\Controllers\Tenant\CustomerActivityController::class, 'edit'])->name('activities.edit');
             Route::put('activities/{activity}', [\App\Http\Controllers\Tenant\CustomerActivityController::class, 'update'])->name('activities.update');
             Route::delete('activities/{activity}', [\App\Http\Controllers\Tenant\CustomerActivityController::class, 'destroy'])->name('activities.destroy');
-            
+
             // Record Payment
             Route::get('record-payment', [VoucherController::class, 'recordPayment'])->name('record-payment');
             Route::post('record-payment', [VoucherController::class, 'storePayment'])->name('store-payment');
-            
+
             // Payment Reminders
             Route::get('payment-reminders', [CustomerController::class, 'paymentReminders'])->name('payment-reminders');
             Route::post('payment-reminders/send', [CustomerController::class, 'sendPaymentReminders'])->name('payment-reminders.send');
-            
+
             // Payment Reports
             Route::get('payment-reports', [CustomerController::class, 'paymentReports'])->name('payment-reports');
 

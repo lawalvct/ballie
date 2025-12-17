@@ -14,6 +14,9 @@ class Kernel extends ConsoleKernel
     {
         // Handle expired subscriptions daily at 2 AM
         $schedule->command('subscriptions:handle-expired')->dailyAt('02:00');
+
+        // Send email verification reminders daily at 10 AM
+        $schedule->command('email:send-verification-reminders')->dailyAt('10:00');
     }
 
     /**

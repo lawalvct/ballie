@@ -72,7 +72,9 @@ class AuthController extends Controller
 
         event(new Registered($user));
 
-        // Send welcome notification
+        // Send welcome notification with verification code
+        // Note: Email verification is optional - users can access dashboard without verifying
+        // They will receive reminders to verify within 7 days
         $verificationCode = rand(100000, 999999);
         $user->notify(new WelcomeNotification($verificationCode));
 

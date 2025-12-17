@@ -8,6 +8,45 @@
         <!-- Subscription Status Alert -->
         @include('components.subscription-status-alert')
 
+        <!-- Email Verification Reminder -->
+        @if(auth()->check() && !auth()->user()->hasVerifiedEmail())
+            @php
+                $accountAge = auth()->user()->created_at->diffInDays(now());
+                $daysRemaining = max(0, 7 - $accountAge);
+            @endphp
+            <div class="bg-blue-50 border-l-4 border-blue-400 p-4 mb-6 rounded-lg">
+                <div class="flex items-start">
+                    <div class="flex-shrink-0">
+                        <svg class="h-5 w-5 text-blue-400" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"/>
+                        </svg>
+                    </div>
+                    <div class="ml-3 flex-1">
+                        <p class="text-sm text-blue-700">
+                            <strong>Please verify your email address.</strong>
+                            @if($daysRemaining > 0)
+                                You have <strong>{{ $daysRemaining }} days</strong> remaining to verify your email.
+                            @else
+                                Your verification period has expired. Please verify your email to ensure full access to all features.
+                            @endif
+                        </p>
+                        <div class="mt-2">
+                            <a href="{{ route('verification.notice') }}" class="text-sm font-medium text-blue-700 hover:text-blue-600 underline">
+                                Verify email now →
+                            </a>
+                        </div>
+                    </div>
+                    <div class="ml-auto pl-3">
+                        <button type="button" onclick="this.parentElement.parentElement.parentElement.remove()" class="inline-flex text-blue-400 hover:text-blue-600">
+                            <svg class="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"/>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        @endif
+
         <!-- Welcome Section -->
         <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg mb-6">
             <div class="p-6 text-gray-900">

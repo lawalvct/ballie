@@ -146,4 +146,113 @@
                             </div>
                         </div>
                         @error('image')
-                            <p class="mt-1 text-sm text
+                            <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                        @enderror
+                    </div>
+
+                    <div>
+                        <label for="sort_order" class="block text-sm font-medium text-gray-700 mb-1">
+                            Sort Order
+                        </label>
+                        <input type="number" name="sort_order" id="sort_order" value="{{ old('sort_order', $category->sort_order) }}" min="0" max="999999"
+                               class="block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500 @error('sort_order') border-red-500 @enderror"
+                               placeholder="0">
+                        <p class="mt-1 text-xs text-gray-500">Lower numbers appear first.</p>
+                        @error('sort_order')
+                            <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                        @enderror
+                    </div>
+
+                    <div>
+                        <div class="flex items-center">
+                            <input type="checkbox" name="is_active" id="is_active" value="1" {{ old('is_active', $category->is_active) ? 'checked' : '' }}
+                                   class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded">
+                            <label for="is_active" class="ml-2 block text-sm text-gray-900">
+                                Active
+                            </label>
+                        </div>
+                        <p class="mt-1 text-xs text-gray-500">Inactive categories won't be available for product assignment.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Form Actions -->
+            <div class="flex items-center justify-end space-x-3 pt-6 border-t border-gray-200">
+                <a href="{{ route('tenant.inventory.categories.index', ['tenant' => $tenant->slug]) }}"
+                   class="px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors">
+                    Cancel
+                </a>
+                <button type="submit"
+                        class="inline-flex items-center px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
+                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                    </svg>
+                    Update Category
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+@push('scripts')
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const nameInput = document.getElementById('name');
+    const slugInput = document.getElementById('slug');
+
+    // Auto-generate slug from name
+    nameInput.addEventListener('input', function() {
+        if (!slugInput.dataset.userModified) {
+            const slug = this.value
+                .toLowerCase()
+                .replace(/[^a-z0-9\s-]/g, '')
+                .replace(/\s+/g, '-')
+                .replace(/-+/g, '-')
+                .trim('-');
+            slugInput.value = slug;
+        }
+    });
+
+    // Mark slug as user-modified if manually changed
+    slugInput.addEventListener('input', function() {
+        slugInput.dataset.userModified = 'true';
+    });
+
+    // Image preview for new upload
+    const imageInput = document.getElementById('image');
+
+    imageInput.addEventListener('change', function(e) {
+        const file = e.target.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                // Show preview near the upload area
+                const previewHtml = `
+                    <div class="mt-3 relative inline-block">
+                        <img src="${e.target.result}" alt="New Image Preview" class="h-24 w-24 object-cover rounded-lg border-2 border-blue-300">
+                        <span class="absolute -top-2 -right-2 bg-blue-500 text-white text-xs px-2 py-1 rounded">New</span>
+                    </div>
+                `;
+
+                // Find the parent container and append preview
+                const container = imageInput.closest('div').querySelector('.border-dashed');
+                if (container && !document.getElementById('new-image-preview')) {
+                    const previewDiv = document.createElement('div');
+                    previewDiv.id = 'new-image-preview';
+                    previewDiv.innerHTML = previewHtml;
+                    container.parentNode.insertBefore(previewDiv, container.nextSibling);
+                }
+            };
+            reader.readAsDataURL(file);
+        } else {
+            // Remove preview if file is cleared
+            const preview = document.getElementById('new-image-preview');
+            if (preview) {
+                preview.remove();
+            }
+        }
+    });
+});
+</script>
+@endpush
+@endsection

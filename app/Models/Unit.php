@@ -60,11 +60,11 @@ class Unit extends Model
     }
 
     /**
-     * Get all products that use this unit.
+     * Get all products that use this unit as primary unit.
      */
     public function products(): HasMany
     {
-        return $this->hasMany(Product::class, 'unit_id');
+        return $this->hasMany(Product::class, 'primary_unit_id');
     }
 
     /**

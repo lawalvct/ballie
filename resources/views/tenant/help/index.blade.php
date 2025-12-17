@@ -190,16 +190,14 @@ createApp({
         @include('tenant.help.components.accounting-reports')
         @include('tenant.help.components.inventory-products')
         @include('tenant.help.components.inventory-stock')
-        
-        // Inventory Components
-        'inventory-categories': { template: `<div><h1 class="text-3xl font-bold mb-4">📊 Categories & Units</h1><p class="text-gray-600 mb-6">Organize products into categories and define measurement units.</p><div class="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-6"><p class="text-sm text-yellow-700">🚧 Documentation coming soon...</p></div></div>` },
-        'inventory-reports': { template: `<div><h1 class="text-3xl font-bold mb-4">📊 Inventory Reports</h1><p class="text-gray-600 mb-6">Generate stock reports, valuation, and movement analysis.</p><div class="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-6"><p class="text-sm text-yellow-700">🚧 Documentation coming soon...</p></div></div>` },
-        
+        @include('tenant.help.components.inventory-categories')
+
+
         // CRM Components
         'crm-customers': { template: `<div><h1 class="text-3xl font-bold mb-4">👥 Customer Management</h1><p class="text-gray-600 mb-6">Manage customer information, statements, and transactions.</p><div class="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-6"><p class="text-sm text-yellow-700">🚧 Documentation coming soon...</p></div></div>` },
         'crm-vendors': { template: `<div><h1 class="text-3xl font-bold mb-4">👥 Vendor Management</h1><p class="text-gray-600 mb-6">Manage vendor information and purchase transactions.</p><div class="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-6"><p class="text-sm text-yellow-700">🚧 Documentation coming soon...</p></div></div>` },
         'crm-activities': { template: `<div><h1 class="text-3xl font-bold mb-4">📝 Activities & Follow-ups</h1><p class="text-gray-600 mb-6">Track customer activities and schedule follow-ups.</p><div class="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-6"><p class="text-sm text-yellow-700">🚧 Documentation coming soon...</p></div></div>` },
-        
+
         // Payroll Components
         'payroll-employees': { template: `<div><h1 class="text-3xl font-bold mb-4">👥 Employee Management</h1><p class="text-gray-600 mb-6">Add and manage employee records, departments, and positions.</p><div class="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-6"><p class="text-sm text-yellow-700">🚧 Documentation coming soon...</p></div></div>` },
         'payroll-salary': { template: `<div><h1 class="text-3xl font-bold mb-4">💵 Salary Components</h1><p class="text-gray-600 mb-6">Configure earnings, deductions, and employer contributions.</p><div class="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-6"><p class="text-sm text-yellow-700">🚧 Documentation coming soon...</p></div></div>` },
@@ -207,7 +205,7 @@ createApp({
         'payroll-pension': { template: `<div><h1 class="text-3xl font-bold mb-4">🏦 Pension & PFA</h1><p class="text-gray-600 mb-6">Manage pension contributions and PFA providers.</p><div class="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-6"><p class="text-sm text-yellow-700">🚧 Documentation coming soon...</p></div></div>` },
         'payroll-attendance': { template: `<div><h1 class="text-3xl font-bold mb-4">📅 Attendance & Leave</h1><p class="text-gray-600 mb-6">Track employee attendance, leave requests, and overtime.</p><div class="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-6"><p class="text-sm text-yellow-700">🚧 Documentation coming soon...</p></div></div>` },
         'payroll-loans': { template: `<div><h1 class="text-3xl font-bold mb-4">💰 Loans & Advances</h1><p class="text-gray-600 mb-6">Manage employee loans and salary advances.</p><div class="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-6"><p class="text-sm text-yellow-700">🚧 Documentation coming soon...</p></div></div>` },
-        
+
         // Other Modules
         'module-pos': { template: `<div><h1 class="text-3xl font-bold mb-4">🛒 Point of Sale</h1><p class="text-gray-600 mb-6">Process sales transactions, manage cash register, and print receipts.</p><div class="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-6"><p class="text-sm text-yellow-700">🚧 Documentation coming soon...</p></div></div>` },
         'module-statutory': { template: `<div><h1 class="text-3xl font-bold mb-4">📋 Statutory & Tax</h1><p class="text-gray-600 mb-6">Manage VAT, PAYE tax, and pension contributions.</p><div class="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-6"><p class="text-sm text-yellow-700">🚧 Documentation coming soon...</p></div></div>` },

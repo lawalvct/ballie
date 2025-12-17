@@ -6,35 +6,32 @@
 
 @section('content')
 <div class="space-y-6">
-    <!-- Breadcrumb -->
-    <nav class="flex" aria-label="Breadcrumb">
-        <ol class="inline-flex items-center space-x-1 md:space-x-3">
-            <li class="inline-flex items-center">
-                <a href="{{ route('tenant.inventory.categories.index', ['tenant' => $tenant->slug]) }}" class="inline-flex items-center text-sm font-medium text-gray-700 hover:text-blue-600">
-                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path>
-                    </svg>
-                    Categories
-                </a>
-            </li>
-            @foreach($breadcrumbs as $index => $breadcrumb)
-                <li>
-                    <div class="flex items-center">
-                        <svg class="w-6 h-6 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
-                            <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd"></path>
-                        </svg>
-                        @if($index < count($breadcrumbs) - 1)
-                            <a href="{{ route('tenant.inventory.categories.show', ['tenant' => $tenant->slug, 'category' => $breadcrumb->id]) }}" class="ml-1 text-sm font-medium text-gray-700 hover:text-blue-600 md:ml-2">
-                                {{ $breadcrumb->name }}
-                            </a>
-                        @else
-                            <span class="ml-1 text-sm font-medium text-gray-500 md:ml-2">{{ $breadcrumb->name }}</span>
-                        @endif
-                    </div>
-                </li>
-            @endforeach
-        </ol>
-    </nav>
+    <!-- Header -->
+    <div class="flex items-center justify-between">
+        <a href="{{ route('tenant.inventory.categories.index', ['tenant' => $tenant->slug]) }}" 
+           class="inline-flex items-center text-sm text-gray-600 hover:text-gray-900">
+            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
+            </svg>
+            Back to Categories
+        </a>
+        <div class="flex items-center space-x-2">
+            <a href="{{ route('tenant.inventory.categories.edit', ['tenant' => $tenant->slug, 'category' => $category->id]) }}"
+               class="inline-flex items-center px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
+                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+                </svg>
+                Edit
+            </a>
+            <a href="{{ route('tenant.inventory.categories.create', ['tenant' => $tenant->slug, 'parent_id' => $category->id]) }}"
+               class="inline-flex items-center px-3 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors">
+                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+                </svg>
+                Add Subcategory
+            </a>
+        </div>
+    </div>
 
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <!-- Main Content -->
@@ -70,22 +67,22 @@
                         </div>
                     @endif
 
-                    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-                        <div>
-                            <dt class="text-sm font-medium text-gray-500">Products</dt>
-                            <dd class="mt-1 text-sm text-gray-900">{{ $category->products_count }}</dd>
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-6">
+                        <div class="text-center p-4 bg-blue-50 rounded-lg">
+                            <dt class="text-sm font-medium text-blue-600 mb-1">Products</dt>
+                            <dd class="text-2xl font-bold text-blue-900">{{ $category->products_count }}</dd>
                         </div>
-                        <div>
-                            <dt class="text-sm font-medium text-gray-500">Subcategories</dt>
-                            <dd class="mt-1 text-sm text-gray-900">{{ $category->children_count }}</dd>
+                        <div class="text-center p-4 bg-purple-50 rounded-lg">
+                            <dt class="text-sm font-medium text-purple-600 mb-1">Subcategories</dt>
+                            <dd class="text-2xl font-bold text-purple-900">{{ $category->children_count }}</dd>
                         </div>
-                        <div>
-                            <dt class="text-sm font-medium text-gray-500">Sort Order</dt>
-                            <dd class="mt-1 text-sm text-gray-900">{{ $category->sort_order }}</dd>
+                        <div class="text-center p-4 bg-green-50 rounded-lg">
+                            <dt class="text-sm font-medium text-green-600 mb-1">Sort Order</dt>
+                            <dd class="text-2xl font-bold text-green-900">{{ $category->sort_order }}</dd>
                         </div>
-                        <div>
-                            <dt class="text-sm font-medium text-gray-500">Created</dt>
-                            <dd class="mt-1 text-sm text-gray-900">{{ $category->created_at->format('M j, Y') }}</dd>
+                        <div class="text-center p-4 bg-orange-50 rounded-lg">
+                            <dt class="text-sm font-medium text-orange-600 mb-1">Created</dt>
+                            <dd class="text-sm font-bold text-orange-900">{{ $category->created_at->format('M j, Y') }}</dd>
                         </div>
                     </div>
 
@@ -200,37 +197,21 @@
 
         <!-- Sidebar -->
         <div class="space-y-6">
-            <!-- Actions -->
+            <!-- Quick Actions -->
             <div class="bg-white rounded-xl shadow-sm border border-gray-200">
                 <div class="px-6 py-4 border-b border-gray-200">
-                    <h3 class="text-lg font-medium text-gray-900">Actions</h3>
+                    <h3 class="text-lg font-medium text-gray-900">Quick Actions</h3>
                 </div>
                 <div class="p-6 space-y-3">
-                    <a href="{{ route('tenant.inventory.categories.edit', ['tenant' => $tenant->slug, 'category' => $category->id]) }}"
-                       class="w-full inline-flex items-center justify-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors duration-200">
-                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
-                        </svg>
-                        Edit Category
-                    </a>
-
-                    <a href="{{ route('tenant.inventory.categories.create', ['tenant' => $tenant->slug, 'parent_id' => $category->id]) }}"
-                       class="w-full inline-flex items-center justify-center px-4 py-2 bg-green-600 hover:bg-green-700 text-white font-medium rounded-lg transition-colors duration-200">
-                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
-                        </svg>
-                        Add Subcategory
-                    </a>
-
                     <form method="POST" action="{{ route('tenant.inventory.categories.toggle-status', ['tenant' => $tenant->slug, 'category' => $category->id]) }}">
                         @csrf
                         @method('PATCH')
                         <button type="submit"
-                                class="w-full inline-flex items-center justify-center px-4 py-2 bg-{{ $category->is_active ? 'orange' : 'green' }}-600 hover:bg-{{ $category->is_active ? 'orange' : 'green' }}-700 text-white font-medium rounded-lg transition-colors duration-200"
-                                onclick="return confirm('Are you sure you want to {{ $category->is_active ? 'deactivate' : 'activate' }} this category?')">
+                                class="w-full inline-flex items-center justify-center px-4 py-2 bg-{{ $category->is_active ? 'orange' : 'green' }}-600 hover:bg-{{ $category->is_active ? 'orange' : 'green' }}-700 text-white rounded-lg transition-colors"
+                                onclick="return confirm('Are you sure?')">
                             @if($category->is_active)
                                 <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728L5.636 5.636m12.728 12.728L5.636 5.636"></path>
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728L5.636 5.636"></path>
                                 </svg>
                                 Deactivate
                             @else
@@ -247,12 +228,12 @@
                             @csrf
                             @method('DELETE')
                             <button type="submit"
-                                    class="w-full inline-flex items-center justify-center px-4 py-2 bg-red-600 hover:bg-red-700 text-white font-medium rounded-lg transition-colors duration-200"
-                                    onclick="return confirm('Are you sure you want to delete this category? This action cannot be undone.')">
+                                    class="w-full inline-flex items-center justify-center px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors"
+                                    onclick="return confirm('Are you sure you want to delete this category?')">
                                 <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
                                 </svg>
-                                Delete Category
+                                Delete
                             </button>
                         </form>
                     @endif
