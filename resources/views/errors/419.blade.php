@@ -4,20 +4,6 @@
 @section('description', 'Your session has expired. Please refresh and try again.')
 
 @section('content')
-<script>
-    // Auto-redirect after 2 seconds
-    setTimeout(function() {
-        @auth
-            @if(isset($tenant) && $tenant)
-                window.location.href = "{{ route('tenant.dashboard', $tenant->slug) }}";
-            @else
-                window.location.href = "{{ route('home') }}";
-            @endif
-        @else
-            window.location.href = "{{ route('home') }}";
-        @endauth
-    }, 2000);
-</script>
 <style>
     :root {
         --color-gold: #d1b05e;
@@ -35,7 +21,7 @@
     .gradient-bg {
         background: linear-gradient(135deg, var(--color-blue) 0%, var(--color-dark-purple) 50%, var(--color-deep-purple) 100%);
     }
-</script>
+</style>
 
 <div class="gradient-bg min-h-screen flex flex-col items-center justify-center px-4 py-16">
     <div class="max-w-3xl w-full bg-white rounded-2xl shadow-xl overflow-hidden">
@@ -77,34 +63,11 @@
                     </ul>
                 </div>
 
-                <!-- Auto-redirect notice -->
-                <div class="bg-blue-50 p-4 rounded-lg mb-6">
-                    <div class="flex items-center justify-center space-x-2">
-                        <svg class="animate-spin h-5 w-5 text-brand-blue" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                        </svg>
-                        <p class="text-brand-blue font-medium">Redirecting you in 2 seconds...</p>
-                    </div>
-                </div>
-
                 <!-- Main Action Buttons -->
                 <div class="flex flex-col sm:flex-row gap-4 justify-center">
-                    @auth
-                        @if(isset($tenant) && $tenant)
-                            <a href="{{ route('tenant.dashboard', $tenant->slug) }}" class="px-8 py-3 bg-brand-blue text-white rounded-lg hover:bg-opacity-90 transition-all font-medium">
-                                Go to Dashboard
-                            </a>
-                        @else
-                            <a href="{{ route('home') }}" class="px-8 py-3 bg-brand-blue text-white rounded-lg hover:bg-opacity-90 transition-all font-medium">
-                                Return to Home
-                            </a>
-                        @endif
-                    @else
-                        <a href="{{ route('home') }}" class="px-8 py-3 bg-brand-blue text-white rounded-lg hover:bg-opacity-90 transition-all font-medium">
-                            Return to Home
-                        </a>
-                    @endauth
+                    <a href="{{ route('home') }}" class="px-8 py-3 bg-brand-blue text-white rounded-lg hover:bg-opacity-90 transition-all font-medium">
+                        Return to Home
+                    </a>
 
                     <button onclick="window.location.reload()" class="px-8 py-3 border-2 border-brand-gold text-brand-gold rounded-lg hover:bg-brand-gold hover:text-white transition-all font-medium">
                         Refresh Page
@@ -121,4 +84,18 @@
         </div>
     </div>
 </div>
+<script>
+    // Auto-redirect after 2 seconds
+    setTimeout(function() {
+        @auth
+            @if(isset($tenant) && $tenant)
+                window.location.href = "{{ route('tenant.dashboard', $tenant->slug) }}";
+            @else
+                window.location.href = "{{ route('home') }}";
+            @endif
+        @else
+            window.location.href = "{{ route('home') }}";
+        @endauth
+    }, 2000);
+</script>
 @endsection

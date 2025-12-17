@@ -191,11 +191,12 @@ createApp({
         @include('tenant.help.components.inventory-products')
         @include('tenant.help.components.inventory-stock')
         @include('tenant.help.components.inventory-categories')
+        @include('tenant.help.components.inventory-reports')
+        @include('tenant.help.components.crm-customers')
+        @include('tenant.help.components.crm-vendors')
 
 
         // CRM Components
-        'crm-customers': { template: `<div><h1 class="text-3xl font-bold mb-4">👥 Customer Management</h1><p class="text-gray-600 mb-6">Manage customer information, statements, and transactions.</p><div class="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-6"><p class="text-sm text-yellow-700">🚧 Documentation coming soon...</p></div></div>` },
-        'crm-vendors': { template: `<div><h1 class="text-3xl font-bold mb-4">👥 Vendor Management</h1><p class="text-gray-600 mb-6">Manage vendor information and purchase transactions.</p><div class="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-6"><p class="text-sm text-yellow-700">🚧 Documentation coming soon...</p></div></div>` },
         'crm-activities': { template: `<div><h1 class="text-3xl font-bold mb-4">📝 Activities & Follow-ups</h1><p class="text-gray-600 mb-6">Track customer activities and schedule follow-ups.</p><div class="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-6"><p class="text-sm text-yellow-700">🚧 Documentation coming soon...</p></div></div>` },
 
         // Payroll Components
