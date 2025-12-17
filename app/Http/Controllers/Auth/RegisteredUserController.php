@@ -180,22 +180,7 @@ class RegisteredUserController extends Controller
 
                 Log::info('Verification code generated', ['user_id' => $user->id]);
 
-                // Send welcome email with verification code (inside transaction)
-                // If this fails, the entire transaction will be rolled back
-                try {
-                    $user->notify(new WelcomeNotification($code));
-                    Log::info('Welcome email sent successfully', ['user_id' => $user->id]);
-                } catch (\Exception $emailError) {
-                    Log::error('Email sending failed', [
-                        'user_id' => $user->id,
-                        'error' => $emailError->getMessage()
-                    ]);
-
-                    // Throw the exception to trigger transaction rollback
-                    throw new \Exception('Failed to send verification email. Please check your internet connection and try again.');
-                }
-
-                // Log user in (but they'll need to verify email)
+                // Log user in
                 Auth::login($user);
 
                 Log::info('User logged in successfully');
@@ -203,10 +188,33 @@ class RegisteredUserController extends Controller
 
             Log::info('Registration completed successfully');
 
-            // Redirect to onboarding (users can verify email later)
-            // A verification email has been sent, but it's not required to proceed
+            // Send welcome email AFTER transaction completes
+            // If email fails, user is already registered and logged in
+            $emailSent = false;
+            try {
+                $user->notify(new WelcomeNotification($code));
+                Log::info('Welcome email sent successfully', ['user_id' => $user->id]);
+                $emailSent = true;
+            } catch (\Exception $emailError) {
+                Log::error('Email sending failed but registration succeeded', [
+                    'user_id' => $user->id,
+                    'email' => $user->email,
+                    'error' => $emailError->getMessage(),
+                    'trace' => $emailError->getTraceAsString()
+                ]);
+                // Continue without throwing - user is already registered
+            }
+
+            // Redirect to onboarding
+            $message = 'Welcome! Please complete your business setup.';
+            if ($emailSent) {
+                $message .= ' A verification email has been sent to ' . $user->email;
+            } else {
+                $message .= ' Note: We couldn\'t send the verification email. You can verify your email later from your dashboard.';
+            }
+
             return redirect()->route('tenant.onboarding.index', ['tenant' => $tenant->slug])
-                ->with('success', 'Welcome! Please complete your business setup. A verification email has been sent to ' . $user->email);
+                ->with($emailSent ? 'success' : 'warning', $message);
 
         } catch (\Exception $e) {
             Log::error('Registration failed', [
@@ -216,18 +224,8 @@ class RegisteredUserController extends Controller
                 'business_name' => $request->business_name
             ]);
 
-            // Check if it's an email-related error
-            $errorMessage = 'Registration failed. Please try again.';
-
-            if (str_contains($e->getMessage(), 'verification email') ||
-                str_contains($e->getMessage(), 'Connection could not be established') ||
-                str_contains($e->getMessage(), 'smtp') ||
-                str_contains($e->getMessage(), 'mailtrap')) {
-                $errorMessage = 'Unable to send verification email. Please check your internet connection and try again. If the problem persists, contact support.';
-            }
-
             return back()->withInput($request->except('password', 'password_confirmation'))->withErrors([
-                'email' => $errorMessage
+                'email' => 'Registration failed. Please try again. If the problem persists, contact support.'
             ]);
         }
     }
