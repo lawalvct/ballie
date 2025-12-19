@@ -33,81 +33,86 @@
     <!-- Filters -->
     <div class="bg-white shadow-sm rounded-lg border border-gray-200">
         <div class="p-6">
-            <form method="GET" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4">
-                <!-- Search -->
-                <div>
-                    <label for="search" class="block text-sm font-medium text-gray-700 mb-1">Search</label>
-                    <input type="text"
-                           name="search"
-                           id="search"
-                           value="{{ request('search') }}"
-                           placeholder="Quotation number, customer name, subject..."
-                           class="block w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-primary-500 focus:border-primary-500 text-sm">
-                </div>
+            <form method="GET" class="space-y-4">
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+                    <!-- Search -->
+                    <div>
+                        <label for="search" class="block text-sm font-medium text-gray-700 mb-1">Search</label>
+                        <input type="text"
+                               name="search"
+                               id="search"
+                               value="{{ request('search') }}"
+                               placeholder="Quotation number, customer name, subject..."
+                               class="block w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-primary-500 focus:border-primary-500 text-sm">
+                    </div>
 
-                <!-- Status -->
-                <div>
-                    <label for="status" class="block text-sm font-medium text-gray-700 mb-1">Status</label>
-                    <select name="status"
-                            id="status"
-                            class="block w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-primary-500 focus:border-primary-500 text-sm">
-                        <option value="">All Statuses</option>
-                        <option value="draft" {{ request('status') === 'draft' ? 'selected' : '' }}>Draft</option>
-                        <option value="sent" {{ request('status') === 'sent' ? 'selected' : '' }}>Sent</option>
-                        <option value="accepted" {{ request('status') === 'accepted' ? 'selected' : '' }}>Accepted</option>
-                        <option value="rejected" {{ request('status') === 'rejected' ? 'selected' : '' }}>Rejected</option>
-                        <option value="expired" {{ request('status') === 'expired' ? 'selected' : '' }}>Expired</option>
-                        <option value="converted" {{ request('status') === 'converted' ? 'selected' : '' }}>Converted</option>
-                    </select>
-                </div>
+                    <!-- Status -->
+                    <div>
+                        <label for="status" class="block text-sm font-medium text-gray-700 mb-1">Status</label>
+                        <select name="status"
+                                id="status"
+                                class="block w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-primary-500 focus:border-primary-500 text-sm">
+                            <option value="">All Statuses</option>
+                            <option value="draft" {{ request('status') === 'draft' ? 'selected' : '' }}>Draft</option>
+                            <option value="sent" {{ request('status') === 'sent' ? 'selected' : '' }}>Sent</option>
+                            <option value="accepted" {{ request('status') === 'accepted' ? 'selected' : '' }}>Accepted</option>
+                            <option value="rejected" {{ request('status') === 'rejected' ? 'selected' : '' }}>Rejected</option>
+                            <option value="expired" {{ request('status') === 'expired' ? 'selected' : '' }}>Expired</option>
+                            <option value="converted" {{ request('status') === 'converted' ? 'selected' : '' }}>Converted</option>
+                        </select>
+                    </div>
 
-                <!-- Customer -->
-                <div>
-                    <label for="customer_id" class="block text-sm font-medium text-gray-700 mb-1">Customer</label>
-                    <select name="customer_id"
-                            id="customer_id"
-                            class="block w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-primary-500 focus:border-primary-500 text-sm">
-                        <option value="">All Customers</option>
-                        @foreach($customers as $customer)
-                            <option value="{{ $customer->id }}" {{ request('customer_id') == $customer->id ? 'selected' : '' }}>
-                                {{ $customer->company_name ?: ($customer->first_name . ' ' . $customer->last_name) }}
-                            </option>
-                        @endforeach
-                    </select>
-                </div>
+                    <!-- Customer -->
+                    <div>
+                        <label for="customer_id" class="block text-sm font-medium text-gray-700 mb-1">Customer</label>
+                        <select name="customer_id"
+                                id="customer_id"
+                                class="block w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-primary-500 focus:border-primary-500 text-sm">
+                            <option value="">All Customers</option>
+                            @foreach($customers as $customer)
+                                <option value="{{ $customer->id }}" {{ request('customer_id') == $customer->id ? 'selected' : '' }}>
+                                    {{ $customer->company_name ?: ($customer->first_name . ' ' . $customer->last_name) }}
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
 
-                <!-- Date From -->
-                <div>
-                    <label for="date_from" class="block text-sm font-medium text-gray-700 mb-1">Date From</label>
-                    <input type="date"
-                           name="date_from"
-                           id="date_from"
-                           value="{{ request('date_from') }}"
-                           class="block w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-primary-500 focus:border-primary-500 text-sm">
-                </div>
+                    <!-- Date From -->
+                    <div>
+                        <label for="date_from" class="block text-sm font-medium text-gray-700 mb-1">Date From</label>
+                        <input type="date"
+                               name="date_from"
+                               id="date_from"
+                               value="{{ request('date_from') }}"
+                               class="block w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-primary-500 focus:border-primary-500 text-sm">
+                    </div>
 
-                <!-- Date To -->
-                <div>
-                    <label for="date_to" class="block text-sm font-medium text-gray-700 mb-1">Date To</label>
-                    <input type="date"
-                           name="date_to"
-                           id="date_to"
-                           value="{{ request('date_to') }}"
-                           class="block w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-primary-500 focus:border-primary-500 text-sm">
+                    <!-- Date To -->
+                    <div>
+                        <label for="date_to" class="block text-sm font-medium text-gray-700 mb-1">Date To</label>
+                        <input type="date"
+                               name="date_to"
+                               id="date_to"
+                               value="{{ request('date_to') }}"
+                               class="block w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-primary-500 focus:border-primary-500 text-sm">
+                    </div>
                 </div>
 
                 <!-- Filter Buttons -->
-                <div class="flex items-end space-x-2">
+                <div class="flex items-center gap-3">
                     <button type="submit"
-                            class="inline-flex items-center px-4 py-2 bg-primary-600 border border-transparent rounded-lg font-semibold text-xs text-white uppercase tracking-widest hover:bg-primary-700 focus:bg-primary-700 active:bg-primary-900 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 transition ease-in-out duration-150">
-                        <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            class="inline-flex items-center px-6 py-2 bg-primary-600 border border-transparent rounded-lg font-semibold text-xs text-white uppercase tracking-widest hover:bg-primary-700 focus:bg-primary-700 active:bg-primary-900 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 transition ease-in-out duration-150">
+                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.207A1 1 0 013 6.5V4z"></path>
                         </svg>
-                        Filter
+                        Apply Filters
                     </button>
                     <a href="{{ route('tenant.accounting.quotations.index', ['tenant' => $tenant->slug]) }}"
-                       class="inline-flex items-center px-4 py-2 bg-gray-300 border border-transparent rounded-lg font-semibold text-xs text-gray-700 uppercase tracking-widest hover:bg-gray-400 focus:bg-gray-400 active:bg-gray-500 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 transition ease-in-out duration-150">
-                        Clear
+                       class="inline-flex items-center px-6 py-2 bg-gray-300 border border-transparent rounded-lg font-semibold text-xs text-gray-700 uppercase tracking-widest hover:bg-gray-400 focus:bg-gray-400 active:bg-gray-500 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 transition ease-in-out duration-150">
+                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                        </svg>
+                        Clear Filters
                     </a>
                 </div>
             </form>

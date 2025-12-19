@@ -77,47 +77,47 @@
         <!-- Summary Cards -->
         <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
             <div class="bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-xl p-4">
-                <div class="flex justify-between items-center">
-                    <div>
-                        <h3 class="text-sm font-semibold opacity-90">Total Customers</h3>
-                        <p class="text-2xl font-bold">{{ $customers->total() }}</p>
+                <div class="flex items-start justify-between">
+                    <div class="flex-1 min-w-0">
+                        <h3 class="text-xs font-semibold opacity-90 mb-1">Total Customers</h3>
+                        <p class="text-lg md:text-xl font-bold truncate">{{ number_format($totalCustomers) }}</p>
                     </div>
-                    <div class="text-blue-200">
-                        <i class="fas fa-users text-2xl"></i>
+                    <div class="text-blue-200 ml-2 flex-shrink-0">
+                        <i class="fas fa-users text-xl"></i>
                     </div>
                 </div>
             </div>
             <div class="bg-gradient-to-r from-green-500 to-green-600 text-white rounded-xl p-4">
-                <div class="flex justify-between items-center">
-                    <div>
-                        <h3 class="text-sm font-semibold opacity-90">Total Receivable (DR)</h3>
-                        <p class="text-2xl font-bold">₦{{ number_format($customers->where('running_balance', '>', 0)->sum('running_balance'), 2) }}</p>
+                <div class="flex items-start justify-between">
+                    <div class="flex-1 min-w-0">
+                        <h3 class="text-xs font-semibold opacity-90 mb-1">Total Receivable (DR)</h3>
+                        <p class="text-base md:text-lg font-bold break-words" title="₦{{ number_format($totalReceivable, 2) }}">₦{{ number_format($totalReceivable, 2) }}</p>
                     </div>
-                    <div class="text-green-200">
-                        <i class="fas fa-arrow-up text-2xl"></i>
+                    <div class="text-green-200 ml-2 flex-shrink-0">
+                        <i class="fas fa-arrow-up text-xl"></i>
                     </div>
                 </div>
             </div>
             <div class="bg-gradient-to-r from-red-500 to-red-600 text-white rounded-xl p-4">
-                <div class="flex justify-between items-center">
-                    <div>
-                        <h3 class="text-sm font-semibold opacity-90">Total Payable (CR)</h3>
-                        <p class="text-2xl font-bold">₦{{ number_format(abs($customers->where('running_balance', '<', 0)->sum('running_balance')), 2) }}</p>
+                <div class="flex items-start justify-between">
+                    <div class="flex-1 min-w-0">
+                        <h3 class="text-xs font-semibold opacity-90 mb-1">Total Payable (CR)</h3>
+                        <p class="text-base md:text-lg font-bold break-words" title="₦{{ number_format($totalPayable, 2) }}">₦{{ number_format($totalPayable, 2) }}</p>
                     </div>
-                    <div class="text-red-200">
-                        <i class="fas fa-arrow-down text-2xl"></i>
+                    <div class="text-red-200 ml-2 flex-shrink-0">
+                        <i class="fas fa-arrow-down text-xl"></i>
                     </div>
                 </div>
             </div>
             <div class="bg-gradient-to-r from-purple-500 to-purple-600 text-white rounded-xl p-4">
-                <div class="flex justify-between items-center">
-                    <div>
-                        <h3 class="text-sm font-semibold opacity-90">Net Balance</h3>
-                        <p class="text-2xl font-bold">₦{{ number_format(abs($customers->sum('running_balance')), 2) }}</p>
-                        <p class="text-xs opacity-90">{{ $customers->sum('running_balance') >= 0 ? 'Receivable' : 'Payable' }}</p>
+                <div class="flex items-start justify-between">
+                    <div class="flex-1 min-w-0">
+                        <h3 class="text-xs font-semibold opacity-90 mb-1">Net Balance</h3>
+                        <p class="text-base md:text-lg font-bold break-words" title="₦{{ number_format(abs($netBalance), 2) }}">₦{{ number_format(abs($netBalance), 2) }}</p>
+                        <p class="text-xs opacity-90 mt-1">{{ $netBalance >= 0 ? 'Receivable' : 'Payable' }}</p>
                     </div>
-                    <div class="text-purple-200">
-                        <i class="fas fa-balance-scale text-2xl"></i>
+                    <div class="text-purple-200 ml-2 flex-shrink-0">
+                        <i class="fas fa-balance-scale text-xl"></i>
                     </div>
                 </div>
             </div>
@@ -231,7 +231,8 @@
                                         </span>
                                     </td>
                                     <td class="px-4 py-3 whitespace-nowrap">
-                                        <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full {{ $customer->balance_type === 'dr' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800' }}">
+                                        <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full {{ $customer->running_balance >= 0 ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800' }}">
+                                            {{ $customer->running_balance >= 0 ? 'DR' : 'CR' }}
                                         </span>
                                     </td>
                                     <td class="px-4 py-3 whitespace-nowrap">

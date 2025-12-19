@@ -345,7 +345,7 @@ class CustomerController extends Controller
 
         $customer->load('ledgerAccount');
         $outstandingBalance = $customer->ledgerAccount ? $customer->ledgerAccount->getCurrentBalance() : 0;
-        
+
         // Get recent activities for this customer
         $activities = \App\Models\CustomerActivity::where('customer_id', $customer->id)
             ->with('user')
@@ -705,8 +705,14 @@ class CustomerController extends Controller
                 : $customers->sortBy('total_credits');
         }
 
+        // Calculate totals from full dataset before pagination
+        $totalCustomers = $customers->count();
+        $totalReceivable = $customers->where('running_balance', '>', 0)->sum('running_balance');
+        $totalPayable = abs($customers->where('running_balance', '<', 0)->sum('running_balance'));
+        $netBalance = $customers->sum('running_balance');
+
         // Paginate manually
-        $perPage = 20;
+        $perPage = 50;
         $currentPage = $request->get('page', 1);
         $items = $customers->forPage($currentPage, $perPage);
 
@@ -721,6 +727,10 @@ class CustomerController extends Controller
         return view('tenant.crm.customers.statements', [
             'tenant' => $tenant,
             'customers' => $paginated,
+            'totalCustomers' => $totalCustomers,
+            'totalReceivable' => $totalReceivable,
+            'totalPayable' => $totalPayable,
+            'netBalance' => $netBalance,
             'search' => $request->get('search'),
             'customer_type' => $request->get('customer_type'),
             'status' => $request->get('status'),

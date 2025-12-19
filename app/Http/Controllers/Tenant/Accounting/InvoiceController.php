@@ -739,6 +739,12 @@ class InvoiceController extends Controller
 
     public function update(Request $request, Tenant $tenant, Voucher $invoice)
     {
+        Log::info('=== INVOICE UPDATE STARTED ===', [
+            'invoice_id' => $invoice->id,
+            'tenant_id' => $tenant->id,
+            'user_id' => auth()->id(),
+        ]);
+
         // Ensure the invoice belongs to the tenant and is editable
         if ($invoice->tenant_id !== $tenant->id) {
             abort(404);
@@ -754,28 +760,45 @@ class InvoiceController extends Controller
             'voucher_date' => 'required|date',
             'reference_number' => 'nullable|string|max:255',
             'narration' => 'nullable|string',
-            'customer_id' => 'nullable|exists:customers,id',
+            'customer_id' => 'required|exists:ledger_accounts,id',
             'inventory_items' => 'required|array|min:1',
             'inventory_items.*.product_id' => 'required|exists:products,id',
             'inventory_items.*.quantity' => 'required|numeric|min:0.01',
             'inventory_items.*.rate' => 'required|numeric|min:0',
+            'inventory_items.*.purchase_rate' => 'nullable|numeric|min:0',
             'inventory_items.*.description' => 'nullable|string',
+            'ledger_accounts' => 'nullable|array',
+            'ledger_accounts.*.ledger_account_id' => 'required_with:ledger_accounts|exists:ledger_accounts,id',
+            'ledger_accounts.*.amount' => 'required_with:ledger_accounts|numeric|min:0',
+            'ledger_accounts.*.narration' => 'nullable|string',
+        ], [
+            'customer_id.required' => 'Please select a customer or vendor.',
+            'customer_id.exists' => 'The selected customer or vendor is invalid.',
         ]);
 
         if ($validator->fails()) {
+            Log::warning('Validation Failed', [
+                'errors' => $validator->errors()->toArray()
+            ]);
             return redirect()->back()
                 ->withErrors($validator)
                 ->withInput();
         }
 
         try {
-            DB::beginTransaction();
+            $shouldPost = in_array($request->action, ['save_and_post', 'save_and_post_new_sales']);
 
-            // Calculate total amount
+            DB::beginTransaction();
+            Log::info('Database Transaction Started');
+
+            // Get voucher type
+            $voucherType = VoucherType::findOrFail($request->voucher_type_id);
+
+            // Calculate total amount from inventory items
             $totalAmount = 0;
             $inventoryItems = [];
 
-            foreach ($request->inventory_items as $item) {
+            foreach ($request->inventory_items as $index => $item) {
                 $product = Product::findOrFail($item['product_id']);
                 $amount = $item['quantity'] * $item['rate'];
                 $totalAmount += $amount;
@@ -786,9 +809,37 @@ class InvoiceController extends Controller
                     'description' => $item['description'] ?? $product->name,
                     'quantity' => $item['quantity'],
                     'rate' => $item['rate'],
+                    'purchase_rate' => $item['purchase_rate'] ?? 0,
                     'amount' => $amount,
+                    'discount' => 0,
+                    'tax' => 0,
+                    'is_tax_inclusive' => false,
+                    'total' => $amount,
                 ];
             }
+
+            // Process additional ledger accounts
+            $additionalLedgerAccounts = [];
+            if ($request->has('ledger_accounts') && is_array($request->ledger_accounts)) {
+                foreach ($request->ledger_accounts as $ledgerAccount) {
+                    if (!empty($ledgerAccount['ledger_account_id']) && !empty($ledgerAccount['amount'])) {
+                        $amount = floatval($ledgerAccount['amount']);
+                        $totalAmount += $amount;
+
+                        $additionalLedgerAccounts[] = [
+                            'ledger_account_id' => $ledgerAccount['ledger_account_id'],
+                            'amount' => $amount,
+                            'narration' => $ledgerAccount['narration'] ?? '',
+                        ];
+                    }
+                }
+            }
+
+            Log::info('Calculated Totals', [
+                'total_amount' => $totalAmount,
+                'inventory_items_count' => count($inventoryItems),
+                'additional_ledger_accounts_count' => count($additionalLedgerAccounts)
+            ]);
 
             // Update voucher
             $invoice->update([
@@ -797,26 +848,76 @@ class InvoiceController extends Controller
                 'reference_number' => $request->reference_number,
                 'narration' => $request->narration,
                 'total_amount' => $totalAmount,
-                'status' => $request->action === 'save_and_post' ? 'posted' : 'draft',
-                'posted_at' => $request->action === 'save_and_post' ? now() : null,
-                'posted_by' => $request->action === 'save_and_post' ? auth()->id() : null,
-                'meta_data' => json_encode(['inventory_items' => $inventoryItems])
+                'status' => $shouldPost ? 'posted' : 'draft',
+                'posted_at' => $shouldPost ? now() : null,
+                'posted_by' => $shouldPost ? auth()->id() : null,
+                'meta_data' => json_encode([
+                    'inventory_items' => $inventoryItems,
+                    'additional_ledger_accounts' => $additionalLedgerAccounts
+                ])
             ]);
 
-            // Delete old entries and create new ones
+            Log::info('Voucher Updated', [
+                'voucher_id' => $invoice->id,
+                'status' => $invoice->status
+            ]);
+
+            // Delete old voucher items and create new ones
+            $invoice->items()->delete();
+
+            foreach ($inventoryItems as $item) {
+                $invoice->items()->create([
+                    'product_id' => $item['product_id'],
+                    'product_name' => $item['product_name'],
+                    'description' => $item['description'],
+                    'quantity' => $item['quantity'],
+                    'rate' => $item['rate'],
+                    'amount' => $item['amount'],
+                    'voucher_id' => $invoice->id,
+                    'purchase_rate' => $item['purchase_rate'] ?? 0,
+                    'discount' => $item['discount'] ?? 0,
+                    'tax' => $item['tax'] ?? 0,
+                    'is_tax_inclusive' => $item['is_tax_inclusive'] ?? false,
+                    'total' => $item['total'] ?? null,
+                ]);
+            }
+
+            Log::info('Voucher Items Recreated', ['items_count' => count($inventoryItems)]);
+
+            // Delete old accounting entries and create new ones
             $invoice->entries()->delete();
-            $this->createAccountingEntries($invoice, $inventoryItems, $tenant, $request->customer_id);
+            $this->createAccountingEntries($invoice, $inventoryItems, $tenant, $request->customer_id, $additionalLedgerAccounts);
+
+            Log::info('Accounting Entries Recreated');
 
             // Update product stock if posted
-            if ($request->action === 'save_and_post') {
-                $this->updateProductStock($inventoryItems, 'decrease', $invoice);
+            if ($shouldPost) {
+                $effect = $voucherType->inventory_effect ?? 'decrease';
+                if ($effect === 'increase' || $effect === 'decrease') {
+                    $this->updateProductStock($inventoryItems, $effect, $invoice);
+                    Log::info('Product Stock Updated');
+                }
             }
 
             DB::commit();
+            Log::info('Database Transaction Committed');
 
-            $message = $request->action === 'save_and_post'
+            $message = $shouldPost
                 ? 'Invoice updated and posted successfully!'
                 : 'Invoice updated successfully!';
+
+            Log::info('=== INVOICE UPDATE COMPLETED ===', [
+                'voucher_id' => $invoice->id,
+                'status' => $invoice->status,
+                'message' => $message
+            ]);
+
+            // If user chose to Save, Post and open a new Sales invoice, redirect to create page with type=sv
+            if ($request->action === 'save_and_post_new_sales') {
+                return redirect()
+                    ->route('tenant.accounting.invoices.create', ['tenant' => $tenant->slug, 'type' => 'sv'])
+                    ->with('success', $message);
+            }
 
             return redirect()
                 ->route('tenant.accounting.invoices.show', ['tenant' => $tenant->slug, 'invoice' => $invoice->id])
@@ -824,10 +925,19 @@ class InvoiceController extends Controller
 
         } catch (\Exception $e) {
             DB::rollBack();
-            Log::error('Error updating invoice: ' . $e->getMessage());
+
+            Log::error('=== INVOICE UPDATE FAILED ===', [
+                'error_message' => $e->getMessage(),
+                'error_file' => $e->getFile(),
+                'error_line' => $e->getLine(),
+                'stack_trace' => $e->getTraceAsString(),
+                'invoice_id' => $invoice->id,
+                'tenant_id' => $tenant->id,
+                'user_id' => auth()->id()
+            ]);
 
             return redirect()->back()
-                ->with('error', 'An error occurred while updating the invoice. Please try again.')
+                ->with('error', 'An error occurred while updating the invoice: ' . $e->getMessage())
                 ->withInput();
         }
     }

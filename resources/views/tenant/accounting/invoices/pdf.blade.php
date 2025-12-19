@@ -523,7 +523,7 @@ if (!function_exists('numberToWords')) {
                                $product?->sales_account_id : $product?->purchase_account_id;
                     })->filter()->unique()->toArray();
 
-                    // Filter additional charges (exclude customer/vendor accounts, VAT accounts, and product accounts)
+                    // Filter additional charges (exclude customer/vendor accounts, VAT accounts, product accounts, COGS and Inventory)
                     $additionalCharges = $voucherEntries->filter(function($entry) use ($vatEntries, $invoice, $productAccountIds) {
                         // Skip if it's a VAT entry
                         if ($vatEntries->contains('id', $entry->id)) {
@@ -540,6 +540,14 @@ if (!function_exists('numberToWords')) {
 
                         // Skip product-specific accounts
                         if (in_array($account->id, $productAccountIds)) {
+                            return false;
+                        }
+
+                        // Skip COGS and Inventory accounts (internal accounting entries that shouldn't show on customer invoice)
+                        $accountName = strtolower($account->name ?? '');
+                        $accountCode = strtoupper($account->code ?? '');
+                        if (in_array($accountName, ['cost of goods sold', 'inventory', 'stock']) ||
+                            in_array($accountCode, ['COGS', 'INV', 'STOCK'])) {
                             return false;
                         }
 

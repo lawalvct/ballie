@@ -136,7 +136,8 @@
                 <p class="text-xs text-emerald-200">Create new invoices for customer transactions.</p>
             </a>
  <!-- Invoice List Card -->
-            <a href="#"
+                       <a href="{{ route('tenant.accounting.invoices.index',  ['tenant' => $tenant->slug] ) }}"
+
                class="action-card bg-gradient-to-br from-sky-600 to-sky-800 hover:from-sky-500 hover:to-sky-700 border border-sky-500 rounded-xl p-4 transition-all duration-300 hover:shadow-lg hover:scale-105 group">
                 <div class="flex items-center mb-3">
                     <div class="w-10 h-10 bg-sky-500 bg-opacity-30 rounded-lg flex items-center justify-center mr-3 group-hover:scale-110 transition-transform duration-300">
