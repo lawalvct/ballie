@@ -391,6 +391,90 @@ class Tenant extends Model
         return $this->hasMany(Bank::class);
     }
 
+    // E-commerce Relationships
+
+    /**
+     * Get tenant's e-commerce settings
+     */
+    public function ecommerceSettings()
+    {
+        return $this->hasOne(EcommerceSetting::class);
+    }
+
+    /**
+     * Get tenant's e-commerce orders
+     */
+    public function orders()
+    {
+        return $this->hasMany(Order::class)->orderBy('created_at', 'desc');
+    }
+
+    /**
+     * Get tenant's shipping methods
+     */
+    public function shippingMethods()
+    {
+        return $this->hasMany(ShippingMethod::class);
+    }
+
+    /**
+     * Get tenant's coupons
+     */
+    public function coupons()
+    {
+        return $this->hasMany(Coupon::class);
+    }
+
+    /**
+     * Get tenant's carts
+     */
+    public function carts()
+    {
+        return $this->hasMany(Cart::class);
+    }
+
+    /**
+     * Get tenant's wishlists
+     */
+    public function wishlists()
+    {
+        return $this->hasMany(Wishlist::class);
+    }
+
+    // E-commerce Helper Methods
+
+    /**
+     * Check if tenant has e-commerce enabled
+     */
+    public function hasEcommerceEnabled()
+    {
+        return $this->ecommerceSettings && $this->ecommerceSettings->is_enabled;
+    }
+
+    /**
+     * Get store URL
+     */
+    public function getStoreUrl()
+    {
+        return url('/' . $this->slug . '/store');
+    }
+
+    /**
+     * Get active shipping methods
+     */
+    public function getActiveShippingMethods()
+    {
+        return $this->shippingMethods()->active()->get();
+    }
+
+    /**
+     * Get valid coupons
+     */
+    public function getValidCoupons()
+    {
+        return $this->coupons()->valid()->get();
+    }
+
     /**
      * Check if tenant owner has verified their email
      *

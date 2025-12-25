@@ -308,4 +308,96 @@ class Customer extends Model
     {
         return $query->where('customer_type', 'business');
     }
+
+    // E-commerce Relationships
+
+    /**
+     * Get customer's online authentication record
+     */
+    public function authentication()
+    {
+        return $this->hasOne(CustomerAuthentication::class);
+    }
+
+    /**
+     * Get customer's e-commerce orders
+     */
+    public function orders()
+    {
+        return $this->hasMany(Order::class)->orderBy('created_at', 'desc');
+    }
+
+    /**
+     * Get customer's shipping addresses
+     */
+    public function addresses()
+    {
+        return $this->hasMany(ShippingAddress::class);
+    }
+
+    /**
+     * Get customer's default shipping address
+     */
+    public function defaultAddress()
+    {
+        return $this->hasOne(ShippingAddress::class)->where('is_default', true);
+    }
+
+    /**
+     * Get customer's shopping cart
+     */
+    public function cart()
+    {
+        return $this->hasOne(Cart::class);
+    }
+
+    /**
+     * Get customer's wishlist
+     */
+    public function wishlist()
+    {
+        return $this->hasOne(Wishlist::class);
+    }
+
+    /**
+     * Get customer's coupon usage history
+     */
+    public function couponUsages()
+    {
+        return $this->hasMany(CouponUsage::class);
+    }
+
+    // E-commerce Helper Methods
+
+    /**
+     * Check if customer has online account
+     */
+    public function hasOnlineAccount()
+    {
+        return (bool) ($this->attributes['has_online_account'] ?? false);
+    }
+
+    /**
+     * Get total orders count
+     */
+    public function getTotalOrdersCount()
+    {
+        return $this->orders()->count();
+    }
+
+    /**
+     * Get total orders amount
+     */
+    public function getTotalOrdersAmount()
+    {
+        return $this->orders()->sum('total_amount');
+    }
+
+    /**
+     * Scope for customers with online accounts
+     */
+    public function scopeWithOnlineAccount($query)
+    {
+        return $query->where('has_online_account', true);
+    }
 }

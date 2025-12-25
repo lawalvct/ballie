@@ -126,6 +126,32 @@ class Product extends Model
         return $this->hasMany(StockMovement::class)->orderBy('transaction_date', 'desc')->orderBy('created_at', 'desc');
     }
 
+    // E-commerce Relationships
+    public function images()
+    {
+        return $this->hasMany(ProductImage::class)->ordered();
+    }
+
+    public function primaryImage()
+    {
+        return $this->hasOne(ProductImage::class)->where('is_primary', true);
+    }
+
+    public function cartItems()
+    {
+        return $this->hasMany(CartItem::class);
+    }
+
+    public function wishlistItems()
+    {
+        return $this->hasMany(WishlistItem::class);
+    }
+
+    public function orderItems()
+    {
+        return $this->hasMany(OrderItem::class);
+    }
+
     // Date-based Stock Calculation Methods
 
     /**
@@ -399,5 +425,60 @@ class Product extends Model
             'opening_value' => $this->opening_stock_value,
             'closing_value' => $this->current_stock_value,
         ];
+    }
+
+    // E-commerce Helper Methods
+
+    /**
+     * Get the primary image URL or fallback
+     */
+    public function getImageUrl()
+    {
+        if ($this->primaryImage) {
+            return $this->primaryImage->image_url;
+        }
+
+        if ($this->image_path) {
+            return Storage::disk('public')->url($this->image_path);
+        }
+
+        return asset('images/no-image.png');
+    }
+
+    /**
+     * Get product slug for URL (generate if not exists)
+     */
+    public function getSlugAttribute()
+    {
+        return $this->attributes['slug'] ?? \Illuminate\Support\Str::slug($this->name);
+    }
+
+    /**
+     * Check if product is available for e-commerce
+     */
+    public function isAvailableOnline()
+    {
+        return $this->is_active &&
+               $this->is_saleable &&
+               ($this->attributes['is_visible_online'] ?? true) &&
+               (!$this->maintain_stock || $this->current_stock > 0);
+    }
+
+    /**
+     * Scope for online products
+     */
+    public function scopeOnline($query)
+    {
+        return $query->where('is_active', true)
+            ->where('is_saleable', true)
+            ->where('is_visible_online', true);
+    }
+
+    /**
+     * Scope for featured products
+     */
+    public function scopeFeatured($query)
+    {
+        return $query->where('is_featured', true);
     }
 }
