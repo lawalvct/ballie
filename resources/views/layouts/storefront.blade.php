@@ -36,7 +36,7 @@
                 </div>
                 <div>
                     @auth('customer')
-                        <span class="mr-4">Welcome, {{ auth('customer')->user()->customer->name }}!</span>
+                        <span class="mr-4">Welcome, {{ auth('customer')->user()->customer->first_name }}!</span>
                         <form method="POST" action="{{ route('storefront.logout', ['tenant' => $tenant->slug]) }}" class="inline">
                             @csrf
                             <button type="submit" class="hover:text-gray-300">Logout</button>

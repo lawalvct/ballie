@@ -146,11 +146,15 @@ Route::prefix('{tenant}/store')->middleware(['tenant'])->group(function () {
     Route::get('/auth/google', [CustomerAuthController::class, 'redirectToGoogle'])->name('storefront.auth.google');
     Route::get('/auth/google/callback', [CustomerAuthController::class, 'handleGoogleCallback'])->name('storefront.auth.google.callback');
 
-    // Checkout
-    Route::get('/checkout', [CheckoutController::class, 'index'])->name('storefront.checkout');
-    Route::post('/checkout/apply-coupon', [CheckoutController::class, 'applyCoupon'])->name('storefront.checkout.apply-coupon');
-    Route::post('/checkout/process', [CheckoutController::class, 'process'])->name('storefront.checkout.process');
+    // Order success (public - no auth required)
     Route::get('/order/success/{order}', [CheckoutController::class, 'success'])->name('storefront.order.success');
+
+    // Checkout (requires authentication)
+    Route::middleware('auth:customer')->group(function () {
+        Route::get('/checkout', [CheckoutController::class, 'index'])->name('storefront.checkout');
+        Route::post('/checkout/apply-coupon', [CheckoutController::class, 'applyCoupon'])->name('storefront.checkout.apply-coupon');
+        Route::post('/checkout/process', [CheckoutController::class, 'process'])->name('storefront.checkout.process');
+    });
 });
 
 

@@ -8,6 +8,7 @@ use App\Models\OrderItem;
 use App\Models\ShippingAddress;
 use App\Models\Cart;
 use App\Models\Coupon;
+use App\Models\Tenant;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -45,7 +46,7 @@ class CheckoutController extends Controller
 
         // Get shipping methods
         $shippingMethods = $storeSettings->shipping_enabled
-            ? $tenant->shippingMethods()->where('is_active', true)->orderBy('sort_order')->get()
+            ? $tenant->shippingMethods()->where('is_active', true)->orderBy('name')->get()
             : collect();
 
         return view('storefront.checkout.index', compact('tenant', 'storeSettings', 'cart', 'addresses', 'shippingMethods', 'customer'));
@@ -105,29 +106,47 @@ class CheckoutController extends Controller
         $tenant = $request->current_tenant;
         $storeSettings = $tenant->ecommerceSettings;
 
-        $validated = $request->validate([
-            'customer_name' => 'required|string|max:255',
-            'customer_email' => 'required|email',
-            'customer_phone' => 'required|string|max:20',
+        // Conditionally build validation rules based on whether existing address is used
+        $rules = [
             'shipping_address_id' => 'nullable|exists:shipping_addresses,id',
-            'shipping_name' => 'required_without:shipping_address_id|string|max:255',
-            'shipping_phone' => 'required_without:shipping_address_id|string|max:20',
-            'shipping_address_line1' => 'required_without:shipping_address_id|string',
-            'shipping_address_line2' => 'nullable|string',
-            'shipping_city' => 'required_without:shipping_address_id|string',
-            'shipping_state' => 'required_without:shipping_address_id|string',
-            'shipping_postal_code' => 'required_without:shipping_address_id|string',
-            'shipping_country' => 'required_without:shipping_address_id|string',
             'shipping_method_id' => 'nullable|exists:shipping_methods,id',
-            'payment_method' => 'required|in:cod,paystack,flutterwave',
+            'payment_method' => 'required|in:cash_on_delivery,paystack,flutterwave',
             'coupon_code' => 'nullable|string',
             'notes' => 'nullable|string',
-        ]);
+        ];
+
+        // Only validate new_address fields if shipping_address_id is not provided
+        if (!$request->filled('shipping_address_id')) {
+            $rules['new_address'] = 'required|array';
+            $rules['new_address.name'] = 'required|string|max:255';
+            $rules['new_address.phone'] = 'required|string|max:20';
+            $rules['new_address.address_line1'] = 'required|string';
+            $rules['new_address.address_line2'] = 'nullable|string';
+            $rules['new_address.city'] = 'required|string';
+            $rules['new_address.state'] = 'required|string';
+            $rules['new_address.postal_code'] = 'nullable|string';
+            $rules['new_address.country'] = 'required|string';
+        }
+
+        $validated = $request->validate($rules);
 
         $cart = $this->getCart($tenant);
 
         if (!$cart || $cart->items->count() === 0) {
             return back()->with('error', 'Your cart is empty');
+        }
+
+        // Get customer information
+        $customer = null;
+        $customerName = 'Guest';
+        $customerEmail = 'guest@example.com';
+        $customerPhone = '';
+
+        if (Auth::guard('customer')->check()) {
+            $customer = Auth::guard('customer')->user()->customer;
+            $customerName = $customer->first_name . ' ' . $customer->last_name;
+            $customerEmail = $customer->email ?? 'no-email@example.com';
+            $customerPhone = $customer->phone ?? '';
         }
 
         try {
@@ -145,13 +164,13 @@ class CheckoutController extends Controller
             }
 
             // Apply shipping
-            if ($validated['shipping_method_id']) {
+            if (!empty($validated['shipping_method_id'])) {
                 $shippingMethod = $tenant->shippingMethods()->findOrFail($validated['shipping_method_id']);
                 $shippingAmount = $shippingMethod->cost;
             }
 
             // Apply coupon
-            if ($validated['coupon_code']) {
+            if (!empty($validated['coupon_code'])) {
                 $coupon = Coupon::where('tenant_id', $tenant->id)
                     ->where('code', strtoupper($validated['coupon_code']))
                     ->first();
@@ -164,18 +183,19 @@ class CheckoutController extends Controller
             $totalAmount = $subtotal + $taxAmount + $shippingAmount - $discountAmount;
 
             // Create or get shipping address
-            $shippingAddressId = $validated['shipping_address_id'];
-            if (!$shippingAddressId) {
+            $shippingAddressId = $validated['shipping_address_id'] ?? null;
+            if (!$shippingAddressId && isset($validated['new_address'])) {
                 $shippingAddress = ShippingAddress::create([
-                    'customer_id' => Auth::guard('customer')->check() ? Auth::guard('customer')->user()->customer_id : null,
-                    'name' => $validated['shipping_name'],
-                    'phone' => $validated['shipping_phone'],
-                    'address_line1' => $validated['shipping_address_line1'],
-                    'address_line2' => $validated['shipping_address_line2'],
-                    'city' => $validated['shipping_city'],
-                    'state' => $validated['shipping_state'],
-                    'postal_code' => $validated['shipping_postal_code'],
-                    'country' => $validated['shipping_country'],
+                    'tenant_id' => $tenant->id,
+                    'customer_id' => $customer ? $customer->id : null,
+                    'name' => $validated['new_address']['name'],
+                    'phone' => $validated['new_address']['phone'],
+                    'address_line1' => $validated['new_address']['address_line1'],
+                    'address_line2' => $validated['new_address']['address_line2'] ?? null,
+                    'city' => $validated['new_address']['city'],
+                    'state' => $validated['new_address']['state'],
+                    'postal_code' => $validated['new_address']['postal_code'] ?? null,
+                    'country' => $validated['new_address']['country'],
                     'is_default' => false,
                 ]);
                 $shippingAddressId = $shippingAddress->id;
@@ -185,21 +205,21 @@ class CheckoutController extends Controller
             $order = Order::create([
                 'tenant_id' => $tenant->id,
                 'order_number' => Order::generateOrderNumber($tenant->id),
-                'customer_id' => Auth::guard('customer')->check() ? Auth::guard('customer')->user()->customer_id : null,
-                'customer_name' => $validated['customer_name'],
-                'customer_email' => $validated['customer_email'],
-                'customer_phone' => $validated['customer_phone'],
+                'customer_id' => $customer ? $customer->id : null,
+                'customer_name' => $customerName,
+                'customer_email' => $customerEmail,
+                'customer_phone' => $customerPhone,
                 'status' => 'pending',
-                'payment_status' => $validated['payment_method'] === 'cod' ? 'pending' : 'pending',
+                'payment_status' => 'unpaid',
                 'payment_method' => $validated['payment_method'],
-                'subtotal_amount' => $subtotal,
+                'subtotal' => $subtotal,
                 'tax_amount' => $taxAmount,
                 'shipping_amount' => $shippingAmount,
                 'discount_amount' => $discountAmount,
                 'total_amount' => $totalAmount,
                 'coupon_code' => $validated['coupon_code'] ?? null,
                 'shipping_address_id' => $shippingAddressId,
-                'notes' => $validated['notes'],
+                'notes' => $validated['notes'] ?? null,
                 'ip_address' => $request->ip(),
                 'user_agent' => $request->userAgent(),
             ]);
@@ -210,19 +230,19 @@ class CheckoutController extends Controller
                     'order_id' => $order->id,
                     'product_id' => $cartItem->product_id,
                     'product_name' => $cartItem->product->name,
-                    'product_sku' => $cartItem->product->sku,
+                    'product_sku' => $cartItem->product->sku ?? '',
                     'quantity' => $cartItem->quantity,
-                    'unit_price' => $cartItem->unit_price,
-                    'total_price' => $cartItem->total_price,
+                    'unit_price' => $cartItem->product->sales_rate,
+                    'total_price' => $cartItem->product->sales_rate * $cartItem->quantity,
                 ]);
             }
 
             // Update coupon usage if applied
-            if ($validated['coupon_code'] && isset($coupon)) {
+            if (!empty($validated['coupon_code']) && isset($coupon)) {
                 $coupon->increment('usage_count');
-                if (Auth::guard('customer')->check()) {
+                if ($customer) {
                     $coupon->usages()->create([
-                        'customer_id' => Auth::guard('customer')->user()->customer_id,
+                        'customer_id' => $customer->id,
                         'order_id' => $order->id,
                     ]);
                 }
@@ -234,7 +254,7 @@ class CheckoutController extends Controller
             DB::commit();
 
             // Redirect based on payment method
-            if ($validated['payment_method'] === 'cod') {
+            if ($validated['payment_method'] === 'cash_on_delivery') {
                 return redirect()->route('storefront.order.success', ['tenant' => $tenant->slug, 'order' => $order->id])
                     ->with('success', 'Order placed successfully! You will pay on delivery.');
             } else {
@@ -252,17 +272,36 @@ class CheckoutController extends Controller
     /**
      * Display order success page
      */
-    public function success(Request $request, $orderId)
+    public function success(Request $request, $tenant, $orderId)
     {
-        $tenant = $request->current_tenant;
+        // Get the tenant
+        if (is_string($tenant)) {
+            $tenant = Tenant::where('slug', $tenant)->firstOrFail();
+        }
+
+        Log::info('Order success page accessed', [
+            'order_id' => $orderId,
+            'tenant_id' => $tenant->id,
+            'tenant_slug' => $tenant->slug,
+        ]);
+
+        // Find the order
+        $order = Order::where('id', $orderId)
+            ->where('tenant_id', $tenant->id)
+            ->with(['items.product', 'shippingAddress'])
+            ->first();
+
+        if (!$order) {
+            Log::error('Order not found', [
+                'order_id' => $orderId,
+                'tenant_id' => $tenant->id,
+            ]);
+            abort(404, 'Order not found');
+        }
+
         $storeSettings = $tenant->ecommerceSettings;
 
-        $order = Order::where('tenant_id', $tenant->id)
-            ->where('id', $orderId)
-            ->with('items.product', 'shippingAddress')
-            ->firstOrFail();
-
-        return view('storefront.checkout.success', compact('tenant', 'storeSettings', 'order'));
+        return view('storefront.checkout.success', compact('tenant', 'order', 'storeSettings'));
     }
 
     /**

@@ -16,6 +16,14 @@ class Authenticate extends Middleware
             return null;
         }
 
+        // Check if this is a storefront customer route
+        if ($request->is('*/store/*')) {
+            $tenant = $request->route('tenant');
+            // Get slug whether it's a Tenant object or string
+            $tenantSlug = is_object($tenant) ? $tenant->slug : $tenant;
+            return route('storefront.login', ['tenant' => $tenantSlug]);
+        }
+
         // Check if this is a super admin route
         if ($request->is('super-admin/*')) {
             // Clear any non-super-admin intended URL from session

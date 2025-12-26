@@ -85,7 +85,8 @@ class CustomerAuthController extends Controller
         }
 
         $validated = $request->validate([
-            'name' => 'required|string|max:255',
+            'first_name' => 'required|string|max:255',
+            'last_name' => 'required|string|max:255',
             'email' => 'required|email|unique:customer_authentications,email',
             'phone' => $storeSettings->require_phone_number ? 'required|string|max:20' : 'nullable|string|max:20',
             'password' => 'required|string|min:8|confirmed',
@@ -97,18 +98,28 @@ class CustomerAuthController extends Controller
             // Create customer in CRM
             $customer = Customer::create([
                 'tenant_id' => $tenant->id,
-                'name' => $validated['name'],
+                'customer_type' => 'individual',
+                'first_name' => $validated['first_name'],
+                'last_name' => $validated['last_name'],
                 'email' => $validated['email'],
                 'phone' => $validated['phone'] ?? null,
                 'has_online_account' => true,
                 'registration_source' => 'storefront',
+                'status' => 'active',
             ]);
+
+            // Ensure ledger account is created
+            $customer->refresh();
+            if (!$customer->ledgerAccount) {
+                $customer->createLedgerAccount();
+                $customer->refresh();
+            }
 
             // Create authentication record
             $customerAuth = CustomerAuthentication::create([
                 'customer_id' => $customer->id,
                 'email' => $validated['email'],
-                'password' => Hash::make($validated['password']),
+                'password' => $validated['password'], // Model's setPasswordAttribute will hash it
                 'is_social_login' => false,
             ]);
 
