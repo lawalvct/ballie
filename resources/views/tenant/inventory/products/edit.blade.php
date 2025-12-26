@@ -431,48 +431,115 @@
             </div>
         </div>
 
-        <!-- Section 6: Product Image -->
+        <!-- Section 6: Product Images -->
         <div class="bg-white rounded-2xl p-6 shadow-lg transition-all duration-300 hover:shadow-xl">
             <h3 class="text-lg font-medium text-gray-900 mb-4 flex items-center">
                 <span class="flex items-center justify-center w-6 h-6 rounded-full bg-blue-100 text-blue-600 mr-2 text-sm font-semibold">6</span>
-                Product Image
+                Product Images
             </h3>
 
-            @if($product->image_url)
-            <div class="mb-4">
-                <label class="block text-sm font-medium text-gray-700 mb-2">Current Image</label>
-                <img src="{{ $product->image_url }}" alt="{{ $product->name }}" class="w-32 h-32 object-cover rounded-lg border border-gray-300">
-            </div>
-              @endif
+            <!-- Primary Image Section -->
+            <div class="mb-6">
+                <h4 class="text-sm font-semibold text-gray-700 mb-3">Primary Image</h4>
+                @if($product->image_url)
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Current Primary Image</label>
+                    <img src="{{ $product->image_url }}" alt="{{ $product->name }}" class="w-32 h-32 object-cover rounded-lg border border-gray-300 shadow-sm">
+                </div>
+                @endif
 
-            <div class="form-group">
-                <label for="image" class="block text-sm font-medium text-gray-700 mb-1">
-                    {{ $product->image_url ? 'Replace Image' : 'Upload Image' }}
-                </label>
-                <div class="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-md hover:border-blue-400 transition-colors duration-200">
-                    <div class="space-y-1 text-center">
-                        <svg class="mx-auto h-12 w-12 text-gray-400" stroke="currentColor" fill="none" viewBox="0 0 48 48">
-                            <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
-                        </svg>
-                        <div class="flex text-sm text-gray-600">
-                            <label for="image" class="relative cursor-pointer bg-white rounded-md font-medium text-blue-600 hover:text-blue-500 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-blue-500">
-                                <span>Upload a file</span>
-                                <input id="image" name="image" type="file" class="sr-only" accept="image/*" onchange="previewImage(this)">
-                            </label>
-                            <p class="pl-1">or drag and drop</p>
+                <div class="form-group">
+                    <label for="image" class="block text-sm font-medium text-gray-700 mb-1">
+                        {{ $product->image_url ? 'Replace Primary Image' : 'Upload Primary Image' }}
+                        <span class="text-gray-500 font-normal text-xs">(Leave empty to keep current)</span>
+                    </label>
+                    <div class="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-md hover:border-blue-400 transition-colors duration-200">
+                        <div class="space-y-1 text-center">
+                            <svg class="mx-auto h-12 w-12 text-gray-400" stroke="currentColor" fill="none" viewBox="0 0 48 48">
+                                <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                            </svg>
+                            <div class="flex text-sm text-gray-600">
+                                <label for="image" class="relative cursor-pointer bg-white rounded-md font-medium text-blue-600 hover:text-blue-500 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-blue-500">
+                                    <span>Upload a file</span>
+                                    <input id="image" name="image" type="file" class="sr-only" accept="image/*" onchange="previewImage(this)">
+                                </label>
+                                <p class="pl-1">or drag and drop</p>
+                            </div>
+                            <p class="text-xs text-gray-500">PNG, JPG, GIF up to 2MB</p>
                         </div>
-                        <p class="text-xs text-gray-500">PNG, JPG, GIF up to 2MB</p>
+                    </div>
+                    @error('image')
+                        <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                    @enderror
+                </div>
+
+                <!-- New Primary Image Preview -->
+                <div id="image-preview" class="mt-4 hidden">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">New Image Preview</label>
+                    <img id="preview-img" src="" alt="Preview" class="w-32 h-32 object-cover rounded-lg border border-gray-300">
+                </div>
+            </div>
+
+            <!-- Product Gallery Section -->
+            <div class="border-t pt-6">
+                <h4 class="text-sm font-semibold text-gray-700 mb-3">Product Gallery</h4>
+
+                @if($product->images && $product->images->count() > 0)
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-3">Current Gallery Images</label>
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-4" id="existing-gallery">
+                        @foreach($product->images as $image)
+                        <div class="relative group" data-image-id="{{ $image->id }}">
+                            <img src="{{ Storage::disk('public')->url($image->image_path) }}"
+                                 alt="Gallery Image"
+                                 class="w-full h-32 object-cover rounded-lg border border-gray-300 shadow-sm">
+                            <button type="button"
+                                    onclick="deleteGalleryImage({{ $image->id }})"
+                                    class="absolute top-2 right-2 bg-red-500 text-white p-1.5 rounded-full opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-600">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                                </svg>
+                            </button>
+                            @if($image->is_primary)
+                            <span class="absolute top-2 left-2 bg-blue-500 text-white text-xs px-2 py-1 rounded-full">Primary</span>
+                            @endif
+                            <span class="absolute bottom-2 left-2 bg-black bg-opacity-50 text-white text-xs px-2 py-1 rounded">Order: {{ $image->sort_order }}</span>
+                        </div>
+                        @endforeach
                     </div>
                 </div>
-                @error('image')
-                    <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                @enderror
-            </div>
+                @endif
 
-            <!-- Image Preview -->
-            <div id="image-preview" class="mt-4 hidden">
-                <label class="block text-sm font-medium text-gray-700 mb-2">Preview</label>
-                <img id="preview-img" src="" alt="Preview" class="w-32 h-32 object-cover rounded-lg border border-gray-300">
+                <div class="form-group">
+                    <label for="gallery_images" class="block text-sm font-medium text-gray-700 mb-1">
+                        Add More Gallery Images
+                        <span class="text-gray-500 font-normal text-xs">- Show different views of your product</span>
+                    </label>
+                    <div class="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-purple-300 border-dashed rounded-md hover:border-purple-400 transition-colors duration-200">
+                        <div class="space-y-1 text-center">
+                            <svg class="mx-auto h-12 w-12 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                            </svg>
+                            <div class="flex text-sm text-gray-600">
+                                <label for="gallery_images" class="relative cursor-pointer bg-white rounded-md font-medium text-purple-600 hover:text-purple-500 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-purple-500">
+                                    <span>Upload gallery images</span>
+                                    <input id="gallery_images" name="gallery_images[]" type="file" class="sr-only" accept="image/*" multiple onchange="previewGalleryImages(this)">
+                                </label>
+                                <p class="pl-1">or drag and drop</p>
+                            </div>
+                            <p class="text-xs text-gray-500">Select multiple images (PNG, JPG, GIF up to 2MB each)</p>
+                        </div>
+                    </div>
+                    @error('gallery_images')
+                        <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                    @enderror
+                </div>
+
+                <!-- New Gallery Images Preview -->
+                <div id="gallery-preview" class="mt-4 hidden">
+                    <label class="block text-sm font-medium text-gray-700 mb-3">New Images Preview</label>
+                    <div id="gallery-preview-container" class="grid grid-cols-2 md:grid-cols-4 gap-4"></div>
+                </div>
             </div>
         </div>
 
@@ -649,6 +716,78 @@ function previewImage(input) {
 
         reader.readAsDataURL(input.files[0]);
     }
+}
+
+// Preview gallery images
+function previewGalleryImages(input) {
+    const files = input.files;
+    const galleryPreview = document.getElementById('gallery-preview');
+    const galleryContainer = document.getElementById('gallery-preview-container');
+
+    if (files.length > 0) {
+        galleryContainer.innerHTML = '';
+        galleryPreview.classList.remove('hidden');
+
+        Array.from(files).forEach((file, index) => {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const div = document.createElement('div');
+                div.className = 'relative group';
+                div.innerHTML = `
+                    <img src="${e.target.result}" alt="Gallery ${index + 1}" class="w-full h-32 object-cover rounded-lg border border-gray-300">
+                    <div class="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-30 transition-opacity rounded-lg flex items-center justify-center">
+                        <span class="text-white text-sm opacity-0 group-hover:opacity-100">New Image ${index + 1}</span>
+                    </div>
+                `;
+                galleryContainer.appendChild(div);
+            }
+            reader.readAsDataURL(file);
+        });
+    } else {
+        galleryPreview.classList.add('hidden');
+        galleryContainer.innerHTML = '';
+    }
+}
+
+// Delete gallery image
+function deleteGalleryImage(imageId) {
+    if (!confirm('Are you sure you want to delete this image?')) {
+        return;
+    }
+
+    fetch(`/{{ $tenant->slug }}/inventory/products/{{ $product->id }}/images/${imageId}`, {
+        method: 'DELETE',
+        headers: {
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+            'Accept': 'application/json',
+            'Content-Type': 'application/json'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Remove the image from DOM
+            const imageElement = document.querySelector(`[data-image-id="${imageId}"]`);
+            if (imageElement) {
+                imageElement.remove();
+            }
+
+            // Show success message
+            alert('Image deleted successfully');
+
+            // Check if gallery is now empty
+            const gallery = document.getElementById('existing-gallery');
+            if (gallery && gallery.children.length === 0) {
+                gallery.parentElement.remove();
+            }
+        } else {
+            alert('Failed to delete image: ' + (data.message || 'Unknown error'));
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('An error occurred while deleting the image');
+    });
 }
 
 // Form validation and progress tracking

@@ -501,14 +501,42 @@
             </div>
             @endif
 
-            <!-- Product Image -->
-            @if($product->image_url)
+            <!-- Product Images -->
+            @if($product->image_url || $product->images->count() > 0)
             <div class="bg-white shadow-sm rounded-lg border border-gray-200">
                 <div class="px-6 py-4 border-b border-gray-200">
-                    <h3 class="text-lg font-medium text-gray-900">Product Image</h3>
+                    <h3 class="text-lg font-medium text-gray-900">Product Images</h3>
                 </div>
-                <div class="p-6">
-                    <img src="{{ $product->image_url }}" alt="{{ $product->name }}" class="w-full h-48 object-cover rounded-lg">
+                <div class="p-6 space-y-4">
+                    <!-- Primary Image -->
+                    @if($product->image_url)
+                    <div>
+                        <label class="block text-xs font-medium text-gray-500 mb-2 uppercase tracking-wider">Primary Image</label>
+                        <img src="{{ $product->image_url }}" alt="{{ $product->name }}" class="w-full h-48 object-cover rounded-lg border-2 border-blue-200">
+                    </div>
+                    @endif
+
+                    <!-- Gallery Images -->
+                    @if($product->images->count() > 0)
+                    <div>
+                        <label class="block text-xs font-medium text-gray-500 mb-2 uppercase tracking-wider">
+                            Gallery ({{ $product->images->count() }} {{ Str::plural('image', $product->images->count()) }})
+                        </label>
+                        <div class="grid grid-cols-2 gap-2">
+                            @foreach($product->images->sortBy('sort_order') as $image)
+                            <div class="relative group">
+                                <img src="{{ Storage::disk('public')->url($image->image_path) }}"
+                                     alt="{{ $product->name }}"
+                                     class="w-full h-24 object-cover rounded-lg border border-gray-200 group-hover:border-blue-400 transition-colors">
+                                @if($image->is_primary)
+                                <span class="absolute top-1 left-1 bg-blue-500 text-white text-xs px-2 py-0.5 rounded-full">Primary</span>
+                                @endif
+                                <span class="absolute bottom-1 right-1 bg-black bg-opacity-60 text-white text-xs px-2 py-0.5 rounded">#{{ $image->sort_order }}</span>
+                            </div>
+                            @endforeach
+                        </div>
+                    </div>
+                    @endif
                 </div>
             </div>
             @endif

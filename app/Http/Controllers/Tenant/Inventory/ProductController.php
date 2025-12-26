@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Tenant\Inventory;
 use App\Http\Controllers\Controller;
 use App\Models\Product;
 use App\Models\ProductCategory;
+use App\Models\ProductImage;
 use App\Models\Unit;
 use App\Models\LedgerAccount;
 use App\Models\Tenant;
@@ -170,6 +171,7 @@ class ProductController extends Controller
             'tax_rate' => 'nullable|numeric|min:0|max:100',
             'barcode' => 'nullable|string|max:255',
             'image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+            'gallery_images.*' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
             'stock_asset_account_id' => 'nullable|exists:ledger_accounts,id',
             'sales_account_id' => 'nullable|exists:ledger_accounts,id',
             'purchase_account_id' => 'nullable|exists:ledger_accounts,id',
@@ -191,7 +193,7 @@ class ProductController extends Controller
             $data['tenant_id'] = $tenant->id;
             $data['created_by'] = auth()->id();
 
-            // Handle image upload
+            // Handle primary image upload
             if ($request->hasFile('image')) {
                 $data['image_path'] = $request->file('image')->store('products', 'public');
             }
@@ -235,6 +237,23 @@ class ProductController extends Controller
                 // Clear cache to ensure fresh calculation
                 $cacheKey = "product_stock_{$product->id}_" . now()->toDateString();
                 Cache::forget($cacheKey);
+            }
+
+            // Handle gallery images upload
+            if ($request->hasFile('gallery_images')) {
+                $sortOrder = $product->images()->max('sort_order') ?? 0;
+
+                foreach ($request->file('gallery_images') as $galleryImage) {
+                    $sortOrder++;
+                    $imagePath = $galleryImage->store('products/gallery', 'public');
+
+                    ProductImage::create([
+                        'product_id' => $product->id,
+                        'image_path' => $imagePath,
+                        'is_primary' => false,
+                        'sort_order' => $sortOrder,
+                    ]);
+                }
             }
 
             DB::commit();
@@ -286,7 +305,7 @@ class ProductController extends Controller
         abort(404);
     }
 
-    $product->load(['category', 'primaryUnit', 'stockAssetAccount', 'salesAccount', 'purchaseAccount']);
+    $product->load(['category', 'primaryUnit', 'stockAssetAccount', 'salesAccount', 'purchaseAccount', 'images']);
 
     // Clear cache to get fresh stock data
     $asOfDate = now()->toDateString();
@@ -427,6 +446,7 @@ public function update(Request $request, Tenant $tenant, Product $product)
         'tax_rate' => 'nullable|numeric|min:0|max:100',
         'barcode' => 'nullable|string|max:255',
         'image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+        'gallery_images.*' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
         'maintain_stock' => 'nullable|boolean',
         'is_active' => 'nullable|boolean',
         'is_saleable' => 'nullable|boolean',
@@ -447,7 +467,9 @@ public function update(Request $request, Tenant $tenant, Product $product)
     }
 
     try {
-        $data = $request->except(['image']);
+        DB::beginTransaction();
+
+        $data = $request->except(['image', 'gallery_images']);
 
         // Handle boolean fields
         $data['maintain_stock'] = $request->has('maintain_stock');
@@ -458,15 +480,32 @@ public function update(Request $request, Tenant $tenant, Product $product)
         $data['is_visible_online'] = $request->has('is_visible_online');
         $data['is_featured'] = $request->has('is_featured');
 
-        // Handle image upload
+        // Handle primary image upload
         if ($request->hasFile('image')) {
             // Delete old image if exists
             if ($product->image_path) {
-                Storage::delete($product->image_path);
+                Storage::disk('public')->delete($product->image_path);
             }
 
             $imagePath = $request->file('image')->store('products', 'public');
             $data['image_path'] = $imagePath;
+        }
+
+        // Handle gallery images upload
+        if ($request->hasFile('gallery_images')) {
+            $sortOrder = $product->images()->max('sort_order') ?? 0;
+
+            foreach ($request->file('gallery_images') as $galleryImage) {
+                $sortOrder++;
+                $imagePath = $galleryImage->store('products/gallery', 'public');
+
+                ProductImage::create([
+                    'product_id' => $product->id,
+                    'image_path' => $imagePath,
+                    'is_primary' => false,
+                    'sort_order' => $sortOrder,
+                ]);
+            }
         }
 
         // Calculate stock values if stock is maintained
@@ -487,10 +526,13 @@ public function update(Request $request, Tenant $tenant, Product $product)
 
         $product->update($data);
 
+        DB::commit();
+
         return redirect()->route('tenant.inventory.products.show', ['tenant' => $tenant->slug, 'product' => $product->id])
             ->with('success', 'Product updated successfully.');
 
     } catch (\Exception $e) {
+        DB::rollBack();
         Log::error('Error updating product: ' . $e->getMessage());
 
         return redirect()->back()
@@ -498,6 +540,47 @@ public function update(Request $request, Tenant $tenant, Product $product)
             ->withInput();
     }
 }
+
+    /**
+     * Delete a product gallery image
+     */
+    public function deleteImage(Request $request, $imageId)
+    {
+        $tenant = $request->tenant;
+
+        try {
+            $image = ProductImage::findOrFail($imageId);
+
+            // Verify the image belongs to a product owned by this tenant
+            if ($image->product->tenant_id !== $tenant->id) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Unauthorized'
+                ], 403);
+            }
+
+            // Delete the image file from storage
+            if ($image->image_path) {
+                Storage::disk('public')->delete($image->image_path);
+            }
+
+            // Delete the database record
+            $image->delete();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Image deleted successfully'
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('Error deleting product image: ' . $e->getMessage());
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to delete image'
+            ], 500);
+        }
+    }
 
     public function bulkAction(Request $request)
     {

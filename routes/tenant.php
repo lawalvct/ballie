@@ -425,6 +425,7 @@ Route::prefix('ledger-accounts')->name('ledger-accounts.')->group(function () {
             Route::get('products/export/template', [ProductController::class, 'downloadTemplate'])->name('products.export.template');
             Route::get('products/export/categories-reference', [ProductController::class, 'downloadCategoriesReference'])->name('products.export.categories-reference');
             Route::post('products/import', [ProductController::class, 'importProducts'])->name('products.import');
+            Route::delete('products/{product}/images/{image}', [ProductController::class, 'deleteImage'])->name('products.images.delete');
             Route::resource('products', ProductController::class);
             Route::patch('products/{product}/toggle-status', [ProductController::class, 'toggleStatus'])->name('products.toggle-status');
             Route::get('products/export/all', [ProductController::class, 'export'])->name('products.export');

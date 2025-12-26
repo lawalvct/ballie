@@ -586,12 +586,12 @@
             </div>
         </div>
 
-        <!-- Section 9: Product Image (Collapsible) -->
+        <!-- Section 9: Product Images (Collapsible) -->
         <div class="bg-white rounded-2xl p-6 shadow-lg transition-all duration-300 hover:shadow-xl">
             <div class="flex items-center justify-between cursor-pointer" onclick="toggleSection('product-image')">
                 <h3 class="text-lg font-medium text-gray-900 flex items-center">
                     <span class="flex items-center justify-center w-6 h-6 rounded-full bg-green-100 text-green-600 mr-2 text-sm font-semibold">9</span>
-                    Product Image
+                    Product Images
                 </h3>
                 <svg id="product-image-icon" class="w-5 h-5 text-gray-500 transform transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
@@ -599,9 +599,10 @@
             </div>
 
             <div id="product-image-content" class="mt-4 hidden">
-                <div class="form-group">
+                <!-- Primary Product Image -->
+                <div class="form-group mb-6">
                     <label for="image" class="block text-sm font-medium text-gray-700 mb-1">
-                        Upload Image
+                        Primary Product Image
                     </label>
                     <div class="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-md">
                         <div class="space-y-1 text-center">
@@ -610,13 +611,13 @@
                             </svg>
                             <div class="flex text-sm text-gray-600">
                                 <label for="image" class="relative cursor-pointer bg-white rounded-md font-medium text-green-600 hover:text-green-500 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-green-500">
-                                    <span>Upload a file</span>
+                                    <span>Upload primary image</span>
                                     <input id="image" name="image" type="file" class="sr-only" accept="image/*">
                                 </label>
                                 <p class="pl-1">or drag and drop</p>
                             </div>
                             <p class="text-xs text-gray-500">
-                                PNG, JPG, GIF up to 2MB
+                                PNG, JPG, GIF up to 2MB - This will be the main product image
                             </p>
                         </div>
                     </div>
@@ -631,6 +632,38 @@
                         </div>
                     </div>
                     @error('image')
+                        <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                    @enderror
+                </div>
+
+                <!-- Additional Gallery Images -->
+                <div class="form-group border-t pt-6">
+                    <label for="gallery_images" class="block text-sm font-medium text-gray-700 mb-1">
+                        Additional Images (Gallery)
+                        <span class="text-gray-500 font-normal text-xs">- Show different views of your product</span>
+                    </label>
+                    <div class="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-purple-300 border-dashed rounded-md">
+                        <div class="space-y-1 text-center">
+                            <svg class="mx-auto h-12 w-12 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                            </svg>
+                            <div class="flex text-sm text-gray-600">
+                                <label for="gallery_images" class="relative cursor-pointer bg-white rounded-md font-medium text-purple-600 hover:text-purple-500 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-purple-500">
+                                    <span>Upload gallery images</span>
+                                    <input id="gallery_images" name="gallery_images[]" type="file" class="sr-only" accept="image/*" multiple>
+                                </label>
+                                <p class="pl-1">or drag and drop</p>
+                            </div>
+                            <p class="text-xs text-gray-500">
+                                Select multiple images (PNG, JPG, GIF up to 2MB each)
+                            </p>
+                        </div>
+                    </div>
+                    <div id="gallery-preview" class="mt-4 hidden">
+                        <p class="text-sm font-medium text-gray-700 mb-3">Gallery Preview:</p>
+                        <div id="gallery-preview-container" class="grid grid-cols-2 md:grid-cols-4 gap-4"></div>
+                    </div>
+                    @error('gallery_images')
                         <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                     @enderror
                 </div>
@@ -949,6 +982,38 @@ document.addEventListener('DOMContentLoaded', function() {
         imageInput.value = '';
         previewContainer.classList.add('hidden');
         previewImage.src = '#';
+    });
+
+    // Gallery images preview functionality
+    const galleryInput = document.getElementById('gallery_images');
+    const galleryPreview = document.getElementById('gallery-preview');
+    const galleryContainer = document.getElementById('gallery-preview-container');
+
+    galleryInput.addEventListener('change', function() {
+        const files = this.files;
+        if (files.length > 0) {
+            galleryContainer.innerHTML = '';
+            galleryPreview.classList.remove('hidden');
+
+            Array.from(files).forEach((file, index) => {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const div = document.createElement('div');
+                    div.className = 'relative group';
+                    div.innerHTML = `
+                        <img src="${e.target.result}" alt="Gallery ${index + 1}" class="w-full h-32 object-cover rounded-lg border border-gray-300">
+                        <div class="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-30 transition-opacity rounded-lg flex items-center justify-center">
+                            <span class="text-white text-sm opacity-0 group-hover:opacity-100">Image ${index + 1}</span>
+                        </div>
+                    `;
+                    galleryContainer.appendChild(div);
+                }
+                reader.readAsDataURL(file);
+            });
+        } else {
+            galleryPreview.classList.add('hidden');
+            galleryContainer.innerHTML = '';
+        }
     });
 
     // Form validation

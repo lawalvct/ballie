@@ -34,6 +34,7 @@
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-12">
             <!-- Product Images -->
             <div>
+                <!-- Main Image Display -->
                 <div class="bg-white rounded-lg shadow-sm overflow-hidden mb-4">
                     @if($product->image_path)
                         <img src="{{ Storage::disk('public')->url($product->image_path) }}"
@@ -54,14 +55,25 @@
                     @endif
                 </div>
 
-                <!-- Thumbnail Images -->
-                @if($product->images->count() > 1)
+                <!-- Thumbnail Gallery -->
+                @if($product->images->count() > 0 || $product->image_path)
                     <div class="grid grid-cols-4 gap-2">
+                        <!-- Primary image thumbnail -->
+                        @if($product->image_path)
+                            <div class="cursor-pointer rounded-lg overflow-hidden border-2 border-blue-600 hover:border-blue-700 transition-colors">
+                                <img src="{{ Storage::disk('public')->url($product->image_path) }}"
+                                     alt="{{ $product->name }}"
+                                     onclick="changeMainImage(this.src)"
+                                     class="w-full h-20 object-cover">
+                            </div>
+                        @endif
+
+                        <!-- Gallery images thumbnails -->
                         @foreach($product->images as $image)
                             <div class="cursor-pointer rounded-lg overflow-hidden border-2 border-transparent hover:border-blue-600 transition-colors">
                                 <img src="{{ Storage::disk('public')->url($image->image_path) }}"
                                      alt="{{ $product->name }}"
-                                     onclick="document.getElementById('main-image').src = this.src"
+                                     onclick="changeMainImage(this.src)"
                                      class="w-full h-20 object-cover">
                             </div>
                         @endforeach
@@ -192,4 +204,27 @@
         @endif
     </div>
 </div>
+
+@push('scripts')
+<script>
+// Function to change main image when clicking thumbnails
+function changeMainImage(src) {
+    const mainImage = document.getElementById('main-image');
+    if (mainImage) {
+        mainImage.src = src;
+
+        // Update active thumbnail border
+        document.querySelectorAll('.grid div').forEach(div => {
+            if (div.querySelector('img')?.src === src) {
+                div.classList.remove('border-transparent');
+                div.classList.add('border-blue-600');
+            } else {
+                div.classList.remove('border-blue-600');
+                div.classList.add('border-transparent');
+            }
+        });
+    }
+}
+</script>
+@endpush
 @endsection
