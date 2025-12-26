@@ -157,23 +157,7 @@
                     <span class="menu-title whitespace-nowrap font-medium">E-commerce</span>
                 </a>
             </li>
-            @php
-                $ecommerceSettings = tenant()->ecommerceSettings;
-            @endphp
-            @if($ecommerceSettings && $ecommerceSettings->is_store_enabled)
-            <li>
-                <a href="/{{ tenant()->slug }}/store" target="_blank"
-                   class="menu-item flex items-center px-4 py-3 rounded-xl group"
-                   title="View Your Store">
-                    <div class="flex-shrink-0 w-6 h-6 mr-4 text-green-400 group-hover:scale-110 transition-transform duration-200">
-                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-                        </svg>
-                    </div>
-                    <span class="menu-title whitespace-nowrap font-medium">View Store</span>
-                </a>
-            </li>
-            @endif
+
             @endpermission
 
             <!-- Payroll -->
