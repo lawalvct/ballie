@@ -36,7 +36,9 @@
                 </div>
                 <div>
                     @auth('customer')
-                        <span class="mr-4">Welcome, {{ auth('customer')->user()->customer->first_name }}!</span>
+                        <a href="{{ route('storefront.account', ['tenant' => $tenant->slug]) }}" class="hover:text-gray-300 mr-3">My Account</a>
+                        <a href="{{ route('storefront.orders', ['tenant' => $tenant->slug]) }}" class="hover:text-gray-300 mr-3">Orders</a>
+                        <span class="mr-4">Hi, {{ auth('customer')->user()->customer->first_name }}!</span>
                         <form method="POST" action="{{ route('storefront.logout', ['tenant' => $tenant->slug]) }}" class="inline">
                             @csrf
                             <button type="submit" class="hover:text-gray-300">Logout</button>

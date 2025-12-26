@@ -65,6 +65,7 @@ class DashboardController extends Controller
         $alerts = [];
         $lowStockCount = Product::where('tenant_id', $tenant->id)
             ->where('maintain_stock', true)
+            ->where('type', 'item') // Exclude services
             ->lowStock()
             ->count();
 
@@ -79,6 +80,7 @@ class DashboardController extends Controller
 
         $outOfStockCount = Product::where('tenant_id', $tenant->id)
             ->where('maintain_stock', true)
+            ->where('type', 'item') // Exclude services
             ->outOfStock()
             ->count();
 

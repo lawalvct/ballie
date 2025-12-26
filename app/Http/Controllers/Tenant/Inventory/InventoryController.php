@@ -15,10 +15,13 @@ class InventoryController extends Controller
     public function index(Tenant $tenant)
     {
         // Get inventory statistics
-        $totalProducts = Product::where('tenant_id', $tenant->id)->count();
+        $totalProducts = Product::where('tenant_id', $tenant->id)
+         ->where('type', 'item') // Exclude services
+         ->count();
 
         // Calculate total stock value from all products with calculated stock
         $products = Product::where('tenant_id', $tenant->id)
+         ->where('type', 'item') // Exclude services
             ->where('maintain_stock', true)
             ->where('is_active', true)
             ->get();
@@ -137,6 +140,7 @@ class InventoryController extends Controller
         // Add low stock alerts for products that are currently low
         $currentLowStockProducts = Product::where('tenant_id', $tenant->id)
             ->where('maintain_stock', true)
+             ->where('type', 'item') // Exclude services
             ->whereColumn('current_stock', '<=', 'reorder_level')
             ->limit(3)
             ->get();
@@ -314,6 +318,7 @@ class InventoryController extends Controller
     {
         // Get all products and calculate stock from movements
         $productsWithStock = Product::where('tenant_id', $tenant->id)
+        ->where('type', 'item') // Exclude services
             ->where('maintain_stock', true)
             ->get();
 
@@ -385,6 +390,7 @@ class InventoryController extends Controller
     private function getMonthlyStockMovements($tenant)
     {
         $movements = \App\Models\StockMovement::where('tenant_id', $tenant->id)
+         ->where('type', 'item') // Exclude services
             ->whereYear('created_at', now()->year)
             ->selectRaw('MONTH(created_at) as month, transaction_type, SUM(ABS(quantity)) as total_quantity')
             ->groupBy('month', 'transaction_type')

@@ -305,6 +305,106 @@ class CheckoutController extends Controller
     }
 
     /**
+     * Show customer orders list
+     */
+    public function orders(Request $request)
+    {
+        $tenant = $request->current_tenant;
+        $storeSettings = $tenant->ecommerceSettings;
+        $customer = Auth::guard('customer')->user()->customer;
+
+        $orders = Order::where('tenant_id', $tenant->id)
+            ->where('customer_id', $customer->id)
+            ->with(['items.product'])
+            ->orderBy('created_at', 'desc')
+            ->paginate(10);
+
+        return view('storefront.orders.index', compact('tenant', 'storeSettings', 'orders'));
+    }
+
+    /**
+     * Show order detail page
+     */
+    public function orderDetail(Request $request, $tenant, $orderId)
+    {
+        // Get the tenant
+        if (is_string($tenant)) {
+            $tenant = Tenant::where('slug', $tenant)->firstOrFail();
+        }
+
+        $customer = Auth::guard('customer')->user()->customer;
+
+        $order = Order::where('id', $orderId)
+            ->where('tenant_id', $tenant->id)
+            ->where('customer_id', $customer->id)
+            ->with(['items.product', 'shippingAddress'])
+            ->firstOrFail();
+
+        $storeSettings = $tenant->ecommerceSettings;
+
+        return view('storefront.orders.detail', compact('tenant', 'order', 'storeSettings'));
+    }
+
+    /**
+     * Download order invoice
+     */
+    public function downloadInvoice(Request $request, $tenant, $orderId)
+    {
+        // Get the tenant
+        if (is_string($tenant)) {
+            $tenant = Tenant::where('slug', $tenant)->firstOrFail();
+        }
+
+        $customer = Auth::guard('customer')->user()->customer;
+
+        $order = Order::where('id', $orderId)
+            ->where('tenant_id', $tenant->id)
+            ->where('customer_id', $customer->id)
+            ->with(['items.product', 'shippingAddress'])
+            ->firstOrFail();
+
+        $storeSettings = $tenant->ecommerceSettings;
+
+        return view('storefront.orders.invoice', compact('tenant', 'order', 'storeSettings'));
+    }
+
+    /**
+     * Submit order dispute
+     */
+    public function submitDispute(Request $request, $tenant, $orderId)
+    {
+        // Get the tenant
+        if (is_string($tenant)) {
+            $tenant = Tenant::where('slug', $tenant)->firstOrFail();
+        }
+
+        $customer = Auth::guard('customer')->user()->customer;
+
+        $validated = $request->validate([
+            'dispute_reason' => 'required|string|in:damaged,wrong_item,not_delivered,poor_quality,other',
+            'dispute_message' => 'required|string|max:1000',
+        ]);
+
+        $order = Order::where('id', $orderId)
+            ->where('tenant_id', $tenant->id)
+            ->where('customer_id', $customer->id)
+            ->firstOrFail();
+
+        // Update order with dispute information
+        $order->update([
+            'admin_notes' => ($order->admin_notes ? $order->admin_notes . "\n\n" : '') .
+                "DISPUTE SUBMITTED (" . now()->format('Y-m-d H:i') . "):\n" .
+                "Reason: " . ucfirst(str_replace('_', ' ', $validated['dispute_reason'])) . "\n" .
+                "Message: " . $validated['dispute_message'],
+        ]);
+
+        // You can also create a separate disputes table for better tracking
+        // For now, we're just adding it to admin_notes
+
+        return back()->with('success', 'Your dispute has been submitted. Our team will review it shortly.');
+    }
+
+    /**
      * Get cart for current user/session
      */
     private function getCart($tenant)

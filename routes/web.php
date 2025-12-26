@@ -154,6 +154,18 @@ Route::prefix('{tenant}/store')->middleware(['tenant'])->group(function () {
         Route::get('/checkout', [CheckoutController::class, 'index'])->name('storefront.checkout');
         Route::post('/checkout/apply-coupon', [CheckoutController::class, 'applyCoupon'])->name('storefront.checkout.apply-coupon');
         Route::post('/checkout/process', [CheckoutController::class, 'process'])->name('storefront.checkout.process');
+
+        // Customer Account Management
+        Route::get('/account', [CustomerAuthController::class, 'account'])->name('storefront.account');
+        Route::get('/account/edit', [CustomerAuthController::class, 'editAccount'])->name('storefront.account.edit');
+        Route::put('/account/update', [CustomerAuthController::class, 'updateAccount'])->name('storefront.account.update');
+        Route::put('/account/password', [CustomerAuthController::class, 'updatePassword'])->name('storefront.account.password');
+
+        // Order Management
+        Route::get('/orders', [CheckoutController::class, 'orders'])->name('storefront.orders');
+        Route::get('/orders/{order}', [CheckoutController::class, 'orderDetail'])->name('storefront.order.detail');
+        Route::get('/orders/{order}/invoice', [CheckoutController::class, 'downloadInvoice'])->name('storefront.order.invoice');
+        Route::post('/orders/{order}/dispute', [CheckoutController::class, 'submitDispute'])->name('storefront.order.dispute');
     });
 });
 

@@ -231,4 +231,87 @@ class CustomerAuthController extends Controller
             return redirect()->route('home')->with('error', 'Login failed. Please try again.');
         }
     }
+
+    /**
+     * Show customer account page
+     */
+    public function account(Request $request)
+    {
+        $tenant = $request->current_tenant;
+        $storeSettings = $tenant->ecommerceSettings;
+        $customer = Auth::guard('customer')->user()->customer;
+
+        return view('storefront.account.index', compact('tenant', 'storeSettings', 'customer'));
+    }
+
+    /**
+     * Show edit account page
+     */
+    public function editAccount(Request $request)
+    {
+        $tenant = $request->current_tenant;
+        $storeSettings = $tenant->ecommerceSettings;
+        $customer = Auth::guard('customer')->user()->customer;
+
+        return view('storefront.account.edit', compact('tenant', 'storeSettings', 'customer'));
+    }
+
+    /**
+     * Update customer account information
+     */
+    public function updateAccount(Request $request)
+    {
+        $tenant = $request->current_tenant;
+        $customer = Auth::guard('customer')->user()->customer;
+
+        $validated = $request->validate([
+            'first_name' => 'required|string|max:255',
+            'last_name' => 'required|string|max:255',
+            'email' => 'required|email|unique:customer_authentications,email,' . Auth::guard('customer')->id(),
+            'phone' => 'nullable|string|max:20',
+        ]);
+
+        // Update customer
+        $customer->update([
+            'first_name' => $validated['first_name'],
+            'last_name' => $validated['last_name'],
+            'phone' => $validated['phone'] ?? null,
+        ]);
+
+        // Update email in authentication table
+        Auth::guard('customer')->user()->update([
+            'email' => $validated['email'],
+        ]);
+
+        return redirect()->route('storefront.account', ['tenant' => $tenant->slug])
+            ->with('success', 'Profile updated successfully!');
+    }
+
+    /**
+     * Update customer password
+     */
+    public function updatePassword(Request $request)
+    {
+        $tenant = $request->current_tenant;
+
+        $validated = $request->validate([
+            'current_password' => 'required',
+            'password' => 'required|string|min:8|confirmed',
+        ]);
+
+        $customerAuth = Auth::guard('customer')->user();
+
+        // Verify current password
+        if (!Hash::check($validated['current_password'], $customerAuth->password)) {
+            return back()->withErrors(['current_password' => 'Current password is incorrect.']);
+        }
+
+        // Update password (model mutator will hash it)
+        $customerAuth->update([
+            'password' => $validated['password'],
+        ]);
+
+        return redirect()->route('storefront.account', ['tenant' => $tenant->slug])
+            ->with('success', 'Password updated successfully!');
+    }
 }
