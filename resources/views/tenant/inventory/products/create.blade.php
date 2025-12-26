@@ -235,6 +235,7 @@
                     @error('purchase_rate')
                         <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                     @enderror
+                    <span class="text-xs text-gray-500" id="purchase_rate_formatted"></span>
                 </div>
 
                 <div class="form-group">
@@ -249,6 +250,7 @@
                     @error('sales_rate')
                         <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                     @enderror
+                    <span class="text-xs text-gray-500" id="sales_rate_formatted"></span>
                 </div>
 
                 <div class="form-group">
@@ -263,6 +265,7 @@
                     @error('mrp')
                         <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                     @enderror
+                    <span class="text-xs text-gray-500" id="mrp_formatted"></span>
                 </div>
             </div>
         </div>
@@ -684,6 +687,97 @@
             </div>
         </div>
 
+        <!-- Section 11: E-commerce Settings (Collapsible) -->
+        <div class="bg-white rounded-2xl p-6 shadow-lg transition-all duration-300 hover:shadow-xl">
+            <div class="flex items-center justify-between cursor-pointer" onclick="toggleSection('ecommerce-settings')">
+                <h3 class="text-lg font-medium text-gray-900 flex items-center">
+                    <span class="flex items-center justify-center w-6 h-6 rounded-full bg-green-100 text-green-600 mr-2 text-sm font-semibold">11</span>
+                    E-commerce Settings
+                    <span class="ml-2 px-2 py-1 text-xs font-semibold text-blue-600 bg-blue-100 rounded-full">Online Store</span>
+                </h3>
+                <svg id="ecommerce-settings-icon" class="w-5 h-5 text-gray-500 transform transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                </svg>
+            </div>
+
+            <div id="ecommerce-settings-content" class="mt-4 hidden">
+                <!-- Slug -->
+                <div class="form-group mb-6">
+                    <label for="slug" class="block text-sm font-medium text-gray-700 mb-1">
+                        Product URL Slug
+                    </label>
+                    <div class="flex">
+                        <input type="text" name="slug" id="slug" value="{{ old('slug') }}"
+                            class="mt-1 focus:ring-green-500 focus:border-green-500 block w-full shadow-sm sm:text-sm rounded-md {{ $errors->has('slug') ? 'border-red-300' : 'border-gray-300' }}"
+                            placeholder="product-name-slug">
+                        <button type="button" onclick="generateSlug()" class="ml-2 mt-1 inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
+                            Generate
+                        </button>
+                    </div>
+                    @error('slug')
+                        <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                    @enderror
+                    <p class="mt-1 text-xs text-gray-500">URL-friendly name for product page. Leave empty to auto-generate from product name.</p>
+                </div>
+
+                <!-- Short Description -->
+                <div class="form-group mb-6">
+                    <label for="short_description" class="block text-sm font-medium text-gray-700 mb-1">
+                        Short Description
+                    </label>
+                    <textarea name="short_description" id="short_description" rows="2"
+                        class="mt-1 focus:ring-green-500 focus:border-green-500 block w-full shadow-sm sm:text-sm rounded-md {{ $errors->has('short_description') ? 'border-red-300' : 'border-gray-300' }}"
+                        placeholder="Brief product description for listings">{{ old('short_description') }}</textarea>
+                    @error('short_description')
+                        <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                    @enderror
+                    <p class="mt-1 text-xs text-gray-500">Brief description shown in product listings (recommended: 100-150 characters)</p>
+                </div>
+
+                <!-- Long Description -->
+                <div class="form-group mb-6">
+                    <label for="long_description" class="block text-sm font-medium text-gray-700 mb-1">
+                        Long Description
+                    </label>
+                    <textarea name="long_description" id="long_description" rows="5"
+                        class="mt-1 focus:ring-green-500 focus:border-green-500 block w-full shadow-sm sm:text-sm rounded-md {{ $errors->has('long_description') ? 'border-red-300' : 'border-gray-300' }}"
+                        placeholder="Detailed product description for product page">{{ old('long_description') }}</textarea>
+                    @error('long_description')
+                        <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                    @enderror
+                    <p class="mt-1 text-xs text-gray-500">Detailed description shown on product detail page</p>
+                </div>
+
+                <!-- Online Store Options -->
+                <div class="border-t pt-6">
+                    <h4 class="text-sm font-semibold text-gray-700 mb-4">Online Store Options</h4>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div class="flex items-center">
+                            <div class="flex items-center h-5">
+                                <input type="checkbox" name="is_visible_online" id="is_visible_online" value="1" {{ old('is_visible_online', true) ? 'checked' : '' }}
+                                       class="h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300 rounded">
+                            </div>
+                            <div class="ml-3 text-sm">
+                                <label for="is_visible_online" class="font-medium text-gray-700">Visible on Store</label>
+                                <p class="text-gray-500">Show this product on the online store</p>
+                            </div>
+                        </div>
+
+                        <div class="flex items-center">
+                            <div class="flex items-center h-5">
+                                <input type="checkbox" name="is_featured" id="is_featured" value="1" {{ old('is_featured', false) ? 'checked' : '' }}
+                                       class="h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300 rounded">
+                            </div>
+                            <div class="ml-3 text-sm">
+                                <label for="is_featured" class="font-medium text-gray-700">Featured Product</label>
+                                <p class="text-gray-500">Display on homepage featured section</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <!-- Form Actions -->
         <div class="flex items-center justify-between pt-6">
             <a href="{{ route('tenant.inventory.products.index', ['tenant' => $tenant->slug]) }}"
@@ -791,6 +885,7 @@ document.addEventListener('DOMContentLoaded', function() {
     toggleSection('ledger-accounts', true);
     toggleSection('product-image', true);
     toggleSection('product-options', true);
+    toggleSection('ecommerce-settings', true);
 
     // Declare all form elements at the top to avoid reference errors
     const productForm = document.getElementById('productForm');
@@ -963,6 +1058,41 @@ document.addEventListener('DOMContentLoaded', function() {
     if (!mrpInput.value || mrpInput.value === '0') {
         mrpInput.value = salesRateInput.value;
     }
+
+    // Real-time thousand separator display for all price fields
+    const purchaseRateFormatted = document.getElementById('purchase_rate_formatted');
+    const salesRateFormatted = document.getElementById('sales_rate_formatted');
+    const mrpFormatted = document.getElementById('mrp_formatted');
+
+    function formatWithThousands(value) {
+        if (!value || value === '') return '';
+        const number = parseFloat(value);
+        if (isNaN(number)) return '';
+        return '₦' + number.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    }
+
+    purchaseRateInput.addEventListener('input', function() {
+        purchaseRateFormatted.textContent = formatWithThousands(this.value);
+    });
+
+    salesRateInput.addEventListener('input', function() {
+        salesRateFormatted.textContent = formatWithThousands(this.value);
+    });
+
+    mrpInput.addEventListener('input', function() {
+        mrpFormatted.textContent = formatWithThousands(this.value);
+    });
+
+    // Display initial values if exist
+    if (purchaseRateInput.value) {
+        purchaseRateFormatted.textContent = formatWithThousands(purchaseRateInput.value);
+    }
+    if (salesRateInput.value) {
+        salesRateFormatted.textContent = formatWithThousands(salesRateInput.value);
+    }
+    if (mrpInput.value) {
+        mrpFormatted.textContent = formatWithThousands(mrpInput.value);
+    }
 });
 
 // Function to toggle collapsible sections
@@ -1096,6 +1226,26 @@ function showSuccessNotification(message) {
             document.body.removeChild(notification);
         }, 300);
     }, 3000);
+}
+
+// Function to generate Slug
+function generateSlug() {
+    const nameInput = document.getElementById('name');
+    const slugInput = document.getElementById('slug');
+
+    if (!nameInput.value.trim()) {
+        alert('Please enter a product name first');
+        nameInput.focus();
+        return;
+    }
+
+    // Generate slug from product name
+    const slug = nameInput.value
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/^-+|-+$/g, '');
+
+    slugInput.value = slug;
 }
 
 // Function to generate SKU

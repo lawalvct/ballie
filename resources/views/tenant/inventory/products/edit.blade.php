@@ -227,6 +227,7 @@
                     @error('purchase_rate')
                         <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                     @enderror
+                    <span class="text-xs text-gray-500" id="purchase_rate_formatted"></span>
                 </div>
 
                 <div class="form-group">
@@ -242,6 +243,7 @@
                     @error('sales_rate')
                         <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                     @enderror
+                    <span class="text-xs text-gray-500" id="sales_rate_formatted"></span>
                 </div>
 
                 <div class="form-group">
@@ -257,6 +259,7 @@
                     @error('mrp')
                         <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                     @enderror
+                    <span class="text-xs text-gray-500" id="mrp_formatted"></span>
                 </div>
             </div>
 
@@ -473,6 +476,92 @@
             </div>
         </div>
 
+        <!-- Section 7: E-commerce Settings -->
+        <div class="bg-white rounded-2xl p-6 shadow-lg transition-all duration-300 hover:shadow-xl">
+            <h3 class="text-lg font-medium text-gray-900 mb-4 flex items-center">
+                <span class="flex items-center justify-center w-6 h-6 rounded-full bg-blue-100 text-blue-600 mr-2 text-sm font-semibold">7</span>
+                E-commerce Settings
+                <span class="ml-2 px-2 py-1 text-xs font-semibold text-blue-600 bg-blue-100 rounded-full">Online Store</span>
+            </h3>
+
+            <div class="space-y-6">
+                <!-- Slug -->
+                <div class="form-group">
+                    <label for="slug" class="block text-sm font-medium text-gray-700 mb-1">
+                        Product URL Slug
+                    </label>
+                    <div class="flex">
+                        <input type="text" name="slug" id="slug" value="{{ old('slug', $product->slug) }}"
+                            class="mt-1 focus:ring-blue-500 focus:border-blue-500 block w-full shadow-sm sm:text-sm rounded-md {{ $errors->has('slug') ? 'border-red-300' : 'border-gray-300' }}"
+                            placeholder="product-name-slug">
+                        <button type="button" onclick="generateSlug()" class="ml-2 mt-1 inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                            Generate
+                        </button>
+                    </div>
+                    @error('slug')
+                        <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                    @enderror
+                    <p class="mt-1 text-xs text-gray-500">URL-friendly name for product page. Leave empty to auto-generate from product name.</p>
+                </div>
+
+                <!-- Short Description -->
+                <div class="form-group">
+                    <label for="short_description" class="block text-sm font-medium text-gray-700 mb-1">
+                        Short Description
+                    </label>
+                    <textarea name="short_description" id="short_description" rows="2"
+                        class="mt-1 focus:ring-blue-500 focus:border-blue-500 block w-full shadow-sm sm:text-sm rounded-md {{ $errors->has('short_description') ? 'border-red-300' : 'border-gray-300' }}"
+                        placeholder="Brief product description for listings">{{ old('short_description', $product->short_description) }}</textarea>
+                    @error('short_description')
+                        <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                    @enderror
+                    <p class="mt-1 text-xs text-gray-500">Brief description shown in product listings (recommended: 100-150 characters)</p>
+                </div>
+
+                <!-- Long Description -->
+                <div class="form-group">
+                    <label for="long_description" class="block text-sm font-medium text-gray-700 mb-1">
+                        Long Description
+                    </label>
+                    <textarea name="long_description" id="long_description" rows="5"
+                        class="mt-1 focus:ring-blue-500 focus:border-blue-500 block w-full shadow-sm sm:text-sm rounded-md {{ $errors->has('long_description') ? 'border-red-300' : 'border-gray-300' }}"
+                        placeholder="Detailed product description for product page">{{ old('long_description', $product->long_description) }}</textarea>
+                    @error('long_description')
+                        <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                    @enderror
+                    <p class="mt-1 text-xs text-gray-500">Detailed description shown on product detail page</p>
+                </div>
+
+                <!-- Online Store Options -->
+                <div class="border-t pt-6">
+                    <h4 class="text-sm font-semibold text-gray-700 mb-4">Online Store Options</h4>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div class="flex items-center">
+                            <div class="flex items-center h-5">
+                                <input type="checkbox" name="is_visible_online" id="is_visible_online" value="1" {{ old('is_visible_online', $product->is_visible_online) ? 'checked' : '' }}
+                                       class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded">
+                            </div>
+                            <div class="ml-3 text-sm">
+                                <label for="is_visible_online" class="font-medium text-gray-700">Visible on Store</label>
+                                <p class="text-gray-500">Show this product on the online store</p>
+                            </div>
+                        </div>
+
+                        <div class="flex items-center">
+                            <div class="flex items-center h-5">
+                                <input type="checkbox" name="is_featured" id="is_featured" value="1" {{ old('is_featured', $product->is_featured) ? 'checked' : '' }}
+                                       class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded">
+                            </div>
+                            <div class="ml-3 text-sm">
+                                <label for="is_featured" class="font-medium text-gray-700">Featured Product</label>
+                                <p class="text-gray-500">Display on homepage featured section</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <!-- Form Actions -->
         <div class="bg-white rounded-2xl p-6 shadow-lg">
             <div class="flex flex-col sm:flex-row gap-4 justify-end">
@@ -513,6 +602,26 @@ function generateSKU() {
     }
 }
 
+// Generate Slug function
+function generateSlug() {
+    const nameInput = document.getElementById('name');
+    const slugInput = document.getElementById('slug');
+
+    if (!nameInput.value.trim()) {
+        alert('Please enter a product name first');
+        nameInput.focus();
+        return;
+    }
+
+    // Generate slug from product name
+    const slug = nameInput.value
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/^-+|-+$/g, '');
+
+    slugInput.value = slug;
+}
+
 // Toggle stock fields based on maintain_stock checkbox
 function toggleStockFields() {
     const maintainStock = document.getElementById('maintain_stock').checked;
@@ -550,6 +659,51 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Initialize stock fields visibility
     toggleStockFields();
+
+    // Real-time thousand separator display for all price fields
+    const purchaseRateInput = document.getElementById('purchase_rate');
+    const salesRateInput = document.getElementById('sales_rate');
+    const mrpInput = document.getElementById('mrp');
+    const purchaseRateFormatted = document.getElementById('purchase_rate_formatted');
+    const salesRateFormatted = document.getElementById('sales_rate_formatted');
+    const mrpFormatted = document.getElementById('mrp_formatted');
+
+    function formatWithThousands(value) {
+        if (!value || value === '') return '';
+        const number = parseFloat(value);
+        if (isNaN(number)) return '';
+        return '₦' + number.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    }
+
+    if (purchaseRateInput) {
+        purchaseRateInput.addEventListener('input', function() {
+            purchaseRateFormatted.textContent = formatWithThousands(this.value);
+        });
+        // Display initial value
+        if (purchaseRateInput.value) {
+            purchaseRateFormatted.textContent = formatWithThousands(purchaseRateInput.value);
+        }
+    }
+
+    if (salesRateInput) {
+        salesRateInput.addEventListener('input', function() {
+            salesRateFormatted.textContent = formatWithThousands(this.value);
+        });
+        // Display initial value
+        if (salesRateInput.value) {
+            salesRateFormatted.textContent = formatWithThousands(salesRateInput.value);
+        }
+    }
+
+    if (mrpInput) {
+        mrpInput.addEventListener('input', function() {
+            mrpFormatted.textContent = formatWithThousands(this.value);
+        });
+        // Display initial value
+        if (mrpInput.value) {
+            mrpFormatted.textContent = formatWithThousands(mrpInput.value);
+        }
+    }
 
     // Track form completion
     function updateProgress() {

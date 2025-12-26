@@ -6,6 +6,10 @@ use App\Http\Controllers\HomeController;
 use App\Http\Controllers\SuperAdmin\DashboardController as SuperAdminDashboardController;
 use App\Http\Controllers\SuperAdmin\TenantController;
 use App\Http\Controllers\SuperAdmin\AuthController as SuperAdminAuthController;
+    use App\Http\Controllers\Storefront\StorefrontController;
+    use App\Http\Controllers\Storefront\CartController;
+    use App\Http\Controllers\Storefront\CheckoutController;
+    use App\Http\Controllers\Storefront\CustomerAuthController;
 
 // Firebase Service Worker - Return 404 to prevent auth redirection
 Route::get('/firebase-messaging-sw.js', function () {
@@ -112,6 +116,40 @@ require __DIR__.'/super-admin.php';
 // Tenant Routes (path-based: /tenant1/dashboard, /tenant2/invoices, etc.)
 Route::prefix('{tenant}')->middleware(['tenant'])->group(function () {
     require __DIR__.'/tenant.php';
+});
+
+// Storefront Routes (Public E-commerce - path-based: /tenant1/store/*, /tenant2/store/*)
+Route::prefix('{tenant}/store')->middleware(['tenant'])->group(function () {
+
+
+    // Public storefront pages
+    Route::get('/', [StorefrontController::class, 'index'])->name('storefront.index');
+    Route::get('/products', [StorefrontController::class, 'products'])->name('storefront.products');
+    Route::get('/products/{slug}', [StorefrontController::class, 'show'])->name('storefront.product.show');
+
+    // Cart management
+    Route::get('/cart', [CartController::class, 'index'])->name('storefront.cart');
+    Route::post('/cart/add', [CartController::class, 'add'])->name('storefront.cart.add');
+    Route::patch('/cart/update/{item}', [CartController::class, 'update'])->name('storefront.cart.update');
+    Route::delete('/cart/remove/{item}', [CartController::class, 'remove'])->name('storefront.cart.remove');
+    Route::delete('/cart/clear', [CartController::class, 'clear'])->name('storefront.cart.clear');
+
+    // Customer authentication
+    Route::get('/login', [CustomerAuthController::class, 'showLogin'])->name('storefront.login');
+    Route::post('/login', [CustomerAuthController::class, 'login']);
+    Route::get('/register', [CustomerAuthController::class, 'showRegister'])->name('storefront.register');
+    Route::post('/register', [CustomerAuthController::class, 'register']);
+    Route::post('/logout', [CustomerAuthController::class, 'logout'])->name('storefront.logout');
+
+    // Google OAuth
+    Route::get('/auth/google', [CustomerAuthController::class, 'redirectToGoogle'])->name('storefront.auth.google');
+    Route::get('/auth/google/callback', [CustomerAuthController::class, 'handleGoogleCallback'])->name('storefront.auth.google.callback');
+
+    // Checkout
+    Route::get('/checkout', [CheckoutController::class, 'index'])->name('storefront.checkout');
+    Route::post('/checkout/apply-coupon', [CheckoutController::class, 'applyCoupon'])->name('storefront.checkout.apply-coupon');
+    Route::post('/checkout/process', [CheckoutController::class, 'process'])->name('storefront.checkout.process');
+    Route::get('/order/success/{order}', [CheckoutController::class, 'success'])->name('storefront.order.success');
 });
 
 

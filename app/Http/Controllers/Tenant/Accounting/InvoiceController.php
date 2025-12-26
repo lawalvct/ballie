@@ -1601,12 +1601,44 @@ class InvoiceController extends Controller
 
         $invoice->load(['voucherType', 'entries.ledgerAccount', 'createdBy', 'postedBy', 'items']);
 
-        // Get customer info if available
-        $customer = $invoice->entries->where('debit_amount', '>', 0)->first()?->ledgerAccount;
+        // Determine customer info (try Customer model first, otherwise use ledger account)
+        $customerLedgerEntry = $invoice->entries->where('debit_amount', '>', 0)->first();
+        $customer = null;
+        $customerNameForFile = 'customer';
+
+        if ($customerLedgerEntry && $customerLedgerEntry->ledgerAccount) {
+            $ledger = $customerLedgerEntry->ledgerAccount;
+
+            // Try to find a Customer model linked to this ledger account
+            $custModel = \App\Models\Customer::where('ledger_account_id', $ledger->id)->first();
+
+            if ($custModel) {
+                $customer = $custModel;
+                if (!empty($custModel->company_name)) {
+                    $customerNameForFile = $custModel->company_name;
+                } else {
+                    $fullName = trim((($custModel->first_name ?? '') . ' ' . ($custModel->last_name ?? '')));
+                    $customerNameForFile = $fullName !== '' ? $fullName : ($custModel->name ?? $ledger->name ?? 'customer');
+                }
+            } else {
+                // No Customer model; use ledger account details
+                $customer = $ledger;
+                $customerNameForFile = $ledger->name ?? 'customer';
+            }
+        } else {
+            $customerNameForFile = 'walk-in-customer';
+        }
+
+        // Sanitize and slugify the customer name for filename safety
+        $prefix = strtolower($customerNameForFile);
+        $prefix = preg_replace('/[^a-z0-9]+/i', '-', $prefix);
+        $prefix = trim($prefix, '-');
+        $prefix = $prefix === '' ? 'customer' : $prefix;
 
         $pdf = Pdf::loadView('tenant.accounting.invoices.pdf', compact('tenant', 'invoice', 'customer'));
 
-        return $pdf->download('invoice-' . $invoice->voucherType->prefix . $invoice->voucher_number . '.pdf');
+        $filename = $prefix . '-invoice-' . ($invoice->voucherType->prefix ?? '') . $invoice->voucher_number . '.pdf';
+        return $pdf->download($filename);
     }
 
     public function email(Request $request, Tenant $tenant, Voucher $invoice)

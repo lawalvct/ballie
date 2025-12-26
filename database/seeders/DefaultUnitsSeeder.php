@@ -163,6 +163,56 @@ class DefaultUnitsSeeder extends Seeder
                 'base_unit_id' => null,
                 'conversion_factor' => 1.0,
             ],
+
+            // Additional Units requested
+            [
+                'name' => 'Each',
+                'symbol' => 'ea',
+                'description' => 'Individual each unit',
+                'is_base_unit' => true,
+                'base_unit_id' => null,
+                'conversion_factor' => 1.0,
+            ],
+            [
+                'name' => 'Hour',
+                'symbol' => 'h',
+                'description' => 'Time in hours',
+                'is_base_unit' => true,
+                'base_unit_id' => null,
+                'conversion_factor' => 1.0,
+            ],
+            [
+                'name' => 'Day',
+                'symbol' => 'd',
+                'description' => 'Time in days',
+                'is_base_unit' => true,
+                'base_unit_id' => null,
+                'conversion_factor' => 1.0,
+            ],
+            [
+                'name' => 'Month',
+                'symbol' => 'mo',
+                'description' => 'Time in months',
+                'is_base_unit' => true,
+                'base_unit_id' => null,
+                'conversion_factor' => 1.0,
+            ],
+            [
+                'name' => 'Session',
+                'symbol' => 'session',
+                'description' => 'Single session unit',
+                'is_base_unit' => true,
+                'base_unit_id' => null,
+                'conversion_factor' => 1.0,
+            ],
+            [
+                'name' => 'Project',
+                'symbol' => 'proj',
+                'description' => 'Project-based unit',
+                'is_base_unit' => true,
+                'base_unit_id' => null,
+                'conversion_factor' => 1.0,
+            ],
         ];
 
         $createdUnits = [];

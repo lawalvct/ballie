@@ -421,13 +421,20 @@ if (!function_exists('numberToWords')) {
             <div class="bill-to">
                 <div class="section-title">Bill To</div>
                 @if($customer)
-                    <div class="customer-name">
-                        @if($customer->customer_type === 'business' || !empty($customer->company_name))
-                            {{ $customer->company_name ?? $customer->name }}
-                        @else
-                            {{ trim(($customer->first_name ?? '') . ' ' . ($customer->last_name ?? '')) }}
-                        @endif
-                    </div>
+                    @php
+                        // Robust display name: prefer company_name, then first+last, then name, then fallback
+                        $displayName = null;
+                        if (!empty($customer->company_name)) {
+                            $displayName = $customer->company_name;
+                        } else {
+                            $fullName = trim((($customer->first_name ?? '') . ' ' . ($customer->last_name ?? '')));
+                            $displayName = $fullName !== '' ? $fullName : ($customer->name ?? null);
+                        }
+                        if (empty($displayName)) {
+                            $displayName = 'Walk-in Customer';
+                        }
+                    @endphp
+                    <div class="customer-name">{{ $displayName }}</div>
                     @if($customer->address || ($customer->address_line1 ?? false))
                         <div class="detail-line">{{ $customer->address ?? $customer->address_line1 }}</div>
                         @if($customer->address_line2 ?? false)

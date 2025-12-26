@@ -147,6 +147,90 @@
             </div>
         </div>
 
+        @php
+            $ecommerceSettings = $tenant->ecommerceSettings;
+        @endphp
+        @if($ecommerceSettings && $ecommerceSettings->is_store_enabled)
+        <!-- E-commerce Store Widget -->
+        <div class="bg-gradient-to-br from-orange-50 to-red-50 border-2 border-orange-200 overflow-hidden shadow-sm sm:rounded-lg mb-6">
+            <div class="p-6">
+                <div class="flex items-center justify-between mb-4">
+                    <div class="flex items-center">
+                        <div class="w-12 h-12 bg-orange-500 rounded-lg flex items-center justify-center mr-4">
+                            <svg class="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
+                            </svg>
+                        </div>
+                        <div>
+                            <h2 class="text-xl font-bold text-gray-900">Your Online Store</h2>
+                            <p class="text-gray-600 text-sm">{{ $ecommerceSettings->store_name }}</p>
+                        </div>
+                    </div>
+                    <div class="flex items-center bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm font-semibold">
+                        <div class="w-2 h-2 bg-green-500 rounded-full mr-2 animate-pulse"></div>
+                        Live
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-lg p-4 mb-4 border border-orange-200">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Store URL</label>
+                    <div class="flex gap-2">
+                        <input type="text"
+                               id="dashboardStoreUrl"
+                               value="{{ url('/' . $tenant->slug . '/store') }}"
+                               readonly
+                               class="flex-1 px-3 py-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-700 font-mono text-sm">
+                        <button onclick="copyDashboardUrl()"
+                                class="px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition flex items-center gap-2">
+                            <svg id="copyIcon" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path>
+                            </svg>
+                            <span id="copyText">Copy</span>
+                        </button>
+                        <a href="{{ url('/' . $tenant->slug . '/store') }}"
+                           target="_blank"
+                           class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition flex items-center gap-2">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path>
+                            </svg>
+                            Visit
+                        </a>
+                    </div>
+                </div>
+
+                <div class="flex gap-3">
+                    <a href="{{ route('tenant.ecommerce.settings.index', ['tenant' => $tenant->slug]) }}"
+                       class="flex-1 text-center px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition">
+                        Manage Store
+                    </a>
+                    <a href="{{ route('tenant.ecommerce.orders.index', ['tenant' => $tenant->slug]) }}"
+                       class="flex-1 text-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition">
+                        View Orders
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <script>
+        function copyDashboardUrl() {
+            const input = document.getElementById('dashboardStoreUrl');
+            const copyText = document.getElementById('copyText');
+            const copyIcon = document.getElementById('copyIcon');
+
+            input.select();
+            document.execCommand('copy');
+
+            copyText.textContent = 'Copied!';
+            copyIcon.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>';
+
+            setTimeout(() => {
+                copyText.textContent = 'Copy';
+                copyIcon.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path>';
+            }, 2000);
+        }
+        </script>
+        @endif
+
         <!-- Quick Actions -->
         <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg mb-6">
             <div class="p-6">

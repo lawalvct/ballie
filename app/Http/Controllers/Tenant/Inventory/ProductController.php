@@ -174,6 +174,12 @@ class ProductController extends Controller
             'sales_account_id' => 'nullable|exists:ledger_accounts,id',
             'purchase_account_id' => 'nullable|exists:ledger_accounts,id',
             'opening_stock_date' => 'nullable|date',
+            // E-commerce fields
+            'slug' => 'nullable|string|max:255|unique:products,slug,NULL,id,tenant_id,' . $tenant->id,
+            'short_description' => 'nullable|string|max:500',
+            'long_description' => 'nullable|string',
+            'is_visible_online' => 'nullable|boolean',
+            'is_featured' => 'nullable|boolean',
         ];
 
         $request->validate($rules);
@@ -426,6 +432,12 @@ public function update(Request $request, Tenant $tenant, Product $product)
         'is_saleable' => 'nullable|boolean',
         'is_purchasable' => 'nullable|boolean',
         'tax_inclusive' => 'nullable|boolean',
+        // E-commerce fields
+        'slug' => 'nullable|string|max:255|unique:products,slug,' . $product->id . ',id,tenant_id,' . $tenant->id,
+        'short_description' => 'nullable|string|max:500',
+        'long_description' => 'nullable|string',
+        'is_visible_online' => 'nullable|boolean',
+        'is_featured' => 'nullable|boolean',
     ]);
 
     if ($validator->fails()) {
@@ -443,6 +455,8 @@ public function update(Request $request, Tenant $tenant, Product $product)
         $data['is_saleable'] = $request->has('is_saleable');
         $data['is_purchasable'] = $request->has('is_purchasable');
         $data['tax_inclusive'] = $request->has('tax_inclusive');
+        $data['is_visible_online'] = $request->has('is_visible_online');
+        $data['is_featured'] = $request->has('is_featured');
 
         // Handle image upload
         if ($request->hasFile('image')) {

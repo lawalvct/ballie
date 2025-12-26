@@ -19,7 +19,10 @@ class Product extends Model
         'type',
         'name',
         'sku',
+        'slug',
         'description',
+        'short_description',
+        'long_description',
         'category_id',
         'brand',
         'hsn_code',
@@ -48,6 +51,9 @@ class Product extends Model
         'is_active',
         'is_saleable',
         'is_purchasable',
+        'is_visible_online',
+        'is_featured',
+        'view_count',
         'created_by',
         'updated_by',
     ];
@@ -71,6 +77,9 @@ class Product extends Model
         'is_saleable' => 'boolean',
         'is_purchasable' => 'boolean',
         'tax_inclusive' => 'boolean',
+        'is_visible_online' => 'boolean',
+        'is_featured' => 'boolean',
+        'view_count' => 'integer',
     ];
 
     // Relationships

@@ -236,6 +236,143 @@
                     </div>
                 </div>
             </div>
+
+            <!-- E-commerce Information -->
+            <div class="bg-white shadow-sm rounded-lg border border-gray-200">
+                <div class="px-6 py-4 border-b border-gray-200 bg-gradient-to-r from-blue-50 to-indigo-50">
+                    <h3 class="text-lg font-medium text-gray-900 flex items-center">
+                        <svg class="w-5 h-5 mr-2 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9"></path>
+                        </svg>
+                        Online Store
+                        @if($product->is_visible_online)
+                            <span class="ml-2 px-2 py-1 text-xs font-semibold text-green-800 bg-green-100 rounded-full">Live</span>
+                        @else
+                            <span class="ml-2 px-2 py-1 text-xs font-semibold text-gray-800 bg-gray-100 rounded-full">Hidden</span>
+                        @endif
+                    </h3>
+                </div>
+                <div class="p-6 space-y-4">
+                    <dl class="grid grid-cols-1 gap-4">
+                        <div>
+                            <dt class="text-sm font-medium text-gray-500 mb-1">Visibility Status</dt>
+                            <dd class="mt-1">
+                                @if($product->is_visible_online)
+                                    <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800 border border-green-200">
+                                        <svg class="w-4 h-4 mr-1.5" fill="currentColor" viewBox="0 0 20 20">
+                                            <path d="M10 12a2 2 0 100-4 2 2 0 000 4z"></path>
+                                            <path fill-rule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clip-rule="evenodd"></path>
+                                        </svg>
+                                        Visible on Storefront
+                                    </span>
+                                @else
+                                    <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-gray-100 text-gray-800 border border-gray-200">
+                                        <svg class="w-4 h-4 mr-1.5" fill="currentColor" viewBox="0 0 20 20">
+                                            <path fill-rule="evenodd" d="M3.707 2.293a1 1 0 00-1.414 1.414l14 14a1 1 0 001.414-1.414l-1.473-1.473A10.014 10.014 0 0019.542 10C18.268 5.943 14.478 3 10 3a9.958 9.958 0 00-4.512 1.074l-1.78-1.781zm4.261 4.26l1.514 1.515a2.003 2.003 0 012.45 2.45l1.514 1.514a4 4 0 00-5.478-5.478z" clip-rule="evenodd"></path>
+                                            <path d="M12.454 16.697L9.75 13.992a4 4 0 01-3.742-3.741L2.335 6.578A9.98 9.98 0 00.458 10c1.274 4.057 5.065 7 9.542 7 .847 0 1.669-.105 2.454-.303z"></path>
+                                        </svg>
+                                        Hidden from Storefront
+                                    </span>
+                                @endif
+                            </dd>
+                        </div>
+
+                        @if($product->is_visible_online)
+                        <div>
+                            <dt class="text-sm font-medium text-gray-500 mb-1">Featured Product</dt>
+                            <dd class="mt-1">
+                                @if($product->is_featured)
+                                    <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-yellow-100 text-yellow-800 border border-yellow-200">
+                                        <svg class="w-4 h-4 mr-1.5" fill="currentColor" viewBox="0 0 20 20">
+                                            <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path>
+                                        </svg>
+                                        Displayed on Homepage
+                                    </span>
+                                @else
+                                    <span class="text-sm text-gray-600">Not featured</span>
+                                @endif
+                            </dd>
+                        </div>
+
+                        <div>
+                            <dt class="text-sm font-medium text-gray-500 mb-1">Product URL</dt>
+                            <dd class="mt-1">
+                                @php
+                                    $storeUrl = url('/' . $tenant->slug . '/store/products/' . ($product->slug ?? $product->id));
+                                @endphp
+                                <a href="{{ $storeUrl }}" target="_blank"
+                                   class="inline-flex items-center text-blue-600 hover:text-blue-800 text-sm font-medium">
+                                    <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path>
+                                    </svg>
+                                    View on Store
+                                </a>
+                            </dd>
+                        </div>
+
+                        @if($product->slug)
+                        <div>
+                            <dt class="text-sm font-medium text-gray-500 mb-1">URL Slug</dt>
+                            <dd class="mt-1 text-sm text-gray-900 font-mono bg-gray-50 px-3 py-2 rounded border border-gray-200">
+                                {{ $product->slug }}
+                            </dd>
+                        </div>
+                        @endif
+
+                        @if($product->short_description)
+                        <div>
+                            <dt class="text-sm font-medium text-gray-500 mb-1">Short Description</dt>
+                            <dd class="mt-1 text-sm text-gray-700 bg-gray-50 px-3 py-2 rounded border border-gray-200">
+                                {{ $product->short_description }}
+                            </dd>
+                        </div>
+                        @endif
+
+                        @if($product->long_description)
+                        <div>
+                            <dt class="text-sm font-medium text-gray-500 mb-1">Long Description</dt>
+                            <dd class="mt-1 text-sm text-gray-700 bg-gray-50 px-3 py-2 rounded border border-gray-200 max-h-32 overflow-y-auto">
+                                {{ $product->long_description }}
+                            </dd>
+                        </div>
+                        @endif
+
+                        @if($product->view_count > 0)
+                        <div>
+                            <dt class="text-sm font-medium text-gray-500 mb-1">Views</dt>
+                            <dd class="mt-1">
+                                <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-purple-100 text-purple-800 border border-purple-200">
+                                    <svg class="w-4 h-4 mr-1.5" fill="currentColor" viewBox="0 0 20 20">
+                                        <path d="M10 12a2 2 0 100-4 2 2 0 000 4z"></path>
+                                        <path fill-rule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clip-rule="evenodd"></path>
+                                    </svg>
+                                    {{ number_format($product->view_count) }} {{ Str::plural('view', $product->view_count) }}
+                                </span>
+                            </dd>
+                        </div>
+                        @endif
+                        @endif
+                    </dl>
+
+                    @if(!$product->is_visible_online)
+                    <div class="pt-4 border-t border-gray-200">
+                        <p class="text-sm text-gray-600 mb-3 flex items-start">
+                            <svg class="w-5 h-5 mr-2 text-yellow-500 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"></path>
+                            </svg>
+                            This product is currently hidden from your online store. Update the e-commerce settings to make it visible to customers.
+                        </p>
+                        <a href="{{ route('tenant.inventory.products.edit', ['tenant' => $tenant->slug, 'product' => $product->id]) }}"
+                           class="inline-flex items-center px-4 py-2 text-sm font-medium text-blue-700 bg-blue-50 border border-blue-200 rounded-lg hover:bg-blue-100 transition">
+                            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+                            </svg>
+                            Update E-commerce Settings
+                        </a>
+                    </div>
+                    @endif
+                </div>
+            </div>
         </div>
 
         <!-- Sidebar -->

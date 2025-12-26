@@ -510,6 +510,31 @@ Route::prefix('ledger-accounts')->name('ledger-accounts.')->group(function () {
             Route::get('low-stock', [InventoryController::class, 'lowStock'])->name('low-stock');
         });
 
+        // E-commerce Store Management
+        Route::prefix('ecommerce')->name('tenant.ecommerce.')->group(function () {
+            // Store Settings
+            Route::get('/settings', [\App\Http\Controllers\Tenant\Ecommerce\EcommerceSettingsController::class, 'index'])->name('settings.index');
+            Route::put('/settings', [\App\Http\Controllers\Tenant\Ecommerce\EcommerceSettingsController::class, 'update'])->name('settings.update');
+            Route::get('/settings/generate-qr', [\App\Http\Controllers\Tenant\Ecommerce\EcommerceSettingsController::class, 'generateQrCode'])->name('settings.generate-qr');
+
+            // Order Management
+            Route::prefix('orders')->name('orders.')->group(function () {
+                Route::get('/', [\App\Http\Controllers\Tenant\Ecommerce\OrderManagementController::class, 'index'])->name('index');
+                Route::get('/{order}', [\App\Http\Controllers\Tenant\Ecommerce\OrderManagementController::class, 'show'])->name('show');
+                Route::put('/{order}/status', [\App\Http\Controllers\Tenant\Ecommerce\OrderManagementController::class, 'updateStatus'])->name('update-status');
+                Route::put('/{order}/payment-status', [\App\Http\Controllers\Tenant\Ecommerce\OrderManagementController::class, 'updatePaymentStatus'])->name('update-payment');
+                Route::post('/{order}/create-invoice', [\App\Http\Controllers\Tenant\Ecommerce\OrderManagementController::class, 'createInvoice'])->name('create-invoice');
+            });
+
+            // Shipping Methods
+            Route::resource('shipping-methods', \App\Http\Controllers\Tenant\Ecommerce\ShippingMethodController::class)->except(['show']);
+            Route::post('/shipping-methods/{shipping_method}/toggle', [\App\Http\Controllers\Tenant\Ecommerce\ShippingMethodController::class, 'toggle'])->name('shipping-methods.toggle');
+
+            // Coupons
+            Route::resource('coupons', \App\Http\Controllers\Tenant\Ecommerce\CouponController::class)->except(['show']);
+            Route::post('/coupons/{coupon}/toggle', [\App\Http\Controllers\Tenant\Ecommerce\CouponController::class, 'toggle'])->name('coupons.toggle');
+        });
+
         // CRM - Customer & Vendor Management
         Route::prefix('crm')->name('tenant.crm.')->group(function () {
             // Customer Activities
