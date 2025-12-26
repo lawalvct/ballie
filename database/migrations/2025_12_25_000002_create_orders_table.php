@@ -77,7 +77,7 @@ return new class extends Migration
                 ->references('id')
                 ->on('shipping_addresses')
                 ->onDelete('set null');
-            
+
             $table->foreign('billing_address_id')
                 ->references('id')
                 ->on('shipping_addresses')
