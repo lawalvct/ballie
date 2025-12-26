@@ -70,19 +70,6 @@ return new class extends Migration
             $table->index('payment_status');
             $table->index('created_at');
         });
-
-        // Add foreign keys after shipping_addresses table is created
-        Schema::table('orders', function (Blueprint $table) {
-            $table->foreign('shipping_address_id')
-                ->references('id')
-                ->on('shipping_addresses')
-                ->onDelete('set null');
-
-            $table->foreign('billing_address_id')
-                ->references('id')
-                ->on('shipping_addresses')
-                ->onDelete('set null');
-        });
     }
 
     /**
@@ -90,11 +77,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('orders', function (Blueprint $table) {
-            $table->dropForeign(['shipping_address_id']);
-            $table->dropForeign(['billing_address_id']);
-        });
-
         Schema::dropIfExists('orders');
     }
 };
