@@ -28,7 +28,11 @@
                             <div class="flex items-center gap-4 p-6 border-b border-gray-200 last:border-b-0">
                                 <!-- Product Image -->
                                 <div class="w-24 h-24 flex-shrink-0 bg-gray-100 rounded-lg overflow-hidden">
-                                    @if($item->product && $item->product->primaryImage)
+                                    @if($item->product && $item->product->image_path)
+                                        <img src="{{ Storage::disk('public')->url($item->product->image_path) }}"
+                                             alt="{{ $item->product->name }}"
+                                             class="w-full h-full object-cover">
+                                    @elseif($item->product && $item->product->primaryImage)
                                         <img src="{{ Storage::disk('public')->url($item->product->primaryImage->image_path) }}"
                                              alt="{{ $item->product->name }}"
                                              class="w-full h-full object-cover">

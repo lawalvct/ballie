@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
     <meta name="description" content="{{ $storeSettings->meta_description ?? $storeSettings->store_description }}">
     <title>@yield('title', $storeSettings->store_name ?? $tenant->name . ' Store')</title>
 
@@ -148,6 +149,105 @@
             </div>
         </div>
     </footer>
+
+    <script>
+        // Initialize cart count on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            updateCartCount();
+            initializeAjaxCartForms();
+        });
+
+        // Function to update cart count
+        function updateCartCount() {
+            fetch('{{ route('storefront.cart.count', ['tenant' => $tenant->slug]) }}')
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById('cart-count').textContent = data.count;
+                })
+                .catch(error => console.error('Error fetching cart count:', error));
+        }
+
+        // Function to initialize all AJAX cart forms (for product cards)
+        function initializeAjaxCartForms() {
+            document.querySelectorAll('.ajax-cart-form').forEach(form => {
+                form.addEventListener('submit', function(e) {
+                    e.preventDefault();
+
+                    const btn = this.querySelector('button[type="submit"]');
+                    const originalHTML = btn.innerHTML;
+
+                    // Disable button and show loading
+                    btn.disabled = true;
+                    btn.innerHTML = '<svg class="w-5 h-5 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>';
+
+                    // Get form data
+                    const formData = new FormData(this);
+                    const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+
+                    // Send AJAX request
+                    fetch(this.action, {
+                        method: 'POST',
+                        headers: {
+                            'X-CSRF-TOKEN': csrfToken,
+                            'Accept': 'application/json',
+                            'X-Requested-With': 'XMLHttpRequest'
+                        },
+                        body: formData
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            // Update cart count
+                            document.getElementById('cart-count').textContent = data.cart_count;
+                            // Show success notification
+                            showNotification(data.message, 'success');
+                        } else {
+                            showNotification(data.message || 'Failed to add to cart', 'error');
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        showNotification('An error occurred. Please try again.', 'error');
+                    })
+                    .finally(() => {
+                        // Re-enable button
+                        btn.disabled = false;
+                        btn.innerHTML = originalHTML;
+                    });
+                });
+            });
+        }
+
+        // Function to show notification
+        function showNotification(message, type = 'success') {
+            const notification = document.createElement('div');
+            notification.className = `fixed top-4 right-4 z-50 px-6 py-4 rounded-lg shadow-lg transform transition-all duration-300 translate-x-full ${
+                type === 'success' ? 'bg-green-500' : 'bg-red-500'
+            } text-white`;
+            notification.innerHTML = `
+                <div class="flex items-center gap-3">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        ${
+                            type === 'success'
+                            ? '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />'
+                            : '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />'
+                        }
+                    </svg>
+                    <span class="font-medium">${message}</span>
+                </div>
+            `;
+            document.body.appendChild(notification);
+
+            // Slide in
+            setTimeout(() => notification.classList.remove('translate-x-full'), 100);
+
+            // Slide out and remove
+            setTimeout(() => {
+                notification.classList.add('translate-x-full');
+                setTimeout(() => notification.remove(), 300);
+            }, 3000);
+        }
+    </script>
 
     @stack('scripts')
 </body>

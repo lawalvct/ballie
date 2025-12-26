@@ -129,23 +129,23 @@
 
                 <!-- Add to Cart Form -->
                 @if(!$product->maintain_stock || $product->current_stock > 0)
-                    <form action="{{ route('storefront.cart.add', ['tenant' => $tenant->slug]) }}" method="POST" class="mb-6">
+                    <form id="add-to-cart-form" action="{{ route('storefront.cart.add', ['tenant' => $tenant->slug]) }}" method="POST" class="mb-6">
                         @csrf
                         <input type="hidden" name="product_id" value="{{ $product->id }}">
 
                         <div class="flex items-center gap-4 mb-4">
                             <label class="text-sm font-medium text-gray-700">Quantity:</label>
-                            <input type="number" name="quantity" value="1" min="1"
+                            <input type="number" name="quantity" id="quantity-input" value="1" min="1"
                                    max="{{ $product->maintain_stock ? $product->current_stock : 999 }}"
                                    class="w-24 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
                         </div>
 
-                        <button type="submit"
+                        <button type="submit" id="add-to-cart-btn"
                                 class="w-full px-8 py-4 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center gap-2">
                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
                             </svg>
-                            Add to Cart
+                            <span id="btn-text">Add to Cart</span>
                         </button>
                     </form>
                 @else
@@ -225,6 +225,61 @@ function changeMainImage(src) {
         });
     }
 }
+
+// AJAX Add to Cart
+document.getElementById('add-to-cart-form').addEventListener('submit', function(e) {
+    e.preventDefault();
+
+    const form = this;
+    const btn = document.getElementById('add-to-cart-btn');
+    const btnText = document.getElementById('btn-text');
+    const originalText = btnText.textContent;
+
+    // Disable button and show loading state
+    btn.disabled = true;
+    btnText.textContent = 'Adding...';
+
+    // Get form data
+    const formData = new FormData(form);
+
+    // Get CSRF token
+    const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+
+    // Send AJAX request
+    fetch(form.action, {
+        method: 'POST',
+        headers: {
+            'X-CSRF-TOKEN': csrfToken,
+            'Accept': 'application/json',
+            'X-Requested-With': 'XMLHttpRequest'
+        },
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Update cart count
+            document.getElementById('cart-count').textContent = data.cart_count;
+
+            // Show success notification
+            showNotification(data.message, 'success');
+
+            // Reset quantity to 1
+            document.getElementById('quantity-input').value = 1;
+        } else {
+            showNotification(data.message || 'Failed to add to cart', 'error');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showNotification('An error occurred. Please try again.', 'error');
+    })
+    .finally(() => {
+        // Re-enable button
+        btn.disabled = false;
+        btnText.textContent = originalText;
+    });
+});
 </script>
 @endpush
 @endsection

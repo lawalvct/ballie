@@ -45,12 +45,12 @@
             @if($product->maintain_stock && $product->current_stock <= 0)
                 <span class="text-sm text-red-600 font-medium">Out of Stock</span>
             @else
-                <form action="{{ route('storefront.cart.add', ['tenant' => $tenant->slug]) }}" method="POST" class="inline">
+                <form action="{{ route('storefront.cart.add', ['tenant' => $tenant->slug]) }}" method="POST" class="inline ajax-cart-form">
                     @csrf
                     <input type="hidden" name="product_id" value="{{ $product->id }}">
                     <input type="hidden" name="quantity" value="1">
                     <button type="submit"
-                            class="p-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
+                            class="p-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
                         </svg>

@@ -129,6 +129,7 @@ Route::prefix('{tenant}/store')->middleware(['tenant'])->group(function () {
 
     // Cart management
     Route::get('/cart', [CartController::class, 'index'])->name('storefront.cart');
+    Route::get('/cart/count', [CartController::class, 'count'])->name('storefront.cart.count');
     Route::post('/cart/add', [CartController::class, 'add'])->name('storefront.cart.add');
     Route::patch('/cart/update/{item}', [CartController::class, 'update'])->name('storefront.cart.update');
     Route::delete('/cart/remove/{item}', [CartController::class, 'remove'])->name('storefront.cart.remove');

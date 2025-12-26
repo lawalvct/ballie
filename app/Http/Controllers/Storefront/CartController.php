@@ -80,6 +80,19 @@ class CartController extends Controller
             ]);
         }
 
+        // Recalculate cart totals
+        $cart = $cart->fresh();
+
+        // Return JSON for AJAX requests
+        if ($request->wantsJson() || $request->ajax()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Product added to cart!',
+                'cart_count' => $cart->items->sum('quantity'),
+                'cart_subtotal' => $cart->getSubtotal(),
+            ]);
+        }
+
         return back()->with('success', 'Product added to cart!');
     }
 
@@ -179,5 +192,19 @@ class CartController extends Controller
         }
 
         return $cart->load('items.product.primaryImage');
+    }
+
+    /**
+     * Get cart item count (for AJAX)
+     */
+    public function count(Request $request)
+    {
+        $tenant = $request->current_tenant;
+        $cart = $this->getOrCreateCart($tenant);
+
+        return response()->json([
+            'count' => $cart->items->sum('quantity'),
+            'subtotal' => $cart->getSubtotal(),
+        ]);
     }
 }
