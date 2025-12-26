@@ -16,7 +16,7 @@ class CartController extends Controller
      */
     public function index(Request $request)
     {
-        $tenant = $request->tenant;
+        $tenant = $request->current_tenant;
         $storeSettings = $tenant->ecommerceSettings;
 
         if (!$storeSettings || !$storeSettings->is_store_enabled) {
@@ -33,7 +33,7 @@ class CartController extends Controller
      */
     public function add(Request $request)
     {
-        $tenant = $request->tenant;
+        $tenant = $request->current_tenant;
 
         $validated = $request->validate([
             'product_id' => 'required|exists:products,id',
@@ -88,7 +88,7 @@ class CartController extends Controller
      */
     public function update(Request $request, $itemId)
     {
-        $tenant = $request->tenant;
+        $tenant = $request->current_tenant;
 
         $validated = $request->validate([
             'quantity' => 'required|integer|min:1',
@@ -126,7 +126,7 @@ class CartController extends Controller
      */
     public function remove(Request $request, $itemId)
     {
-        $tenant = $request->tenant;
+        $tenant = $request->current_tenant;
         $cart = $this->getOrCreateCart($tenant);
 
         $cartItem = $cart->items()->findOrFail($itemId);
@@ -140,7 +140,7 @@ class CartController extends Controller
      */
     public function clear(Request $request)
     {
-        $tenant = $request->tenant;
+        $tenant = $request->current_tenant;
         $cart = $this->getOrCreateCart($tenant);
 
         $cart->items()->delete();

@@ -20,7 +20,7 @@ class CheckoutController extends Controller
      */
     public function index(Request $request)
     {
-        $tenant = $request->tenant;
+        $tenant = $request->current_tenant;
         $storeSettings = $tenant->ecommerceSettings;
 
         if (!$storeSettings || !$storeSettings->is_store_enabled) {
@@ -56,7 +56,7 @@ class CheckoutController extends Controller
      */
     public function applyCoupon(Request $request)
     {
-        $tenant = $request->tenant;
+        $tenant = $request->current_tenant;
 
         $validated = $request->validate([
             'coupon_code' => 'required|string',
@@ -102,7 +102,7 @@ class CheckoutController extends Controller
      */
     public function process(Request $request)
     {
-        $tenant = $request->tenant;
+        $tenant = $request->current_tenant;
         $storeSettings = $tenant->ecommerceSettings;
 
         $validated = $request->validate([
@@ -254,7 +254,7 @@ class CheckoutController extends Controller
      */
     public function success(Request $request, $orderId)
     {
-        $tenant = $request->tenant;
+        $tenant = $request->current_tenant;
         $storeSettings = $tenant->ecommerceSettings;
 
         $order = Order::where('tenant_id', $tenant->id)

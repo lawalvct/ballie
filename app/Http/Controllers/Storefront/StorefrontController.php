@@ -15,7 +15,7 @@ class StorefrontController extends Controller
      */
     public function index(Request $request)
     {
-        $tenant = $request->tenant;
+        $tenant = $request->current_tenant;
 
         // Check if store is enabled
         $storeSettings = $tenant->ecommerceSettings;
@@ -58,7 +58,7 @@ class StorefrontController extends Controller
      */
     public function products(Request $request)
     {
-        $tenant = $request->tenant;
+        $tenant = $request->current_tenant;
         $storeSettings = $tenant->ecommerceSettings;
 
         if (!$storeSettings || !$storeSettings->is_store_enabled) {
@@ -130,9 +130,13 @@ class StorefrontController extends Controller
     /**
      * Display single product detail page
      */
-    public function show(Request $request, $productSlug)
+    public function show($tenant, $slug)
     {
-        $tenant = $request->tenant;
+        // Resolve tenant if it's a string (slug)
+        if (is_string($tenant)) {
+            $tenant = Tenant::where('slug', $tenant)->firstOrFail();
+        }
+
         $storeSettings = $tenant->ecommerceSettings;
 
         if (!$storeSettings || !$storeSettings->is_store_enabled) {
@@ -140,7 +144,7 @@ class StorefrontController extends Controller
         }
 
         $product = Product::where('tenant_id', $tenant->id)
-            ->where('slug', $productSlug)
+            ->where('slug', $slug)
             ->where('is_visible_online', true)
             ->where('is_active', true)
             ->with('images', 'category', 'unit')

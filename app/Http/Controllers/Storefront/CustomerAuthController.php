@@ -18,7 +18,7 @@ class CustomerAuthController extends Controller
      */
     public function showLogin(Request $request)
     {
-        $tenant = $request->tenant;
+        $tenant = $request->current_tenant;
         $storeSettings = $tenant->ecommerceSettings;
 
         if (!$storeSettings || !$storeSettings->is_store_enabled) {
@@ -33,7 +33,7 @@ class CustomerAuthController extends Controller
      */
     public function showRegister(Request $request)
     {
-        $tenant = $request->tenant;
+        $tenant = $request->current_tenant;
         $storeSettings = $tenant->ecommerceSettings;
 
         if (!$storeSettings || !$storeSettings->is_store_enabled || !$storeSettings->allow_email_registration) {
@@ -48,7 +48,7 @@ class CustomerAuthController extends Controller
      */
     public function login(Request $request)
     {
-        $tenant = $request->tenant;
+        $tenant = $request->current_tenant;
 
         $credentials = $request->validate([
             'email' => 'required|email',
@@ -77,7 +77,7 @@ class CustomerAuthController extends Controller
      */
     public function register(Request $request)
     {
-        $tenant = $request->tenant;
+        $tenant = $request->current_tenant;
         $storeSettings = $tenant->ecommerceSettings;
 
         if (!$storeSettings->allow_email_registration) {
@@ -131,7 +131,7 @@ class CustomerAuthController extends Controller
      */
     public function logout(Request $request)
     {
-        $tenant = $request->tenant;
+        $tenant = $request->current_tenant;
 
         Auth::guard('customer')->logout();
 
@@ -144,7 +144,7 @@ class CustomerAuthController extends Controller
      */
     public function redirectToGoogle(Request $request)
     {
-        $tenant = $request->tenant;
+        $tenant = $request->current_tenant;
         $storeSettings = $tenant->ecommerceSettings;
 
         if (!$storeSettings->allow_google_login) {
