@@ -56,4 +56,11 @@ return [
         'redirect' => env('LINKEDIN_REDIRECT_URI', '/auth/linkedin/callback'),
     ],
 
+    // CyberPanel Email Management
+    'cyberpanel' => [
+        'api_url' => env('CYBERPANEL_API_URL', 'https://staging.cyberpanel.net:8090/cloudAPI/'),
+        'username' => env('CYBERPANEL_USERNAME', 'admin'),
+        'password' => env('CYBERPANEL_PASSWORD'),
+    ],
+
 ];

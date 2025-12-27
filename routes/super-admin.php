@@ -80,6 +80,20 @@ Route::prefix('super-admin')->name('super-admin.')->group(function () {
             Route::post('/{payout}/process', [\App\Http\Controllers\SuperAdmin\AffiliateController::class, 'processPayout'])->name('process');
         });
 
+        // Email Management (CyberPanel Integration)
+        Route::prefix('emails')->name('emails.')->group(function () {
+            Route::get('/', [\App\Http\Controllers\SuperAdmin\EmailController::class, 'index'])->name('index');
+            Route::get('/create', [\App\Http\Controllers\SuperAdmin\EmailController::class, 'create'])->name('create');
+            Route::post('/store', [\App\Http\Controllers\SuperAdmin\EmailController::class, 'store'])->name('store');
+            Route::delete('/destroy', [\App\Http\Controllers\SuperAdmin\EmailController::class, 'destroy'])->name('destroy');
+            Route::get('/change-password', [\App\Http\Controllers\SuperAdmin\EmailController::class, 'editPassword'])->name('edit-password');
+            Route::post('/update-password', [\App\Http\Controllers\SuperAdmin\EmailController::class, 'updatePassword'])->name('update-password');
+            Route::get('/generate-password', [\App\Http\Controllers\SuperAdmin\EmailController::class, 'generatePassword'])->name('generate-password');
+
+            // Test route to verify token and API connection
+            Route::get('/test-connection', [\App\Http\Controllers\SuperAdmin\EmailController::class, 'testConnection'])->name('test-connection');
+        });
+
         // Support Center (Future implementation)
         Route::prefix('support')->name('support.')->group(function () {
             Route::get('/tickets', function () {
