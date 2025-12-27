@@ -169,16 +169,16 @@
                 <div class="mt-6 pt-6 border-t border-gray-200">
                     <div class="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-4">
                         <p class="text-xs text-blue-800">
-                            <strong>Coming Soon:</strong> Local backup feature is under development
+                            <strong>Note:</strong> Downloads complete database backup as ZIP file
                         </p>
                     </div>
-                    <form method="POST" action="{{ route('super-admin.backups.create-local') }}">
+                    <form method="POST" action="{{ route('super-admin.backups.create-local') }}" onsubmit="return confirm('Create and download local backup? This will export all databases.');">
                         @csrf
-                        <button type="submit" disabled class="w-full px-4 py-3 bg-gray-300 text-gray-500 rounded-lg font-medium cursor-not-allowed">
+                        <button type="submit" class="w-full px-4 py-3 bg-gradient-to-r from-blue-500 to-cyan-500 text-white rounded-lg font-medium hover:from-blue-600 hover:to-cyan-600 transition-all duration-200 shadow-md hover:shadow-lg">
                             <svg class="w-5 h-5 inline-block mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
                             </svg>
-                            Create Local Backup (Coming Soon)
+                            Create & Download Local Backup
                         </button>
                     </form>
                 </div>
