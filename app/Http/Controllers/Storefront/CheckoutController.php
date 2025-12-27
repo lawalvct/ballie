@@ -9,6 +9,11 @@ use App\Models\ShippingAddress;
 use App\Models\Cart;
 use App\Models\Coupon;
 use App\Models\Tenant;
+use App\Models\Voucher;
+use App\Models\VoucherType;
+use App\Models\VoucherEntry;
+use App\Models\Product;
+use App\Models\LedgerAccount;
 use App\Helpers\PaymentHelper;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -563,6 +568,43 @@ class CheckoutController extends Controller
                     'order_number' => $order->order_number
                 ]);
 
+                // Create invoice and receipt voucher for online payment
+                try {
+                    DB::beginTransaction();
+
+                    // Load order items
+                    $order->load('items.product');
+
+                    // Create invoice from order
+                    $invoice = $this->createInvoiceFromOrder($order, $tenant);
+                    Log::info('Invoice created for online payment', [
+                        'order_id' => $order->id,
+                        'invoice_id' => $invoice->id
+                    ]);
+
+                    // Create receipt voucher
+                    $paymentData = [
+                        'payment_date' => now()->toDateString(),
+                        'payment_reference' => $order->payment_method . ' - ' . $order->payment_gateway_reference,
+                        'payment_notes' => 'Payment received via ' . strtoupper($order->payment_method) . ' for e-commerce order #' . $order->order_number,
+                    ];
+                    $this->createReceiptVoucher($order, $invoice, $tenant, $paymentData);
+                    Log::info('Receipt voucher created for online payment', [
+                        'order_id' => $order->id,
+                        'invoice_id' => $invoice->id
+                    ]);
+
+                    DB::commit();
+                } catch (\Exception $e) {
+                    DB::rollBack();
+                    Log::error('Failed to create invoice/receipt for online payment', [
+                        'order_id' => $order->id,
+                        'error' => $e->getMessage(),
+                        'trace' => $e->getTraceAsString()
+                    ]);
+                    // Don't fail the order, just log the error
+                }
+
                 $storeSettings = $tenant->ecommerceSettings;
 
                 return redirect()->route('storefront.order.success', [
@@ -624,5 +666,416 @@ class CheckoutController extends Controller
         }
 
         return $this->processNombaPayment($order, $tenant, $customer->email ?? 'customer@example.com');
+    }
+
+    /**
+     * Create invoice from order (copied from OrderManagementController)
+     */
+    private function createInvoiceFromOrder($order, $tenant)
+    {
+        Log::info('Creating invoice from order', [
+            'order_id' => $order->id,
+            'order_number' => $order->order_number,
+            'tenant_id' => $tenant->id
+        ]);
+
+        // Get Sales Invoice voucher type
+        $voucherType = VoucherType::where('tenant_id', $tenant->id)
+            ->where(function($q) {
+                $q->where('code', 'SALES')->orWhere('code', 'SV');
+            })
+            ->where('affects_inventory', true)
+            ->first();
+
+        if (!$voucherType) {
+            throw new \Exception('Sales voucher type not found. Please create a Sales Invoice voucher type first.');
+        }
+
+        // Generate voucher number
+        $lastVoucher = Voucher::where('tenant_id', $tenant->id)
+            ->where('voucher_type_id', $voucherType->id)
+            ->whereYear('voucher_date', date('Y'))
+            ->latest('id')
+            ->first();
+
+        $nextNumber = 1;
+        if ($lastVoucher) {
+            preg_match('/(\d+)$/', $lastVoucher->voucher_number, $matches);
+            if (isset($matches[1])) {
+                $nextNumber = intval($matches[1]) + 1;
+            }
+        }
+
+        $voucherNumber = str_pad($nextNumber, 4, '0', STR_PAD_LEFT);
+
+        // Prepare inventory items array
+        $inventoryItems = [];
+        $totalAmount = 0;
+
+        foreach ($order->items as $orderItem) {
+            $product = $orderItem->product;
+
+            if (!$product) {
+                Log::warning('Product not found for order item', [
+                    'order_item_id' => $orderItem->id,
+                    'product_id' => $orderItem->product_id
+                ]);
+                continue;
+            }
+
+            $itemAmount = $orderItem->total_price;
+            $totalAmount += $itemAmount;
+
+            $inventoryItems[] = [
+                'product_id' => $product->id,
+                'product_name' => $orderItem->product_name,
+                'description' => $orderItem->product_name,
+                'quantity' => $orderItem->quantity,
+                'rate' => $orderItem->unit_price,
+                'amount' => $itemAmount,
+                'purchase_rate' => $product->purchase_rate ?? 0,
+            ];
+        }
+
+        // Create voucher
+        $voucher = Voucher::create([
+            'tenant_id' => $tenant->id,
+            'voucher_type_id' => $voucherType->id,
+            'voucher_number' => $voucherNumber,
+            'voucher_date' => now()->toDateString(),
+            'reference' => 'Order #' . $order->order_number,
+            'narration' => 'Sales invoice generated from e-commerce order #' . $order->order_number,
+            'status' => 'posted',
+            'total_amount' => $totalAmount,
+            'created_by' => 1, // System user for storefront orders
+            'posted_by' => 1,
+            'posted_at' => now(),
+        ]);
+
+        // Create voucher items
+        foreach ($inventoryItems as $item) {
+            $voucher->items()->create([
+                'tenant_id' => $tenant->id,
+                'product_id' => $item['product_id'],
+                'product_name' => $item['product_name'],
+                'description' => $item['description'],
+                'quantity' => $item['quantity'],
+                'rate' => $item['rate'],
+                'amount' => $item['amount'],
+                'purchase_rate' => $item['purchase_rate'],
+            ]);
+        }
+
+        // Get customer ledger account
+        $customerLedgerId = null;
+        if ($order->customer && $order->customer->ledger_account_id) {
+            $customerLedgerId = $order->customer->ledger_account_id;
+        }
+
+        // Create accounting entries
+        $this->createAccountingEntries($voucher, $inventoryItems, $tenant, $customerLedgerId, $order->tax_amount ?? 0);
+
+        // Update product stock
+        $this->updateProductStock($inventoryItems, 'decrease', $voucher);
+
+        // Link voucher to order
+        $order->update(['voucher_id' => $voucher->id]);
+
+        return $voucher;
+    }
+
+    /**
+     * Create accounting entries for invoice
+     */
+    private function createAccountingEntries($voucher, $inventoryItems, $tenant, $customerLedgerId, $taxAmount = 0)
+    {
+        // Get the customer account
+        $partyAccount = null;
+        if ($customerLedgerId) {
+            $partyAccount = LedgerAccount::find($customerLedgerId);
+        }
+
+        $totalAmount = collect($inventoryItems)->sum('amount');
+
+        // Add tax to total amount
+        $totalAmount += $taxAmount;
+
+        // Group items by their sales account
+        $groupedItems = [];
+        foreach ($inventoryItems as $item) {
+            $product = Product::find($item['product_id']);
+
+            if (!$product) {
+                continue;
+            }
+
+            $accountId = $product->sales_account_id;
+
+            if (!$accountId) {
+                Log::warning('Product has no sales account', [
+                    'product_id' => $product->id,
+                    'product_name' => $product->name
+                ]);
+                continue;
+            }
+
+            if (!isset($groupedItems[$accountId])) {
+                $groupedItems[$accountId] = 0;
+            }
+            $groupedItems[$accountId] += $item['amount'];
+        }
+
+        // Debit: Customer Account (Accounts Receivable)
+        if ($partyAccount) {
+            VoucherEntry::create([
+                'voucher_id' => $voucher->id,
+                'ledger_account_id' => $partyAccount->id,
+                'debit_amount' => $totalAmount,
+                'credit_amount' => 0,
+                'particulars' => 'Sales invoice - ' . $voucher->voucher_number,
+            ]);
+
+            $partyAccount->updateCurrentBalance();
+        }
+
+        // Credit: Product's Sales Account(s)
+        foreach ($groupedItems as $accountId => $amount) {
+            VoucherEntry::create([
+                'voucher_id' => $voucher->id,
+                'ledger_account_id' => $accountId,
+                'debit_amount' => 0,
+                'credit_amount' => $amount,
+                'particulars' => 'Sales - ' . $voucher->voucher_number,
+            ]);
+
+            $ledgerAccount = LedgerAccount::find($accountId);
+            if ($ledgerAccount) {
+                $ledgerAccount->updateCurrentBalance();
+            }
+        }
+
+        // Credit: VAT Output (if tax exists)
+        if ($taxAmount > 0) {
+            $vatOutputAccount = LedgerAccount::where('tenant_id', $tenant->id)
+                ->where('code', 'VAT-OUT-001')
+                ->first();
+
+            if ($vatOutputAccount) {
+                VoucherEntry::create([
+                    'voucher_id' => $voucher->id,
+                    'ledger_account_id' => $vatOutputAccount->id,
+                    'debit_amount' => 0,
+                    'credit_amount' => $taxAmount,
+                    'particulars' => 'VAT @ 7.5% - ' . $voucher->voucher_number,
+                ]);
+
+                $vatOutputAccount->updateCurrentBalance();
+            }
+        }
+
+        // COGS ENTRIES
+        $cogsAccount = LedgerAccount::where('tenant_id', $tenant->id)
+            ->whereHas('accountGroup', function($q) {
+                $q->where('code', 'COGS');
+            })
+            ->where('is_active', true)
+            ->first();
+
+        $inventoryAccount = LedgerAccount::where('tenant_id', $tenant->id)
+            ->whereHas('accountGroup', function($q) {
+                $q->where('code', 'CA')->where('name', 'LIKE', '%Inventory%');
+            })
+            ->where('is_active', true)
+            ->first();
+
+        if ($cogsAccount && $inventoryAccount) {
+            $totalCogs = 0;
+            foreach ($inventoryItems as $item) {
+                $product = Product::find($item['product_id']);
+                if ($product && $product->maintain_stock) {
+                    $cogs = ($product->purchase_rate ?? 0) * $item['quantity'];
+                    $totalCogs += $cogs;
+                }
+            }
+
+            if ($totalCogs > 0) {
+                // Debit COGS
+                VoucherEntry::create([
+                    'voucher_id' => $voucher->id,
+                    'ledger_account_id' => $cogsAccount->id,
+                    'debit_amount' => $totalCogs,
+                    'credit_amount' => 0,
+                    'particulars' => 'Cost of Goods Sold - ' . $voucher->voucher_number,
+                ]);
+
+                // Credit Inventory
+                VoucherEntry::create([
+                    'voucher_id' => $voucher->id,
+                    'ledger_account_id' => $inventoryAccount->id,
+                    'debit_amount' => 0,
+                    'credit_amount' => $totalCogs,
+                    'particulars' => 'Inventory reduction - ' . $voucher->voucher_number,
+                ]);
+
+                $cogsAccount->updateCurrentBalance();
+                $inventoryAccount->updateCurrentBalance();
+            }
+        }
+    }
+
+    /**
+     * Update product stock
+     */
+    private function updateProductStock($inventoryItems, $operation, $voucher)
+    {
+        foreach ($inventoryItems as $item) {
+            $product = Product::find($item['product_id']);
+
+            if (!$product || !$product->maintain_stock) {
+                continue;
+            }
+
+            $quantity = $item['quantity'];
+            $oldStock = $product->current_stock;
+
+            if ($operation === 'decrease') {
+                $product->decrement('current_stock', $quantity);
+                $product->refresh();
+                $newStock = $product->current_stock;
+
+                $product->update([
+                    'current_stock_value' => $product->current_stock * ($product->purchase_rate ?? 0)
+                ]);
+
+                $product->stockMovements()->create([
+                    'tenant_id' => $product->tenant_id,
+                    'type' => 'out',
+                    'transaction_type' => 'sales',
+                    'transaction_reference' => $voucher->voucher_number,
+                    'transaction_date' => now()->toDateString(),
+                    'quantity' => -$quantity,
+                    'old_stock' => $oldStock,
+                    'new_stock' => $newStock,
+                    'rate' => $product->purchase_rate ?? $product->sales_rate,
+                    'reference' => $voucher->reference ?? 'Sales Invoice',
+                    'created_by' => 1,
+                ]);
+            }
+        }
+    }
+
+    /**
+     * Create receipt voucher for order payment
+     */
+    private function createReceiptVoucher($order, $invoice, $tenant, $paymentData)
+    {
+        Log::info('Creating receipt voucher for order payment', [
+            'order_id' => $order->id,
+            'invoice_id' => $invoice->id,
+            'tenant_id' => $tenant->id
+        ]);
+
+        // Get receipt voucher type (RV)
+        $receiptVoucherType = VoucherType::where('tenant_id', $tenant->id)
+            ->where('code', 'RV')
+            ->first();
+
+        if (!$receiptVoucherType) {
+            throw new \Exception('Receipt voucher type (RV) not found. Please create it first.');
+        }
+
+        // Get default cash/bank account
+        $bankAccount = LedgerAccount::where('tenant_id', $tenant->id)
+            ->whereHas('accountGroup', function($q) {
+                $q->where('code', 'CA');
+            })
+            ->where(function($q) {
+                $q->where('name', 'LIKE', '%Cash%')
+                  ->orWhere('name', 'LIKE', '%Bank%');
+            })
+            ->where('is_active', true)
+            ->first();
+
+        if (!$bankAccount) {
+            throw new \Exception('Bank account not found. Please specify a bank account for payment.');
+        }
+
+        // Get customer account from the invoice
+        $customerAccount = $invoice->entries->where('debit_amount', '>', 0)->first()?->ledgerAccount;
+
+        if (!$customerAccount) {
+            throw new \Exception('Customer account not found in invoice entries');
+        }
+
+        // Generate voucher number for receipt
+        $lastReceipt = Voucher::where('tenant_id', $tenant->id)
+            ->where('voucher_type_id', $receiptVoucherType->id)
+            ->whereYear('voucher_date', date('Y'))
+            ->latest('id')
+            ->first();
+
+        $nextNumber = 1;
+        if ($lastReceipt) {
+            preg_match('/(\d+)$/', $lastReceipt->voucher_number, $matches);
+            if (isset($matches[1])) {
+                $nextNumber = intval($matches[1]) + 1;
+            }
+        }
+
+        $voucherNumber = str_pad($nextNumber, 4, '0', STR_PAD_LEFT);
+
+        // Create receipt voucher
+        $paymentDate = $paymentData['payment_date'] ?? now()->toDateString();
+        $paymentReference = $paymentData['payment_reference'] ?? $order->payment_method . ' - Order #' . $order->order_number;
+        $paymentNotes = $paymentData['payment_notes'] ?? 'Payment received for e-commerce order #' . $order->order_number;
+
+        $receiptVoucher = Voucher::create([
+            'tenant_id' => $tenant->id,
+            'voucher_type_id' => $receiptVoucherType->id,
+            'voucher_number' => $voucherNumber,
+            'voucher_date' => $paymentDate,
+            'reference' => $paymentReference,
+            'narration' => $paymentNotes,
+            'total_amount' => $order->total_amount,
+            'status' => 'posted',
+            'created_by' => 1,
+            'posted_at' => now(),
+            'posted_by' => 1,
+        ]);
+
+        // Create accounting entries for receipt
+        // Debit: Bank/Cash Account
+        VoucherEntry::create([
+            'voucher_id' => $receiptVoucher->id,
+            'ledger_account_id' => $bankAccount->id,
+            'debit_amount' => $order->total_amount,
+            'credit_amount' => 0,
+            'particulars' => 'Payment received from ' . $customerAccount->name . ' - Order #' . $order->order_number,
+        ]);
+
+        // Credit: Customer Account
+        VoucherEntry::create([
+            'voucher_id' => $receiptVoucher->id,
+            'ledger_account_id' => $customerAccount->id,
+            'debit_amount' => 0,
+            'credit_amount' => $order->total_amount,
+            'particulars' => 'Payment received against Invoice ' . $invoice->voucherType->prefix . $invoice->voucher_number,
+        ]);
+
+        // Update ledger account balances
+        $bankAccount->fresh()->updateCurrentBalance();
+        $customerAccount->fresh()->updateCurrentBalance();
+
+        // Update customer outstanding balance
+        if ($order->customer && $order->customer->ledger_account_id) {
+            $customer = $order->customer;
+            $customerLedger = LedgerAccount::find($customer->ledger_account_id);
+            if ($customerLedger) {
+                $outstandingBalance = max(0, $customerLedger->current_balance);
+                $customer->update(['outstanding_balance' => $outstandingBalance]);
+            }
+        }
+
+        return $receiptVoucher;
     }
 }
