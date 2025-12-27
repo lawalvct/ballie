@@ -28,6 +28,7 @@ class InventoryReportsController extends Controller
         // Build query for products
         $query = Product::where('tenant_id', $tenant->id)
             ->where('maintain_stock', true)
+            ->where('type', '!=', 'service') // Exclude services
             ->with(['category', 'primaryUnit']);
 
         if ($categoryId) {
@@ -129,6 +130,7 @@ class InventoryReportsController extends Controller
         // Build query for products with stock tracking
         $query = Product::where('tenant_id', $tenant->id)
             ->where('maintain_stock', true)
+            ->where('type', '!=', 'service') // Exclude services
             ->where('is_active', true)
             ->with(['category', 'primaryUnit']);
 
@@ -246,6 +248,7 @@ class InventoryReportsController extends Controller
         // Build query
         $query = Product::where('tenant_id', $tenant->id)
             ->where('maintain_stock', true)
+            ->where('type', '!=', 'service') // Exclude services
             ->with(['category', 'primaryUnit']);
 
         if ($categoryId) {
@@ -439,6 +442,7 @@ class InventoryReportsController extends Controller
         // Products for filter
         $products = Product::where('tenant_id', $tenant->id)
             ->where('maintain_stock', true)
+            ->where('type', '!=', 'service') // Exclude services
             ->orderBy('name')
             ->get();
 
