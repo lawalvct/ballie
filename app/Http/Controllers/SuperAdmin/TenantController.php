@@ -124,9 +124,24 @@ class TenantController extends Controller
 
     public function show(Tenant $tenant)
     {
-        $tenant->load(['users', 'subscriptions', 'superAdmin']);
+        $tenant->load(['users', 'subscriptions', 'superAdmin', 'plan', 'businessType']);
 
-        return view('super-admin.tenants.show', compact('tenant'));
+        // Get real stats for this tenant
+        $stats = [
+            'customers_count' => \App\Models\Customer::where('tenant_id', $tenant->id)->count(),
+            'products_count' => \App\Models\Product::where('tenant_id', $tenant->id)->count(),
+            'vouchers_count' => \App\Models\Voucher::where('tenant_id', $tenant->id)->count(),
+            'ledger_accounts_count' => \App\Models\LedgerAccount::where('tenant_id', $tenant->id)->count(),
+            'invoices_count' => \App\Models\Voucher::where('tenant_id', $tenant->id)
+                ->whereHas('voucherType', fn($q) => $q->whereIn('code', ['SV', 'SALES', 'INV']))
+                ->count(),
+            'total_revenue' => \App\Models\Voucher::where('tenant_id', $tenant->id)
+                ->whereHas('voucherType', fn($q) => $q->whereIn('code', ['SV', 'SALES', 'INV']))
+                ->where('status', 'posted')
+                ->sum('total_amount'),
+        ];
+
+        return view('super-admin.tenants.show', compact('tenant', 'stats'));
     }
 
     public function edit(Tenant $tenant)
@@ -263,7 +278,7 @@ class TenantController extends Controller
             try {
                 \Illuminate\Support\Facades\Mail::to($validated['owner_email'])
                     ->send(new \App\Mail\TenantInvitation($token, $validated, $selectedPlan));
-                
+
                 $emailSent = true;
                 $message = 'Invitation sent successfully to ' . $validated['owner_email'] . '! They have 7 days to accept.';
             } catch (\Exception $mailException) {
@@ -273,7 +288,7 @@ class TenantController extends Controller
                     'email' => $validated['owner_email'],
                     'token' => $token
                 ]);
-                
+
                 $emailSent = false;
                 $message = 'Invitation created but email failed to send due to mail server issues. Please share the invitation link manually.';
             }
@@ -342,7 +357,7 @@ class TenantController extends Controller
         $tenants = $query->latest()->get();
 
         $filename = 'companies-' . now()->format('Y-m-d-H-i-s') . '.csv';
-        
+
         $headers = [
             'Content-Type' => 'text/csv',
             'Content-Disposition' => 'attachment; filename="' . $filename . '"',
@@ -350,7 +365,7 @@ class TenantController extends Controller
 
         $callback = function() use ($tenants) {
             $file = fopen('php://output', 'w');
-            
+
             // CSV Headers
             fputcsv($file, [
                 'ID', 'Company Name', 'Email', 'Slug', 'Phone', 'Business Type',
@@ -378,7 +393,7 @@ class TenantController extends Controller
                     $tenant->is_active ? 'Yes' : 'No'
                 ]);
             }
-            
+
             fclose($file);
         };
 

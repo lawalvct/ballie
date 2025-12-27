@@ -26,7 +26,10 @@
                     </div>
                 </div>
                 <div class="flex flex-wrap gap-3">
-                    @if($tenant->users->where('role', 'owner')->first())
+                    @php
+                        $owner = $tenant->users->first(fn($u) => $u->pivot->role === 'owner');
+                    @endphp
+                    @if($owner)
                     <button onclick="impersonateOwner()"
                             class="inline-flex items-center px-4 py-2 bg-gradient-to-r from-green-500 to-green-600 text-white rounded-lg text-sm font-medium hover:from-green-600 hover:to-green-700 transition-all duration-200 shadow-md hover:shadow-lg">
                         <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -104,7 +107,7 @@
             <div class="flex items-center justify-between">
                 <div>
                     <p class="text-green-100 text-sm font-medium">Active Users</p>
-                    <p class="text-3xl font-bold">{{ $tenant->users->where('is_active', true)->count() }}</p>
+                    <p class="text-3xl font-bold">{{ $tenant->users->filter(fn($u) => $u->pivot->is_active)->count() }}</p>
                 </div>
                 <div class="bg-green-400/30 p-3 rounded-lg">
                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -129,125 +132,80 @@
             </div>
         </div>
 
-        <!-- Storage Used -->
+        <!-- Customers -->
         <div class="bg-gradient-to-br from-orange-500 to-orange-600 rounded-xl p-6 text-white">
             <div class="flex items-center justify-between">
                 <div>
-                    <p class="text-orange-100 text-sm font-medium">Storage Used</p>
-                    <p class="text-3xl font-bold">{{ number_format(rand(10, 95)) }}%</p>
+                    <p class="text-orange-100 text-sm font-medium">Customers</p>
+                    <p class="text-3xl font-bold">{{ number_format($stats['customers_count'] ?? 0) }}</p>
                 </div>
                 <div class="bg-orange-400/30 p-3 rounded-lg">
                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4m0 5c0 2.21-3.582 4-8 4s-8-1.79-8-4"/>
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/>
                     </svg>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Performance Metrics Dashboard -->
-    <div class="grid grid-cols-1 xl:grid-cols-2 gap-8 mb-8">
-        <!-- User Activity Chart -->
-        <div class="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
-            <div class="px-6 py-4 border-b border-gray-200 bg-gradient-to-r from-blue-50 to-indigo-50">
-                <div class="flex items-center justify-between">
-                    <h3 class="text-lg font-semibold text-gray-900">User Activity</h3>
-                    <div class="flex space-x-2">
-                        <button class="px-3 py-1 text-xs font-medium bg-blue-100 text-blue-700 rounded-full hover:bg-blue-200 transition-colors">7D</button>
-                        <button class="px-3 py-1 text-xs font-medium bg-gray-100 text-gray-600 rounded-full hover:bg-gray-200 transition-colors">30D</button>
-                        <button class="px-3 py-1 text-xs font-medium bg-gray-100 text-gray-600 rounded-full hover:bg-gray-200 transition-colors">90D</button>
-                    </div>
+    <!-- Business Stats Row -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <!-- Products -->
+        <div class="bg-white rounded-xl p-6 shadow-md border border-gray-100">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-gray-500 text-sm font-medium">Products</p>
+                    <p class="text-2xl font-bold text-gray-900">{{ number_format($stats['products_count'] ?? 0) }}</p>
                 </div>
-            </div>
-            <div class="p-6">
-                <!-- Simplified Chart Representation -->
-                <div class="h-64 flex items-end justify-between space-x-2">
-                    @for($i = 0; $i < 7; $i++)
-                        @php $height = rand(20, 90); @endphp
-                        <div class="flex flex-col items-center flex-1">
-                            <div class="w-full bg-gradient-to-t from-blue-500 to-blue-400 rounded-t-lg transition-all duration-500 hover:from-blue-600 hover:to-blue-500"
-                                 style="height: {{ $height }}%"></div>
-                            <span class="text-xs text-gray-500 mt-2">{{ now()->subDays(6-$i)->format('M j') }}</span>
-                        </div>
-                    @endfor
-                </div>
-                <div class="mt-4 grid grid-cols-3 gap-4 text-center border-t pt-4">
-                    <div>
-                        <p class="text-2xl font-bold text-blue-600">{{ rand(150, 500) }}</p>
-                        <p class="text-xs text-gray-500">Total Logins</p>
-                    </div>
-                    <div>
-                        <p class="text-2xl font-bold text-green-600">{{ rand(5, 15) }}</p>
-                        <p class="text-xs text-gray-500">Avg. Session (min)</p>
-                    </div>
-                    <div>
-                        <p class="text-2xl font-bold text-purple-600">{{ rand(80, 95) }}%</p>
-                        <p class="text-xs text-gray-500">Engagement Rate</p>
-                    </div>
+                <div class="bg-indigo-100 p-3 rounded-lg">
+                    <svg class="w-6 h-6 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/>
+                    </svg>
                 </div>
             </div>
         </div>
 
-        <!-- Resource Usage -->
-        <div class="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
-            <div class="px-6 py-4 border-b border-gray-200 bg-gradient-to-r from-purple-50 to-pink-50">
-                <h3 class="text-lg font-semibold text-gray-900">Resource Usage</h3>
+        <!-- Vouchers -->
+        <div class="bg-white rounded-xl p-6 shadow-md border border-gray-100">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-gray-500 text-sm font-medium">Total Vouchers</p>
+                    <p class="text-2xl font-bold text-gray-900">{{ number_format($stats['vouchers_count'] ?? 0) }}</p>
+                </div>
+                <div class="bg-blue-100 p-3 rounded-lg">
+                    <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                    </svg>
+                </div>
             </div>
-            <div class="p-6 space-y-6">
-                <!-- Storage Usage -->
-                <div>
-                    <div class="flex justify-between items-center mb-2">
-                        <span class="text-sm font-medium text-gray-700">Storage</span>
-                        <span class="text-sm text-gray-500">{{ rand(2, 8) }}.{{ rand(1, 9) }} GB / 10 GB</span>
-                    </div>
-                    <div class="w-full bg-gray-200 rounded-full h-2">
-                        <div class="bg-gradient-to-r from-blue-500 to-purple-500 h-2 rounded-full transition-all duration-1000" style="width: {{ rand(25, 85) }}%"></div>
-                    </div>
-                </div>
+        </div>
 
-                <!-- API Calls -->
+        <!-- Ledger Accounts -->
+        <div class="bg-white rounded-xl p-6 shadow-md border border-gray-100">
+            <div class="flex items-center justify-between">
                 <div>
-                    <div class="flex justify-between items-center mb-2">
-                        <span class="text-sm font-medium text-gray-700">API Calls</span>
-                        <span class="text-sm text-gray-500">{{ number_format(rand(5000, 45000)) }} / 50,000</span>
-                    </div>
-                    <div class="w-full bg-gray-200 rounded-full h-2">
-                        <div class="bg-gradient-to-r from-green-500 to-emerald-500 h-2 rounded-full transition-all duration-1000" style="width: {{ rand(30, 90) }}%"></div>
-                    </div>
+                    <p class="text-gray-500 text-sm font-medium">Ledger Accounts</p>
+                    <p class="text-2xl font-bold text-gray-900">{{ number_format($stats['ledger_accounts_count'] ?? 0) }}</p>
                 </div>
+                <div class="bg-emerald-100 p-3 rounded-lg">
+                    <svg class="w-6 h-6 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 6l3 1m0 0l-3 9a5.002 5.002 0 006.001 0M6 7l3 9M6 7l6-2m6 2l3-1m-3 1l-3 9a5.002 5.002 0 006.001 0M18 7l3 9m-3-9l-6-2m0-2v2m0 16V5m0 16H9m3 0h3"/>
+                    </svg>
+                </div>
+            </div>
+        </div>
 
-                <!-- Database Records -->
+        <!-- Total Revenue -->
+        <div class="bg-white rounded-xl p-6 shadow-md border border-gray-100">
+            <div class="flex items-center justify-between">
                 <div>
-                    <div class="flex justify-between items-center mb-2">
-                        <span class="text-sm font-medium text-gray-700">Database Records</span>
-                        <span class="text-sm text-gray-500">{{ number_format(rand(10000, 90000)) }} / 100,000</span>
-                    </div>
-                    <div class="w-full bg-gray-200 rounded-full h-2">
-                        <div class="bg-gradient-to-r from-yellow-500 to-orange-500 h-2 rounded-full transition-all duration-1000" style="width: {{ rand(40, 85) }}%"></div>
-                    </div>
+                    <p class="text-gray-500 text-sm font-medium">Total Revenue</p>
+                    <p class="text-2xl font-bold text-gray-900">₦{{ number_format($stats['total_revenue'] ?? 0, 2) }}</p>
                 </div>
-
-                <!-- Monthly Bandwidth -->
-                <div>
-                    <div class="flex justify-between items-center mb-2">
-                        <span class="text-sm font-medium text-gray-700">Bandwidth</span>
-                        <span class="text-sm text-gray-500">{{ rand(15, 85) }} GB / 100 GB</span>
-                    </div>
-                    <div class="w-full bg-gray-200 rounded-full h-2">
-                        <div class="bg-gradient-to-r from-pink-500 to-red-500 h-2 rounded-full transition-all duration-1000" style="width: {{ rand(15, 85) }}%"></div>
-                    </div>
-                </div>
-
-                <!-- Quick Stats -->
-                <div class="grid grid-cols-2 gap-4 pt-4 border-t">
-                    <div class="text-center">
-                        <p class="text-xl font-bold text-indigo-600">{{ rand(95, 100) }}%</p>
-                        <p class="text-xs text-gray-500">Uptime</p>
-                    </div>
-                    <div class="text-center">
-                        <p class="text-xl font-bold text-green-600">{{ rand(150, 300) }}ms</p>
-                        <p class="text-xs text-gray-500">Avg Response</p>
-                    </div>
+                <div class="bg-green-100 p-3 rounded-lg">
+                    <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                    </svg>
                 </div>
             </div>
         </div>
@@ -280,7 +238,7 @@
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-gray-500 mb-1">Business Type</label>
-                            <p class="text-sm text-gray-900">{{ ucfirst(str_replace('_', ' ', $tenant->business_type)) }}</p>
+                            <p class="text-sm text-gray-900">{{ $tenant->businessType->name ?? 'Not specified' }}</p>
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-gray-500 mb-1">Company Slug</label>
@@ -352,16 +310,10 @@
                                 {{ $tenant->users->count() }} total
                             </span>
                             <span class="bg-blue-100 text-blue-800 text-xs font-medium px-2.5 py-0.5 rounded-full">
-                                {{ $tenant->users->where('is_active', true)->count() }} active
+                                {{ $tenant->users->filter(fn($u) => $u->pivot->is_active)->count() }} active
                             </span>
                         </div>
-                        <button onclick="addUser()"
-                                class="inline-flex items-center px-3 py-1.5 bg-gradient-to-r from-green-500 to-green-600 text-white rounded-lg text-xs font-medium hover:from-green-600 hover:to-green-700 transition-all duration-200">
-                            <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
-                            </svg>
-                            Add User
-                        </button>
+                        <span class="text-xs text-gray-500 italic">Users are managed by company owner</span>
                     </div>
                 </div>
                 <div class="p-6">
@@ -403,8 +355,8 @@
                                  data-user-card="true"
                                  data-user-name="{{ $user->name }}"
                                  data-user-email="{{ $user->email }}"
-                                 data-user-status="{{ $user->is_active ? 'active' : 'inactive' }}"
-                                 data-user-role="{{ $user->role }}">
+                                 data-user-status="{{ $user->pivot->is_active ? 'active' : 'inactive' }}"
+                                 data-user-role="{{ $user->pivot->role }}">
                                 <div class="flex items-center">
                                     <div class="flex-shrink-0 h-12 w-12">
                                         <div class="h-12 w-12 rounded-full bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center shadow-md">
@@ -414,7 +366,7 @@
                                     <div class="ml-4">
                                         <div class="flex items-center space-x-2">
                                             <h4 class="text-sm font-semibold text-gray-900">{{ $user->name }}</h4>
-                                            @if($user->role === 'owner')
+                                            @if($user->pivot->role === 'owner')
                                                 <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gradient-to-r from-purple-100 to-pink-100 text-purple-800 border border-purple-200">
                                                     <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3l14 9-14 9V3z"/>
@@ -423,7 +375,7 @@
                                                 </span>
                                             @else
                                                 <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-700 border border-gray-200">
-                                                    {{ ucfirst($user->role) }}
+                                                    {{ ucfirst($user->pivot->role) }}
                                                 </span>
                                             @endif
                                         </div>
@@ -446,7 +398,7 @@
                                     </div>
                                 </div>
                                 <div class="flex items-center space-x-3">
-                                    @if($user->is_active)
+                                    @if($user->pivot->is_active)
                                         <div class="flex items-center space-x-1">
                                             <span class="flex h-2 w-2">
                                                 <span class="animate-ping absolute inline-flex h-2 w-2 rounded-full bg-green-400 opacity-75"></span>
