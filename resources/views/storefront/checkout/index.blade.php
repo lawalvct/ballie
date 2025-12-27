@@ -227,7 +227,20 @@
                                 </div>
                             </label>
 
-                            <!-- Add Paystack and Flutterwave options when implemented -->
+                            <label class="flex items-start gap-3 p-4 border border-gray-200 rounded-lg cursor-pointer hover:border-blue-500 transition">
+                                <input type="radio"
+                                       name="payment_method"
+                                       value="nomba"
+                                       class="mt-1"
+                                       required>
+                                <div class="flex-1">
+                                    <div class="font-semibold text-gray-800 flex items-center gap-2">
+                                        Pay Online
+                                        <span class="px-2 py-0.5 bg-green-100 text-green-700 text-xs rounded-full">Secure</span>
+                                    </div>
+                                    <div class="text-gray-600 text-sm mt-1">Pay securely with card, bank transfer, or USSD via Nomba</div>
+                                </div>
+                            </label>
                         </div>
 
                         @error('payment_method')

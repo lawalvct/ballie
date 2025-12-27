@@ -27,7 +27,7 @@ return new class extends Migration
             $table->enum('payment_status', ['unpaid', 'paid', 'partially_paid', 'refunded'])->default('unpaid');
 
             // Payment Information
-            $table->enum('payment_method', ['cash_on_delivery', 'paystack', 'flutterwave', 'bank_transfer'])->default('cash_on_delivery');
+            $table->enum('payment_method', ['cash_on_delivery', 'nomba', 'paystack', 'stripe', 'flutterwave', 'bank_transfer'])->default('cash_on_delivery');
             $table->string('payment_gateway_reference')->nullable();
 
             // Amounts

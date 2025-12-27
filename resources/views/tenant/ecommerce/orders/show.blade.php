@@ -122,9 +122,9 @@
                                 @if($order->shippingAddress->address_line2)
                                     {{ $order->shippingAddress->address_line2 }}<br>
                                 @endif
-                                {{ $order->shippingAddress->city }}, {{ $order->shippingAddress->state }}<br>
+                                {{ data_get($order->shippingAddress, 'city.name', $order->shippingAddress->city) }}, {{ data_get($order->shippingAddress, 'state.name', $order->shippingAddress->state) }}<br>
                                 {{ $order->shippingAddress->postal_code }}<br>
-                                {{ $order->shippingAddress->country }}
+                                {{ data_get($order->shippingAddress, 'country.name', $order->shippingAddress->country) }}
                             </p>
                         @else
                             <p class="text-gray-500">No shipping address provided</p>
@@ -146,9 +146,9 @@
                                 @if($order->billingAddress->address_line2)
                                     {{ $order->billingAddress->address_line2 }}<br>
                                 @endif
-                                {{ $order->billingAddress->city }}, {{ $order->billingAddress->state }}<br>
+                                {{ data_get($order->billingAddress, 'city.name', $order->billingAddress->city) }}, {{ data_get($order->billingAddress, 'state.name', $order->billingAddress->state) }}<br>
                                 {{ $order->billingAddress->postal_code }}<br>
-                                {{ $order->billingAddress->country }}
+                                {{ data_get($order->billingAddress, 'country.name', $order->billingAddress->country) }}
                             </p>
                         @else
                             <p class="text-gray-500 italic">Same as shipping address</p>
@@ -310,10 +310,14 @@
                             </select>
                         </div>
 
-                        <button type="submit"
-                                class="w-full px-6 py-2 bg-gradient-to-r from-green-600 to-green-700 text-white font-medium rounded-lg hover:from-green-700 hover:to-green-800 transition-all duration-200">
-                            Update Payment
-                        </button>
+                        @if($order->payment_status !== 'paid')
+                            <button type="submit"
+                                    class="w-full px-6 py-2 bg-gradient-to-r from-green-600 to-green-700 text-white font-medium rounded-lg hover:from-green-700 hover:to-green-800 transition-all duration-200">
+                                Update Payment
+                            </button>
+                        @else
+                            <div class="text-center text-sm text-gray-500">Payment already recorded.</div>
+                        @endif
                     </form>
                 </div>
             </div>

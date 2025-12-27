@@ -149,11 +149,17 @@ Route::prefix('{tenant}/store')->middleware(['tenant'])->group(function () {
     // Order success (public - no auth required)
     Route::get('/order/success/{order}', [CheckoutController::class, 'success'])->name('storefront.order.success');
 
+    // Payment callback (public - Nomba redirects here after payment)
+    Route::get('/payment/callback/{order}', [CheckoutController::class, 'paymentCallback'])->name('storefront.payment.callback');
+
     // Checkout (requires authentication)
     Route::middleware('auth:customer')->group(function () {
         Route::get('/checkout', [CheckoutController::class, 'index'])->name('storefront.checkout');
         Route::post('/checkout/apply-coupon', [CheckoutController::class, 'applyCoupon'])->name('storefront.checkout.apply-coupon');
         Route::post('/checkout/process', [CheckoutController::class, 'process'])->name('storefront.checkout.process');
+
+        // Payment retry for failed orders
+        Route::post('/orders/{order}/retry-payment', [CheckoutController::class, 'retryPayment'])->name('storefront.order.retry-payment');
 
         // Customer Account Management
         Route::get('/account', [CustomerAuthController::class, 'account'])->name('storefront.account');

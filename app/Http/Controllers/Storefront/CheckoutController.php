@@ -9,10 +9,12 @@ use App\Models\ShippingAddress;
 use App\Models\Cart;
 use App\Models\Coupon;
 use App\Models\Tenant;
+use App\Helpers\PaymentHelper;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Str;
 
 class CheckoutController extends Controller
 {
@@ -110,7 +112,7 @@ class CheckoutController extends Controller
         $rules = [
             'shipping_address_id' => 'nullable|exists:shipping_addresses,id',
             'shipping_method_id' => 'nullable|exists:shipping_methods,id',
-            'payment_method' => 'required|in:cash_on_delivery,paystack,flutterwave',
+            'payment_method' => 'required|in:cash_on_delivery,nomba,paystack,stripe,flutterwave,bank_transfer',
             'coupon_code' => 'nullable|string',
             'notes' => 'nullable|string',
         ];
@@ -257,8 +259,11 @@ class CheckoutController extends Controller
             if ($validated['payment_method'] === 'cash_on_delivery') {
                 return redirect()->route('storefront.order.success', ['tenant' => $tenant->slug, 'order' => $order->id])
                     ->with('success', 'Order placed successfully! You will pay on delivery.');
+            } elseif ($validated['payment_method'] === 'nomba') {
+                // Process Nomba payment
+                return $this->processNombaPayment($order, $tenant, $customerEmail);
             } else {
-                // Redirect to payment gateway
+                // Redirect to other payment gateways (paystack, flutterwave)
                 return redirect()->route('storefront.payment.process', ['tenant' => $tenant->slug, 'order' => $order->id]);
             }
 
@@ -421,5 +426,203 @@ class CheckoutController extends Controller
                 ->with('items.product.primaryImage')
                 ->first();
         }
+    }
+
+    /**
+     * Process Nomba payment for order
+     */
+    private function processNombaPayment(Order $order, Tenant $tenant, string $customerEmail)
+    {
+        try {
+            // Initialize payment helper
+            $paymentHelper = new PaymentHelper();
+
+            // Check if Nomba credentials are configured
+            $tokenData = $paymentHelper->nombaAccessToken();
+            if (!$tokenData) {
+                Log::error('Nomba credentials not configured for storefront checkout', [
+                    'tenant_id' => $tenant->id,
+                    'order_id' => $order->id
+                ]);
+                return redirect()->route('storefront.cart', ['tenant' => $tenant->slug])
+                    ->with('error', 'Payment gateway not configured. Please try another payment method or contact the store.');
+            }
+
+            // Generate unique payment reference
+            $paymentReference = 'ORD_' . strtoupper(Str::random(8)) . '_' . $order->id;
+
+            // Store payment reference in order
+            $order->update([
+                'payment_gateway_reference' => $paymentReference,
+            ]);
+
+            // Prepare callback URL
+            $callbackUrl = route('storefront.payment.callback', [
+                'tenant' => $tenant->slug,
+                'order' => $order->id
+            ]);
+
+            Log::info('Initiating Nomba payment for storefront order', [
+                'order_id' => $order->id,
+                'amount' => $order->total_amount,
+                'email' => $customerEmail,
+                'callbackUrl' => $callbackUrl,
+                'paymentReference' => $paymentReference
+            ]);
+
+            // Process payment with Nomba
+            $paymentResult = $paymentHelper->processPayment(
+                $order->total_amount,
+                'NGN',
+                $customerEmail,
+                $callbackUrl,
+                $paymentReference
+            );
+
+            Log::info('Nomba payment result for storefront', $paymentResult);
+
+            if ($paymentResult['status']) {
+                // Update order with gateway reference
+                $order->update([
+                    'payment_gateway_reference' => $paymentResult['orderReference'],
+                ]);
+
+                Log::info('Redirecting to Nomba checkout for storefront order', [
+                    'order_id' => $order->id,
+                    'checkoutLink' => $paymentResult['checkoutLink']
+                ]);
+
+                // Redirect to Nomba checkout
+                return redirect($paymentResult['checkoutLink']);
+
+            } else {
+                Log::error('Nomba payment initiation failed for storefront', [
+                    'order_id' => $order->id,
+                    'error' => $paymentResult['message'] ?? 'Unknown error',
+                    'full_result' => $paymentResult
+                ]);
+
+                return redirect()->route('storefront.cart', ['tenant' => $tenant->slug])
+                    ->with('error', 'Failed to initiate payment: ' . ($paymentResult['message'] ?? 'Payment service unavailable'));
+            }
+
+        } catch (\Exception $e) {
+            Log::error('Nomba payment processing exception', [
+                'order_id' => $order->id,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+
+            return redirect()->route('storefront.cart', ['tenant' => $tenant->slug])
+                ->with('error', 'Payment processing failed. Please try again.');
+        }
+    }
+
+    /**
+     * Handle Nomba payment callback
+     */
+    public function paymentCallback(Request $request, $tenant, $orderId)
+    {
+        Log::info('Storefront payment callback started', [
+            'tenant' => $tenant,
+            'order_id' => $orderId,
+            'request_data' => $request->all()
+        ]);
+
+        try {
+            // Get the tenant
+            if (is_string($tenant)) {
+                $tenant = Tenant::where('slug', $tenant)->firstOrFail();
+            }
+
+            // Find the order
+            $order = Order::where('id', $orderId)
+                ->where('tenant_id', $tenant->id)
+                ->firstOrFail();
+
+            // Initialize payment helper
+            $paymentHelper = new PaymentHelper();
+
+            // Verify payment with Nomba
+            $verificationResult = $paymentHelper->verifyPayment($order->payment_gateway_reference);
+
+            Log::info('Nomba payment verification result', [
+                'order_id' => $order->id,
+                'verification_result' => $verificationResult
+            ]);
+
+            if ($verificationResult['status'] && $verificationResult['payment_status'] === 'successful') {
+                // Payment successful
+                $order->update([
+                    'payment_status' => 'paid',
+                    'status' => 'confirmed', // Auto-confirm on payment
+                ]);
+
+                Log::info('Storefront order payment successful', [
+                    'order_id' => $order->id,
+                    'order_number' => $order->order_number
+                ]);
+
+                $storeSettings = $tenant->ecommerceSettings;
+
+                return redirect()->route('storefront.order.success', [
+                    'tenant' => $tenant->slug,
+                    'order' => $order->id
+                ])->with('success', 'Payment successful! Your order has been confirmed.');
+
+            } else {
+                // Payment failed
+                $order->update([
+                    'payment_status' => 'failed',
+                ]);
+
+                Log::warning('Storefront order payment failed', [
+                    'order_id' => $order->id,
+                    'verification_result' => $verificationResult
+                ]);
+
+                return redirect()->route('storefront.order.detail', [
+                    'tenant' => $tenant->slug,
+                    'order' => $order->id
+                ])->with('error', 'Payment was not successful. Please try again or contact the store.');
+            }
+
+        } catch (\Exception $e) {
+            Log::error('Storefront payment callback failed', [
+                'order_id' => $orderId,
+                'tenant' => $tenant,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+
+            return redirect()->route('storefront.orders', ['tenant' => is_string($tenant) ? $tenant : $tenant->slug])
+                ->with('error', 'Payment verification failed. Please contact the store if you were charged.');
+        }
+    }
+
+    /**
+     * Retry payment for an existing order
+     */
+    public function retryPayment(Request $request, $tenant, $orderId)
+    {
+        // Get the tenant
+        if (is_string($tenant)) {
+            $tenant = Tenant::where('slug', $tenant)->firstOrFail();
+        }
+
+        $customer = Auth::guard('customer')->user()->customer;
+
+        $order = Order::where('id', $orderId)
+            ->where('tenant_id', $tenant->id)
+            ->where('customer_id', $customer->id)
+            ->where('payment_status', '!=', 'paid')
+            ->firstOrFail();
+
+        // Only allow retry for Nomba payments
+        if ($order->payment_method !== 'nomba') {
+            return back()->with('error', 'Payment retry is only available for online payments.');
+        }
+
+        return $this->processNombaPayment($order, $tenant, $customer->email ?? 'customer@example.com');
     }
 }

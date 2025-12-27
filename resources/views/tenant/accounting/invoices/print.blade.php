@@ -602,7 +602,16 @@ if (!function_exists('convertChunkToWords')) {
         </div>
 
         <!-- Invoice Items -->
-        @if(count($inventoryItems) > 0)
+        @php
+            // Support both inventory items (from meta_data) and invoice items (from database relationship)
+            $items = [];
+            if (isset($inventoryItems) && count($inventoryItems) > 0) {
+                $items = $inventoryItems;
+            } elseif ($invoice->items && $invoice->items->count() > 0) {
+                $items = $invoice->items;
+            }
+        @endphp
+        @if(count($items) > 0)
         <div class="items-section">
             <table class="items-table">
                 <thead>
@@ -617,38 +626,49 @@ if (!function_exists('convertChunkToWords')) {
                 </thead>
                 <tbody>
                     @php $subtotal = 0; @endphp
-                    @foreach($inventoryItems as $index => $item)
-                        @php $subtotal += $item['amount']; @endphp
+                    @foreach($items as $index => $item)
+                        @php
+                            // Support both array and object formats
+                            $productName = is_array($item) ? $item['product_name'] : $item->product_name;
+                            $description = is_array($item) ? ($item['description'] ?? '') : ($item->description ?? '');
+                            $quantity = is_array($item) ? $item['quantity'] : $item->quantity;
+                            $rate = is_array($item) ? $item['rate'] : $item->rate;
+                            $amount = is_array($item) ? $item['amount'] : $item->amount;
+                            $sku = is_array($item) ? ($item['sku'] ?? '') : ($item->product->sku ?? '');
+                            $unit = is_array($item) ? ($item['unit'] ?? '') : ($item->product->primaryUnit->abbreviation ?? '');
+
+                            $subtotal += $amount;
+                        @endphp
                         <tr>
                             <td class="text-center sn-column">{{ $index + 1 }}</td>
                             <td>
                                 <div style="font-weight: bold; color: #333; margin-bottom: 4px;">
-                                    {{ $item['product_name'] }}
+                                    {{ $productName }}
                                 </div>
-                                @if(isset($item['sku']) && $item['sku'])
+                                @if($sku)
                                     <div style="font-size: 12px; color: #999;">
-                                        SKU: {{ $item['sku'] }}
+                                        SKU: {{ $sku }}
                                     </div>
                                 @endif
                             </td>
                             <td>
                                 <div style="color: #666; font-size: 14px;">
-                                    {{ $item['description'] ?: 'N/A' }}
+                                    {{ $description ?: 'N/A' }}
                                 </div>
                             </td>
                             <td class="text-center">
                                 <span style="font-weight: bold; color: #2c5aa0;">
-                                    {{ number_format($item['quantity'], 2) }}
+                                    {{ number_format($quantity, 2) }}
                                 </span>
-                                @if(isset($item['unit']) && $item['unit'])
-                                    <div style="font-size: 12px; color: #999;">{{ $item['unit'] }}</div>
+                                @if($unit)
+                                    <div style="font-size: 12px; color: #999;">{{ $unit }}</div>
                                 @endif
                             </td>
                             <td class="text-right">
-                                <span style="font-weight: bold;">₦{{ number_format($item['rate'], 2) }}</span>
+                                <span style="font-weight: bold;">₦{{ number_format($rate, 2) }}</span>
                             </td>
                             <td class="text-right">
-                                <span style="font-weight: bold; color: #27ae60;">₦{{ number_format($item['amount'], 2) }}</span>
+                                <span style="font-weight: bold; color: #27ae60;">₦{{ number_format($amount, 2) }}</span>
                             </td>
                         </tr>
                     @endforeach
@@ -677,10 +697,11 @@ if (!function_exists('convertChunkToWords')) {
                                in_array($accountCode, ['VAT-OUT-001', 'VAT-IN-001']);
                     });
 
-                    // Get product accounts from inventory items to exclude from additional charges
-                    $productAccountIds = collect($inventoryItems)->map(function($item) use ($invoice) {
-                        if (isset($item['product_id'])) {
-                            $product = \App\Models\Product::find($item['product_id']);
+                    // Get product accounts from items to exclude from additional charges
+                    $productAccountIds = collect($items)->map(function($item) use ($invoice) {
+                        $productId = is_array($item) ? ($item['product_id'] ?? null) : ($item->product_id ?? null);
+                        if ($productId) {
+                            $product = \App\Models\Product::find($productId);
                             if ($product) {
                                 // Check if it's a sales or purchase invoice to get the right account
                                 if ($invoice->voucherType && str_contains(strtolower($invoice->voucherType->name ?? ''), 'purchase')) {
@@ -724,7 +745,7 @@ if (!function_exists('convertChunkToWords')) {
                         return true;
                     });
 
-                    $totalAmount = ($subtotal ?? $inventoryItems->sum('amount'));
+                    $totalAmount = $subtotal;
                 @endphp
 
                 @if($additionalCharges->count() > 0)

@@ -148,6 +148,16 @@
                             <span id="btn-text">Add to Cart</span>
                         </button>
                     </form>
+
+                    <!-- View Cart Button (Initially Hidden) -->
+                    <a href="{{ route('storefront.cart', ['tenant' => $tenant->slug]) }}"
+                       id="view-cart-btn"
+                       class="hidden w-full px-8 py-4 bg-green-600 text-white font-semibold rounded-lg hover:bg-green-700 transition-colors items-center justify-center gap-2 mt-4">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
+                        </svg>
+                        <span>View Cart</span>
+                    </a>
                 @else
                     <button disabled class="w-full px-8 py-4 bg-gray-300 text-gray-500 font-semibold rounded-lg cursor-not-allowed">
                         Out of Stock
@@ -260,6 +270,13 @@ document.getElementById('add-to-cart-form').addEventListener('submit', function(
         if (data.success) {
             // Update cart count
             document.getElementById('cart-count').textContent = data.cart_count;
+
+            // Show "View Cart" button
+            const viewCartBtn = document.getElementById('view-cart-btn');
+            if (viewCartBtn) {
+                viewCartBtn.classList.remove('hidden');
+                viewCartBtn.classList.add('flex');
+            }
 
             // Show success notification
             showNotification(data.message, 'success');

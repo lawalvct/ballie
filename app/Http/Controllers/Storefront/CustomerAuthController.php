@@ -267,6 +267,7 @@ class CustomerAuthController extends Controller
         $validated = $request->validate([
             'first_name' => 'required|string|max:255',
             'last_name' => 'required|string|max:255',
+
             'email' => 'required|email|unique:customer_authentications,email,' . Auth::guard('customer')->id(),
             'phone' => 'nullable|string|max:20',
         ]);

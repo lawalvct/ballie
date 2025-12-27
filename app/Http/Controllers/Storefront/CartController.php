@@ -99,7 +99,7 @@ class CartController extends Controller
     /**
      * Update cart item quantity
      */
-    public function update(Request $request, $itemId)
+    public function update(Request $request, $tenant, $item)
     {
         $tenant = $request->current_tenant;
 
@@ -109,15 +109,12 @@ class CartController extends Controller
 
         $cart = $this->getOrCreateCart($tenant);
 
-        $cartItem = $cart->items()->findOrFail($itemId);
+        $cartItem = $cart->items()->findOrFail($item);
         $product = $cartItem->product;
 
         // Check stock
         if ($product->maintain_stock && $product->current_stock < $validated['quantity']) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Insufficient stock. Only ' . $product->current_stock . ' items available.'
-            ], 400);
+            return back()->with('error', 'Insufficient stock. Only ' . $product->current_stock . ' items available.');
         }
 
         $cartItem->update([
@@ -126,23 +123,18 @@ class CartController extends Controller
             'total_price' => $validated['quantity'] * $product->sales_rate,
         ]);
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Cart updated',
-            'item_total' => number_format($cartItem->total_price, 2),
-            'cart_subtotal' => number_format($cart->fresh()->getSubtotal(), 2),
-        ]);
+        return back()->with('success', 'Cart updated successfully');
     }
 
     /**
      * Remove item from cart
      */
-    public function remove(Request $request, $itemId)
+    public function remove(Request $request, $tenant, $item)
     {
         $tenant = $request->current_tenant;
         $cart = $this->getOrCreateCart($tenant);
 
-        $cartItem = $cart->items()->findOrFail($itemId);
+        $cartItem = $cart->items()->findOrFail($item);
         $cartItem->delete();
 
         return back()->with('success', 'Item removed from cart');

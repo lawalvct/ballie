@@ -94,7 +94,7 @@ class EcommerceSettingsController extends Controller
 
         return response()->json([
             'success' => true,
-            'qr_code' => $qrCode,
+            'qr_code' => (string) $qrCode,
             'store_url' => $storeUrl
         ]);
     }
