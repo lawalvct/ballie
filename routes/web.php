@@ -113,6 +113,15 @@ Route::middleware(['auth'])->get('/dashboard', function () {
 // Super Admin Routes - Include separate route file
 require __DIR__.'/super-admin.php';
 
+// Public payment callback for invoices - NO AUTH, NO TENANT PARAMETER
+// Customer payment callback - creates receipt and shows success page
+// Accept both GET and POST (Paystack redirects GET, some gateways webhook POST)
+// Only uses voucher/invoice ID - tenant is retrieved from voucher relationship
+Route::match(['get', 'post'], '/invoice/payment-callback/{invoice}', [App\Http\Controllers\PublicPaymentCallbackController::class, 'handleCallback'])
+    ->middleware(['web'])
+    ->name('invoice.payment.callback');
+
+
 // Tenant Routes (path-based: /tenant1/dashboard, /tenant2/invoices, etc.)
 Route::prefix('{tenant}')->middleware(['tenant'])->group(function () {
     require __DIR__.'/tenant.php';

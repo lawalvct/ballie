@@ -265,6 +265,54 @@
                     Email Invoice
                 </button>
 
+                @php
+                    $paymentLinks = $invoice->meta_data['payment_links'] ?? [];
+                @endphp
+
+                @if(!empty($paymentLinks))
+                    <div class="pt-3 border-t border-gray-200">
+                        <h4 class="text-sm font-medium text-gray-700 mb-3">Payment Links</h4>
+                        <div class="space-y-2">
+                            @if(isset($paymentLinks['nomba']))
+                                <div class="bg-green-50 border border-green-200 rounded-lg p-3">
+                                    <div class="flex items-center justify-between mb-2">
+                                        <span class="text-xs font-semibold text-green-800 flex items-center">
+                                            <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/></svg>
+                                            Nomba
+                                        </span>
+                                        <span class="text-xs text-green-600">₦{{ number_format($paymentLinks['nomba']['amount'], 2) }}</span>
+                                    </div>
+                                    <a href="{{ $paymentLinks['nomba']['checkout_link'] }}" target="_blank" class="block w-full text-center px-3 py-2 bg-green-600 text-white text-xs font-medium rounded hover:bg-green-700 transition-colors">
+                                        Pay with Nomba
+                                    </a>
+                                    <button onclick="copyToClipboard('{{ $paymentLinks['nomba']['checkout_link'] }}')" class="mt-1 block w-full text-center px-3 py-1 bg-white border border-green-300 text-green-700 text-xs font-medium rounded hover:bg-green-50 transition-colors">
+                                        Copy Link
+                                    </button>
+                                </div>
+                            @endif
+
+                            @if(isset($paymentLinks['paystack']))
+                                <div class="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                                    <div class="flex items-center justify-between mb-2">
+                                        <span class="text-xs font-semibold text-blue-800 flex items-center">
+                                            <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/></svg>
+                                            Paystack
+                                        </span>
+                                        <span class="text-xs text-blue-600">₦{{ number_format($invoice->total_amount, 2) }}</span>
+                                    </div>
+                                    <a href="{{ $paymentLinks['paystack']['authorization_url'] }}" target="_blank" class="block w-full text-center px-3 py-2 bg-blue-600 text-white text-xs font-medium rounded hover:bg-blue-700 transition-colors">
+                                        Pay with Paystack
+                                    </a>
+                                    <button onclick="copyToClipboard('{{ $paymentLinks['paystack']['authorization_url'] }}')" class="mt-1 block w-full text-center px-3 py-1 bg-white border border-blue-300 text-blue-700 text-xs font-medium rounded hover:bg-blue-50 transition-colors">
+                                        Copy Link
+                                    </button>
+                                </div>
+                            @endif
+                        </div>
+                        <p class="text-xs text-gray-500 mt-2 italic">Share these links with your customer for easy payment</p>
+                    </div>
+                @endif
+
                 <div class="flex space-x-3">
                     <a href="{{ route('tenant.accounting.invoices.print', ['tenant' => $tenant->slug, 'invoice' => $invoice->id]) }}" target="_blank" class="flex-1 inline-flex items-center justify-center px-4 py-2 bg-gray-600 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500">
                         <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>
@@ -429,6 +477,24 @@ Best regards,
             window.open('{{ route("tenant.accounting.invoices.pdf", ["tenant" => $tenant->slug, "invoice" => $invoice->id]) }}', '_blank');
         }
     };
+}
+
+// Copy to clipboard function
+function copyToClipboard(text) {
+    navigator.clipboard.writeText(text).then(() => {
+        // Show success message
+        const message = document.createElement('div');
+        message.className = 'fixed top-4 right-4 z-50 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg';
+        message.textContent = '✓ Payment link copied to clipboard!';
+        document.body.appendChild(message);
+
+        setTimeout(() => {
+            message.remove();
+        }, 3000);
+    }).catch(err => {
+        alert('Failed to copy link. Please try again.');
+        console.error('Copy failed:', err);
+    });
 }
 </script>
 @endpush

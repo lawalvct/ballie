@@ -32,6 +32,7 @@ class Voucher extends Model
         'voucher_date' => 'date',
         'total_amount' => 'decimal:2',
         'posted_at' => 'datetime',
+        'meta_data' => 'array',
     ];
 
     const STATUS_DRAFT = 'draft';

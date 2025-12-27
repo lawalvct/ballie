@@ -20,6 +20,8 @@ use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Log;
 use Barryvdh\DomPDF\Facade\Pdf;
+use App\Helpers\PaymentHelper;
+use App\Helpers\PaystackPaymentHelper;
 
 class InvoiceController extends Controller
 {
@@ -508,6 +510,9 @@ class InvoiceController extends Controller
 
             DB::commit();
             Log::info('Database Transaction Committed Successfully');
+
+            // Generate payment links for customer convenience
+            $this->generatePaymentLinks($voucher, $tenant, $request->customer_id);
 
             $message = $shouldPost
                 ? 'Invoice created and posted successfully!'
@@ -1924,6 +1929,150 @@ class InvoiceController extends Controller
             DB::rollBack();
             Log::error('Error recording payment: ' . $e->getMessage());
             return response()->json(['message' => 'Failed to record payment: ' . $e->getMessage()], 500);
+        }
+    }
+
+    /**
+     * Generate payment links (Nomba and Paystack) for the invoice
+     */
+    private function generatePaymentLinks(Voucher $voucher, Tenant $tenant, $customerLedgerId)
+    {
+        try {
+            // Get customer email
+            $customerLedger = LedgerAccount::find($customerLedgerId);
+            if (!$customerLedger) {
+                Log::warning('Customer ledger not found for payment link generation', [
+                    'ledger_id' => $customerLedgerId
+                ]);
+                return;
+            }
+
+            // Try to get customer/vendor email
+            $customer = Customer::where('ledger_account_id', $customerLedgerId)->first();
+            $vendor = Vendor::where('ledger_account_id', $customerLedgerId)->first();
+
+            $party = $customer ?? $vendor;
+            $email = $party->email ?? null;
+
+            if (!$email) {
+                Log::info('No email found for payment link generation', [
+                    'voucher_id' => $voucher->id
+                ]);
+                // Don't generate links if no email
+                return;
+            }
+
+            $paymentLinks = [];
+            $invoiceReference = $voucher->voucherType->prefix . $voucher->voucher_number;
+            $callbackUrl = route('invoice.payment.callback', [
+                'invoice' => $voucher->id
+            ]);
+
+            // Generate Nomba payment link
+            try {
+                $nombaHelper = new PaymentHelper();
+                $nombaToken = $nombaHelper->nombaAccessToken();
+
+                if ($nombaToken) {
+                    $nombaResult = $nombaHelper->processPayment(
+                        $voucher->total_amount,
+                        'NGN',
+                        $email,
+                        $callbackUrl,
+                        'INV_' . $invoiceReference
+                    );
+
+                    if ($nombaResult['status'] && isset($nombaResult['checkoutLink'])) {
+                        $paymentLinks['nomba'] = [
+                            'checkout_link' => $nombaResult['checkoutLink'],
+                            'reference' => $nombaResult['orderReference'],
+                            'amount' => $nombaResult['amount'],
+                            'currency' => $nombaResult['currency']
+                        ];
+
+                        Log::info('Nomba payment link generated', [
+                            'voucher_id' => $voucher->id,
+                            'link' => $nombaResult['checkoutLink']
+                        ]);
+                    }
+                } else {
+                    Log::info('Nomba not configured or credentials missing');
+                }
+            } catch (\Exception $e) {
+                Log::warning('Failed to generate Nomba payment link', [
+                    'voucher_id' => $voucher->id,
+                    'error' => $e->getMessage()
+                ]);
+            }
+
+            // Generate Paystack payment link
+            try {
+                $paystackHelper = new PaystackPaymentHelper();
+
+                if ($paystackHelper->isConfigured()) {
+                    $paystackResult = $paystackHelper->initializeTransaction(
+                        $voucher->total_amount,
+                        $email,
+                        $callbackUrl,
+                        'INV_' . $invoiceReference,
+                        [
+                            'invoice_number' => $invoiceReference,
+                            'voucher_id' => $voucher->id,
+                            'tenant_id' => $tenant->id,
+                            'customer_name' => $party->display_name ?? $customerLedger->name
+                        ]
+                    );
+
+                    if ($paystackResult['status'] && isset($paystackResult['authorization_url'])) {
+                        $paymentLinks['paystack'] = [
+                            'authorization_url' => $paystackResult['authorization_url'],
+                            'reference' => $paystackResult['reference'],
+                            'access_code' => $paystackResult['access_code']
+                        ];
+
+                        Log::info('Paystack payment link generated', [
+                            'voucher_id' => $voucher->id,
+                            'link' => $paystackResult['authorization_url']
+                        ]);
+                    }
+                } else {
+                    Log::info('Paystack not configured');
+                }
+            } catch (\Exception $e) {
+                Log::warning('Failed to generate Paystack payment link', [
+                    'voucher_id' => $voucher->id,
+                    'error' => $e->getMessage()
+                ]);
+            }
+
+            // Store payment links in voucher meta_data
+            if (!empty($paymentLinks)) {
+                // Ensure meta_data is an array (decode if it's JSON string)
+                $metaData = $voucher->meta_data;
+                if (is_string($metaData)) {
+                    $metaData = json_decode($metaData, true) ?? [];
+                } elseif (!is_array($metaData)) {
+                    $metaData = [];
+                }
+
+                $metaData['payment_links'] = $paymentLinks;
+                $metaData['payment_links_generated_at'] = now()->toDateTimeString();
+
+                $voucher->update(['meta_data' => $metaData]);
+
+                Log::info('Payment links stored in voucher', [
+                    'voucher_id' => $voucher->id,
+                    'links_count' => count($paymentLinks)
+                ]);
+            }
+
+        } catch (\Exception $e) {
+            Log::error('Payment link generation failed', [
+                'voucher_id' => $voucher->id,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            // Don't throw - payment links are optional enhancement
         }
     }
 }
