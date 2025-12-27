@@ -15,10 +15,30 @@ use App\Http\Controllers\Api\AccountingAssistantController;
 |
 */
 
-// Default Laravel API route (you might already have this)
+// Default Laravel API route
 Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
     return $request->user();
 });
+
+/*
+|--------------------------------------------------------------------------
+| Mobile API Routes - Version 1
+|--------------------------------------------------------------------------
+|
+| Load v1 API routes from separate files for better organization.
+| When you need v2, just create routes/api/v2/ directory
+|
+*/
+
+// Global authentication (no tenant required - auto-detects tenant from email)
+Route::prefix('v1/auth')
+    ->name('api.v1.auth.')
+    ->group(base_path('routes/api/v1/auth.php'));
+
+// Tenant-scoped routes (for backwards compatibility or direct tenant access)
+Route::prefix('v1/tenant/{tenant}')
+    ->name('api.v1.tenant.')
+    ->group(base_path('routes/api/v1/tenant.php'));
 
 // AI Accounting Assistant Routes
 Route::prefix('ai')->middleware(['web', 'auth'])->group(function () {
