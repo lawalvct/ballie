@@ -14,7 +14,6 @@ class ShippingMethodController extends Controller
         $tenant = tenant();
 
         $shippingMethods = ShippingMethod::where('tenant_id', $tenant->id)
-            ->orderBy('sort_order')
             ->orderBy('name')
             ->get();
 
@@ -38,7 +37,6 @@ class ShippingMethodController extends Controller
             'cost' => 'required|numeric|min:0',
             'estimated_days' => 'nullable|string|max:255',
             'is_active' => 'nullable|boolean',
-            'sort_order' => 'nullable|integer|min:0',
         ]);
 
         $validated['tenant_id'] = $tenant->id;
@@ -70,7 +68,6 @@ class ShippingMethodController extends Controller
             'cost' => 'required|numeric|min:0',
             'estimated_days' => 'nullable|string|max:255',
             'is_active' => 'nullable|boolean',
-            'sort_order' => 'nullable|integer|min:0',
         ]);
 
         $validated['is_active'] = $request->has('is_active');
