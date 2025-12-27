@@ -1042,6 +1042,32 @@ Route::prefix('ledger-accounts')->name('ledger-accounts.')->group(function () {
         // Help & Documentation
         Route::get('/help', [HelpController::class, 'index'])->name('tenant.help');
 
+        // Support Center
+        Route::prefix('support')->name('tenant.support.')->group(function () {
+            // Ticket Management
+            Route::get('/', [SupportController::class, 'index'])->name('index');
+            Route::get('/create', [SupportController::class, 'create'])->name('create');
+            Route::post('/tickets', [SupportController::class, 'store'])->name('tickets.store');
+            Route::get('/tickets/{ticket}', [SupportController::class, 'show'])->name('tickets.show');
+            Route::post('/tickets/{ticket}/reply', [SupportController::class, 'reply'])->name('tickets.reply');
+            Route::post('/tickets/{ticket}/close', [SupportController::class, 'close'])->name('tickets.close');
+            Route::post('/tickets/{ticket}/reopen', [SupportController::class, 'reopen'])->name('tickets.reopen');
+            Route::post('/tickets/{ticket}/rate', [SupportController::class, 'rate'])->name('tickets.rate');
+
+            // Attachments
+            Route::post('/attachments/upload', [SupportController::class, 'uploadAttachment'])->name('attachments.upload');
+            Route::get('/attachments/{attachment}/download', [SupportController::class, 'downloadAttachment'])->name('attachments.download');
+
+            // Knowledge Base
+            Route::get('/knowledge-base', [SupportController::class, 'knowledgeBase'])->name('knowledge-base.index');
+            Route::get('/knowledge-base/{category}', [SupportController::class, 'knowledgeBaseCategory'])->name('knowledge-base.category');
+            Route::get('/knowledge-base/{category}/{article}', [SupportController::class, 'knowledgeBaseArticle'])->name('knowledge-base.article');
+            Route::post('/knowledge-base/{article}/helpful', [SupportController::class, 'markHelpful'])->name('knowledge-base.helpful');
+
+            // Search
+            Route::get('/search', [SupportController::class, 'search'])->name('search');
+        });
+
         // Notifications
         Route::prefix('notifications')->name('tenant.notifications.')->group(function () {
             Route::get('/', [\App\Http\Controllers\Tenant\NotificationController::class, 'index'])->name('index');
