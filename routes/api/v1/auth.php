@@ -15,6 +15,10 @@ use App\Http\Controllers\Api\GlobalAuthController;
 |
 */
 
+// Public resources for registration
+Route::get('/business-types', [GlobalAuthController::class, 'getBusinessTypes'])->name('business-types');
+Route::get('/plans', [GlobalAuthController::class, 'getPlans'])->name('plans');
+
 // Email-based tenant detection and authentication
 Route::post('/login', [GlobalAuthController::class, 'login'])->name('login');
 Route::post('/register', [GlobalAuthController::class, 'register'])->name('register');

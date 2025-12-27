@@ -185,63 +185,227 @@ class GlobalAuthController extends BaseApiController
     }
 
     /**
-     * Register new user (requires tenant identification)
+     * Register new tenant and owner user
+     *
+     * MOBILE APP REGISTRATION FLOW:
+     * Step 1: GET /api/v1/auth/business-types - Show business types for user to select
+     * Step 2: Show form for personal info (name, email, password) and business info (business_name, phone)
+     * Step 3: GET /api/v1/auth/plans - Show plans, let user select and accept terms
+     * Step 4: POST /api/v1/auth/register - Submit all data to create tenant + owner user
      */
     public function register(Request $request): JsonResponse
     {
         $validator = Validator::make($request->all(), [
-            'tenant_slug' => 'required|string|exists:tenants,slug',
+            // Step 1: Business Type Selection
+            'business_type_id' => 'required|integer|exists:business_types,id',
+            'business_structure' => 'nullable|string',
+
+            // Step 2: Personal & Business Information
             'name' => 'required|string|max:255',
-            'email' => 'required|email|max:255',
+            'email' => 'required|email|max:255|unique:users,email',
             'password' => 'required|string|min:8|confirmed',
+            'business_name' => 'required|string|max:255',
             'phone' => 'nullable|string|max:20',
+
+            // Step 3: Plan Selection & Terms
+            'plan_id' => 'required|integer|exists:plans,id',
+            'terms' => 'required|accepted',
+
+            // Optional
             'device_name' => 'nullable|string|max:255',
+            'affiliate_code' => 'nullable|string', // For referral tracking
         ]);
 
         if ($validator->fails()) {
             return $this->validationError($validator->errors());
         }
 
-        // Get tenant
-        $tenant = Tenant::where('slug', $request->tenant_slug)->firstOrFail();
+        try {
+            $tenant = null;
+            $user = null;
 
-        // Check if email already exists for this tenant
-        $existingUser = User::where('tenant_id', $tenant->id)
-            ->where('email', $request->email)
-            ->first();
+            \DB::transaction(function () use ($request, &$tenant, &$user) {
+                // Get the selected plan
+                $selectedPlan = \App\Models\Plan::findOrFail($request->plan_id);
 
-        if ($existingUser) {
-            return $this->error('Email already registered for this workspace', 422);
+                // Create tenant (the business/workspace)
+                $tenant = Tenant::create([
+                    'name' => $request->business_name,
+                    'slug' => \App\Helpers\TenantHelper::generateUniqueSlug($request->business_name),
+                    'email' => $request->email,
+                    'phone' => $request->phone,
+                    'business_structure' => $request->business_structure,
+                    'business_type_id' => $request->business_type_id,
+                    'plan_id' => $selectedPlan->id,
+                    'trial_ends_at' => now()->addDays(30), // 30-day trial
+                    'is_active' => true,
+                    'onboarding_completed' => false,
+                ]);
+
+                // Handle affiliate referral if provided
+                if ($request->affiliate_code) {
+                    $affiliate = \App\Models\Affiliate::where('affiliate_code', $request->affiliate_code)
+                        ->where('status', 'active')
+                        ->first();
+
+                    if ($affiliate) {
+                        \App\Models\AffiliateReferral::create([
+                            'affiliate_id' => $affiliate->id,
+                            'tenant_id' => $tenant->id,
+                            'status' => 'registered',
+                            'tracking_data' => [
+                                'registered_at' => now(),
+                                'plan_selected' => $selectedPlan->name,
+                                'source' => 'mobile_app',
+                            ],
+                        ]);
+                    }
+                }
+
+                // Start trial for the selected plan
+                $tenant->startTrial($selectedPlan);
+
+                // Create owner user
+                $user = User::create([
+                    'tenant_id' => $tenant->id,
+                    'name' => $request->name,
+                    'email' => $request->email,
+                    'password' => Hash::make($request->password),
+                    'phone' => $request->phone,
+                    'role' => User::ROLE_OWNER, // Owner role
+                    'is_active' => true,
+                ]);
+
+                // Generate and store email verification code
+                $verificationCode = sprintf('%04d', random_int(0, 9999));
+                \DB::table('email_verification_codes')->insert([
+                    'user_id' => $user->id,
+                    'code' => $verificationCode,
+                    'expires_at' => now()->addMinutes(60),
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ]);
+
+                // TODO: Send verification email (implement queue job)
+                // dispatch(new SendVerificationEmail($user, $verificationCode));
+            });
+
+            // Set tenant context
+            $tenant->makeCurrent();
+
+            // Generate auth token
+            $deviceName = $request->device_name ?? 'Mobile App';
+            $token = $user->createToken($deviceName)->plainTextToken;
+
+            return $this->created([
+                'user' => new UserResource($user),
+                'token' => $token,
+                'tenant' => [
+                    'id' => $tenant->id,
+                    'slug' => $tenant->slug,
+                    'name' => $tenant->name,
+                    'plan' => [
+                        'id' => $tenant->plan_id,
+                        'name' => $tenant->plan->name,
+                    ],
+                    'trial_ends_at' => $tenant->trial_ends_at,
+                ],
+                'token_type' => 'Bearer',
+                'message' => 'Registration successful! You have 30 days free trial.',
+            ], 'Registration successful');
+
+        } catch (\Exception $e) {
+            \Log::error('Mobile registration failed', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+
+            return $this->error('Registration failed. Please try again.', 500);
+        }
+    }
+
+    /**
+     * Get available business types grouped by category
+     * For Step 1 of registration
+     */
+    public function getBusinessTypes(): JsonResponse
+    {
+        $businessTypes = \App\Models\BusinessType::getGroupedByCategory();
+
+        // Format for mobile consumption
+        $formatted = [];
+        foreach ($businessTypes as $category => $types) {
+            $formatted[] = [
+                'category' => $category,
+                'types' => $types->map(function ($type) {
+                    return [
+                        'id' => $type->id,
+                        'name' => $type->name,
+                        'slug' => $type->slug,
+                        'icon' => $type->icon,
+                        'description' => $type->description,
+                    ];
+                })->values(),
+            ];
         }
 
-        // Create user
-        $user = User::create([
-            'tenant_id' => $tenant->id,
-            'name' => $request->name,
-            'email' => $request->email,
-            'password' => Hash::make($request->password),
-            'phone' => $request->phone,
-            'role' => 'user',
-            'is_active' => true,
-        ]);
+        return $this->success($formatted, 'Business types retrieved successfully');
+    }
 
-        // Set tenant context
-        $tenant->makeCurrent();
+    /**
+     * Get available subscription plans
+     * For Step 3 of registration
+     */
+    public function getPlans(): JsonResponse
+    {
+        $plans = \App\Models\Plan::where('is_active', true)
+            ->orderBy('sort_order')
+            ->orderBy('monthly_price')
+            ->get([
+                'id',
+                'name',
+                'slug',
+                'description',
+                'features',
+                'monthly_price',
+                'yearly_price',
+                'max_users',
+                'max_customers',
+                'has_pos',
+                'has_payroll',
+                'has_api_access',
+                'has_advanced_reports',
+                'support_level',
+                'is_popular',
+            ])
+            ->map(function ($plan) {
+                return [
+                    'id' => $plan->id,
+                    'name' => $plan->name,
+                    'slug' => $plan->slug,
+                    'description' => $plan->description,
+                    'features' => $plan->features,
+                    'monthly_price' => $plan->monthly_price,
+                    'yearly_price' => $plan->yearly_price,
+                    'formatted_monthly_price' => '₦' . number_format($plan->monthly_price / 100, 0),
+                    'formatted_yearly_price' => '₦' . number_format($plan->yearly_price / 100, 0),
+                    'yearly_savings_percent' => round((1 - ($plan->yearly_price / 12) / $plan->monthly_price) * 100),
+                    'limits' => [
+                        'max_users' => $plan->max_users,
+                        'max_customers' => $plan->max_customers,
+                    ],
+                    'capabilities' => [
+                        'pos' => $plan->has_pos,
+                        'payroll' => $plan->has_payroll,
+                        'api_access' => $plan->has_api_access,
+                        'advanced_reports' => $plan->has_advanced_reports,
+                    ],
+                    'support_level' => $plan->support_level,
+                    'is_popular' => $plan->is_popular,
+                ];
+            });
 
-        // Generate token
-        $deviceName = $request->device_name ?? 'Mobile App';
-        $token = $user->createToken($deviceName)->plainTextToken;
-
-        return $this->created([
-            'user' => new UserResource($user),
-            'token' => $token,
-            'tenant' => [
-                'id' => $tenant->id,
-                'slug' => $tenant->slug,
-                'name' => $tenant->name,
-            ],
-            'token_type' => 'Bearer',
-        ], 'Registration successful');
+        return $this->success($plans, 'Plans retrieved successfully');
     }
 
     /**
