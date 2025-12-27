@@ -120,6 +120,43 @@
             @csrf
             <input type="hidden" name="billing_cycle" value="monthly" id="billingCycleInput">
 
+            <!-- Payment Method Selection -->
+            <div class="mb-6">
+                <h4 class="text-sm font-medium text-gray-900 mb-3">Choose Payment Method</h4>
+                <div class="space-y-3">
+                    <label class="flex items-start gap-3 p-4 border border-gray-200 rounded-lg cursor-pointer hover:border-blue-500 transition">
+                        <input type="radio"
+                               name="payment_method"
+                               value="nomba"
+                               class="mt-1"
+                               checked
+                               required>
+                        <div class="flex-1">
+                            <div class="font-semibold text-gray-800 flex items-center gap-2">
+                                Pay with Nomba
+                                <span class="px-2 py-0.5 bg-green-100 text-green-700 text-xs rounded-full">Secure</span>
+                            </div>
+                            <div class="text-gray-600 text-sm mt-1">Pay securely with card, bank transfer, or USSD via Nomba</div>
+                        </div>
+                    </label>
+
+                    <label class="flex items-start gap-3 p-4 border border-gray-200 rounded-lg cursor-pointer hover:border-blue-500 transition">
+                        <input type="radio"
+                               name="payment_method"
+                               value="paystack"
+                               class="mt-1"
+                               required>
+                        <div class="flex-1">
+                            <div class="font-semibold text-gray-800 flex items-center gap-2">
+                                Pay with Paystack
+                                <span class="px-2 py-0.5 bg-blue-100 text-blue-700 text-xs rounded-full">Secure</span>
+                            </div>
+                            <div class="text-gray-600 text-sm mt-1">Pay securely with card, bank transfer, or USSD via Paystack</div>
+                        </div>
+                    </label>
+                </div>
+            </div>
+
             <div class="text-center">
                 <button type="submit"
                         class="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-semibold py-3 px-8 rounded-lg transition-all duration-200 transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
@@ -134,7 +171,7 @@
             </div>
 
             <div class="mt-4 text-center text-sm text-gray-600">
-                <p>• Secure payment processing via Nomba</p>
+                <p>• Secure payment processing</p>
                 <p>• Upgrade takes effect immediately</p>
                 <p>• You can change or cancel anytime</p>
                 @if($plan->trial_days > 0 && !$tenant->hasUsedTrial())
@@ -166,7 +203,7 @@
 
             <div>
                 <h4 class="font-medium text-gray-900 mb-2">Is my payment secure?</h4>
-                <p class="text-gray-600 text-sm">Yes, all payments are processed securely through Nomba's encrypted payment gateway. We never store your payment information.</p>
+                <p class="text-gray-600 text-sm">Yes, all payments are processed securely through our trusted payment partners (Nomba & Paystack). We never store your payment information.</p>
             </div>
         </div>
     </div>

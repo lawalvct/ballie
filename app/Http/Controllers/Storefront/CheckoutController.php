@@ -15,6 +15,7 @@ use App\Models\VoucherEntry;
 use App\Models\Product;
 use App\Models\LedgerAccount;
 use App\Helpers\PaymentHelper;
+use App\Helpers\PaystackPaymentHelper;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -267,8 +268,11 @@ class CheckoutController extends Controller
             } elseif ($validated['payment_method'] === 'nomba') {
                 // Process Nomba payment
                 return $this->processNombaPayment($order, $tenant, $customerEmail);
+            } elseif ($validated['payment_method'] === 'paystack') {
+                // Process Paystack payment
+                return $this->processPaystackPayment($order, $tenant, $customerEmail);
             } else {
-                // Redirect to other payment gateways (paystack, flutterwave)
+                // Redirect to other payment gateways (flutterwave, stripe)
                 return redirect()->route('storefront.payment.process', ['tenant' => $tenant->slug, 'order' => $order->id]);
             }
 
@@ -524,7 +528,100 @@ class CheckoutController extends Controller
     }
 
     /**
-     * Handle Nomba payment callback
+     * Process Paystack payment for order
+     */
+    private function processPaystackPayment(Order $order, Tenant $tenant, string $customerEmail)
+    {
+        try {
+            // Initialize Paystack helper
+            $paystackHelper = new PaystackPaymentHelper();
+
+            // Check if Paystack is configured
+            if (!$paystackHelper->isConfigured()) {
+                Log::error('Paystack credentials not configured for storefront checkout', [
+                    'tenant_id' => $tenant->id,
+                    'order_id' => $order->id
+                ]);
+                return redirect()->route('storefront.cart', ['tenant' => $tenant->slug])
+                    ->with('error', 'Payment gateway not configured. Please try another payment method or contact the store.');
+            }
+
+            // Generate unique payment reference
+            $paymentReference = 'ORD_PS_' . strtoupper(Str::random(8)) . '_' . $order->id;
+
+            // Store payment reference in order
+            $order->update([
+                'payment_gateway_reference' => $paymentReference,
+            ]);
+
+            // Prepare callback URL
+            $callbackUrl = route('storefront.payment.callback', [
+                'tenant' => $tenant->slug,
+                'order' => $order->id
+            ]);
+
+            Log::info('Initiating Paystack payment for storefront order', [
+                'order_id' => $order->id,
+                'amount' => $order->total_amount,
+                'email' => $customerEmail,
+                'callbackUrl' => $callbackUrl,
+                'paymentReference' => $paymentReference
+            ]);
+
+            // Initialize transaction with Paystack
+            $paymentResult = $paystackHelper->initializeTransaction(
+                $order->total_amount,
+                $customerEmail,
+                $callbackUrl,
+                $paymentReference,
+                [
+                    'order_id' => $order->id,
+                    'order_number' => $order->order_number,
+                    'tenant_id' => $tenant->id
+                ]
+            );
+
+            Log::info('Paystack payment result for storefront', $paymentResult);
+
+            if ($paymentResult['status']) {
+                // Update order with gateway reference
+                $order->update([
+                    'payment_gateway_reference' => $paymentResult['reference'],
+                ]);
+
+                Log::info('Redirecting to Paystack checkout for storefront order', [
+                    'order_id' => $order->id,
+                    'authorization_url' => $paymentResult['authorization_url']
+                ]);
+
+                // Redirect to Paystack checkout
+                return redirect($paymentResult['authorization_url']);
+
+            } else {
+                Log::error('Paystack payment initiation failed for storefront', [
+                    'order_id' => $order->id,
+                    'error' => $paymentResult['message'] ?? 'Unknown error',
+                    'full_result' => $paymentResult
+                ]);
+
+                return redirect()->route('storefront.cart', ['tenant' => $tenant->slug])
+                    ->with('error', 'Failed to initiate payment: ' . ($paymentResult['message'] ?? 'Payment service unavailable'));
+            }
+
+        } catch (\Exception $e) {
+            Log::error('Paystack payment processing exception', [
+                'order_id' => $order->id,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+
+            return redirect()->route('storefront.cart', ['tenant' => $tenant->slug])
+                ->with('error', 'Payment processing failed. Please try again.');
+        }
+    }
+
+    /**
+     * Handle payment callback (supports Nomba and Paystack)
      */
     public function paymentCallback(Request $request, $tenant, $orderId)
     {
@@ -545,14 +642,12 @@ class CheckoutController extends Controller
                 ->where('tenant_id', $tenant->id)
                 ->firstOrFail();
 
-            // Initialize payment helper
-            $paymentHelper = new PaymentHelper();
+            // Verify payment based on payment method
+            $verificationResult = $this->verifyPaymentByMethod($order);
 
-            // Verify payment with Nomba
-            $verificationResult = $paymentHelper->verifyPayment($order->payment_gateway_reference);
-
-            Log::info('Nomba payment verification result', [
+            Log::info('Payment verification result', [
                 'order_id' => $order->id,
+                'payment_method' => $order->payment_method,
                 'verification_result' => $verificationResult
             ]);
 
@@ -660,12 +755,41 @@ class CheckoutController extends Controller
             ->where('payment_status', '!=', 'paid')
             ->firstOrFail();
 
-        // Only allow retry for Nomba payments
-        if ($order->payment_method !== 'nomba') {
+        // Only allow retry for online payments
+        if (!in_array($order->payment_method, ['nomba', 'paystack'])) {
             return back()->with('error', 'Payment retry is only available for online payments.');
         }
 
-        return $this->processNombaPayment($order, $tenant, $customer->email ?? 'customer@example.com');
+        if ($order->payment_method === 'nomba') {
+            return $this->processNombaPayment($order, $tenant, $customer->email ?? 'customer@example.com');
+        } elseif ($order->payment_method === 'paystack') {
+            return $this->processPaystackPayment($order, $tenant, $customer->email ?? 'customer@example.com');
+        }
+
+        return back()->with('error', 'Payment method not supported for retry.');
+    }
+
+    /**
+     * Verify payment based on payment method
+     */
+    private function verifyPaymentByMethod(Order $order)
+    {
+        $paymentMethod = $order->payment_method;
+        $reference = $order->payment_gateway_reference;
+
+        if ($paymentMethod === 'nomba') {
+            $paymentHelper = new PaymentHelper();
+            return $paymentHelper->verifyPayment($reference);
+        } elseif ($paymentMethod === 'paystack') {
+            $paystackHelper = new PaystackPaymentHelper();
+            return $paystackHelper->verifyTransaction($reference);
+        }
+
+        return [
+            'status' => false,
+            'payment_status' => 'unknown',
+            'message' => 'Unsupported payment method'
+        ];
     }
 
     /**

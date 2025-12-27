@@ -10,6 +10,7 @@ use App\Models\Affiliate;
 use App\Models\AffiliateReferral;
 use App\Models\AffiliateCommission;
 use App\Helpers\PaymentHelper;
+use App\Helpers\PaystackPaymentHelper;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -83,6 +84,7 @@ class SubscriptionController extends Controller
     {
         $request->validate([
             'billing_cycle' => 'required|in:monthly,yearly',
+            'payment_method' => 'required|in:nomba,paystack',
         ]);
 
         $tenant = tenant(); // Use the tenant() helper instead of the route parameter
@@ -127,9 +129,9 @@ class SubscriptionController extends Controller
                 'amount' => $amount,
                 'currency' => 'NGN',
                 'status' => 'pending',
-                'payment_method' => 'nomba',
+                'payment_method' => $request->payment_method,
                 'payment_reference' => $paymentReference,
-                'gateway_reference' => null, // Will be updated after Nomba response
+                'gateway_reference' => null, // Will be updated after gateway response
             ]);
 
             Log::info('Payment record created', [
@@ -137,81 +139,19 @@ class SubscriptionController extends Controller
                 'payment_reference' => $paymentReference
             ]);
 
-            // Initialize payment helper
-            $paymentHelper = new PaymentHelper();
+            // Route to appropriate payment gateway based on payment method
+            $paymentMethod = $request->payment_method;
 
-            // Check if Nomba credentials are configured
-            $tokenData = $paymentHelper->nombaAccessToken();
-            if (!$tokenData) {
-                DB::rollBack();
-                Log::error('Nomba credentials not configured', [
-                    'tenant_id' => $tenant->id,
-                    'plan_id' => $plan->id
-                ]);
-                return back()->with('error', 'Payment gateway not configured. Please contact administrator.');
+            if ($paymentMethod === 'nomba') {
+                return $this->processNombaPaymentForSubscription($request, $subscription, $payment, $tenant, $plan, $amount);
+            } elseif ($paymentMethod === 'paystack') {
+                return $this->processPaystackPaymentForSubscription($request, $subscription, $payment, $tenant, $plan, $amount);
             }
 
-            // Prepare callback URLs
-            $successUrl = route('tenant.subscription.payment.success', [
-                'tenant' => $tenant->slug,
-                'payment' => $payment->id
-            ]);
-            $callbackUrl = route('tenant.subscription.payment.callback', [
-                'tenant' => $tenant->slug,
-                'payment' => $payment->id
-            ]);
+            DB::rollBack();
+            return back()->with('error', 'Invalid payment method selected.');
 
-            // Get user email (from tenant's primary user or current user)
-            $userEmail = $tenant->users()->first()?->email ?? auth()->user()?->email;
-
-            Log::info('Initiating Nomba payment', [
-                'amount' => $amount / 100,
-                'userEmail' => $userEmail,
-                'callbackUrl' => $callbackUrl,
-                'paymentReference' => $paymentReference
-            ]);
-
-            // Process payment with Nomba
-            $paymentResult = $paymentHelper->processPayment(
-                $amount / 100, // Convert to naira (amount is in kobo)
-                'NGN',
-                $userEmail,
-                $callbackUrl,
-                $paymentReference
-            );
-
-            Log::info('Nomba payment result', $paymentResult);
-
-            if ($paymentResult['status']) {
-                // Update payment record with gateway reference
-                $payment->update([
-                    'gateway_reference' => $paymentResult['orderReference'],
-                    'gateway_response' => $paymentResult,
-                ]);
-
-                DB::commit();
-
-                Log::info('Redirecting to Nomba checkout', [
-                    'checkoutLink' => $paymentResult['checkoutLink']
-                ]);
-
-                // Redirect to Nomba checkout
-                return redirect($paymentResult['checkoutLink']);
-
-            } else {
-                // Payment initiation failed
-                DB::rollBack();
-
-                Log::error('Nomba payment initiation failed', [
-                    'tenant_id' => $tenant->id,
-                    'plan_id' => $plan->id,
-                    'amount' => $amount,
-                    'error' => $paymentResult['message'] ?? 'Unknown error',
-                    'full_result' => $paymentResult
-                ]);
-
-                return back()->with('error', 'Failed to initiate payment: ' . ($paymentResult['message'] ?? 'Payment service unavailable'));
-            }
+            // This code has been moved to processNombaPaymentForSubscription and processPaystackPaymentForSubscription methods
 
         } catch (\Exception $e) {
             DB::rollBack();
@@ -224,6 +164,195 @@ class SubscriptionController extends Controller
 
             return back()->with('error', 'Failed to process upgrade. Please try again.');
         }
+    }
+
+    /**
+     * Process Nomba payment for subscription
+     */
+    private function processNombaPaymentForSubscription($request, $subscription, $payment, $tenant, $plan, $amount)
+    {
+        // Initialize payment helper
+        $paymentHelper = new PaymentHelper();
+
+        // Check if Nomba credentials are configured
+        $tokenData = $paymentHelper->nombaAccessToken();
+        if (!$tokenData) {
+            DB::rollBack();
+            Log::error('Nomba credentials not configured', [
+                'tenant_id' => $tenant->id,
+                'plan_id' => $plan->id
+            ]);
+            return back()->with('error', 'Payment gateway not configured. Please contact administrator.');
+        }
+
+        // Prepare callback URL
+        $callbackUrl = route('tenant.subscription.payment.callback', [
+            'tenant' => $tenant->slug,
+            'payment' => $payment->id
+        ]);
+
+        // Get user email
+        $userEmail = $tenant->users()->first()?->email ?? auth()->user()?->email;
+
+        Log::info('Initiating Nomba payment for subscription', [
+            'amount' => $amount / 100,
+            'userEmail' => $userEmail,
+            'callbackUrl' => $callbackUrl,
+            'paymentReference' => $payment->payment_reference
+        ]);
+
+        // Process payment with Nomba
+        $paymentResult = $paymentHelper->processPayment(
+            $amount / 100, // Convert to naira (amount is in kobo)
+            'NGN',
+            $userEmail,
+            $callbackUrl,
+            $payment->payment_reference
+        );
+
+        Log::info('Nomba payment result', $paymentResult);
+
+        if ($paymentResult['status']) {
+            // Update payment record with gateway reference
+            $payment->update([
+                'gateway_reference' => $paymentResult['orderReference'],
+                'gateway_response' => $paymentResult,
+            ]);
+
+            DB::commit();
+
+            Log::info('Redirecting to Nomba checkout', [
+                'checkoutLink' => $paymentResult['checkoutLink']
+            ]);
+
+            // Redirect to Nomba checkout
+            return redirect($paymentResult['checkoutLink']);
+
+        } else {
+            // Payment initiation failed
+            DB::rollBack();
+
+            Log::error('Nomba payment initiation failed', [
+                'tenant_id' => $tenant->id,
+                'plan_id' => $plan->id,
+                'amount' => $amount,
+                'error' => $paymentResult['message'] ?? 'Unknown error',
+                'full_result' => $paymentResult
+            ]);
+
+            return back()->with('error', 'Failed to initiate payment: ' . ($paymentResult['message'] ?? 'Payment service unavailable'));
+        }
+    }
+
+    /**
+     * Process Paystack payment for subscription
+     */
+    private function processPaystackPaymentForSubscription($request, $subscription, $payment, $tenant, $plan, $amount)
+    {
+        // Initialize Paystack helper
+        $paystackHelper = new PaystackPaymentHelper();
+
+        // Check if Paystack is configured
+        if (!$paystackHelper->isConfigured()) {
+            DB::rollBack();
+            Log::error('Paystack credentials not configured', [
+                'tenant_id' => $tenant->id,
+                'plan_id' => $plan->id
+            ]);
+            return back()->with('error', 'Payment gateway not configured. Please contact administrator.');
+        }
+
+        // Prepare callback URL
+        $callbackUrl = route('tenant.subscription.payment.callback', [
+            'tenant' => $tenant->slug,
+            'payment' => $payment->id
+        ]);
+
+        // Get user email
+        $userEmail = $tenant->users()->first()?->email ?? auth()->user()?->email ?? 'noreply@' . $tenant->slug . '.com';
+
+        Log::info('Initiating Paystack payment for subscription', [
+            'amount' => $amount / 100,
+            'userEmail' => $userEmail,
+            'callbackUrl' => $callbackUrl,
+            'paymentReference' => $payment->payment_reference
+        ]);
+
+        // Initialize transaction with Paystack
+        $paymentResult = $paystackHelper->initializeTransaction(
+            $amount / 100, // Convert to naira (amount is in kobo)
+            $userEmail,
+            $callbackUrl,
+            $payment->payment_reference,
+            [
+                'subscription_id' => $subscription->id,
+                'plan_id' => $plan->id,
+                'tenant_id' => $tenant->id,
+                'billing_cycle' => $subscription->billing_cycle
+            ]
+        );
+
+        Log::info('Paystack payment result for subscription', $paymentResult);
+
+        if ($paymentResult['status']) {
+            // Update payment record with gateway reference
+            $payment->update([
+                'gateway_reference' => $paymentResult['reference'],
+                'gateway_response' => $paymentResult,
+            ]);
+
+            DB::commit();
+
+            Log::info('Redirecting to Paystack checkout', [
+                'authorization_url' => $paymentResult['authorization_url']
+            ]);
+
+            // Redirect to Paystack checkout
+            return redirect($paymentResult['authorization_url']);
+
+        } else {
+            // Payment initiation failed
+            DB::rollBack();
+
+            Log::error('Paystack payment initiation failed', [
+                'tenant_id' => $tenant->id,
+                'plan_id' => $plan->id,
+                'amount' => $amount,
+                'error' => $paymentResult['message'] ?? 'Unknown error',
+                'full_result' => $paymentResult
+            ]);
+
+            return back()->with('error', 'Failed to initiate payment: ' . ($paymentResult['message'] ?? 'Payment service unavailable'));
+        }
+    }
+
+    /**
+     * Verify payment based on payment method
+     */
+    private function verifyPaymentByMethod(SubscriptionPayment $payment)
+    {
+        $paymentMethod = $payment->payment_method;
+        $reference = $payment->gateway_reference ?? $payment->payment_reference;
+
+        Log::info('Verifying payment by method', [
+            'payment_id' => $payment->id,
+            'payment_method' => $paymentMethod,
+            'reference' => $reference
+        ]);
+
+        if ($paymentMethod === 'nomba') {
+            $paymentHelper = new PaymentHelper();
+            return $paymentHelper->verifyPayment($reference);
+        } elseif ($paymentMethod === 'paystack') {
+            $paystackHelper = new PaystackPaymentHelper();
+            return $paystackHelper->verifyTransaction($reference);
+        }
+
+        return [
+            'status' => false,
+            'payment_status' => 'unknown',
+            'message' => 'Unsupported payment method'
+        ];
     }
 
     /**
@@ -478,10 +607,14 @@ class SubscriptionController extends Controller
     }
 
     /**
-     * Handle payment callback from Nomba
+     * Handle payment callback from payment gateways (Nomba & Paystack)
      */
-    public function paymentCallback(Request $request, $tenantSlug, $paymentId)
+    public function paymentCallback(Request $request, $tenant, SubscriptionPayment $payment)
     {
+        // Extract tenant slug and payment ID for logging
+        $tenantSlug = is_object($tenant) ? $tenant->slug : $tenant;
+        $paymentId = is_object($payment) ? $payment->id : $payment;
+
         Log::info('Payment callback started', [
             'tenant_slug' => $tenantSlug,
             'payment_id' => $paymentId,
@@ -489,7 +622,11 @@ class SubscriptionController extends Controller
         ]);
 
         try {
-            $payment = SubscriptionPayment::findOrFail($paymentId);
+            // If payment is not a model instance, fetch it
+            if (!($payment instanceof SubscriptionPayment)) {
+                $payment = SubscriptionPayment::findOrFail($payment);
+            }
+
             $tenant = tenant();
 
             Log::info('Payment callback - loaded data', [
@@ -508,20 +645,23 @@ class SubscriptionController extends Controller
                 abort(403, 'Unauthorized access to payment record');
             }
 
-            // Initialize payment helper
-            $paymentHelper = new PaymentHelper();
+            // Verify payment based on payment method
+            $verificationResult = $this->verifyPaymentByMethod($payment);
 
-            // Verify payment with Nomba
-            $verificationResult = $paymentHelper->verifyPayment($payment->gateway_reference);
+            Log::info('Payment verification result', [
+                'payment_id' => $payment->id,
+                'payment_method' => $payment->payment_method,
+                'verification_result' => $verificationResult
+            ]);
 
             if ($verificationResult['status'] && $verificationResult['payment_status'] === 'successful') {
                 DB::beginTransaction();
 
-                // Update payment record
+                // Update payment record - Laravel will auto-cast gateway_response to JSON
                 $payment->update([
                     'status' => 'successful',
                     'paid_at' => now(),
-                    'gateway_response' => $verificationResult['response'],
+                    'gateway_response' => $verificationResult,
                 ]);
 
                 // Update subscription status
@@ -557,7 +697,7 @@ class SubscriptionController extends Controller
                     $tenant->update([
                         'subscription_status' => 'active',
                         'subscription_starts_at' => now(),
-                        'subscription_ends_at' => $subscription->ends_at,
+                        'subscription_ends_at' => $subscription->ends_at->format('Y-m-d H:i:s'),
                         'billing_cycle' => $subscription->billing_cycle,
                     ]);
 
@@ -599,7 +739,7 @@ class SubscriptionController extends Controller
 
                 $payment->update([
                     'status' => 'failed',
-                    'gateway_response' => $verificationResult['response'] ?? null,
+                    'gateway_response' => $verificationResult,
                 ]);
 
                 $payment->subscription->update(['status' => 'failed']);
@@ -611,8 +751,8 @@ class SubscriptionController extends Controller
         } catch (\Exception $e) {
             DB::rollBack();
             Log::error('Payment callback processing failed', [
-                'payment_id' => $paymentId,
-                'tenant_slug' => $tenantSlug,
+                'payment_id' => is_object($payment) ? $payment->id : $payment,
+                'tenant_slug' => is_object($tenant) ? $tenant->slug : $tenant,
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString(),
                 'request_data' => $request->all()
@@ -649,6 +789,7 @@ class SubscriptionController extends Controller
     {
         $request->validate([
             'billing_cycle' => 'required|in:monthly,yearly',
+            'payment_method' => 'required|in:nomba,paystack',
         ]);
 
         $tenant = tenant();
@@ -698,89 +839,28 @@ class SubscriptionController extends Controller
                 'amount' => $amount,
                 'currency' => 'NGN',
                 'status' => 'pending',
-                'payment_method' => 'nomba',
+                'payment_method' => $request->payment_method,
                 'payment_reference' => $paymentReference,
                 'gateway_reference' => null,
             ]);
 
             Log::info('Renewal payment record created', [
                 'payment_id' => $payment->id,
-                'payment_reference' => $paymentReference
+                'payment_reference' => $paymentReference,
+                'payment_method' => $request->payment_method
             ]);
 
-            // Initialize payment helper
-            $paymentHelper = new PaymentHelper();
+            // Route to appropriate payment gateway
+            $paymentMethod = $request->payment_method;
 
-            // Check if Nomba credentials are configured
-            $tokenData = $paymentHelper->nombaAccessToken();
-            if (!$tokenData) {
-                DB::rollBack();
-                Log::error('Nomba credentials not configured for renewal', [
-                    'tenant_id' => $tenant->id,
-                    'plan_id' => $currentPlan->id
-                ]);
-                return back()->with('error', 'Payment gateway not configured. Please contact administrator.');
+            if ($paymentMethod === 'nomba') {
+                return $this->processNombaPaymentForSubscription($request, $subscription, $payment, $tenant, $currentPlan, $amount);
+            } elseif ($paymentMethod === 'paystack') {
+                return $this->processPaystackPaymentForSubscription($request, $subscription, $payment, $tenant, $currentPlan, $amount);
             }
 
-            Log::info('Nomba payment processing for renewal', [
-                'payment_reference' => $paymentReference,
-                'amount' => $amount,
-                'currency' => 'NGN',
-                'tenant_email' => $tenant->email ?? 'noreply@' . $tenant->slug . '.com',
-                'callback_url' => route('tenant.subscription.payment.callback', [
-                    'tenant' => $tenant->slug,
-                    'payment' => $payment->id
-                ])
-            ]);
-
-            // Create payment link
-            $paymentLinkResponse = $paymentHelper->processPayment(
-                $amount,
-                'NGN',
-                $tenant->email ?? 'noreply@' . $tenant->slug . '.com',
-                route('tenant.subscription.payment.callback', [
-                    'tenant' => $tenant->slug,
-                    'payment' => $payment->id
-                ]),
-                $paymentReference
-            );
-
-            Log::info('Nomba payment response for renewal', [
-                'payment_reference' => $paymentReference,
-                'response' => $paymentLinkResponse
-            ]);
-
-            if (!$paymentLinkResponse || !$paymentLinkResponse['status'] || !isset($paymentLinkResponse['checkoutLink'])) {
-                DB::rollBack();
-                Log::error('Failed to create Nomba payment link for renewal', [
-                    'response' => $paymentLinkResponse,
-                    'payment_reference' => $paymentReference
-                ]);
-
-                $errorMessage = 'Failed to create payment link. Please try again.';
-                if (isset($paymentLinkResponse['message'])) {
-                    $errorMessage = $paymentLinkResponse['message'];
-                }
-
-                return back()->with('error', $errorMessage);
-            }
-
-            // Update payment with gateway reference
-            $payment->update([
-                'gateway_reference' => $paymentLinkResponse['orderReference'] ?? $paymentReference,
-                'gateway_response' => $paymentLinkResponse,
-            ]);
-
-            DB::commit();
-
-            Log::info('Renewal payment link created successfully', [
-                'payment_id' => $payment->id,
-                'checkout_url' => $paymentLinkResponse['checkoutLink'],
-                'gateway_reference' => $paymentLinkResponse['orderReference'] ?? $paymentReference
-            ]);
-
-            // Redirect to Nomba payment page
-            return redirect()->away($paymentLinkResponse['checkoutLink']);
+            DB::rollBack();
+            return back()->with('error', 'Invalid payment method selected.');
 
         } catch (\Exception $e) {
             DB::rollBack();
