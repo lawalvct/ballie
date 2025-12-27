@@ -184,11 +184,23 @@
         </div>
 
         <!-- Notifications -->
-        <div class="relative" x-data="{ open: false, unreadCount: {{ auth()->user()->unreadNotifications->count() }}, notifications: [] }" 
+        <div class="relative" x-data="{ open: false, unreadCount: {{ auth()->user()->unreadNotifications->count() }}, notifications: [] }"
              x-init="
-                fetch('{{ route('tenant.notifications.index', tenant()->slug) }}?ajax=1')
-                    .then(res => res.json())
-                    .then(data => notifications = data.data.slice(0, 5));
+                // Fetch notifications on load
+                fetch('{{ route('tenant.notifications.index', tenant()->slug) }}', {
+                    headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                })
+                .then(res => res.json())
+                .then(data => notifications = data.notifications || [])
+                .catch(err => console.error('Error loading notifications:', err));
+
+                // Refresh count every 30 seconds
+                setInterval(() => {
+                    fetch('{{ route('tenant.notifications.unread-count', tenant()->slug) }}')
+                        .then(res => res.json())
+                        .then(data => unreadCount = data.count)
+                        .catch(err => console.error('Error fetching count:', err));
+                }, 30000);
              ">
             <button @click="open = !open" @click.away="open = false" class="relative p-2 rounded-xl hover:bg-gray-100 transition-colors duration-200">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -198,7 +210,7 @@
             </button>
 
             <!-- Notifications Dropdown -->
-            <div x-show="open" 
+            <div x-show="open"
                  x-transition:enter="transition ease-out duration-200"
                  x-transition:enter-start="opacity-0 scale-95"
                  x-transition:enter-end="opacity-1 scale-100"
@@ -207,11 +219,11 @@
                  x-transition:leave-end="opacity-0 scale-95"
                  class="absolute right-0 mt-2 w-80 bg-white rounded-xl shadow-lg border border-gray-200 z-50"
                  style="display: none;">
-                
+
                 <!-- Header -->
                 <div class="px-4 py-3 border-b border-gray-200 flex items-center justify-between">
                     <h3 class="text-sm font-semibold text-gray-900">Notifications</h3>
-                    <button @click="fetch('{{ route('tenant.notifications.mark-all-read', tenant()->slug) }}', {method: 'POST', headers: {'X-CSRF-TOKEN': '{{ csrf_token() }}'}}).then(() => {unreadCount = 0; notifications.forEach(n => n.read_at = new Date())})" 
+                    <button @click="fetch('{{ route('tenant.notifications.mark-all-read', tenant()->slug) }}', {method: 'POST', headers: {'X-CSRF-TOKEN': '{{ csrf_token() }}'}}).then(() => {unreadCount = 0; notifications.forEach(n => n.read_at = new Date())})"
                             class="text-xs text-blue-600 hover:text-blue-800">Mark all read</button>
                 </div>
 
@@ -225,21 +237,26 @@
                             No notifications yet
                         </div>
                     </template>
-                    
+
                     <template x-for="notification in notifications" :key="notification.id">
-                        <div @click="if(!notification.read_at) { fetch(`{{ url(tenant()->slug . '/notifications') }}/${notification.id}/mark-read`, {method: 'POST', headers: {'X-CSRF-TOKEN': '{{ csrf_token() }}'}}).then(() => {notification.read_at = new Date(); unreadCount = Math.max(0, unreadCount - 1)}); } if(notification.data.action_url) window.location.href = notification.data.action_url;"
-                             :class="notification.read_at ? 'bg-white' : 'bg-blue-50'" 
+                        <div @click="if(!notification.read_at) { fetch(`{{ url(tenant()->slug . '/notifications') }}/${notification.id}/mark-read`, {method: 'POST', headers: {'X-CSRF-TOKEN': '{{ csrf_token() }}'}}).then(() => {notification.read_at = new Date(); unreadCount = Math.max(0, unreadCount - 1)}); } if(notification.data.ticket_id) window.location.href = '{{ url(tenant()->slug . '/support/tickets') }}/' + notification.data.ticket_id; else if(notification.data.action_url) window.location.href = notification.data.action_url;"
+                             :class="notification.read_at ? 'bg-white' : 'bg-blue-50'"
                              class="px-4 py-3 border-b border-gray-100 hover:bg-gray-50 cursor-pointer transition-colors">
                             <div class="flex items-start space-x-3">
                                 <div class="flex-shrink-0 w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
                                     <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                        <template x-if="notification.data.ticket_number">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z"></path>
+                                        </template>
+                                        <template x-if="!notification.data.ticket_number">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                        </template>
                                     </svg>
                                 </div>
                                 <div class="flex-1 min-w-0">
-                                    <p class="text-sm font-medium text-gray-900" x-text="notification.data.title"></p>
-                                    <p class="text-xs text-gray-600 mt-1" x-text="notification.data.message"></p>
-                                    <p class="text-xs text-gray-400 mt-1" x-text="new Date(notification.created_at).toLocaleDateString()"></p>
+                                    <p class="text-sm font-medium text-gray-900" x-text="notification.data.ticket_number ? 'Ticket #' + notification.data.ticket_number : (notification.data.title || 'Notification')"></p>
+                                    <p class="text-xs text-gray-600 mt-1" x-text="notification.data.subject || notification.data.message || ''"></p>
+                                    <p class="text-xs text-gray-400 mt-1" x-text="new Date(notification.created_at).toLocaleString()"></p>
                                 </div>
                                 <template x-if="!notification.read_at">
                                     <div class="flex-shrink-0 w-2 h-2 bg-blue-600 rounded-full"></div>

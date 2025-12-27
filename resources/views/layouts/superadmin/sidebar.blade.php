@@ -20,10 +20,11 @@
                         <span class="menu-title whitespace-nowrap">Companies</span>
                     </a>
 
-                    <a href="#" class="flex items-center px-4 py-3 text-sm font-medium text-gray-300 rounded-lg nav-item-hover hover:text-white transition-all duration-300"
+                    <a href="{{ route('super-admin.support.index') }}"
+                       class="flex items-center px-4 py-3 text-sm font-medium rounded-lg transition-all duration-300 {{ request()->routeIs('super-admin.support.*') ? 'nav-item-active text-white shadow-lg' : 'text-gray-300 nav-item-hover hover:text-white' }}"
                        title="Support Center">
                         <svg class="w-5 h-5 mr-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 5.636l-3.536 3.536m0 5.656l3.536 3.536M9.172 9.172L5.636 5.636m3.536 9.192L5.636 18.364M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-5 0a4 4 0 11-8 0 4 4 0 018 0z"></path>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"></path>
                         </svg>
                         <span class="menu-title whitespace-nowrap">Support Center</span>
                     </a>

@@ -130,7 +130,7 @@
             @if($ticket->isOpen())
                 <div class="bg-white rounded-lg shadow-md p-6">
                     <h3 class="text-lg font-semibold text-gray-900 mb-4">Add Reply</h3>
-                    <form method="POST" action="{{ route('tenant.support.tickets.reply', ['tenant' => tenant()->slug, 'ticket' => $ticket->id]) }}"
+                    <form method="POST" action="{{ route('tenant.support.tickets.reply', ['tenant' => tenant()->slug, 'supportTicket' => $ticket->id]) }}"
                           enctype="multipart/form-data">
                         @csrf
                         <div class="mb-4">
@@ -253,7 +253,7 @@
 <div id="close-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
     <div class="bg-white rounded-lg max-w-md w-full p-6">
         <h3 class="text-xl font-bold text-gray-900 mb-4">Close Ticket</h3>
-        <form method="POST" action="{{ route('tenant.support.tickets.close', ['tenant' => tenant()->slug, 'ticket' => $ticket->id]) }}">
+        <form method="POST" action="{{ route('tenant.support.tickets.close', ['tenant' => tenant()->slug, 'supportTicket' => $ticket->id]) }}">
             @csrf
             <div class="mb-4">
                 <label class="block text-sm font-medium text-gray-700 mb-2">Reason (Optional)</label>
@@ -278,7 +278,7 @@
 <div id="reopen-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
     <div class="bg-white rounded-lg max-w-md w-full p-6">
         <h3 class="text-xl font-bold text-gray-900 mb-4">Reopen Ticket</h3>
-        <form method="POST" action="{{ route('tenant.support.tickets.reopen', ['tenant' => tenant()->slug, 'ticket' => $ticket->id]) }}">
+        <form method="POST" action="{{ route('tenant.support.tickets.reopen', ['tenant' => tenant()->slug, 'supportTicket' => $ticket->id]) }}">
             @csrf
             <div class="mb-4">
                 <label class="block text-sm font-medium text-gray-700 mb-2">Reason <span class="text-red-500">*</span></label>
@@ -304,7 +304,7 @@
 <div id="rating-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
     <div class="bg-white rounded-lg max-w-md w-full p-6">
         <h3 class="text-xl font-bold text-gray-900 mb-4">Rate Our Support</h3>
-        <form method="POST" action="{{ route('tenant.support.tickets.rate', ['tenant' => tenant()->slug, 'ticket' => $ticket->id]) }}">
+        <form method="POST" action="{{ route('tenant.support.tickets.rate', ['tenant' => tenant()->slug, 'supportTicket' => $ticket->id]) }}">
             @csrf
             <div class="mb-4">
                 <label class="block text-sm font-medium text-gray-700 mb-3">How satisfied are you?</label>

@@ -13,13 +13,13 @@ class NotificationController extends Controller
      */
     public function index(Request $request)
     {
-        if ($request->ajax() || $request->has('ajax')) {
+        if ($request->ajax() || $request->wantsJson()) {
             $notifications = Auth::user()->notifications()
                 ->orderBy('created_at', 'desc')
                 ->limit(10)
                 ->get();
-            
-            return response()->json(['data' => $notifications]);
+
+            return response()->json(['notifications' => $notifications]);
         }
 
         $notifications = Auth::user()->notifications()

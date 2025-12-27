@@ -9,9 +9,14 @@ use App\Models\SupportTicketReply;
 use App\Models\SupportTicketAttachment;
 use App\Models\SupportTicketStatusHistory;
 use App\Models\KnowledgeBaseArticle;
+use App\Models\SuperAdmin;
+use App\Notifications\TicketCreatedNotification;
+use App\Notifications\TicketRepliedNotification;
+use App\Notifications\TicketClosedNotification;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Str;
 
 class SupportController extends Controller
@@ -22,7 +27,7 @@ class SupportController extends Controller
     public function index(Request $request)
     {
         $query = SupportTicket::with(['category', 'user', 'replies'])
-            ->where('tenant_id', tenant('id'))
+            ->where('tenant_id', tenant()->id)
             ->where('user_id', Auth::id());
 
         // Filter by status
@@ -98,7 +103,7 @@ class SupportController extends Controller
 
         // Create the ticket
         $ticket = SupportTicket::create([
-            'tenant_id' => tenant('id'),
+            'tenant_id' => tenant()->id,
             'user_id' => Auth::id(),
             'category_id' => $validated['category_id'],
             'subject' => $validated['subject'],
@@ -136,6 +141,10 @@ class SupportController extends Controller
             'Ticket created'
         );
 
+        // Notify all super admins about the new ticket
+        $admins = SuperAdmin::all();
+        Notification::send($admins, new TicketCreatedNotification($ticket));
+
         return redirect()
             ->route('tenant.support.tickets.show', ['tenant' => tenant()->slug, 'ticket' => $ticket->id])
             ->with('success', 'Support ticket created successfully! Ticket #' . $ticket->ticket_number);
@@ -144,14 +153,19 @@ class SupportController extends Controller
     /**
      * Display the specified ticket.
      */
-    public function show(SupportTicket $ticket)
+    public function show($tenant, $supportTicket)
     {
+        // Manually fetch the ticket to avoid route binding conflicts
+        $supportTicket = SupportTicket::where('id', $supportTicket)
+            ->where('tenant_id', tenant()->id)
+            ->firstOrFail();
+
         // Ensure user can only view their own tickets
-        if ($ticket->tenant_id !== tenant('id') || $ticket->user_id !== Auth::id()) {
+        if ($supportTicket->user_id !== Auth::id()) {
             abort(403, 'Unauthorized access to this ticket.');
         }
 
-        $ticket->load([
+        $supportTicket->load([
             'category',
             'user',
             'assignedAdmin',
@@ -163,23 +177,28 @@ class SupportController extends Controller
         ]);
 
         // Get only public replies (exclude internal notes)
-        $replies = $ticket->replies()->public()->with('attachments')->get();
+        $replies = $supportTicket->replies()->public()->with('attachments')->get();
 
-        return view('tenant.support.show', compact('ticket', 'replies'));
+        return view('tenant.support.show', compact('supportTicket', 'replies'))->with('ticket', $supportTicket);
     }
 
     /**
      * Add a reply to a ticket.
      */
-    public function reply(Request $request, SupportTicket $ticket)
+    public function reply(Request $request, $tenant, $supportTicket)
     {
+        // Manually fetch the ticket to avoid route binding conflicts
+        $supportTicket = SupportTicket::where('id', $supportTicket)
+            ->where('tenant_id', tenant()->id)
+            ->firstOrFail();
+
         // Ensure user can only reply to their own tickets
-        if ($ticket->tenant_id !== tenant('id') || $ticket->user_id !== Auth::id()) {
+        if ($supportTicket->user_id !== Auth::id()) {
             abort(403, 'Unauthorized access to this ticket.');
         }
 
         // Ensure ticket is not closed
-        if ($ticket->isClosed()) {
+        if ($supportTicket->isClosed()) {
             return back()->with('error', 'Cannot reply to a closed ticket. Please reopen it first.');
         }
 
@@ -191,7 +210,7 @@ class SupportController extends Controller
 
         // Create the reply
         $reply = SupportTicketReply::create([
-            'ticket_id' => $ticket->id,
+            'ticket_id' => $supportTicket->id,
             'user_id' => Auth::id(),
             'message' => $validated['message'],
             'is_internal_note' => false,
@@ -202,10 +221,10 @@ class SupportController extends Controller
         if ($request->hasFile('attachments')) {
             foreach ($request->file('attachments') as $file) {
                 $filename = Str::uuid() . '.' . $file->getClientOriginalExtension();
-                $path = $file->storeAs('support-tickets/' . $ticket->id, $filename, 'private');
+                $path = $file->storeAs('support-tickets/' . $supportTicket->id, $filename, 'private');
 
                 SupportTicketAttachment::create([
-                    'ticket_id' => $ticket->id,
+                    'ticket_id' => $supportTicket->id,
                     'reply_id' => $reply->id,
                     'filename' => $filename,
                     'original_name' => $file->getClientOriginalName(),
@@ -219,12 +238,12 @@ class SupportController extends Controller
         }
 
         // Update ticket status if it was waiting for customer
-        if ($ticket->status === 'waiting_customer') {
-            $oldStatus = $ticket->status;
-            $ticket->update(['status' => 'open']);
+        if ($supportTicket->status === 'waiting_customer') {
+            $oldStatus = $supportTicket->status;
+            $supportTicket->update(['status' => 'open']);
 
             SupportTicketStatusHistory::recordChange(
-                $ticket,
+                $supportTicket,
                 $oldStatus,
                 'open',
                 Auth::user(),
@@ -232,21 +251,30 @@ class SupportController extends Controller
             );
         }
 
+        // Notify admins about the customer reply
+        $admins = SuperAdmin::all();
+        Notification::send($admins, new TicketRepliedNotification($supportTicket, $reply, false));
+
         return back()->with('success', 'Reply added successfully!');
     }
 
     /**
      * Close a ticket.
      */
-    public function close(Request $request, SupportTicket $ticket)
+    public function close(Request $request, $tenant, $supportTicket)
     {
+        // Manually fetch the ticket to avoid route binding conflicts
+        $supportTicket = SupportTicket::where('id', $supportTicket)
+            ->where('tenant_id', tenant()->id)
+            ->firstOrFail();
+
         // Ensure user can only close their own tickets
-        if ($ticket->tenant_id !== tenant('id') || $ticket->user_id !== Auth::id()) {
+        if ($supportTicket->user_id !== Auth::id()) {
             abort(403, 'Unauthorized access to this ticket.');
         }
 
         // Ensure ticket is not already closed
-        if ($ticket->isClosed()) {
+        if ($supportTicket->isClosed()) {
             return back()->with('error', 'Ticket is already closed.');
         }
 
@@ -254,39 +282,46 @@ class SupportController extends Controller
             'reason' => 'nullable|string|max:500',
         ]);
 
-        $oldStatus = $ticket->status;
-        $ticket->update([
+        $oldStatus = $supportTicket->status;
+        $supportTicket->update([
             'status' => 'closed',
             'closed_at' => now(),
         ]);
 
         SupportTicketStatusHistory::recordChange(
-            $ticket,
+            $supportTicket,
             $oldStatus,
             'closed',
             Auth::user(),
             $validated['reason'] ?? 'Closed by customer'
         );
-
+        // Notify admins that customer closed the ticket
+        $admins = SuperAdmin::all();
+        Notification::send($admins, new TicketClosedNotification($ticket, Auth::user()));
         return back()->with('success', 'Ticket closed successfully!');
     }
 
     /**
      * Reopen a closed ticket.
      */
-    public function reopen(Request $request, SupportTicket $ticket)
+    public function reopen(Request $request, $tenant, $supportTicket)
     {
+        // Manually fetch the ticket to avoid route binding conflicts
+        $supportTicket = SupportTicket::where('id', $supportTicket)
+            ->where('tenant_id', tenant()->id)
+            ->firstOrFail();
+
         // Ensure user can only reopen their own tickets
-        if ($ticket->tenant_id !== tenant('id') || $ticket->user_id !== Auth::id()) {
+        if ($supportTicket->user_id !== Auth::id()) {
             abort(403, 'Unauthorized access to this ticket.');
         }
 
         // Ensure ticket is closed and can be reopened
-        if (!$ticket->isClosed()) {
+        if (!$supportTicket->isClosed()) {
             return back()->with('error', 'Ticket is not closed.');
         }
 
-        if (!$ticket->canReopen()) {
+        if (!$supportTicket->canReopen()) {
             return back()->with('error', 'Ticket cannot be reopened. It has been closed for more than 30 days.');
         }
 
@@ -294,14 +329,14 @@ class SupportController extends Controller
             'reason' => 'required|string|min:10|max:500',
         ]);
 
-        $oldStatus = $ticket->status;
-        $ticket->update([
+        $oldStatus = $supportTicket->status;
+        $supportTicket->update([
             'status' => 'open',
             'closed_at' => null,
         ]);
 
         SupportTicketStatusHistory::recordChange(
-            $ticket,
+            $supportTicket,
             $oldStatus,
             'open',
             Auth::user(),
@@ -314,20 +349,25 @@ class SupportController extends Controller
     /**
      * Submit a satisfaction rating for a ticket.
      */
-    public function rate(Request $request, SupportTicket $ticket)
+    public function rate(Request $request, $tenant, $supportTicket)
     {
+        // Manually fetch the ticket to avoid route binding conflicts
+        $supportTicket = SupportTicket::where('id', $supportTicket)
+            ->where('tenant_id', tenant()->id)
+            ->firstOrFail();
+
         // Ensure user can only rate their own tickets
-        if ($ticket->tenant_id !== tenant('id') || $ticket->user_id !== Auth::id()) {
+        if ($supportTicket->user_id !== Auth::id()) {
             abort(403, 'Unauthorized access to this ticket.');
         }
 
         // Ensure ticket is resolved or closed
-        if (!in_array($ticket->status, ['resolved', 'closed'])) {
+        if (!in_array($supportTicket->status, ['resolved', 'closed'])) {
             return back()->with('error', 'You can only rate resolved or closed tickets.');
         }
 
         // Ensure ticket hasn't been rated yet
-        if ($ticket->hasRating()) {
+        if ($supportTicket->hasRating()) {
             return back()->with('error', 'You have already rated this ticket.');
         }
 
@@ -336,7 +376,7 @@ class SupportController extends Controller
             'comment' => 'nullable|string|max:1000',
         ]);
 
-        $ticket->update([
+        $supportTicket->update([
             'satisfaction_rating' => $validated['rating'],
             'satisfaction_comment' => $validated['comment'] ?? null,
         ]);

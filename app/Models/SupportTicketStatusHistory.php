@@ -9,6 +9,8 @@ class SupportTicketStatusHistory extends Model
 {
     use HasFactory;
 
+    protected $table = 'support_ticket_status_history';
+
     const UPDATED_AT = null;
 
     protected $fillable = [

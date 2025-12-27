@@ -94,7 +94,7 @@
         <div class="space-y-4">
             @foreach($tickets as $ticket)
                 <div class="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow duration-200 overflow-hidden">
-                    <a href="{{ route('tenant.support.tickets.show', ['tenant' => tenant()->slug, 'ticket' => $ticket->id]) }}"
+                    <a href="{{ route('tenant.support.tickets.show', ['tenant' => tenant()->slug, 'supportTicket' => $ticket->id]) }}"
                        class="block p-6">
                         <div class="flex items-start justify-between">
                             <div class="flex-1">

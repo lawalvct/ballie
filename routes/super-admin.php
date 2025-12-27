@@ -101,14 +101,49 @@ Route::prefix('super-admin')->name('super-admin.')->group(function () {
             Route::post('/local', [\App\Http\Controllers\SuperAdmin\BackupController::class, 'createLocalBackup'])->name('create-local');
         });
 
-        // Support Center (Future implementation)
+        // Support Center
         Route::prefix('support')->name('support.')->group(function () {
-            Route::get('/tickets', function () {
-                return view('super-admin.support.tickets');
-            })->name('tickets');
-            Route::get('/chat', function () {
-                return view('super-admin.support.chat');
-            })->name('chat');
+            // Dashboard & Tickets
+            Route::get('/', [\App\Http\Controllers\SuperAdmin\SupportController::class, 'index'])->name('index');
+            Route::get('/tickets/{ticket}', [\App\Http\Controllers\SuperAdmin\SupportController::class, 'show'])->name('tickets.show');
+            Route::post('/tickets/{ticket}/reply', [\App\Http\Controllers\SuperAdmin\SupportController::class, 'reply'])->name('tickets.reply');
+            Route::post('/tickets/{ticket}/internal-note', [\App\Http\Controllers\SuperAdmin\SupportController::class, 'internalNote'])->name('tickets.internal-note');
+            Route::patch('/tickets/{ticket}/status', [\App\Http\Controllers\SuperAdmin\SupportController::class, 'updateStatus'])->name('tickets.update-status');
+            Route::patch('/tickets/{ticket}/priority', [\App\Http\Controllers\SuperAdmin\SupportController::class, 'updatePriority'])->name('tickets.update-priority');
+            Route::patch('/tickets/{ticket}/assign', [\App\Http\Controllers\SuperAdmin\SupportController::class, 'assign'])->name('tickets.assign');
+            Route::delete('/tickets/{ticket}', [\App\Http\Controllers\SuperAdmin\SupportController::class, 'destroy'])->name('tickets.destroy');
+
+            // Bulk Actions
+            Route::post('/tickets/bulk/status', [\App\Http\Controllers\SuperAdmin\SupportController::class, 'bulkUpdateStatus'])->name('tickets.bulk-status');
+            Route::post('/tickets/bulk/assign', [\App\Http\Controllers\SuperAdmin\SupportController::class, 'bulkAssign'])->name('tickets.bulk-assign');
+            Route::delete('/tickets/bulk/delete', [\App\Http\Controllers\SuperAdmin\SupportController::class, 'bulkDelete'])->name('tickets.bulk-delete');
+
+            // Response Templates
+            Route::resource('templates', \App\Http\Controllers\SuperAdmin\ResponseTemplateController::class);
+
+            // Categories
+            Route::resource('categories', \App\Http\Controllers\SuperAdmin\SupportCategoryController::class);
+            Route::post('/categories/reorder', [\App\Http\Controllers\SuperAdmin\SupportCategoryController::class, 'reorder'])->name('categories.reorder');
+
+            // Knowledge Base Management
+            Route::prefix('kb')->name('kb.')->group(function () {
+                Route::get('/', [\App\Http\Controllers\SuperAdmin\KnowledgeBaseController::class, 'index'])->name('index');
+                Route::get('/create', [\App\Http\Controllers\SuperAdmin\KnowledgeBaseController::class, 'create'])->name('create');
+                Route::post('/', [\App\Http\Controllers\SuperAdmin\KnowledgeBaseController::class, 'store'])->name('store');
+                Route::get('/{article}/edit', [\App\Http\Controllers\SuperAdmin\KnowledgeBaseController::class, 'edit'])->name('edit');
+                Route::put('/{article}', [\App\Http\Controllers\SuperAdmin\KnowledgeBaseController::class, 'update'])->name('update');
+                Route::delete('/{article}', [\App\Http\Controllers\SuperAdmin\KnowledgeBaseController::class, 'destroy'])->name('destroy');
+                Route::post('/{article}/publish', [\App\Http\Controllers\SuperAdmin\KnowledgeBaseController::class, 'publish'])->name('publish');
+                Route::post('/{article}/unpublish', [\App\Http\Controllers\SuperAdmin\KnowledgeBaseController::class, 'unpublish'])->name('unpublish');
+            });
+
+            // Reports & Analytics
+            Route::get('/reports', [\App\Http\Controllers\SuperAdmin\SupportController::class, 'reports'])->name('reports');
+            Route::get('/reports/export', [\App\Http\Controllers\SuperAdmin\SupportController::class, 'exportReport'])->name('reports.export');
+
+            // Settings
+            Route::get('/settings', [\App\Http\Controllers\SuperAdmin\SupportController::class, 'settings'])->name('settings');
+            Route::put('/settings', [\App\Http\Controllers\SuperAdmin\SupportController::class, 'updateSettings'])->name('settings.update');
         });
 
         // System Management (Future implementation)
@@ -142,6 +177,15 @@ Route::prefix('super-admin')->name('super-admin.')->group(function () {
             Route::get('/dashboard-stats', [DashboardController::class, 'getStats'])->name('dashboard.stats');
             Route::get('/tenants/search', [TenantController::class, 'search'])->name('tenants.search');
             Route::get('/system-health', [DashboardController::class, 'systemHealth'])->name('system.health');
+        });
+
+        // Notifications
+        Route::prefix('notifications')->name('notifications.')->group(function () {
+            Route::get('/', [\App\Http\Controllers\SuperAdmin\NotificationController::class, 'index'])->name('index');
+            Route::get('/unread-count', [\App\Http\Controllers\SuperAdmin\NotificationController::class, 'getUnreadCount'])->name('unread-count');
+            Route::post('/{id}/mark-read', [\App\Http\Controllers\SuperAdmin\NotificationController::class, 'markAsRead'])->name('mark-read');
+            Route::post('/mark-all-read', [\App\Http\Controllers\SuperAdmin\NotificationController::class, 'markAllAsRead'])->name('mark-all-read');
+            Route::delete('/{id}', [\App\Http\Controllers\SuperAdmin\NotificationController::class, 'destroy'])->name('destroy');
         });
     });
 });

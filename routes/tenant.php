@@ -1048,11 +1048,11 @@ Route::prefix('ledger-accounts')->name('ledger-accounts.')->group(function () {
             Route::get('/', [SupportController::class, 'index'])->name('index');
             Route::get('/create', [SupportController::class, 'create'])->name('create');
             Route::post('/tickets', [SupportController::class, 'store'])->name('tickets.store');
-            Route::get('/tickets/{ticket}', [SupportController::class, 'show'])->name('tickets.show');
-            Route::post('/tickets/{ticket}/reply', [SupportController::class, 'reply'])->name('tickets.reply');
-            Route::post('/tickets/{ticket}/close', [SupportController::class, 'close'])->name('tickets.close');
-            Route::post('/tickets/{ticket}/reopen', [SupportController::class, 'reopen'])->name('tickets.reopen');
-            Route::post('/tickets/{ticket}/rate', [SupportController::class, 'rate'])->name('tickets.rate');
+            Route::get('/tickets/{supportTicket}', [SupportController::class, 'show'])->where('supportTicket', '[0-9]+')->name('tickets.show');
+            Route::post('/tickets/{supportTicket}/reply', [SupportController::class, 'reply'])->where('supportTicket', '[0-9]+')->name('tickets.reply');
+            Route::post('/tickets/{supportTicket}/close', [SupportController::class, 'close'])->where('supportTicket', '[0-9]+')->name('tickets.close');
+            Route::post('/tickets/{supportTicket}/reopen', [SupportController::class, 'reopen'])->where('supportTicket', '[0-9]+')->name('tickets.reopen');
+            Route::post('/tickets/{supportTicket}/rate', [SupportController::class, 'rate'])->where('supportTicket', '[0-9]+')->name('tickets.rate');
 
             // Attachments
             Route::post('/attachments/upload', [SupportController::class, 'uploadAttachment'])->name('attachments.upload');
