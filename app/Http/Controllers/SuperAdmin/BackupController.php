@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\SuperAdmin;
 
 use App\Http\Controllers\Controller;
+use App\Models\Backup;
 use App\Services\CyberPanelEmailService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -25,7 +26,17 @@ class BackupController extends Controller
      */
     public function index()
     {
-        return view('super-admin.backups.index');
+        $lastBackup = Backup::getLastSuccessfulBackup();
+        $daysSinceLastBackup = Backup::daysSinceLastBackup();
+        $isOverdue = Backup::isBackupOverdue();
+        $recentBackups = Backup::orderBy('created_at', 'desc')->take(10)->get();
+
+        return view('super-admin.backups.index', compact(
+            'lastBackup',
+            'daysSinceLastBackup',
+            'isOverdue',
+            'recentBackups'
+        ));
     }
 
     /**
@@ -35,13 +46,45 @@ class BackupController extends Controller
     {
         $website = 'ballie.co';
 
-        $result = $this->cyberPanelService->createBackup($website);
+        // Create backup record
+        $backup = Backup::create([
+            'type' => 'server',
+            'status' => 'in_progress',
+            'metadata' => [
+                'website' => $website,
+            ],
+        ]);
 
-        if ($result['success']) {
-            return back()->with('success', $result['message'] ?? 'Server backup created successfully');
+        try {
+            $result = $this->cyberPanelService->createBackup($website);
+
+            if ($result['success']) {
+                $backup->update([
+                    'status' => 'completed',
+                    'completed_at' => now(),
+                    'metadata' => array_merge($backup->metadata ?? [], [
+                        'website' => $website,
+                        'response' => $result['data'] ?? [],
+                    ]),
+                ]);
+
+                return back()->with('success', $result['message'] ?? 'Server backup created successfully');
+            }
+
+            $backup->update([
+                'status' => 'failed',
+                'error_message' => $result['error'] ?? 'Unknown error',
+            ]);
+
+            return back()->with('error', $result['error'] ?? 'Failed to create server backup');
+        } catch (\Exception $e) {
+            $backup->update([
+                'status' => 'failed',
+                'error_message' => $e->getMessage(),
+            ]);
+
+            return back()->with('error', 'Failed to create server backup: ' . $e->getMessage());
         }
-
-        return back()->with('error', $result['error'] ?? 'Failed to create server backup');
     }
 
     /**
@@ -49,6 +92,12 @@ class BackupController extends Controller
      */
     public function createLocalBackup(Request $request)
     {
+        // Create backup record
+        $backup = Backup::create([
+            'type' => 'local',
+            'status' => 'in_progress',
+        ]);
+
         try {
             $timestamp = now()->format('Y-m-d_His');
             $backupName = "ballie_backup_{$timestamp}";
@@ -79,6 +128,7 @@ class BackupController extends Controller
 
             // 2. Get tenant count (if tenants table exists)
             $tenantCount = 0;
+            $databasesCount = 1; // Main database
             try {
                 if (DB::getSchemaBuilder()->hasTable('tenants')) {
                     $tenants = DB::table('tenants')->get();
@@ -89,6 +139,7 @@ class BackupController extends Controller
                         $tenantDb = 'tenant_' . $tenant->id;
                         if (DB::getSchemaBuilder()->hasTable($tenantDb)) {
                             $this->exportDatabase($tempDir, $tenantDb, true);
+                            $databasesCount++;
                         }
                     }
                 }
@@ -125,18 +176,42 @@ class BackupController extends Controller
             // 5. Clean up temporary directory
             File::deleteDirectory($tempDir);
 
-            // 6. Download the backup file
+            // 6. Update backup record
+            $fileSize = File::size($zipPath);
+            $backup->update([
+                'status' => 'completed',
+                'filename' => $backupName . '.zip',
+                'file_path' => $zipPath,
+                'file_size' => $fileSize,
+                'databases_count' => $databasesCount,
+                'completed_at' => now(),
+                'metadata' => [
+                    'main_database' => $mainDatabase,
+                    'tenant_count' => $tenantCount,
+                    'databases_count' => $databasesCount,
+                ],
+            ]);
+
+            // 7. Download the backup file
             Log::info('Local backup created successfully', [
+                'backup_id' => $backup->id,
                 'backup_name' => $backupName,
-                'file_size' => File::size($zipPath),
+                'file_size' => $fileSize,
             ]);
 
             return response()->download($zipPath, $backupName . '.zip')->deleteFileAfterSend(true);
 
         } catch (\Exception $e) {
             Log::error('Local backup creation failed', [
+                'backup_id' => $backup->id ?? null,
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString(),
+            ]);
+
+            // Update backup record as failed
+            $backup->update([
+                'status' => 'failed',
+                'error_message' => $e->getMessage(),
             ]);
 
             // Clean up on error
