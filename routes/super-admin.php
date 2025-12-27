@@ -94,6 +94,13 @@ Route::prefix('super-admin')->name('super-admin.')->group(function () {
             Route::get('/test-connection', [\App\Http\Controllers\SuperAdmin\EmailController::class, 'testConnection'])->name('test-connection');
         });
 
+        // Backup Management
+        Route::prefix('backups')->name('backups.')->group(function () {
+            Route::get('/', [\App\Http\Controllers\SuperAdmin\BackupController::class, 'index'])->name('index');
+            Route::post('/server', [\App\Http\Controllers\SuperAdmin\BackupController::class, 'createServerBackup'])->name('create-server');
+            Route::post('/local', [\App\Http\Controllers\SuperAdmin\BackupController::class, 'createLocalBackup'])->name('create-local');
+        });
+
         // Support Center (Future implementation)
         Route::prefix('support')->name('support.')->group(function () {
             Route::get('/tickets', function () {

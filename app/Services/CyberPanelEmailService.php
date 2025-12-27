@@ -304,4 +304,57 @@ class CyberPanelEmailService
             ];
         }
     }
+
+    /**
+     * Create a server backup for a website
+     *
+     * @param string $website
+     * @return array
+     */
+    public function createBackup(string $website): array
+    {
+        try {
+            $response = Http::withHeaders([
+                'Authorization' => $this->token,
+                'Content-Type' => 'application/json',
+            ])
+            ->withoutVerifying()
+            ->timeout(60)
+            ->post($this->apiUrl, [
+                'serverUserName' => $this->serverUserName,
+                'controller' => 'submitBackupCreation',
+                'websiteToBeBacked' => $website,
+            ]);
+
+            Log::info('CyberPanel Backup Creation', [
+                'website' => $website,
+                'status' => $response->status(),
+                'response' => $response->json(),
+            ]);
+
+            if ($response->successful()) {
+                return [
+                    'success' => true,
+                    'data' => $response->json(),
+                    'message' => 'Backup creation initiated successfully',
+                ];
+            }
+
+            return [
+                'success' => false,
+                'error' => $response->json()['error_message'] ?? 'Failed to create backup',
+            ];
+
+        } catch (\Exception $e) {
+            Log::error('CyberPanel Backup Creation Error', [
+                'website' => $website,
+                'error' => $e->getMessage(),
+            ]);
+
+            return [
+                'success' => false,
+                'error' => $e->getMessage(),
+            ];
+        }
+    }
 }
