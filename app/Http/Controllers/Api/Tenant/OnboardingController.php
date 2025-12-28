@@ -327,37 +327,15 @@ class OnboardingController extends BaseApiController
             // Only seed if not already seeded
             if (!$tenant->default_data_seeded) {
 
-                // Account Groups
-                $accountGroupSeeder = new AccountGroupSeeder();
-                $accountGroupSeeder->run();
-
-                // Voucher Types
-                $voucherTypeSeeder = new VoucherTypeSeeder();
-                $voucherTypeSeeder->run();
-
-                // Default Ledger Accounts
-                $ledgerAccountsSeeder = new DefaultLedgerAccountsSeeder();
-                $ledgerAccountsSeeder->run();
-
-                // Default Banks
-                $banksSeeder = new DefaultBanksSeeder();
-                $banksSeeder->run();
-
-                // Product Categories
-                $categoriesSeeder = new DefaultProductCategoriesSeeder();
-                $categoriesSeeder->run();
-
-                // Units
-                $unitsSeeder = new DefaultUnitsSeeder();
-                $unitsSeeder->run();
-
-                // Shifts (for POS)
-                $shiftsSeeder = new DefaultShiftsSeeder();
-                $shiftsSeeder->run();
-
-                // PFAs (Pension Fund Administrators)
-                $pfasSeeder = new DefaultPfasSeeder();
-                $pfasSeeder->run();
+                // Call the static seedForTenant methods directly
+                AccountGroupSeeder::seedForTenant($tenant->id);
+                VoucherTypeSeeder::seedForTenant($tenant->id);
+                DefaultLedgerAccountsSeeder::seedForTenant($tenant->id);
+                DefaultBanksSeeder::seedForTenant($tenant->id);
+                DefaultProductCategoriesSeeder::seedForTenant($tenant->id);
+                DefaultUnitsSeeder::seedForTenant($tenant->id);
+                DefaultShiftsSeeder::seedForTenant($tenant->id);
+                DefaultPfasSeeder::seedForTenant($tenant->id);
 
                 // Mark as seeded
                 $tenant->update(['default_data_seeded' => true]);
@@ -369,6 +347,7 @@ class OnboardingController extends BaseApiController
             Log::error('Failed to seed default data', [
                 'error' => $e->getMessage(),
                 'tenant_id' => $tenant->id,
+                'trace' => $e->getTraceAsString()
             ]);
             // Don't throw - allow onboarding to complete even if seeding fails
         }
