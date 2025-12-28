@@ -326,21 +326,113 @@ class OnboardingController extends BaseApiController
         try {
             // Only seed if not already seeded
             if (!$tenant->default_data_seeded) {
+                // Extend execution time for seeding operations
+                $originalTimeout = ini_get('max_execution_time');
+                set_time_limit(300); // 5 minutes for seeding
 
-                // Call the static seedForTenant methods directly
-                AccountGroupSeeder::seedForTenant($tenant->id);
-                VoucherTypeSeeder::seedForTenant($tenant->id);
-                DefaultLedgerAccountsSeeder::seedForTenant($tenant->id);
-                DefaultBanksSeeder::seedForTenant($tenant->id);
-                DefaultProductCategoriesSeeder::seedForTenant($tenant->id);
-                DefaultUnitsSeeder::seedForTenant($tenant->id);
-                DefaultShiftsSeeder::seedForTenant($tenant->id);
-                DefaultPfasSeeder::seedForTenant($tenant->id);
+                Log::info("Starting seeding for tenant", [
+                    'tenant_id' => $tenant->id,
+                    'tenant_name' => $tenant->name,
+                    'original_timeout' => $originalTimeout
+                ]);
+
+                // Refresh connection before each seeding operation
+                $this->refreshDatabaseConnection();
+
+                // Seed Account Groups with retry mechanism
+                $this->retryOperation(function() use ($tenant) {
+                    AccountGroupSeeder::seedForTenant($tenant->id);
+                }, "Account groups seeding for tenant: {$tenant->id}");
+
+                // Seed Voucher Types with retry mechanism
+                $this->retryOperation(function() use ($tenant) {
+                    VoucherTypeSeeder::seedForTenant($tenant->id);
+                }, "Voucher types seeding for tenant: {$tenant->id}");
+
+                // Seed Default Ledger Accounts with retry mechanism and extended timeout
+                Log::info("Starting ledger accounts seeding (largest dataset)", [
+                    'tenant_id' => $tenant->id
+                ]);
+
+                $this->retryOperation(function() use ($tenant) {
+                    $this->refreshDatabaseConnection();
+                    DefaultLedgerAccountsSeeder::seedForTenant($tenant->id);
+                }, "Ledger accounts seeding for tenant: {$tenant->id}", 5);
+
+                // Verify ledger accounts were seeded
+                $ledgerCount = \App\Models\LedgerAccount::where('tenant_id', $tenant->id)->count();
+                Log::info("Ledger accounts seeded", [
+                    'tenant_id' => $tenant->id,
+                    'count' => $ledgerCount
+                ]);
+
+                if ($ledgerCount === 0) {
+                    throw new \Exception("Ledger accounts seeding failed - no accounts created");
+                }
+
+                // Seed Default Banks with retry mechanism
+                // This must happen AFTER ledger accounts are seeded
+                Log::info("Starting default banks seeding", [
+                    'tenant_id' => $tenant->id
+                ]);
+
+                $this->retryOperation(function() use ($tenant) {
+                    DefaultBanksSeeder::seedForTenant($tenant->id);
+                }, "Default banks seeding for tenant: {$tenant->id}");
+
+                // Verify default bank was seeded
+                $banksCount = \App\Models\Bank::where('tenant_id', $tenant->id)->count();
+                Log::info("Default banks seeded", [
+                    'tenant_id' => $tenant->id,
+                    'count' => $banksCount
+                ]);
+
+                // Seed Product Categories with retry mechanism
+                $this->retryOperation(function() use ($tenant) {
+                    DefaultProductCategoriesSeeder::seedForTenant($tenant->id);
+                }, "Product categories seeding for tenant: {$tenant->id}");
+
+                // Seed Units with retry mechanism
+                $this->retryOperation(function() use ($tenant) {
+                    DefaultUnitsSeeder::seedForTenant($tenant->id);
+                }, "Units seeding for tenant: {$tenant->id}");
+
+                // Seed Default Shifts with retry mechanism
+                $this->retryOperation(function() use ($tenant) {
+                    DefaultShiftsSeeder::seedForTenant($tenant->id);
+                }, "Default shifts seeding for tenant: {$tenant->id}");
+
+                // Seed Default PFAs with retry mechanism
+                $this->retryOperation(function() use ($tenant) {
+                    DefaultPfasSeeder::seedForTenant($tenant->id);
+                }, "Default PFAs seeding for tenant: {$tenant->id}");
 
                 // Mark as seeded
                 $tenant->update(['default_data_seeded' => true]);
 
-                Log::info('Default data seeded successfully', ['tenant_id' => $tenant->id]);
+                // Final verification
+                $accountGroupsCount = \App\Models\AccountGroup::where('tenant_id', $tenant->id)->count();
+                $voucherTypesCount = \App\Models\VoucherType::where('tenant_id', $tenant->id)->count();
+                $categoriesCount = \App\Models\ProductCategory::where('tenant_id', $tenant->id)->count();
+                $unitsCount = \App\Models\Unit::where('tenant_id', $tenant->id)->count();
+                $shiftsCount = \App\Models\ShiftSchedule::where('tenant_id', $tenant->id)->count();
+                $pfasCount = \App\Models\Pfa::where('tenant_id', $tenant->id)->count();
+
+                Log::info("All default data seeded successfully", [
+                    'tenant_id' => $tenant->id,
+                    'account_groups' => $accountGroupsCount,
+                    'voucher_types' => $voucherTypesCount,
+                    'ledger_accounts' => $ledgerCount,
+                    'banks' => $banksCount,
+                    'product_categories' => $categoriesCount,
+                    'units' => $unitsCount,
+                    'shifts' => $shiftsCount,
+                    'pfas' => $pfasCount,
+                    'total' => $accountGroupsCount + $voucherTypesCount + $ledgerCount + $banksCount + $categoriesCount + $unitsCount + $shiftsCount + $pfasCount
+                ]);
+
+                // Restore original timeout
+                set_time_limit((int)$originalTimeout);
             }
 
         } catch (\Exception $e) {
@@ -354,6 +446,60 @@ class OnboardingController extends BaseApiController
     }
 
     /**
+     * Refresh database connection to avoid prepared statement issues
+     */
+    private function refreshDatabaseConnection()
+    {
+        try {
+            DB::disconnect();
+            DB::reconnect();
+            DB::connection()->getPdo();
+            usleep(100000); // 100ms delay
+        } catch (\Exception $e) {
+            Log::warning('Database connection refresh failed, retrying: ' . $e->getMessage());
+            sleep(1);
+            DB::disconnect();
+            DB::reconnect();
+        }
+    }
+
+    /**
+     * Retry an operation multiple times with connection refresh
+     */
+    private function retryOperation($callback, $logMessage, $maxAttempts = 3)
+    {
+        $attempts = 0;
+
+        while ($attempts < $maxAttempts) {
+            try {
+                if ($attempts > 0) {
+                    sleep(1); // Wait before retry
+                    $this->refreshDatabaseConnection();
+                }
+
+                Log::info("Executing: {$logMessage}" . ($attempts > 0 ? " (Attempt " . ($attempts + 1) . ")" : ""));
+                $callback();
+                Log::info("Success: {$logMessage}");
+                return;
+
+            } catch (\Exception $e) {
+                $attempts++;
+                Log::warning("Failed: {$logMessage} (Attempt {$attempts}/{$maxAttempts})", [
+                    'error' => $e->getMessage()
+                ]);
+
+                if ($attempts >= $maxAttempts) {
+                    Log::error("Final failure after {$maxAttempts} attempts: {$logMessage}", [
+                        'error' => $e->getMessage(),
+                        'trace' => $e->getTraceAsString()
+                    ]);
+                    throw $e;
+                }
+            }
+        }
+    }
+
+    /**
      * Create default roles for the tenant
      */
     private function createDefaultRoles(Tenant $tenant)
@@ -362,8 +508,14 @@ class OnboardingController extends BaseApiController
             $rolesExist = \App\Models\Tenant\Role::where('tenant_id', $tenant->id)->exists();
 
             if (!$rolesExist) {
-                $permissionsSeeder = new PermissionsSeeder();
-                $permissionsSeeder->run();
+                Log::info("Starting permissions seeding", [
+                    'tenant_id' => $tenant->id
+                ]);
+
+                $this->retryOperation(function() {
+                    $permissionsSeeder = new PermissionsSeeder();
+                    $permissionsSeeder->run();
+                }, "Permissions seeding and roles setup for tenant: {$tenant->id}");
 
                 Log::info('Default roles created successfully', ['tenant_id' => $tenant->id]);
             }
