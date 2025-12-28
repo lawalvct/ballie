@@ -149,7 +149,7 @@ class OnboardingController extends BaseApiController
             'time_format' => 'required|string|in:12,24',
 
             // Business Settings
-            'fiscal_year_start' => 'required|date_format:m-d',
+            'fiscal_year_start' => 'nullable|date_format:m-d',
             'default_tax_rate' => 'nullable|numeric|min:0|max:100',
 
             // Payment Methods (array of enabled methods)
