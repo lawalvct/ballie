@@ -37,7 +37,7 @@ class OnboardingController extends BaseApiController
             'current_step' => $this->determineCurrentStep($tenant),
             'steps' => [
                 ['name' => 'company', 'label' => 'Company Info', 'completed' => !empty($tenant->business_structure)],
-                ['name' => 'preferences', 'label' => 'Preferences', 'completed' => !empty($tenant->default_currency)],
+                ['name' => 'preferences', 'label' => 'Preferences', 'completed' => !empty($tenant->fiscal_year_start)],
             ],
             'can_skip' => true,
         ]);
@@ -160,15 +160,24 @@ class OnboardingController extends BaseApiController
         $tenant = $request->user()->tenant;
 
         try {
-            // Update tenant preferences
+            // Convert fiscal_year_start from m-d to full date (use current year)
+            $fiscalYearDate = date('Y') . '-' . $validated['fiscal_year_start'];
+
+            // Get existing settings or initialize empty array
+            $settings = $tenant->settings ?? [];
+
+            // Merge preferences into settings JSON
+            $settings['currency'] = $validated['default_currency'];
+            $settings['timezone'] = $validated['timezone'];
+            $settings['date_format'] = $validated['date_format'];
+            $settings['time_format'] = $validated['time_format'];
+            $settings['default_tax_rate'] = $validated['default_tax_rate'] ?? 0;
+            $settings['payment_methods'] = $validated['payment_methods'] ?? ['cash', 'bank_transfer'];
+
+            // Update tenant with fiscal_year_start as DATE and other settings in JSON
             $tenant->update([
-                'default_currency' => $validated['default_currency'],
-                'timezone' => $validated['timezone'],
-                'date_format' => $validated['date_format'],
-                'time_format' => $validated['time_format'],
-                'fiscal_year_start' => $validated['fiscal_year_start'],
-                'default_tax_rate' => $validated['default_tax_rate'] ?? 0,
-                'payment_methods' => $validated['payment_methods'] ?? ['cash', 'bank_transfer'],
+                'fiscal_year_start' => $fiscalYearDate,
+                'settings' => $settings,
             ]);
 
             return $this->success([
@@ -245,15 +254,18 @@ class OnboardingController extends BaseApiController
             DB::beginTransaction();
 
             // Set default values if not already set
-            if (!$tenant->default_currency) {
+            $settings = $tenant->settings ?? [];
+            if (empty($settings['currency'])) {
+                $settings['currency'] = 'NGN';
+                $settings['timezone'] = 'Africa/Lagos';
+                $settings['date_format'] = 'd/m/Y';
+                $settings['time_format'] = '12';
+                $settings['default_tax_rate'] = 0;
+                $settings['payment_methods'] = ['cash', 'bank_transfer'];
+
                 $tenant->update([
-                    'default_currency' => 'NGN',
-                    'timezone' => 'Africa/Lagos',
-                    'date_format' => 'd/m/Y',
-                    'time_format' => '12',
-                    'fiscal_year_start' => '01-01',
-                    'default_tax_rate' => 0,
-                    'payment_methods' => ['cash', 'bank_transfer'],
+                    'fiscal_year_start' => date('Y') . '-01-01', // January 1st of current year
+                    'settings' => $settings
                 ]);
             }
 
@@ -299,7 +311,7 @@ class OnboardingController extends BaseApiController
             return 'company';
         }
 
-        if (empty($tenant->default_currency)) {
+        if (empty($tenant->fiscal_year_start)) {
             return 'preferences';
         }
 
