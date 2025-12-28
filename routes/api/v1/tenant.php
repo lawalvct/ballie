@@ -2,6 +2,7 @@
 
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\Tenant\AuthController;
+use App\Http\Controllers\Api\Tenant\OnboardingController;
 
 /*
 |--------------------------------------------------------------------------
@@ -37,6 +38,15 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/', [AuthController::class, 'profile'])->name('show');
         Route::put('/', [AuthController::class, 'updateProfile'])->name('update');
         Route::post('/change-password', [AuthController::class, 'changePassword'])->name('change-password');
+    });
+
+    // Onboarding
+    Route::prefix('onboarding')->name('onboarding.')->group(function () {
+        Route::get('/status', [OnboardingController::class, 'status'])->name('status');
+        Route::post('/company', [OnboardingController::class, 'saveCompany'])->name('save-company');
+        Route::post('/preferences', [OnboardingController::class, 'savePreferences'])->name('save-preferences');
+        Route::post('/skip', [OnboardingController::class, 'skip'])->name('skip');
+        Route::post('/complete', [OnboardingController::class, 'complete'])->name('complete');
     });
 
     // Future API routes will be added here:
