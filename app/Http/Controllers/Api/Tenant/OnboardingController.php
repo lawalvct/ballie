@@ -212,7 +212,7 @@ class OnboardingController extends BaseApiController
 
             // Mark onboarding as completed
             $tenant->update([
-                'onboarding_completed' => true,
+                'onboarding_completed' => 1,
                 'onboarding_completed_at' => now(),
             ]);
 
