@@ -210,17 +210,31 @@ class OnboardingController extends BaseApiController
         try {
             DB::beginTransaction();
 
-            // Mark onboarding as completed
-            $tenant->update([
-                'onboarding_completed' => 1,
-                'onboarding_completed_at' => now(),
-            ]);
-
-            // Seed default data if not already seeded
+            // Seed default data FIRST if not already seeded
             $this->seedDefaultData($tenant);
 
             // Create default roles if they don't exist
             $this->createDefaultRoles($tenant);
+
+            // Mark onboarding as completed AFTER seeding succeeds
+            // Use retry operation with connection refresh for reliability
+            $this->retryOperation(function() use ($tenant) {
+                $this->refreshDatabaseConnection();
+
+                // Use DB::table() instead of Eloquent to bypass model cache
+                DB::table('tenants')
+                    ->where('id', $tenant->id)
+                    ->update([
+                        'onboarding_completed' => true,
+                        'onboarding_completed_at' => now(),
+                        'updated_at' => now(),
+                    ]);
+
+                Log::info('Onboarding marked as completed', [
+                    'tenant_id' => $tenant->id,
+                    'completed_at' => now()
+                ]);
+            }, "Marking onboarding complete for tenant: {$tenant->id}");
 
             DB::commit();
 
@@ -235,9 +249,10 @@ class OnboardingController extends BaseApiController
             Log::error('Failed to complete onboarding', [
                 'error' => $e->getMessage(),
                 'tenant_id' => $tenant->id,
+                'trace' => $e->getTraceAsString()
             ]);
 
-            return $this->error('Failed to complete onboarding', 500);
+            return $this->error('Failed to complete onboarding: ' . $e->getMessage(), 500);
         }
     }
 
@@ -263,21 +278,39 @@ class OnboardingController extends BaseApiController
                 $settings['default_tax_rate'] = 0;
                 $settings['payment_methods'] = ['cash', 'bank_transfer'];
 
-                $tenant->update([
-                    'fiscal_year_start' => date('Y') . '-01-01', // January 1st of current year
-                    'settings' => $settings
-                ]);
+                // Use retry operation for settings update
+                $this->retryOperation(function() use ($tenant, $settings) {
+                    $this->refreshDatabaseConnection();
+
+                    $tenant->update([
+                        'fiscal_year_start' => date('Y') . '-01-01', // January 1st of current year
+                        'settings' => $settings
+                    ]);
+                }, "Updating default settings for tenant: {$tenant->id}");
             }
 
-            // Mark as completed
-            $tenant->update([
-                'onboarding_completed' => true,
-                'onboarding_completed_at' => now(),
-            ]);
-
-            // Seed defaults
+            // Seed defaults FIRST
             $this->seedDefaultData($tenant);
             $this->createDefaultRoles($tenant);
+
+            // Mark as completed AFTER seeding succeeds
+            $this->retryOperation(function() use ($tenant) {
+                $this->refreshDatabaseConnection();
+
+                // Use DB::table() instead of Eloquent to bypass model cache
+                DB::table('tenants')
+                    ->where('id', $tenant->id)
+                    ->update([
+                        'onboarding_completed' => true,
+                        'onboarding_completed_at' => now(),
+                        'updated_at' => now(),
+                    ]);
+
+                Log::info('Onboarding skipped and marked as completed', [
+                    'tenant_id' => $tenant->id,
+                    'completed_at' => now()
+                ]);
+            }, "Marking onboarding complete (skipped) for tenant: {$tenant->id}");
 
             DB::commit();
 
@@ -292,9 +325,10 @@ class OnboardingController extends BaseApiController
             Log::error('Failed to skip onboarding', [
                 'error' => $e->getMessage(),
                 'tenant_id' => $tenant->id,
+                'trace' => $e->getTraceAsString()
             ]);
 
-            return $this->error('Failed to skip onboarding', 500);
+            return $this->error('Failed to skip onboarding: ' . $e->getMessage(), 500);
         }
     }
 
@@ -407,8 +441,14 @@ class OnboardingController extends BaseApiController
                     DefaultPfasSeeder::seedForTenant($tenant->id);
                 }, "Default PFAs seeding for tenant: {$tenant->id}");
 
-                // Mark as seeded
-                $tenant->update(['default_data_seeded' => true]);
+                // Mark as seeded using DB::table() for reliability
+                $this->refreshDatabaseConnection();
+                DB::table('tenants')
+                    ->where('id', $tenant->id)
+                    ->update([
+                        'default_data_seeded' => true,
+                        'updated_at' => now(),
+                    ]);
 
                 // Final verification
                 $accountGroupsCount = \App\Models\AccountGroup::where('tenant_id', $tenant->id)->count();
