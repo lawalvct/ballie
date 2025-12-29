@@ -63,6 +63,21 @@ Route::middleware('auth:sanctum')->group(function () {
             Route::post('/{accountGroup}/toggle', [\App\Http\Controllers\Api\Tenant\Accounting\AccountGroupController::class, 'toggle'])->name('toggle');
         });
 
+        // Ledger Accounts
+        Route::prefix('ledger-accounts')->name('ledger-accounts.')->group(function () {
+            Route::get('/search', [\App\Http\Controllers\Api\Tenant\Accounting\LedgerAccountController::class, 'search'])->name('search');
+            Route::get('/create', [\App\Http\Controllers\Api\Tenant\Accounting\LedgerAccountController::class, 'create'])->name('create');
+            Route::post('/', [\App\Http\Controllers\Api\Tenant\Accounting\LedgerAccountController::class, 'store'])->name('store');
+            Route::post('/bulk-action', [\App\Http\Controllers\Api\Tenant\Accounting\LedgerAccountController::class, 'bulkAction'])->name('bulk-action');
+            Route::get('/', [\App\Http\Controllers\Api\Tenant\Accounting\LedgerAccountController::class, 'index'])->name('index');
+            Route::get('/{ledgerAccount}', [\App\Http\Controllers\Api\Tenant\Accounting\LedgerAccountController::class, 'show'])->name('show');
+            Route::put('/{ledgerAccount}', [\App\Http\Controllers\Api\Tenant\Accounting\LedgerAccountController::class, 'update'])->name('update');
+            Route::delete('/{ledgerAccount}', [\App\Http\Controllers\Api\Tenant\Accounting\LedgerAccountController::class, 'destroy'])->name('destroy');
+            Route::post('/{ledgerAccount}/toggle', [\App\Http\Controllers\Api\Tenant\Accounting\LedgerAccountController::class, 'toggle'])->name('toggle');
+            Route::get('/{ledgerAccount}/balance', [\App\Http\Controllers\Api\Tenant\Accounting\LedgerAccountController::class, 'balance'])->name('balance');
+            Route::get('/{ledgerAccount}/children', [\App\Http\Controllers\Api\Tenant\Accounting\LedgerAccountController::class, 'children'])->name('children');
+        });
+
     });
 
     // Future API routes will be added here:
