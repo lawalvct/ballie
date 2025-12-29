@@ -527,6 +527,15 @@ Route::prefix('ledger-accounts')->name('ledger-accounts.')->group(function () {
                 Route::post('/{order}/create-invoice', [\App\Http\Controllers\Tenant\Ecommerce\OrderManagementController::class, 'createInvoice'])->name('create-invoice');
             });
 
+            // E-commerce Reports
+            Route::prefix('reports')->name('reports.')->group(function () {
+                Route::get('/orders', [\App\Http\Controllers\Tenant\Ecommerce\EcommerceReportsController::class, 'orders'])->name('orders');
+                Route::get('/revenue', [\App\Http\Controllers\Tenant\Ecommerce\EcommerceReportsController::class, 'revenue'])->name('revenue');
+                Route::get('/products', [\App\Http\Controllers\Tenant\Ecommerce\EcommerceReportsController::class, 'products'])->name('products');
+                Route::get('/customers', [\App\Http\Controllers\Tenant\Ecommerce\EcommerceReportsController::class, 'customers'])->name('customers');
+                Route::get('/abandoned-carts', [\App\Http\Controllers\Tenant\Ecommerce\EcommerceReportsController::class, 'abandonedCarts'])->name('abandoned-carts');
+            });
+
             // Shipping Methods
             Route::resource('shipping-methods', \App\Http\Controllers\Tenant\Ecommerce\ShippingMethodController::class)->except(['show']);
             Route::post('/shipping-methods/{shipping_method}/toggle', [\App\Http\Controllers\Tenant\Ecommerce\ShippingMethodController::class, 'toggle'])->name('shipping-methods.toggle');

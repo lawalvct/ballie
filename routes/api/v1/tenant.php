@@ -49,6 +49,22 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/complete', [OnboardingController::class, 'complete'])->name('complete');
     });
 
+    // Accounting Module
+    Route::prefix('accounting')->name('accounting.')->group(function () {
+        
+        // Account Groups
+        Route::prefix('account-groups')->name('account-groups.')->group(function () {
+            Route::get('/create', [\App\Http\Controllers\Api\Tenant\Accounting\AccountGroupController::class, 'create'])->name('create');
+            Route::post('/', [\App\Http\Controllers\Api\Tenant\Accounting\AccountGroupController::class, 'store'])->name('store');
+            Route::get('/', [\App\Http\Controllers\Api\Tenant\Accounting\AccountGroupController::class, 'index'])->name('index');
+            Route::get('/{accountGroup}', [\App\Http\Controllers\Api\Tenant\Accounting\AccountGroupController::class, 'show'])->name('show');
+            Route::put('/{accountGroup}', [\App\Http\Controllers\Api\Tenant\Accounting\AccountGroupController::class, 'update'])->name('update');
+            Route::delete('/{accountGroup}', [\App\Http\Controllers\Api\Tenant\Accounting\AccountGroupController::class, 'destroy'])->name('destroy');
+            Route::post('/{accountGroup}/toggle', [\App\Http\Controllers\Api\Tenant\Accounting\AccountGroupController::class, 'toggle'])->name('toggle');
+        });
+        
+    });
+
     // Future API routes will be added here:
     // Dashboard
     // Support Tickets
