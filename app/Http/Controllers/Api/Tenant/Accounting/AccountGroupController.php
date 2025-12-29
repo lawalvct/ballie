@@ -440,7 +440,7 @@ class AccountGroupController extends Controller
                     'regex:/^[A-Z0-9_-]+$/',
                     Rule::unique('account_groups')->where('tenant_id', $tenant->id)->ignore($accountGroup->id)
                 ],
-                'nature' => ['required', 'in:assets,liabilities,equity,income,expenses'],
+                'nature' => ['nullable', 'in:assets,liabilities,equity,income,expenses'],
                 'parent_id' => ['nullable', 'exists:account_groups,id'],
                 'is_active' => ['nullable', 'boolean'],
             ], [
