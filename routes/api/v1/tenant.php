@@ -51,7 +51,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // Accounting Module
     Route::prefix('accounting')->name('accounting.')->group(function () {
-        
+
         // Account Groups
         Route::prefix('account-groups')->name('account-groups.')->group(function () {
             Route::get('/create', [\App\Http\Controllers\Api\Tenant\Accounting\AccountGroupController::class, 'create'])->name('create');
@@ -62,7 +62,7 @@ Route::middleware('auth:sanctum')->group(function () {
             Route::delete('/{accountGroup}', [\App\Http\Controllers\Api\Tenant\Accounting\AccountGroupController::class, 'destroy'])->name('destroy');
             Route::post('/{accountGroup}/toggle', [\App\Http\Controllers\Api\Tenant\Accounting\AccountGroupController::class, 'toggle'])->name('toggle');
         });
-        
+
     });
 
     // Future API routes will be added here:

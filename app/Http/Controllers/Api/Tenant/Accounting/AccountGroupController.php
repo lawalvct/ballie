@@ -15,7 +15,7 @@ class AccountGroupController extends Controller
 {
     /**
      * Get form data for creating a new account group.
-     * 
+     *
      * @return JsonResponse
      */
     public function create(): JsonResponse
@@ -102,7 +102,7 @@ class AccountGroupController extends Controller
 
     /**
      * Store a newly created account group.
-     * 
+     *
      * @param Request $request
      * @return JsonResponse
      */
@@ -212,7 +212,7 @@ class AccountGroupController extends Controller
 
     /**
      * Display a listing of account groups.
-     * 
+     *
      * @param Request $request
      * @return JsonResponse
      */
@@ -257,7 +257,7 @@ class AccountGroupController extends Controller
             $sortBy = $request->get('sort', 'name');
             $sortDirection = $request->get('direction', 'asc');
             $allowedSorts = ['name', 'code', 'nature', 'created_at', 'is_active'];
-            
+
             if (in_array($sortBy, $allowedSorts)) {
                 $query->orderBy($sortBy, $sortDirection);
             }
@@ -330,7 +330,7 @@ class AccountGroupController extends Controller
 
     /**
      * Display the specified account group.
-     * 
+     *
      * @param AccountGroup $accountGroup
      * @return JsonResponse
      */
@@ -412,7 +412,7 @@ class AccountGroupController extends Controller
 
     /**
      * Update the specified account group.
-     * 
+     *
      * @param Request $request
      * @param AccountGroup $accountGroup
      * @return JsonResponse
@@ -541,7 +541,7 @@ class AccountGroupController extends Controller
 
     /**
      * Remove the specified account group.
-     * 
+     *
      * @param AccountGroup $accountGroup
      * @return JsonResponse
      */
@@ -598,7 +598,7 @@ class AccountGroupController extends Controller
 
     /**
      * Toggle the active status of an account group.
-     * 
+     *
      * @param AccountGroup $accountGroup
      * @return JsonResponse
      */
