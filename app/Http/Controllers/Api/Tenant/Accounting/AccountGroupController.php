@@ -331,13 +331,13 @@ class AccountGroupController extends Controller
     /**
      * Display the specified account group.
      *
+     * @param Tenant $tenant
      * @param AccountGroup $accountGroup
      * @return JsonResponse
      */
-    public function show(AccountGroup $accountGroup): JsonResponse
+    public function show(Tenant $tenant, AccountGroup $accountGroup): JsonResponse
     {
         try {
-            $tenant = tenant();
 
             // Ensure account group belongs to tenant
             if ($accountGroup->tenant_id !== $tenant->id) {
@@ -414,13 +414,13 @@ class AccountGroupController extends Controller
      * Update the specified account group.
      *
      * @param Request $request
+     * @param Tenant $tenant
      * @param AccountGroup $accountGroup
      * @return JsonResponse
      */
-    public function update(Request $request, AccountGroup $accountGroup): JsonResponse
+    public function update(Request $request, Tenant $tenant, AccountGroup $accountGroup): JsonResponse
     {
         try {
-            $tenant = tenant();
 
             // Ensure account group belongs to tenant
             if ($accountGroup->tenant_id !== $tenant->id) {
@@ -542,13 +542,13 @@ class AccountGroupController extends Controller
     /**
      * Remove the specified account group.
      *
+     * @param Tenant $tenant
      * @param AccountGroup $accountGroup
      * @return JsonResponse
      */
-    public function destroy(AccountGroup $accountGroup): JsonResponse
+    public function destroy(Tenant $tenant, AccountGroup $accountGroup): JsonResponse
     {
         try {
-            $tenant = tenant();
 
             // Ensure account group belongs to tenant
             if ($accountGroup->tenant_id !== $tenant->id) {
@@ -599,13 +599,13 @@ class AccountGroupController extends Controller
     /**
      * Toggle the active status of an account group.
      *
+     * @param Tenant $tenant
      * @param AccountGroup $accountGroup
      * @return JsonResponse
      */
-    public function toggle(AccountGroup $accountGroup): JsonResponse
+    public function toggle(Tenant $tenant, AccountGroup $accountGroup): JsonResponse
     {
         try {
-            $tenant = tenant();
 
             // Ensure account group belongs to tenant
             if ($accountGroup->tenant_id !== $tenant->id) {
