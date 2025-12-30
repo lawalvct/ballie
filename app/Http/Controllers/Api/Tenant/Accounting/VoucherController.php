@@ -300,6 +300,19 @@ class VoucherController extends Controller
                 'status' => 'draft',
                 'created_by' => Auth::id(),
             ]);
+
+                // Create entries
+                foreach ($validated['entries'] as $entryData) {
+                    VoucherEntry::create([
+                        'voucher_id' => $voucher->id,
+                        'ledger_account_id' => $entryData['ledger_account_id'],
+                        'debit_amount' => $entryData['debit_amount'] ?? 0,
+                        'credit_amount' => $entryData['credit_amount'] ?? 0,
+                        'description' => $entryData['description'] ?? null,
+                    ]);
+                }
+
+                return $voucher->fresh(['voucherType', 'entries.ledgerAccount']);
             });
 
             // Handle post action if requested
