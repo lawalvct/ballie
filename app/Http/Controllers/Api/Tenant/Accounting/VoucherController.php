@@ -286,27 +286,20 @@ class VoucherController extends Controller
                     $timestamp = now()->format('YmdHis');
                     $voucherNumber = $prefix . '-' . $timestamp;
                 }
-                    'voucher_number' => $voucherNumber,
-                    'voucher_date' => $validated['voucher_date'],
-                    'narration' => $validated['narration'] ?? null,
-                    'reference_number' => $validated['reference_number'] ?? null,
-                    'total_amount' => collect($request->entries)->sum('debit_amount'),
-                    'status' => 'draft',
-                    'created_by' => Auth::id(),
-                ]);
+            }
 
-                // Create entries
-                foreach ($validated['entries'] as $entryData) {
-                    VoucherEntry::create([
-                        'voucher_id' => $voucher->id,
-                        'ledger_account_id' => $entryData['ledger_account_id'],
-                        'debit_amount' => $entryData['debit_amount'] ?? 0,
-                        'credit_amount' => $entryData['credit_amount'] ?? 0,
-                        'description' => $entryData['description'] ?? null,
-                    ]);
-                }
-
-                return $voucher->fresh(['voucherType', 'entries.ledgerAccount']);
+            // Create voucher
+            $voucher = Voucher::create([
+                'tenant_id' => $tenant->id,
+                'voucher_type_id' => $validated['voucher_type_id'],
+                'voucher_number' => $voucherNumber,
+                'voucher_date' => $validated['voucher_date'],
+                'narration' => $validated['narration'] ?? null,
+                'reference_number' => $validated['reference_number'] ?? null,
+                'total_amount' => collect($request->entries)->sum('debit_amount'),
+                'status' => 'draft',
+                'created_by' => Auth::id(),
+            ]);
             });
 
             // Handle post action if requested
