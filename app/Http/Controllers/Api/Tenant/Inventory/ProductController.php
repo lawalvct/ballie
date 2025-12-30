@@ -42,7 +42,7 @@ class ProductController extends Controller
             $ledgerAccounts = LedgerAccount::where('tenant_id', $tenant->id)
                 ->where('is_active', true)
                 ->orderBy('name')
-                ->get(['id', 'name', 'account_code', 'account_type']);
+                ->get(['id', 'name', 'code', 'account_type']);
 
             // Get default accounts
             $defaultStockAccount = LedgerAccount::where('tenant_id', $tenant->id)
@@ -810,17 +810,17 @@ class ProductController extends Controller
                 'stock_asset_account' => $product->stockAssetAccount ? [
                     'id' => $product->stockAssetAccount->id,
                     'name' => $product->stockAssetAccount->name,
-                    'account_code' => $product->stockAssetAccount->account_code,
+                    'account_code' => $product->stockAssetAccount->code,
                 ] : null,
                 'sales_account' => $product->salesAccount ? [
                     'id' => $product->salesAccount->id,
                     'name' => $product->salesAccount->name,
-                    'account_code' => $product->salesAccount->account_code,
+                    'account_code' => $product->salesAccount->code,
                 ] : null,
                 'purchase_account' => $product->purchaseAccount ? [
                     'id' => $product->purchaseAccount->id,
                     'name' => $product->purchaseAccount->name,
-                    'account_code' => $product->purchaseAccount->account_code,
+                    'account_code' => $product->purchaseAccount->code,
                 ] : null,
                 'images' => $product->images->map(function ($image) {
                     return [
