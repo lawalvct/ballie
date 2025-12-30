@@ -78,6 +78,21 @@ Route::middleware('auth:sanctum')->group(function () {
             Route::get('/{ledgerAccount}/children', [\App\Http\Controllers\Api\Tenant\Accounting\LedgerAccountController::class, 'children'])->name('children');
         });
 
+        // Vouchers
+        Route::prefix('vouchers')->name('vouchers.')->group(function () {
+            Route::get('/search', [\App\Http\Controllers\Api\Tenant\Accounting\VoucherController::class, 'search'])->name('search');
+            Route::get('/create', [\App\Http\Controllers\Api\Tenant\Accounting\VoucherController::class, 'create'])->name('create');
+            Route::post('/', [\App\Http\Controllers\Api\Tenant\Accounting\VoucherController::class, 'store'])->name('store');
+            Route::post('/bulk-action', [\App\Http\Controllers\Api\Tenant\Accounting\VoucherController::class, 'bulkAction'])->name('bulk-action');
+            Route::get('/', [\App\Http\Controllers\Api\Tenant\Accounting\VoucherController::class, 'index'])->name('index');
+            Route::get('/{voucher}', [\App\Http\Controllers\Api\Tenant\Accounting\VoucherController::class, 'show'])->name('show');
+            Route::put('/{voucher}', [\App\Http\Controllers\Api\Tenant\Accounting\VoucherController::class, 'update'])->name('update');
+            Route::delete('/{voucher}', [\App\Http\Controllers\Api\Tenant\Accounting\VoucherController::class, 'destroy'])->name('destroy');
+            Route::post('/{voucher}/post', [\App\Http\Controllers\Api\Tenant\Accounting\VoucherController::class, 'post'])->name('post');
+            Route::post('/{voucher}/unpost', [\App\Http\Controllers\Api\Tenant\Accounting\VoucherController::class, 'unpost'])->name('unpost');
+            Route::get('/{voucher}/duplicate', [\App\Http\Controllers\Api\Tenant\Accounting\VoucherController::class, 'duplicate'])->name('duplicate');
+        });
+
     });
 
     // Future API routes will be added here:
