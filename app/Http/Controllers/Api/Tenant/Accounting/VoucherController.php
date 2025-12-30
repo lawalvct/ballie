@@ -275,14 +275,17 @@ class VoucherController extends Controller
 
                 // Generate voucher number if not provided
                 $voucherNumber = $validated['voucher_number'] ?? null;
-                if (!$voucherNumber && $voucherType->has_numbering) {
-                    $voucherNumber = $voucherType->generateNextNumber();
-                }
 
-                // Create voucher
-                $voucher = Voucher::create([
-                    'tenant_id' => $tenant->id,
-                    'voucher_type_id' => $validated['voucher_type_id'],
+            if (!$voucherNumber) {
+                if ($voucherType->has_numbering) {
+                    // Use voucher type's auto-numbering
+                    $voucherNumber = $voucherType->generateNextNumber();
+                } else {
+                    // Generate fallback number using timestamp
+                    $prefix = $voucherType->code ?? 'VC';
+                    $timestamp = now()->format('YmdHis');
+                    $voucherNumber = $prefix . '-' . $timestamp;
+                }
                     'voucher_number' => $voucherNumber,
                     'voucher_date' => $validated['voucher_date'],
                     'narration' => $validated['narration'] ?? null,
