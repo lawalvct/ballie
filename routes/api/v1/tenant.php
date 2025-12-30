@@ -95,11 +95,30 @@ Route::middleware('auth:sanctum')->group(function () {
 
     });
 
+    // Inventory Module
+    Route::prefix('inventory')->name('inventory.')->group(function () {
+
+        // Products
+        Route::prefix('products')->name('products.')->group(function () {
+            Route::get('/search', [\App\Http\Controllers\Api\Tenant\Inventory\ProductController::class, 'search'])->name('search');
+            Route::get('/statistics', [\App\Http\Controllers\Api\Tenant\Inventory\ProductController::class, 'statistics'])->name('statistics');
+            Route::get('/create', [\App\Http\Controllers\Api\Tenant\Inventory\ProductController::class, 'create'])->name('create');
+            Route::post('/', [\App\Http\Controllers\Api\Tenant\Inventory\ProductController::class, 'store'])->name('store');
+            Route::post('/bulk-action', [\App\Http\Controllers\Api\Tenant\Inventory\ProductController::class, 'bulkAction'])->name('bulk-action');
+            Route::get('/', [\App\Http\Controllers\Api\Tenant\Inventory\ProductController::class, 'index'])->name('index');
+            Route::get('/{product}', [\App\Http\Controllers\Api\Tenant\Inventory\ProductController::class, 'show'])->name('show');
+            Route::put('/{product}', [\App\Http\Controllers\Api\Tenant\Inventory\ProductController::class, 'update'])->name('update');
+            Route::delete('/{product}', [\App\Http\Controllers\Api\Tenant\Inventory\ProductController::class, 'destroy'])->name('destroy');
+            Route::post('/{product}/toggle-status', [\App\Http\Controllers\Api\Tenant\Inventory\ProductController::class, 'toggleStatus'])->name('toggle-status');
+            Route::get('/{product}/stock-movements', [\App\Http\Controllers\Api\Tenant\Inventory\ProductController::class, 'stockMovements'])->name('stock-movements');
+        });
+
+    });
+
     // Future API routes will be added here:
     // Dashboard
     // Support Tickets
     // Invoices
-    // Products
     // Customers
     // POS
     // etc.
