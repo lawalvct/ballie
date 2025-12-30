@@ -37,7 +37,7 @@ class ProductController extends Controller
             $units = Unit::where('tenant_id', $tenant->id)
                 ->where('is_active', true)
                 ->orderBy('name')
-                ->get(['id', 'name', 'short_name']);
+                ->get(['id', 'name', 'symbol']);
 
             $ledgerAccounts = LedgerAccount::where('tenant_id', $tenant->id)
                 ->where('is_active', true)
@@ -704,7 +704,7 @@ class ProductController extends Controller
                         'primary_unit' => $product->primaryUnit ? [
                             'id' => $product->primaryUnit->id,
                             'name' => $product->primaryUnit->name,
-                            'short_name' => $product->primaryUnit->short_name,
+                            'short_name' => $product->primaryUnit->symbol,
                         ] : null,
                         'category' => $product->category ? [
                             'id' => $product->category->id,
@@ -796,7 +796,7 @@ class ProductController extends Controller
             'primary_unit' => $product->primaryUnit ? [
                 'id' => $product->primaryUnit->id,
                 'name' => $product->primaryUnit->name,
-                'short_name' => $product->primaryUnit->short_name,
+                'short_name' => $product->primaryUnit->symbol,
             ] : null,
             'created_at' => $product->created_at,
             'updated_at' => $product->updated_at,
