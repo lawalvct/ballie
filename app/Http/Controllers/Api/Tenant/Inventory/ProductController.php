@@ -51,12 +51,12 @@ class ProductController extends Controller
                 ->first(['id', 'name']);
 
             $defaultSalesAccount = LedgerAccount::where('tenant_id', $tenant->id)
-                ->where('name', 'like', '%Sales%')
+                 ->where('name', 'Sales Revenue')
                 ->where('is_active', true)
                 ->first(['id', 'name']);
 
             $defaultPurchaseAccount = LedgerAccount::where('tenant_id', $tenant->id)
-                ->where('name', 'like', '%Purchase%')
+                  ->where('name', 'Cost of Goods Sold')
                 ->where('is_active', true)
                 ->first(['id', 'name']);
 
