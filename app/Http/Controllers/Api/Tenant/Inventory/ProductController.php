@@ -5,11 +5,13 @@ namespace App\Http\Controllers\Api\Tenant\Inventory;
 use App\Http\Controllers\Controller;
 use App\Models\Product;
 use App\Models\ProductCategory;
+use App\Models\ProductImage;
 use App\Models\Unit;
 use App\Models\LedgerAccount;
 use App\Models\Tenant;
 use App\Models\StockMovement;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Auth;
@@ -119,6 +121,9 @@ class ProductController extends Controller
                 'meta_title' => 'nullable|string|max:255',
                 'meta_description' => 'nullable|string',
                 'slug' => 'nullable|string|max:255',
+                'image' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:2048',
+                'gallery_images' => 'nullable|array',
+                'gallery_images.*' => 'image|mimes:jpeg,png,jpg,gif,webp|max:2048',
             ];
 
             $validated = $request->validate($rules);
@@ -141,6 +146,38 @@ class ProductController extends Controller
 
                 $product = Product::create($productData);
 
+                // Handle primary image upload
+                if ($request->hasFile('image')) {
+                    $image = $request->file('image');
+                    $imageName = time() . '_' . uniqid() . '.' . $image->getClientOriginalExtension();
+                    $imagePath = $image->storeAs('products', $imageName, 'public');
+
+                    ProductImage::create([
+                        'tenant_id' => $tenant->id,
+                        'product_id' => $product->id,
+                        'image_path' => $imagePath,
+                        'is_primary' => true,
+                        'sort_order' => 0,
+                    ]);
+                }
+
+                // Handle gallery images upload
+                if ($request->hasFile('gallery_images')) {
+                    $sortOrder = 1;
+                    foreach ($request->file('gallery_images') as $galleryImage) {
+                        $imageName = time() . '_' . uniqid() . '.' . $galleryImage->getClientOriginalExtension();
+                        $imagePath = $galleryImage->storeAs('products', $imageName, 'public');
+
+                        ProductImage::create([
+                            'tenant_id' => $tenant->id,
+                            'product_id' => $product->id,
+                            'image_path' => $imagePath,
+                            'is_primary' => false,
+                            'sort_order' => $sortOrder++,
+                        ]);
+                    }
+                }
+
                 // Create opening stock movement if provided
                 if (isset($validated['opening_stock']) && $validated['opening_stock'] > 0) {
                     StockMovement::create([
@@ -162,7 +199,8 @@ class ProductController extends Controller
                     'primaryUnit',
                     'stockAssetAccount',
                     'salesAccount',
-                    'purchaseAccount'
+                    'purchaseAccount',
+                    'images'
                 ]);
             });
 
@@ -371,13 +409,84 @@ class ProductController extends Controller
                 'meta_title' => 'nullable|string|max:255',
                 'meta_description' => 'nullable|string',
                 'slug' => 'nullable|string|max:255',
+                'image' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:2048',
+                'gallery_images' => 'nullable|array',
+                'gallery_images.*' => 'image|mimes:jpeg,png,jpg,gif,webp|max:2048',
+                'remove_image_ids' => 'nullable|array',
+                'remove_image_ids.*' => 'integer|exists:product_images,id',
             ];
 
             $validated = $request->validate($rules);
 
-            DB::transaction(function () use ($product, $validated) {
+            DB::transaction(function () use ($request, $product, $validated) {
                 $validated['updated_by'] = Auth::id();
                 $product->update($validated);
+
+                // Handle removing images
+                if ($request->has('remove_image_ids') && is_array($request->remove_image_ids)) {
+                    $imagesToRemove = ProductImage::where('product_id', $product->id)
+                        ->whereIn('id', $request->remove_image_ids)
+                        ->get();
+
+                    foreach ($imagesToRemove as $imageToRemove) {
+                        // Delete file from storage
+                        if (Storage::disk('public')->exists($imageToRemove->image_path)) {
+                            Storage::disk('public')->delete($imageToRemove->image_path);
+                        }
+                        // Delete record
+                        $imageToRemove->delete();
+                    }
+                }
+
+                // Handle primary image upload
+                if ($request->hasFile('image')) {
+                    // Remove old primary image if exists
+                    $oldPrimaryImage = ProductImage::where('product_id', $product->id)
+                        ->where('is_primary', true)
+                        ->first();
+
+                    if ($oldPrimaryImage) {
+                        if (Storage::disk('public')->exists($oldPrimaryImage->image_path)) {
+                            Storage::disk('public')->delete($oldPrimaryImage->image_path);
+                        }
+                        $oldPrimaryImage->delete();
+                    }
+
+                    // Upload new primary image
+                    $image = $request->file('image');
+                    $imageName = time() . '_' . uniqid() . '.' . $image->getClientOriginalExtension();
+                    $imagePath = $image->storeAs('products', $imageName, 'public');
+
+                    ProductImage::create([
+                        'tenant_id' => $product->tenant_id,
+                        'product_id' => $product->id,
+                        'image_path' => $imagePath,
+                        'is_primary' => true,
+                        'sort_order' => 0,
+                    ]);
+                }
+
+                // Handle gallery images upload
+                if ($request->hasFile('gallery_images')) {
+                    $maxSortOrder = ProductImage::where('product_id', $product->id)
+                        ->where('is_primary', false)
+                        ->max('sort_order') ?? 0;
+
+                    $sortOrder = $maxSortOrder + 1;
+
+                    foreach ($request->file('gallery_images') as $galleryImage) {
+                        $imageName = time() . '_' . uniqid() . '.' . $galleryImage->getClientOriginalExtension();
+                        $imagePath = $galleryImage->storeAs('products', $imageName, 'public');
+
+                        ProductImage::create([
+                            'tenant_id' => $product->tenant_id,
+                            'product_id' => $product->id,
+                            'image_path' => $imagePath,
+                            'is_primary' => false,
+                            'sort_order' => $sortOrder++,
+                        ]);
+                    }
+                }
             });
 
             $product->refresh([
@@ -385,7 +494,8 @@ class ProductController extends Controller
                 'primaryUnit',
                 'stockAssetAccount',
                 'salesAccount',
-                'purchaseAccount'
+                'purchaseAccount',
+                'images'
             ]);
 
             return response()->json([
