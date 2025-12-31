@@ -144,32 +144,24 @@ class ProductController extends Controller
                     'created_by' => Auth::id(),
                 ]);
 
-                $product = Product::create($productData);
-
-                // Handle primary image upload
+                // Handle primary image upload - save to products.image_path
                 if ($request->hasFile('image')) {
                     $image = $request->file('image');
                     $imageName = time() . '_' . uniqid() . '.' . $image->getClientOriginalExtension();
                     $imagePath = $image->storeAs('products', $imageName, 'public');
-
-                    ProductImage::create([
-                        'tenant_id' => $tenant->id,
-                        'product_id' => $product->id,
-                        'image_path' => $imagePath,
-                        'is_primary' => true,
-                        'sort_order' => 0,
-                    ]);
+                    $productData['image_path'] = $imagePath;
                 }
 
-                // Handle gallery images upload
+                $product = Product::create($productData);
+
+                // Handle gallery images upload - save to product_images table
                 if ($request->hasFile('gallery_images')) {
                     $sortOrder = 1;
                     foreach ($request->file('gallery_images') as $galleryImage) {
                         $imageName = time() . '_' . uniqid() . '.' . $galleryImage->getClientOriginalExtension();
-                        $imagePath = $galleryImage->storeAs('products', $imageName, 'public');
+                        $imagePath = $galleryImage->storeAs('products/gallery', $imageName, 'public');
 
                         ProductImage::create([
-                            'tenant_id' => $tenant->id,
                             'product_id' => $product->id,
                             'image_path' => $imagePath,
                             'is_primary' => false,
@@ -420,9 +412,24 @@ class ProductController extends Controller
 
             DB::transaction(function () use ($request, $product, $validated) {
                 $validated['updated_by'] = Auth::id();
+
+                // Handle primary image upload - save to products.image_path
+                if ($request->hasFile('image')) {
+                    // Delete old primary image if exists
+                    if ($product->image_path) {
+                        Storage::disk('public')->delete($product->image_path);
+                    }
+
+                    // Upload new primary image
+                    $image = $request->file('image');
+                    $imageName = time() . '_' . uniqid() . '.' . $image->getClientOriginalExtension();
+                    $imagePath = $image->storeAs('products', $imageName, 'public');
+                    $validated['image_path'] = $imagePath;
+                }
+
                 $product->update($validated);
 
-                // Handle removing images
+                // Handle removing gallery images
                 if ($request->has('remove_image_ids') && is_array($request->remove_image_ids)) {
                     $imagesToRemove = ProductImage::where('product_id', $product->id)
                         ->whereIn('id', $request->remove_image_ids)
@@ -438,48 +445,18 @@ class ProductController extends Controller
                     }
                 }
 
-                // Handle primary image upload
-                if ($request->hasFile('image')) {
-                    // Remove old primary image if exists
-                    $oldPrimaryImage = ProductImage::where('product_id', $product->id)
-                        ->where('is_primary', true)
-                        ->first();
-
-                    if ($oldPrimaryImage) {
-                        if (Storage::disk('public')->exists($oldPrimaryImage->image_path)) {
-                            Storage::disk('public')->delete($oldPrimaryImage->image_path);
-                        }
-                        $oldPrimaryImage->delete();
-                    }
-
-                    // Upload new primary image
-                    $image = $request->file('image');
-                    $imageName = time() . '_' . uniqid() . '.' . $image->getClientOriginalExtension();
-                    $imagePath = $image->storeAs('products', $imageName, 'public');
-
-                    ProductImage::create([
-                        'tenant_id' => $product->tenant_id,
-                        'product_id' => $product->id,
-                        'image_path' => $imagePath,
-                        'is_primary' => true,
-                        'sort_order' => 0,
-                    ]);
-                }
-
-                // Handle gallery images upload
+                // Handle gallery images upload - save to product_images table
                 if ($request->hasFile('gallery_images')) {
                     $maxSortOrder = ProductImage::where('product_id', $product->id)
-                        ->where('is_primary', false)
                         ->max('sort_order') ?? 0;
 
                     $sortOrder = $maxSortOrder + 1;
 
                     foreach ($request->file('gallery_images') as $galleryImage) {
                         $imageName = time() . '_' . uniqid() . '.' . $galleryImage->getClientOriginalExtension();
-                        $imagePath = $galleryImage->storeAs('products', $imageName, 'public');
+                        $imagePath = $galleryImage->storeAs('products/gallery', $imageName, 'public');
 
                         ProductImage::create([
-                            'tenant_id' => $product->tenant_id,
                             'product_id' => $product->id,
                             'image_path' => $imagePath,
                             'is_primary' => false,
@@ -932,11 +909,12 @@ class ProductController extends Controller
                     'name' => $product->purchaseAccount->name,
                     'account_code' => $product->purchaseAccount->code,
                 ] : null,
-                'images' => $product->images->map(function ($image) {
+                'primary_image' => $product->image_path ? Storage::disk('public')->url($product->image_path) : null,
+                'gallery_images' => $product->images->map(function ($image) {
                     return [
                         'id' => $image->id,
                         'url' => $image->image_url,
-                        'is_primary' => $image->is_primary,
+                        'sort_order' => $image->sort_order,
                     ];
                 }),
             ]);
