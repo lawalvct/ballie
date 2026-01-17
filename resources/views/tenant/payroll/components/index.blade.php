@@ -337,7 +337,7 @@ function openCreateModal(type = 'earning') {
 function editComponent(id, name, code, type, calculationType, description, isTaxable, isPensionable) {
     document.getElementById('modalTitle').textContent = 'Edit Component';
     document.getElementById('submitText').textContent = 'Update Component';
-    document.getElementById('componentForm').action = `/tenant/{{ $tenant->id }}/payroll/components/${id}`;
+    document.getElementById('componentForm').action = "{{ route('tenant.payroll.components.index', $tenant) }}/" + id;
     document.getElementById('formMethod').value = 'PUT';
     document.getElementById('componentId').value = id;
     document.getElementById('componentName').value = name;
@@ -376,7 +376,7 @@ function deleteComponent(id) {
     if (confirm('Are you sure you want to delete this component? This action cannot be undone.')) {
         const form = document.createElement('form');
         form.method = 'POST';
-        form.action = `/tenant/{{ $tenant->id }}/payroll/components/${id}`;
+        form.action = "{{ route('tenant.payroll.components.index', $tenant) }}/" + id;
 
         const csrfToken = document.createElement('input');
         csrfToken.type = 'hidden';

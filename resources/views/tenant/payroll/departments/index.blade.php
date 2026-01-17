@@ -160,7 +160,7 @@ function openCreateModal() {
 function editDepartment(id, name, code, description) {
     document.getElementById('modalTitle').textContent = 'Edit Department';
     document.getElementById('submitText').textContent = 'Update Department';
-    document.getElementById('departmentForm').action = `/tenant/{{ $tenant->id }}/payroll/departments/${id}`;
+    document.getElementById('departmentForm').action = `{{ route('tenant.payroll.departments.index', $tenant) }}/${id}`;
     document.getElementById('formMethod').value = 'PUT';
     document.getElementById('departmentId').value = id;
     document.getElementById('departmentName').value = name;
@@ -195,7 +195,7 @@ function deleteDepartment(id) {
     if (confirm('Are you sure you want to delete this department? This action cannot be undone.')) {
         const form = document.createElement('form');
         form.method = 'POST';
-        form.action = `/tenant/{{ $tenant->id }}/payroll/departments/${id}`;
+        form.action = `{{ route('tenant.payroll.departments.index', $tenant) }}/${id}`;
 
         const csrfToken = document.createElement('input');
         csrfToken.type = 'hidden';

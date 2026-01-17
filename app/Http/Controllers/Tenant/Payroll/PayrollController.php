@@ -632,6 +632,47 @@ class PayrollController extends Controller
             ->with('success', 'Department created successfully.');
     }
 
+    public function updateDepartment(Request $request, Tenant $tenant, Department $department)
+    {
+        // Validate that the department belongs to this tenant
+        if ($department->tenant_id !== $tenant->id) {
+            abort(404);
+        }
+
+        $validated = $request->validate([
+            'name' => 'required|string|max:255',
+            'code' => 'required|string|max:10|unique:departments,code,' . $department->id . ',id,tenant_id,' . $tenant->id,
+            'description' => 'nullable|string',
+        ]);
+
+        $department->update($validated);
+
+        return redirect()
+            ->route('tenant.payroll.departments.index', $tenant)
+            ->with('success', 'Department updated successfully!');
+    }
+
+    public function deleteDepartment(Tenant $tenant, Department $department)
+    {
+        // Validate that the department belongs to this tenant
+        if ($department->tenant_id !== $tenant->id) {
+            abort(404);
+        }
+
+        // Check if department has employees
+        if ($department->employees()->count() > 0) {
+            return redirect()
+                ->route('tenant.payroll.departments.index', $tenant)
+                ->with('error', 'Cannot delete department with active employees. Please reassign or remove employees first.');
+        }
+
+        $department->delete();
+
+        return redirect()
+            ->route('tenant.payroll.departments.index', $tenant)
+            ->with('success', 'Department deleted successfully!');
+    }
+
     /**
      * Salary Components Management
      */
@@ -667,6 +708,52 @@ class PayrollController extends Controller
         return redirect()
             ->route('tenant.payroll.components.index', $tenant)
             ->with('success', 'Salary component created successfully.');
+    }
+
+    public function updateComponent(Request $request, Tenant $tenant, SalaryComponent $component)
+    {
+        // Validate that the component belongs to this tenant
+        if ($component->tenant_id !== $tenant->id) {
+            abort(403, 'Unauthorized access to salary component.');
+        }
+
+        $validated = $request->validate([
+            'name' => 'required|string|max:255',
+            'code' => 'required|string|max:10|unique:salary_components,code,' . $component->id,
+            'type' => 'required|in:earning,deduction,employer_contribution',
+            'calculation_type' => 'required|in:fixed,percentage,variable,computed',
+            'is_taxable' => 'boolean',
+            'is_pensionable' => 'boolean',
+            'description' => 'nullable|string',
+        ]);
+
+        $component->update($validated);
+
+        return redirect()
+            ->route('tenant.payroll.components.index', $tenant)
+            ->with('success', 'Salary component updated successfully.');
+    }
+
+    public function deleteComponent(Tenant $tenant, SalaryComponent $component)
+    {
+        // Validate that the component belongs to this tenant
+        if ($component->tenant_id !== $tenant->id) {
+            abort(403, 'Unauthorized access to salary component.');
+        }
+
+        // Check if component is assigned to any employees
+        $assignedCount = EmployeeSalaryComponent::where('salary_component_id', $component->id)->count();
+        if ($assignedCount > 0) {
+            return redirect()
+                ->route('tenant.payroll.components.index', $tenant)
+                ->with('error', "Cannot delete component. It is assigned to {$assignedCount} employee(s).");
+        }
+
+        $component->delete();
+
+        return redirect()
+            ->route('tenant.payroll.components.index', $tenant)
+            ->with('success', 'Salary component deleted successfully.');
     }
 
     /**

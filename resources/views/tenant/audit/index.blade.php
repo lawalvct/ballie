@@ -370,8 +370,18 @@
                                                 <div class="text-xs text-gray-400">{{ $activity['timestamp']->diffForHumans() }}</div>
                                             </div>
                                             @if(isset($activity['model']) && isset($activity['id']))
-                                                <a href="{{ route('tenant.audit.show', ['tenant' => $tenant->slug, 'model' => strtolower($activity['model']), 'id' => $activity['id']]) }}"
-                                                   class="p-2 text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50 rounded-md transition-colors">
+                                                @php
+                                                    $showRoute = match(strtolower($activity['model'])) {
+                                                        'customer' => route('tenant.crm.customers.show', ['tenant' => $tenant->slug, 'customer' => $activity['id']]),
+                                                        'vendor' => route('tenant.crm.vendors.show', ['tenant' => $tenant->slug, 'vendor' => $activity['id']]),
+                                                        'product' => route('tenant.inventory.products.show', ['tenant' => $tenant->slug, 'product' => $activity['id']]),
+                                                        'voucher' => route('tenant.accounting.vouchers.show', ['tenant' => $tenant->slug, 'voucher' => $activity['id']]),
+                                                        default => '#'
+                                                    };
+                                                @endphp
+                                                <a href="{{ $showRoute }}"
+                                                   class="p-2 text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50 rounded-md transition-colors"
+                                                   title="View {{ $activity['model'] }}">
                                                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
@@ -420,7 +430,16 @@
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                                             @if(isset($activity['model']) && isset($activity['id']))
-                                                <a href="{{ route('tenant.audit.show', ['tenant' => $tenant->slug, 'model' => strtolower($activity['model']), 'id' => $activity['id']]) }}"
+                                                @php
+                                                    $showRoute = match(strtolower($activity['model'])) {
+                                                        'customer' => route('tenant.crm.customers.show', ['tenant' => $tenant->slug, 'customer' => $activity['id']]),
+                                                        'vendor' => route('tenant.crm.vendors.show', ['tenant' => $tenant->slug, 'vendor' => $activity['id']]),
+                                                        'product' => route('tenant.inventory.products.show', ['tenant' => $tenant->slug, 'product' => $activity['id']]),
+                                                        'voucher' => route('tenant.accounting.vouchers.show', ['tenant' => $tenant->slug, 'voucher' => $activity['id']]),
+                                                        default => '#'
+                                                    };
+                                                @endphp
+                                                <a href="{{ $showRoute }}"
                                                    class="text-indigo-600 hover:text-indigo-900">View</a>
                                             @endif
                                         </td>
@@ -455,7 +474,7 @@
     function toggleFilters() {
         const advancedFilters = document.getElementById('advanced-filters');
         const toggleText = document.getElementById('filter-toggle-text');
-        
+
         if (advancedFilters.classList.contains('hidden')) {
             advancedFilters.classList.remove('hidden');
             toggleText.textContent = 'Hide Advanced';
@@ -493,7 +512,7 @@
         const originalContent = button.innerHTML;
         button.disabled = true;
         button.innerHTML = '<svg class="animate-spin w-4 h-4 mr-2" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>Refreshing...';
-        
+
         setTimeout(() => {
             location.reload();
         }, 1000);

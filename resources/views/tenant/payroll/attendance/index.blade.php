@@ -235,13 +235,17 @@
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ $record->employee->department->name ?? 'N/A' }}</td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                @if($record->shift)
+                                @php
+                                    // Get shift from attendance record or employee's current shift assignment
+                                    $displayShift = $record->shift ?? $record->employee->currentShiftAssignment?->shift;
+                                @endphp
+                                @if($displayShift)
                                     <div class="flex items-center">
                                         <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-indigo-100 text-indigo-800">
-                                            {{ $record->shift->name }}
+                                            {{ $displayShift->name }}
                                         </span>
                                     </div>
-                                    <div class="text-xs text-gray-500 mt-1">{{ $record->shift->code }} • {{ \Carbon\Carbon::parse($record->shift->start_time)->format('g:i A') }}-{{ \Carbon\Carbon::parse($record->shift->end_time)->format('g:i A') }}</div>
+                                    <div class="text-xs text-gray-500 mt-1">{{ $displayShift->code }} • {{ \Carbon\Carbon::parse($displayShift->start_time)->format('g:i A') }}-{{ \Carbon\Carbon::parse($displayShift->end_time)->format('g:i A') }}</div>
                                 @else
                                     <span class="text-gray-400 text-xs italic">No shift assigned</span>
                                 @endif
