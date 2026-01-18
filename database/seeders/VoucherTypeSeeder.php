@@ -19,6 +19,7 @@ class VoucherTypeSeeder extends Seeder
             [
                 'name' => 'Journal',
                 'code' => 'JV',
+                'category' => 'accounting',
                 'abbreviation' => 'J',
                 'description' => 'General journal entries for adjustments and corrections',
                 'numbering_method' => 'auto',
@@ -35,6 +36,7 @@ class VoucherTypeSeeder extends Seeder
             [
                 'name' => 'Payment',
                 'code' => 'PV',
+                'category' => 'accounting',
                 'abbreviation' => 'P',
                 'description' => 'Payment vouchers for cash and bank payments',
                 'numbering_method' => 'auto',
@@ -50,6 +52,7 @@ class VoucherTypeSeeder extends Seeder
             [
                 'name' => 'Receipt',
                 'code' => 'RV',
+                'category' => 'accounting',
                 'abbreviation' => 'R',
                 'description' => 'Receipt vouchers for cash and bank receipts',
                 'numbering_method' => 'auto',
@@ -65,6 +68,7 @@ class VoucherTypeSeeder extends Seeder
               [
                 'name' => 'Sales',
                 'code' => 'SV',
+                'category' => 'inventory',
                 'abbreviation' => 'S',
                 'description' => 'Sales vouchers for recording sales transactions',
                 'numbering_method' => 'auto',
@@ -81,6 +85,7 @@ class VoucherTypeSeeder extends Seeder
             [
                 'name' => 'Purchase',
                 'code' => 'PUR',
+                'category' => 'inventory',
                 'abbreviation' => 'PU',
                 'description' => 'Purchase vouchers for recording purchase transactions',
                 'numbering_method' => 'auto',
@@ -97,6 +102,7 @@ class VoucherTypeSeeder extends Seeder
             [
                 'name' => 'Contra',
                 'code' => 'CV',
+                'category' => 'accounting',
                 'abbreviation' => 'C',
                 'description' => 'Contra vouchers for bank to cash or cash to bank transfers',
                 'numbering_method' => 'auto',
@@ -113,6 +119,7 @@ class VoucherTypeSeeder extends Seeder
             [
                 'name' => 'Credit Note',
                 'code' => 'CN',
+                'category' => 'accounting',
                 'abbreviation' => 'CN',
                 'description' => 'Credit note for sales returns or downward adjustment of customer invoices',
                 'numbering_method' => 'auto',
@@ -129,6 +136,7 @@ class VoucherTypeSeeder extends Seeder
             [
                 'name' => 'Debit Note',
                 'code' => 'DN',
+                'category' => 'accounting',
                 'abbreviation' => 'DN',
                 'description' => 'Debit note for purchase returns or downward adjustment of supplier bills',
                 'numbering_method' => 'auto',
@@ -145,6 +153,7 @@ class VoucherTypeSeeder extends Seeder
             [
                 'name' => 'Sales Return',
                 'code' => 'SR',
+                'category' => 'inventory',
                 'abbreviation' => 'SR',
                 'description' => 'Sales return voucher (if separate from credit note)',
                 'numbering_method' => 'auto',
@@ -161,6 +170,7 @@ class VoucherTypeSeeder extends Seeder
             [
                 'name' => 'Purchase Return',
                 'code' => 'PR',
+                'category' => 'inventory',
                 'abbreviation' => 'PR',
                 'description' => 'Purchase return voucher (if separate from debit note)',
                 'numbering_method' => 'auto',
@@ -177,6 +187,7 @@ class VoucherTypeSeeder extends Seeder
             [
                 'name' => 'Material Issue',
                 'code' => 'MI',
+                'category' => 'inventory',
                 'abbreviation' => 'MI',
                 'description' => 'Material issue voucher for raw material issued to production',
                 'numbering_method' => 'auto',
@@ -193,6 +204,7 @@ class VoucherTypeSeeder extends Seeder
             [
                 'name' => 'Material Receipt',
                 'code' => 'MR',
+                'category' => 'inventory',
                 'abbreviation' => 'MR',
                 'description' => 'Material receipt voucher for finished goods received from production',
                 'numbering_method' => 'auto',
@@ -209,6 +221,7 @@ class VoucherTypeSeeder extends Seeder
             [
                 'name' => 'Stock Transfer',
                 'code' => 'ST',
+                'category' => 'inventory',
                 'abbreviation' => 'ST',
                 'description' => 'Stock transfer voucher for movement of stock between warehouses/branches',
                 'numbering_method' => 'auto',
@@ -225,6 +238,7 @@ class VoucherTypeSeeder extends Seeder
             [
                 'name' => 'Consumption',
                 'code' => 'CON',
+                'category' => 'inventory',
                 'abbreviation' => 'CON',
                 'description' => 'Consumption voucher for usage/consumption of raw materials',
                 'numbering_method' => 'auto',
@@ -241,6 +255,7 @@ class VoucherTypeSeeder extends Seeder
             [
                 'name' => 'Production',
                 'code' => 'PROD',
+                'category' => 'inventory',
                 'abbreviation' => 'PROD',
                 'description' => 'Production/job work voucher for manufacturing/assembly process',
                 'numbering_method' => 'auto',
@@ -257,6 +272,7 @@ class VoucherTypeSeeder extends Seeder
             [
                 'name' => 'Salary',
                 'code' => 'SAL',
+                'category' => 'payroll',
                 'abbreviation' => 'SAL',
                 'description' => 'Salary voucher for monthly salary posting',
                 'numbering_method' => 'auto',
@@ -272,6 +288,7 @@ class VoucherTypeSeeder extends Seeder
             [
                 'name' => 'Overtime/Allowance',
                 'code' => 'OT',
+                'category' => 'payroll',
                 'abbreviation' => 'OT',
                 'description' => 'Overtime/allowance voucher for extra payments to staff',
                 'numbering_method' => 'auto',
@@ -287,6 +304,7 @@ class VoucherTypeSeeder extends Seeder
             [
                 'name' => 'Employee Advance',
                 'code' => 'ADV',
+                'category' => 'payroll',
                 'abbreviation' => 'ADV',
                 'description' => 'Employee advance voucher for advance paid to employees (IOU)',
                 'numbering_method' => 'auto',
@@ -302,6 +320,7 @@ class VoucherTypeSeeder extends Seeder
             [
                 'name' => 'Reimbursement',
                 'code' => 'REIM',
+                'category' => 'payroll',
                 'abbreviation' => 'REIM',
                 'description' => 'Reimbursement voucher for staff expenses reimbursed',
                 'numbering_method' => 'auto',
@@ -317,6 +336,7 @@ class VoucherTypeSeeder extends Seeder
             [
                 'name' => 'Petty Cash',
                 'code' => 'PC',
+                'category' => 'accounting',
                 'abbreviation' => 'PC',
                 'description' => 'Petty cash voucher for small day-to-day expenses',
                 'numbering_method' => 'auto',
@@ -332,6 +352,7 @@ class VoucherTypeSeeder extends Seeder
             [
                 'name' => 'Expense',
                 'code' => 'EXP',
+                'category' => 'accounting',
                 'abbreviation' => 'EXP',
                 'description' => 'Expense voucher for general business expenses',
                 'numbering_method' => 'auto',
@@ -347,6 +368,7 @@ class VoucherTypeSeeder extends Seeder
             [
                 'name' => 'Prepaid Expense',
                 'code' => 'PRE',
+                'category' => 'accounting',
                 'abbreviation' => 'PRE',
                 'description' => 'Prepaid expense voucher for prepaid rent, insurance, etc.',
                 'numbering_method' => 'auto',
@@ -362,6 +384,7 @@ class VoucherTypeSeeder extends Seeder
             [
                 'name' => 'Bank Charges',
                 'code' => 'BC',
+                'category' => 'accounting',
                 'abbreviation' => 'BC',
                 'description' => 'Bank charges voucher for bank fees and service charges',
                 'numbering_method' => 'auto',
@@ -377,6 +400,7 @@ class VoucherTypeSeeder extends Seeder
             [
                 'name' => 'Loan/Interest',
                 'code' => 'LN',
+                'category' => 'accounting',
                 'abbreviation' => 'LN',
                 'description' => 'Loan/interest voucher for loan repayment and interest',
                 'numbering_method' => 'auto',

@@ -13,6 +13,7 @@ class VoucherType extends Model
         'tenant_id',
         'name',
         'code',
+        'category',
         'abbreviation',
         'description',
         'numbering_method',
@@ -36,6 +37,7 @@ class VoucherType extends Model
         'is_active' => 'boolean',
         'default_accounts' => 'array',
         'inventory_effect' => 'string',
+        'category' => 'string',
     ];
 
     // Relationships
