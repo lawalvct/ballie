@@ -15,9 +15,8 @@ class VoucherTypeController extends Controller
     /**
      * Display a listing of voucher types.
      */
-    public function index(Request $request)
+    public function index(Request $request, Tenant $tenant)
     {
-        $tenant = $request->tenant;
 
         $query = VoucherType::where('tenant_id', $tenant->id);
 
@@ -87,9 +86,8 @@ class VoucherTypeController extends Controller
     /**
      * Get data for creating a new voucher type.
      */
-    public function create(Request $request)
+    public function create(Request $request, Tenant $tenant)
     {
-        $tenant = $request->tenant;
 
         // Fetch all system-defined voucher types for reference
         $primaryVoucherTypes = VoucherType::where('tenant_id', $tenant->id)
@@ -120,9 +118,8 @@ class VoucherTypeController extends Controller
     /**
      * Store a newly created voucher type.
      */
-    public function store(Request $request)
+    public function store(Request $request, Tenant $tenant)
     {
-        $tenant = $request->tenant;
 
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
@@ -176,9 +173,8 @@ class VoucherTypeController extends Controller
     /**
      * Display the specified voucher type.
      */
-    public function show(Request $request, VoucherType $voucherType)
+    public function show(Request $request, Tenant $tenant, VoucherType $voucherType)
     {
-        $tenant = $request->tenant;
 
         // Get voucher count
         $voucherCount = Voucher::where('tenant_id', $tenant->id)
@@ -205,9 +201,8 @@ class VoucherTypeController extends Controller
     /**
      * Update the specified voucher type.
      */
-    public function update(Request $request, VoucherType $voucherType)
+    public function update(Request $request, Tenant $tenant, VoucherType $voucherType)
     {
-        $tenant = $request->tenant;
 
         $rules = [
             'abbreviation' => ['required', 'string', 'max:5', 'regex:/^[A-Z]+$/'],
@@ -272,9 +267,8 @@ class VoucherTypeController extends Controller
     /**
      * Remove the specified voucher type.
      */
-    public function destroy(Request $request, VoucherType $voucherType)
+    public function destroy(Request $request, Tenant $tenant, VoucherType $voucherType)
     {
-        $tenant = $request->tenant;
 
         // Check if voucher type has any vouchers
         $voucherCount = Voucher::where('tenant_id', $tenant->id)
@@ -309,7 +303,7 @@ class VoucherTypeController extends Controller
     /**
      * Toggle the active status of a voucher type.
      */
-    public function toggle(Request $request, VoucherType $voucherType)
+    public function toggle(Request $request, Tenant $tenant, VoucherType $voucherType)
     {
         $voucherType->update([
             'is_active' => !$voucherType->is_active
@@ -327,9 +321,8 @@ class VoucherTypeController extends Controller
     /**
      * Reset the numbering sequence for a voucher type.
      */
-    public function resetNumbering(Request $request, VoucherType $voucherType)
+    public function resetNumbering(Request $request, Tenant $tenant, VoucherType $voucherType)
     {
-        $tenant = $request->tenant;
 
         $validated = $request->validate([
             'reset_number' => ['required', 'integer', 'min:1']
@@ -375,9 +368,8 @@ class VoucherTypeController extends Controller
     /**
      * Bulk actions for voucher types.
      */
-    public function bulkAction(Request $request)
+    public function bulkAction(Request $request, Tenant $tenant)
     {
-        $tenant = $request->tenant;
 
         $validated = $request->validate([
             'action' => ['required', 'in:activate,deactivate,delete'],
@@ -463,9 +455,8 @@ class VoucherTypeController extends Controller
     /**
      * Search voucher types for selection.
      */
-    public function search(Request $request)
+    public function search(Request $request, Tenant $tenant)
     {
-        $tenant = $request->tenant;
 
         $query = VoucherType::where('tenant_id', $tenant->id)
             ->where('is_active', true);
