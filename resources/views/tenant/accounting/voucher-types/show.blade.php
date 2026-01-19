@@ -84,6 +84,36 @@
                                 @endif
                             </dd>
                         </div>
+                        <div>
+                            <dt class="text-sm font-medium text-gray-500">Category</dt>
+                            <dd class="mt-1">
+                                @if($voucherType->category === 'accounting')
+                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                        Accounting
+                                    </span>
+                                @elseif($voucherType->category === 'inventory')
+                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-orange-100 text-orange-800">
+                                        Inventory
+                                    </span>
+                                @elseif($voucherType->category === 'POS')
+                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                                        POS
+                                    </span>
+                                @elseif($voucherType->category === 'payroll')
+                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                                        Payroll
+                                    </span>
+                                @elseif($voucherType->category === 'ecommerce')
+                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
+                                        Ecommerce
+                                    </span>
+                                @else
+                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                                        {{ ucfirst($voucherType->category) }}
+                                    </span>
+                                @endif
+                            </dd>
+                        </div>
                         @if($voucherType->description)
                         <div class="md:col-span-2">
                             <dt class="text-sm font-medium text-gray-500">Description</dt>

@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Controllers\Tenant\Accounting;
+namespace App\Http\Controllers\Api\Tenant\Accounting;
 
 use App\Http\Controllers\Controller;
 use App\Models\Tenant;
@@ -12,16 +12,13 @@ use Illuminate\Validation\Rule;
 
 class VoucherTypeController extends Controller
 {
-    public function __construct()
-    {
-        $this->middleware(['auth', 'tenant']);
-    }
-
     /**
      * Display a listing of voucher types.
      */
-    public function index(Request $request, Tenant $tenant)
+    public function index(Request $request)
     {
+        $tenant = $request->tenant;
+
         $query = VoucherType::where('tenant_id', $tenant->id);
 
         // Search functionality
@@ -53,13 +50,14 @@ class VoucherTypeController extends Controller
         $sortBy = $request->get('sort', 'name');
         $sortDirection = $request->get('direction', 'asc');
 
-
         $allowedSorts = ['name', 'code', 'created_at', 'is_active'];
         if (in_array($sortBy, $allowedSorts)) {
             $query->orderBy($sortBy, $sortDirection);
         }
 
-        $voucherTypes = $query->paginate(15)->withQueryString();
+        // Pagination
+        $perPage = $request->get('per_page', 15);
+        $voucherTypes = $query->paginate($perPage);
 
         // Get voucher counts for each type
         $voucherCounts = Voucher::where('tenant_id', $tenant->id)
@@ -67,46 +65,66 @@ class VoucherTypeController extends Controller
             ->groupBy('voucher_type_id')
             ->pluck('count', 'voucher_type_id');
 
-        // Get statistics for the dashboard cards
-        $totalVoucherTypes = VoucherType::where('tenant_id', $tenant->id)->count();
-        $activeVoucherTypes = VoucherType::where('tenant_id', $tenant->id)->where('is_active', true)->count();
-        $systemVoucherTypes = VoucherType::where('tenant_id', $tenant->id)->where('is_system_defined', true)->count();
-        $customVoucherTypes = VoucherType::where('tenant_id', $tenant->id)->where('is_system_defined', false)->count();
+        // Add voucher count to each voucher type
+        $voucherTypes->getCollection()->transform(function ($voucherType) use ($voucherCounts) {
+            $voucherType->voucher_count = $voucherCounts->get($voucherType->id, 0);
+            return $voucherType;
+        });
 
-        return view('tenant.accounting.voucher-types.index', compact(
-            'tenant',
-            'voucherTypes',
-            'voucherCounts',
-            'totalVoucherTypes',
-            'activeVoucherTypes',
-            'systemVoucherTypes',
-            'customVoucherTypes'
-        ));
+        return response()->json([
+            'success' => true,
+            'message' => 'Voucher types retrieved successfully',
+            'data' => $voucherTypes,
+            'statistics' => [
+                'total' => VoucherType::where('tenant_id', $tenant->id)->count(),
+                'active' => VoucherType::where('tenant_id', $tenant->id)->where('is_active', true)->count(),
+                'system_defined' => VoucherType::where('tenant_id', $tenant->id)->where('is_system_defined', true)->count(),
+                'custom' => VoucherType::where('tenant_id', $tenant->id)->where('is_system_defined', false)->count(),
+            ]
+        ]);
     }
 
     /**
-     * Show the form for creating a new voucher type.
+     * Get data for creating a new voucher type.
      */
-    public function create(Tenant $tenant)
+    public function create(Request $request)
     {
-        // Fetch all system-defined voucher types for this tenant
+        $tenant = $request->tenant;
+
+        // Fetch all system-defined voucher types for reference
         $primaryVoucherTypes = VoucherType::where('tenant_id', $tenant->id)
             ->where('is_system_defined', true)
             ->orderBy('name')
             ->get();
 
-        return view('tenant.accounting.voucher-types.create', compact(
-            'tenant',
-            'primaryVoucherTypes'
-        ));
+        return response()->json([
+            'success' => true,
+            'message' => 'Create form data retrieved successfully',
+            'data' => [
+                'primary_voucher_types' => $primaryVoucherTypes,
+                'categories' => [
+                    'accounting' => 'Accounting',
+                    'inventory' => 'Inventory',
+                    'POS' => 'POS',
+                    'payroll' => 'Payroll',
+                    'ecommerce' => 'Ecommerce'
+                ],
+                'numbering_methods' => [
+                    'auto' => 'Automatic',
+                    'manual' => 'Manual'
+                ]
+            ]
+        ]);
     }
 
     /**
      * Store a newly created voucher type.
      */
-    public function store(Request $request, Tenant $tenant)
+    public function store(Request $request)
     {
-        $request->validate([
+        $tenant = $request->tenant;
+
+        $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
             'code' => [
                 'required',
@@ -132,15 +150,15 @@ class VoucherTypeController extends Controller
 
         $voucherType = VoucherType::create([
             'tenant_id' => $tenant->id,
-            'name' => $request->name,
-            'code' => strtoupper($request->code),
-            'abbreviation' => strtoupper($request->abbreviation),
-            'description' => $request->description,
-            'category' => $request->category,
-            'numbering_method' => $request->numbering_method,
-            'prefix' => $request->prefix,
-            'starting_number' => $request->starting_number,
-            'current_number' => $request->starting_number - 1,
+            'name' => $validated['name'],
+            'code' => strtoupper($validated['code']),
+            'abbreviation' => strtoupper($validated['abbreviation']),
+            'description' => $validated['description'] ?? null,
+            'category' => $validated['category'],
+            'numbering_method' => $validated['numbering_method'],
+            'prefix' => $validated['prefix'] ?? null,
+            'starting_number' => $validated['starting_number'],
+            'current_number' => $validated['starting_number'] - 1,
             'has_reference' => $request->boolean('has_reference'),
             'affects_inventory' => $request->boolean('affects_inventory'),
             'affects_cashbank' => $request->boolean('affects_cashbank'),
@@ -148,20 +166,19 @@ class VoucherTypeController extends Controller
             'is_active' => $request->boolean('is_active', true),
         ]);
 
-       return redirect()
-    ->route('tenant.accounting.voucher-types.show', [
-        'tenant' => $tenant->slug,
-        'voucherType' => $voucherType->id
-    ])
-    ->with('success', 'Voucher type created successfully.');
+        return response()->json([
+            'success' => true,
+            'message' => 'Voucher type created successfully',
+            'data' => $voucherType
+        ], 201);
     }
 
     /**
      * Display the specified voucher type.
      */
-    public function show(Tenant $tenant, VoucherType $voucherType)
+    public function show(Request $request, VoucherType $voucherType)
     {
-       // $this->authorize('view', $voucherType);
+        $tenant = $request->tenant;
 
         // Get voucher count
         $voucherCount = Voucher::where('tenant_id', $tenant->id)
@@ -175,33 +192,22 @@ class VoucherTypeController extends Controller
             ->take(5)
             ->get();
 
-        return view('tenant.accounting.voucher-types.show', compact(
-            'tenant',
-            'voucherType',
-            'voucherCount',
-            'recentVouchers'
-        ));
-    }
+        $voucherType->voucher_count = $voucherCount;
+        $voucherType->recent_vouchers = $recentVouchers;
 
-    /**
-     * Show the form for editing the specified voucher type.
-     */
-    public function edit(Tenant $tenant, VoucherType $voucherType)
-    {
-     //   $this->authorize('update', $voucherType);
-
-        return view('tenant.accounting.voucher-types.edit', compact(
-            'tenant',
-            'voucherType'
-        ));
+        return response()->json([
+            'success' => true,
+            'message' => 'Voucher type retrieved successfully',
+            'data' => $voucherType
+        ]);
     }
 
     /**
      * Update the specified voucher type.
      */
-    public function update(Request $request, Tenant $tenant, VoucherType $voucherType)
+    public function update(Request $request, VoucherType $voucherType)
     {
-        //$this->authorize('update', $voucherType);
+        $tenant = $request->tenant;
 
         $rules = [
             'abbreviation' => ['required', 'string', 'max:5', 'regex:/^[A-Z]+$/'],
@@ -230,118 +236,115 @@ class VoucherTypeController extends Controller
             $rules['affects_cashbank'] = ['boolean'];
         }
 
-        $request->validate($rules, [
+        $validated = $request->validate($rules, [
             'code.regex' => 'Code can only contain uppercase letters, numbers, hyphens, and underscores.',
             'abbreviation.regex' => 'Abbreviation can only contain uppercase letters.',
         ]);
 
         $updateData = [
-            'abbreviation' => strtoupper($request->abbreviation),
-            'description' => $request->description,
-            'category' => $request->category,
-            'numbering_method' => $request->numbering_method,
-            'prefix' => $request->prefix,
-            'starting_number' => $request->starting_number,
+            'abbreviation' => strtoupper($validated['abbreviation']),
+            'description' => $validated['description'] ?? null,
+            'category' => $validated['category'],
+            'numbering_method' => $validated['numbering_method'],
+            'prefix' => $validated['prefix'] ?? null,
+            'starting_number' => $validated['starting_number'],
             'has_reference' => $request->boolean('has_reference'),
             'is_active' => $request->boolean('is_active'),
         ];
 
         // Only update these fields for non-system voucher types
         if (!$voucherType->is_system_defined) {
-            $updateData['name'] = $request->name;
-            $updateData['code'] = strtoupper($request->code);
+            $updateData['name'] = $validated['name'];
+            $updateData['code'] = strtoupper($validated['code']);
             $updateData['affects_inventory'] = $request->boolean('affects_inventory');
             $updateData['affects_cashbank'] = $request->boolean('affects_cashbank');
         }
 
         $voucherType->update($updateData);
 
-        return redirect()
-            ->route('tenant.accounting.voucher-types.show',['tenant' => $tenant->slug, 'voucherType' => $voucherType->id])
-
-            ->with('success', 'Voucher type updated successfully.');
+        return response()->json([
+            'success' => true,
+            'message' => 'Voucher type updated successfully',
+            'data' => $voucherType->fresh()
+        ]);
     }
 
     /**
      * Remove the specified voucher type.
      */
-    public function destroy(Tenant $tenant, VoucherType $voucherType)
+    public function destroy(Request $request, VoucherType $voucherType)
     {
-     //   $this->authorize('delete', $voucherType);
-          // Check if voucher type has any vouchers
+        $tenant = $request->tenant;
+
+        // Check if voucher type has any vouchers
         $voucherCount = Voucher::where('tenant_id', $tenant->id)
             ->where('voucher_type_id', $voucherType->id)
             ->count();
 
         if ($voucherCount > 0) {
-            return redirect()
-                ->route('tenant.accounting.voucher-types.show', [
-                    'tenant' => $tenant->slug,
-                    'voucher_type' => $voucherType->id
-                ])
-                ->with('error', 'Cannot delete voucher type that has existing vouchers.');
+            return response()->json([
+                'success' => false,
+                'message' => 'Cannot delete voucher type that has existing vouchers.',
+                'errors' => ['voucher_type' => ['This voucher type has existing vouchers and cannot be deleted.']]
+            ], 422);
         }
 
         // System-defined voucher types cannot be deleted
         if ($voucherType->is_system_defined) {
-            return redirect()
-                ->route('tenant.accounting.voucher-types.show', [
-                    'tenant' => $tenant->slug,
-                    'voucher_type' => $voucherType->id
-                ])
-                ->with('error', 'System-defined voucher types cannot be deleted.');
+            return response()->json([
+                'success' => false,
+                'message' => 'System-defined voucher types cannot be deleted.',
+                'errors' => ['voucher_type' => ['System-defined voucher types are protected and cannot be deleted.']]
+            ], 422);
         }
 
         $voucherType->delete();
 
-        return redirect()
-            ->route('tenant.accounting.voucher-types.index', ['tenant' => $tenant->slug])
-            ->with('success', 'Voucher type deleted successfully.');
+        return response()->json([
+            'success' => true,
+            'message' => 'Voucher type deleted successfully'
+        ]);
     }
 
     /**
      * Toggle the active status of a voucher type.
      */
-    public function toggle(Tenant $tenant, VoucherType $voucherType)
+    public function toggle(Request $request, VoucherType $voucherType)
     {
-        $this->authorize('update', $voucherType);
-
         $voucherType->update([
             'is_active' => !$voucherType->is_active
         ]);
 
         $status = $voucherType->is_active ? 'activated' : 'deactivated';
 
-        return redirect()
-            ->route('tenant.accounting.voucher-types.show', [
-                'tenant' => $tenant->slug,
-                'voucher_type' => $voucherType->id
-            ])
-            ->with('success', "Voucher type {$status} successfully.");
+        return response()->json([
+            'success' => true,
+            'message' => "Voucher type {$status} successfully",
+            'data' => $voucherType->fresh()
+        ]);
     }
 
     /**
      * Reset the numbering sequence for a voucher type.
      */
-    public function resetNumbering(Request $request, Tenant $tenant, VoucherType $voucherType)
+    public function resetNumbering(Request $request, VoucherType $voucherType)
     {
-        $this->authorize('update', $voucherType);
+        $tenant = $request->tenant;
 
-        $request->validate([
+        $validated = $request->validate([
             'reset_number' => ['required', 'integer', 'min:1']
         ]);
 
         // Only allow resetting for auto-numbering voucher types
         if ($voucherType->numbering_method !== 'auto') {
-            return redirect()
-                ->route('tenant.accounting.voucher-types.show', [
-                    'tenant' => $tenant->slug,
-                    'voucher_type' => $voucherType->id
-                ])
-                ->with('error', 'Can only reset numbering for auto-numbered voucher types.');
+            return response()->json([
+                'success' => false,
+                'message' => 'Can only reset numbering for auto-numbered voucher types.',
+                'errors' => ['numbering_method' => ['This voucher type uses manual numbering.']]
+            ], 422);
         }
 
-        $resetNumber = $request->reset_number;
+        $resetNumber = $validated['reset_number'];
 
         // Check if the reset number conflicts with existing vouchers
         $existingVoucher = Voucher::where('tenant_id', $tenant->id)
@@ -350,37 +353,40 @@ class VoucherTypeController extends Controller
             ->first();
 
         if ($existingVoucher) {
-            return redirect()
-                ->route('tenant.accounting.voucher-types.show', [
-                    'tenant' => $tenant->slug,
-                    'voucher_type' => $voucherType->id
-                ])
-                ->with('error', 'Cannot reset to this number as it conflicts with an existing voucher.');
+            return response()->json([
+                'success' => false,
+                'message' => 'Cannot reset to this number as it conflicts with an existing voucher.',
+                'errors' => ['reset_number' => ['A voucher with this number already exists.']]
+            ], 422);
         }
 
         $voucherType->resetNumbering($resetNumber);
 
-        return redirect()
-            ->route('tenant.accounting.voucher-types.show', [
-                'tenant' => $tenant->slug,
-                'voucher_type' => $voucherType->id
-            ])
-            ->with('success', "Numbering reset successfully. Next voucher will be {$voucherType->prefix}" . str_pad($resetNumber, 4, '0', STR_PAD_LEFT));
+        return response()->json([
+            'success' => true,
+            'message' => 'Numbering reset successfully',
+            'data' => [
+                'voucher_type' => $voucherType->fresh(),
+                'next_number' => $voucherType->prefix . str_pad($resetNumber, 4, '0', STR_PAD_LEFT)
+            ]
+        ]);
     }
 
     /**
      * Bulk actions for voucher types.
      */
-    public function bulkAction(Request $request, Tenant $tenant)
+    public function bulkAction(Request $request)
     {
-        $request->validate([
+        $tenant = $request->tenant;
+
+        $validated = $request->validate([
             'action' => ['required', 'in:activate,deactivate,delete'],
             'voucher_types' => ['required', 'array', 'min:1'],
             'voucher_types.*' => ['exists:voucher_types,id']
         ]);
 
-        $voucherTypeIds = $request->voucher_types;
-        $action = $request->action;
+        $voucherTypeIds = $validated['voucher_types'];
+        $action = $validated['action'];
 
         // Get voucher types belonging to this tenant
         $voucherTypes = VoucherType::where('tenant_id', $tenant->id)
@@ -388,9 +394,11 @@ class VoucherTypeController extends Controller
             ->get();
 
         if ($voucherTypes->isEmpty()) {
-            return redirect()
-                ->route('tenant.accounting.voucher-types.index', ['tenant' => $tenant->slug])
-                ->with('error', 'No valid voucher types selected.');
+            return response()->json([
+                'success' => false,
+                'message' => 'No valid voucher types selected.',
+                'errors' => ['voucher_types' => ['No valid voucher types found.']]
+            ], 422);
         }
 
         $successCount = 0;
@@ -438,26 +446,27 @@ class VoucherTypeController extends Controller
             }
         }
 
-        $message = '';
-        if ($successCount > 0) {
-            $actionText = $action === 'activate' ? 'activated' : ($action === 'deactivate' ? 'deactivated' : 'deleted');
-            $message = "{$successCount} voucher type(s) {$actionText} successfully.";
-        }
+        $actionText = $action === 'activate' ? 'activated' : ($action === 'deactivate' ? 'deactivated' : 'deleted');
 
-        if (!empty($errors)) {
-            $message .= ' ' . implode(' ', $errors);
-        }
-
-        return redirect()
-            ->route('tenant.accounting.voucher-types.index', ['tenant' => $tenant->slug])
-            ->with($successCount > 0 ? 'success' : 'error', $message);
+        return response()->json([
+            'success' => $successCount > 0,
+            'message' => $successCount > 0
+                ? "{$successCount} voucher type(s) {$actionText} successfully."
+                : "No voucher types were {$actionText}.",
+            'data' => [
+                'success_count' => $successCount,
+                'errors' => $errors
+            ]
+        ], $successCount > 0 ? 200 : 422);
     }
 
     /**
-     * Get voucher type data for API/AJAX requests.
+     * Search voucher types for selection.
      */
-    public function apiIndex(Request $request, Tenant $tenant)
+    public function search(Request $request)
     {
+        $tenant = $request->tenant;
+
         $query = VoucherType::where('tenant_id', $tenant->id)
             ->where('is_active', true);
 
@@ -465,19 +474,27 @@ class VoucherTypeController extends Controller
             $search = $request->get('search');
             $query->where(function ($q) use ($search) {
                 $q->where('name', 'like', "%{$search}%")
-                  ->orWhere('code', 'like', "%{$search}%");
+                  ->orWhere('code', 'like', "%{$search}%")
+                  ->orWhere('abbreviation', 'like', "%{$search}%");
             });
+        }
+
+        if ($request->filled('category')) {
+            $query->where('category', $request->get('category'));
         }
 
         $voucherTypes = $query->orderBy('name')->get();
 
         return response()->json([
+            'success' => true,
+            'message' => 'Voucher types search results',
             'data' => $voucherTypes->map(function ($voucherType) {
                 return [
                     'id' => $voucherType->id,
                     'name' => $voucherType->name,
                     'code' => $voucherType->code,
                     'abbreviation' => $voucherType->abbreviation,
+                    'category' => $voucherType->category,
                     'prefix' => $voucherType->prefix,
                     'numbering_method' => $voucherType->numbering_method,
                     'has_reference' => $voucherType->has_reference,

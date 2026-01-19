@@ -140,6 +140,27 @@
                             <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                         @enderror
                     </div>
+
+                    <!-- Category -->
+                    <div>
+                        <label for="category" class="block text-sm font-medium text-gray-700 mb-2">
+                            Category <span class="text-red-500">*</span>
+                        </label>
+                        <select name="category"
+                                id="category"
+                                x-model="form.category"
+                                class="block w-full rounded-lg border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 @error('category') border-red-300 @enderror">
+                            <option value="">Select Category</option>
+                            <option value="accounting" {{ old('category', $voucherType->category) === 'accounting' ? 'selected' : '' }}>Accounting</option>
+                            <option value="inventory" {{ old('category', $voucherType->category) === 'inventory' ? 'selected' : '' }}>Inventory</option>
+                            <option value="POS" {{ old('category', $voucherType->category) === 'POS' ? 'selected' : '' }}>POS</option>
+                            <option value="payroll" {{ old('category', $voucherType->category) === 'payroll' ? 'selected' : '' }}>Payroll</option>
+                            <option value="ecommerce" {{ old('category', $voucherType->category) === 'ecommerce' ? 'selected' : '' }}>Ecommerce</option>
+                        </select>
+                        @error('category')
+                            <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                        @enderror
+                    </div>
                 </div>
             </div>
         </div>
@@ -371,6 +392,7 @@ function voucherTypeEditForm() {
             code: '{{ old('code', $voucherType->code) }}',
             abbreviation: '{{ old('abbreviation', $voucherType->abbreviation) }}',
             description: '{{ old('description', $voucherType->description) }}',
+            category: '{{ old('category', $voucherType->category) }}',
             numbering_method: '{{ old('numbering_method', $voucherType->numbering_method) }}',
             prefix: '{{ old('prefix', $voucherType->prefix) }}',
             starting_number: {{ old('starting_number', $voucherType->starting_number) }},

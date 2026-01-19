@@ -52,6 +52,20 @@ Route::middleware('auth:sanctum')->group(function () {
     // Accounting Module
     Route::prefix('accounting')->name('accounting.')->group(function () {
 
+        // Voucher Types
+        Route::prefix('voucher-types')->name('voucher-types.')->group(function () {
+            Route::get('/search', [\App\Http\Controllers\Api\Tenant\Accounting\VoucherTypeController::class, 'search'])->name('search');
+            Route::get('/create', [\App\Http\Controllers\Api\Tenant\Accounting\VoucherTypeController::class, 'create'])->name('create');
+            Route::post('/', [\App\Http\Controllers\Api\Tenant\Accounting\VoucherTypeController::class, 'store'])->name('store');
+            Route::post('/bulk-action', [\App\Http\Controllers\Api\Tenant\Accounting\VoucherTypeController::class, 'bulkAction'])->name('bulk-action');
+            Route::get('/', [\App\Http\Controllers\Api\Tenant\Accounting\VoucherTypeController::class, 'index'])->name('index');
+            Route::get('/{voucherType}', [\App\Http\Controllers\Api\Tenant\Accounting\VoucherTypeController::class, 'show'])->name('show');
+            Route::put('/{voucherType}', [\App\Http\Controllers\Api\Tenant\Accounting\VoucherTypeController::class, 'update'])->name('update');
+            Route::delete('/{voucherType}', [\App\Http\Controllers\Api\Tenant\Accounting\VoucherTypeController::class, 'destroy'])->name('destroy');
+            Route::post('/{voucherType}/toggle', [\App\Http\Controllers\Api\Tenant\Accounting\VoucherTypeController::class, 'toggle'])->name('toggle');
+            Route::post('/{voucherType}/reset-numbering', [\App\Http\Controllers\Api\Tenant\Accounting\VoucherTypeController::class, 'resetNumbering'])->name('reset-numbering');
+        });
+
         // Account Groups
         Route::prefix('account-groups')->name('account-groups.')->group(function () {
             Route::get('/create', [\App\Http\Controllers\Api\Tenant\Accounting\AccountGroupController::class, 'create'])->name('create');

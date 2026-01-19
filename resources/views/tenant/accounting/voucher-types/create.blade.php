@@ -153,6 +153,27 @@
                             <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                         @enderror
                     </div>
+
+                    <!-- Category -->
+                    <div>
+                        <label for="category" class="block text-sm font-medium text-gray-700 mb-2">
+                            Category <span class="text-red-500">*</span>
+                        </label>
+                        <select name="category"
+                                id="category"
+                                x-model="form.category"
+                                class="block w-full rounded-lg border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 @error('category') border-red-300 @enderror">
+                            <option value="">Select Category</option>
+                            <option value="accounting" {{ old('category') === 'accounting' ? 'selected' : '' }}>Accounting</option>
+                            <option value="inventory" {{ old('category') === 'inventory' ? 'selected' : '' }}>Inventory</option>
+                            <option value="POS" {{ old('category') === 'POS' ? 'selected' : '' }}>POS</option>
+                            <option value="payroll" {{ old('category') === 'payroll' ? 'selected' : '' }}>Payroll</option>
+                            <option value="ecommerce" {{ old('category') === 'ecommerce' ? 'selected' : '' }}>Ecommerce</option>
+                        </select>
+                        @error('category')
+                            <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                        @enderror
+                    </div>
                 </div>
             </div>
         </div>
@@ -364,6 +385,7 @@ function voucherTypeForm() {
             code: '',
             abbreviation: '',
             description: '',
+            category: '',
             numbering_method: 'auto',
             prefix: '',
             starting_number: 1,
@@ -382,6 +404,7 @@ function voucherTypeForm() {
                 this.form.code = primaryType.code || this.generateCodeFromName(primaryType.name);
                 this.form.abbreviation = primaryType.abbreviation || primaryType.code?.substring(0, 5) || '';
                 this.form.description = primaryType.description;
+                this.form.category = primaryType.category;
                 this.form.prefix = primaryType.prefix || '';
                 this.form.has_reference = primaryType.has_reference;
                 this.form.affects_inventory = primaryType.affects_inventory;
@@ -395,6 +418,7 @@ function voucherTypeForm() {
                 code: '',
                 abbreviation: '',
                 description: '',
+                category: '',
                 numbering_method: 'auto',
                 prefix: '',
                 starting_number: 1,

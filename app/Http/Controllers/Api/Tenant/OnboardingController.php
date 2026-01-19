@@ -216,6 +216,9 @@ class OnboardingController extends BaseApiController
             // Create default roles if they don't exist
             $this->createDefaultRoles($tenant);
 
+            // Assign owner role to the current user (CRITICAL for web access)
+            $this->assignOwnerRoleToUser($request->user(), $tenant);
+
             // Mark onboarding as completed AFTER seeding succeeds
             // Use retry operation with connection refresh for reliability
             $this->retryOperation(function() use ($tenant) {
@@ -292,6 +295,9 @@ class OnboardingController extends BaseApiController
             // Seed defaults FIRST
             $this->seedDefaultData($tenant);
             $this->createDefaultRoles($tenant);
+
+            // Assign owner role to the current user (CRITICAL for web access)
+            $this->assignOwnerRoleToUser($request->user(), $tenant);
 
             // Mark as completed AFTER seeding succeeds
             $this->retryOperation(function() use ($tenant) {
@@ -552,20 +558,151 @@ class OnboardingController extends BaseApiController
                     'tenant_id' => $tenant->id
                 ]);
 
+                // First, ensure permissions exist
                 $this->retryOperation(function() {
                     $permissionsSeeder = new PermissionsSeeder();
                     $permissionsSeeder->run();
-                }, "Permissions seeding and roles setup for tenant: {$tenant->id}");
+                }, "Permissions seeding for tenant: {$tenant->id}");
 
-                Log::info('Default roles created successfully', ['tenant_id' => $tenant->id]);
+                // Now create default roles with their permissions
+                $defaultRoles = [
+                    [
+                        'name' => 'Owner',
+                        'description' => 'Full system access with all permissions',
+                        'color' => '#dc2626',
+                        'priority' => 100,
+                        'permissions' => 'all',
+                    ],
+                    [
+                        'name' => 'Admin',
+                        'description' => 'Administrative access to most system features',
+                        'color' => '#7c3aed',
+                        'priority' => 90,
+                        'permissions' => ['dashboard.view', 'admin.users.manage', 'admin.roles.manage', 'admin.teams.manage', 'settings.view', 'settings.company.manage', 'reports.view', 'reports.export', 'audit.view'],
+                    ],
+                    [
+                        'name' => 'Manager',
+                        'description' => 'Management access to business operations',
+                        'color' => '#059669',
+                        'priority' => 80,
+                        'permissions' => ['dashboard.view', 'accounting.view', 'accounting.invoices.manage', 'inventory.view', 'inventory.products.manage', 'crm.view', 'crm.customers.manage', 'crm.vendors.manage', 'reports.view'],
+                    ],
+                    [
+                        'name' => 'Accountant',
+                        'description' => 'Access to financial and accounting features',
+                        'color' => '#2563eb',
+                        'priority' => 70,
+                        'permissions' => ['dashboard.view', 'accounting.view', 'accounting.invoices.manage', 'accounting.vouchers.manage', 'accounting.reports.view', 'payroll.view', 'payroll.process', 'banking.view', 'reports.view'],
+                    ],
+                    [
+                        'name' => 'Sales Representative',
+                        'description' => 'Access to sales and customer management features',
+                        'color' => '#ea580c',
+                        'priority' => 60,
+                        'permissions' => ['dashboard.view', 'crm.view', 'crm.customers.manage', 'accounting.invoices.manage', 'pos.access', 'pos.sales.process', 'inventory.view'],
+                    ],
+                    [
+                        'name' => 'Employee',
+                        'description' => 'Basic access for regular employees',
+                        'color' => '#64748b',
+                        'priority' => 30,
+                        'permissions' => ['dashboard.view'],
+                    ],
+                ];
+
+                foreach ($defaultRoles as $roleData) {
+                    $permissions = $roleData['permissions'];
+                    unset($roleData['permissions']);
+
+                    $role = \App\Models\Tenant\Role::firstOrCreate(
+                        [
+                            'name' => $roleData['name'],
+                            'tenant_id' => $tenant->id
+                        ],
+                        array_merge($roleData, [
+                            'slug' => \Illuminate\Support\Str::slug($roleData['name']) . '-' . $tenant->id,
+                            'tenant_id' => $tenant->id,
+                            'is_active' => true,
+                            'is_default' => true,
+                        ])
+                    );
+
+                    // Assign permissions to the role
+                    if ($permissions === 'all') {
+                        $allPermissions = \App\Models\Tenant\Permission::all();
+                        $role->permissions()->sync($allPermissions->pluck('id')->toArray());
+                    } else {
+                        $permissionIds = \App\Models\Tenant\Permission::whereIn('slug', $permissions)->pluck('id')->toArray();
+                        $role->permissions()->sync($permissionIds);
+                    }
+
+                    Log::info("Role created", [
+                        'tenant_id' => $tenant->id,
+                        'role_name' => $role->name,
+                        'role_id' => $role->id,
+                        'permissions_count' => $permissions === 'all' ? 'all' : count($permissions)
+                    ]);
+                }
+
+                Log::info('Default roles created successfully', [
+                    'tenant_id' => $tenant->id,
+                    'roles_count' => count($defaultRoles)
+                ]);
             }
 
         } catch (\Exception $e) {
             Log::error('Failed to create default roles', [
                 'error' => $e->getMessage(),
                 'tenant_id' => $tenant->id,
+                'trace' => $e->getTraceAsString()
             ]);
             // Don't throw - allow onboarding to complete
+        }
+    }
+
+    /**
+     * Assign owner role to the user completing onboarding
+     * This ensures users who register via mobile can access web features
+     */
+    private function assignOwnerRoleToUser($user, Tenant $tenant)
+    {
+        try {
+            if (!$user) {
+                Log::warning("Cannot assign owner role - user is null", [
+                    'tenant_id' => $tenant->id
+                ]);
+                return;
+            }
+
+            $ownerRole = \App\Models\Tenant\Role::where('name', 'Owner')
+                ->where('tenant_id', $tenant->id)
+                ->first();
+
+            if ($ownerRole) {
+                // Use syncWithoutDetaching to avoid removing other roles
+                $user->roles()->syncWithoutDetaching([$ownerRole->id]);
+
+                Log::info("Owner role assigned to user during mobile onboarding", [
+                    'tenant_id' => $tenant->id,
+                    'user_id' => $user->id,
+                    'role_id' => $ownerRole->id,
+                    'role_name' => $ownerRole->name
+                ]);
+            } else {
+                Log::warning("Could not assign owner role - Owner role not found", [
+                    'tenant_id' => $tenant->id,
+                    'user_id' => $user->id
+                ]);
+            }
+
+        } catch (\Exception $e) {
+            Log::error('Failed to assign owner role to user', [
+                'error' => $e->getMessage(),
+                'tenant_id' => $tenant->id,
+                'user_id' => $user ? $user->id : null,
+                'trace' => $e->getTraceAsString()
+            ]);
+            // Don't throw - allow onboarding to complete even if role assignment fails
         }
     }
 }

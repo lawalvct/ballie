@@ -16,15 +16,7 @@
                 Create Voucher Type
             </a>
         </div>
-        <div class="mt-4 lg:mt-0">
-            <a href="{{ route('tenant.accounting.voucher-types.create', ['tenant' => $tenant->slug]) }}"
-               class="inline-flex items-center px-4 py-2 bg-primary-600 border border-transparent rounded-lg font-semibold text-xs text-white uppercase tracking-widest hover:bg-primary-700 focus:bg-primary-700 active:bg-primary-900 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 transition ease-in-out duration-150">
-                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
-                </svg>
-                Create Voucher Type
-            </a>
-        </div>
+
     </div>
 
     <!-- Statistics Cards -->
@@ -148,7 +140,7 @@
                      x-transition:leave="transition ease-in duration-200"
                      x-transition:leave-start="opacity-100 transform translate-y-0"
                      x-transition:leave-end="opacity-0 transform -translate-y-2"
-                     class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                     class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
 
                     <!-- Status Filter -->
                     <div>
@@ -159,6 +151,21 @@
                             <option value="">All Status</option>
                             <option value="active" {{ request('status') === 'active' ? 'selected' : '' }}>Active</option>
                             <option value="inactive" {{ request('status') === 'inactive' ? 'selected' : '' }}>Inactive</option>
+                        </select>
+                    </div>
+
+                    <!-- Category Filter -->
+                    <div>
+                        <label for="category" class="block text-sm font-medium text-gray-700 mb-1">Category</label>
+                        <select name="category"
+                                id="category"
+                                class="block w-full pl-3 pr-10 py-2 text-base border border-gray-300 focus:outline-none focus:ring-primary-500 focus:border-primary-500 rounded-lg">
+                            <option value="">All Categories</option>
+                            <option value="accounting" {{ request('category') === 'accounting' ? 'selected' : '' }}>Accounting</option>
+                            <option value="inventory" {{ request('category') === 'inventory' ? 'selected' : '' }}>Inventory</option>
+                            <option value="pos" {{ request('category') === 'pos' ? 'selected' : '' }}>POS</option>
+                            <option value="payroll" {{ request('category') === 'payroll' ? 'selected' : '' }}>Payroll</option>
+                            <option value="ecommerce" {{ request('category') === 'ecommerce' ? 'selected' : '' }}>E-commerce</option>
                         </select>
                     </div>
 
@@ -210,7 +217,7 @@
                             Apply Filters
                         </button>
 
-                        @if(request()->hasAny(['search', 'status', 'type', 'sort', 'direction']))
+                    @if(request()->hasAny(['search', 'status', 'category', 'type', 'sort', 'direction']))
                             <a href="{{ route('tenant.accounting.voucher-types.index', ['tenant' => $tenant->slug]) }}"
                                class="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-lg shadow-sm text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500">
                                 <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -325,14 +332,18 @@
                 <table class="min-w-full divide-y divide-gray-200">
                     <thead class="bg-gray-50">
                         <tr>
-                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                <input type="checkbox" class="form-checkbox h-4 w-4 text-primary-600 rounded">
+                            <th scope="col" class="px-6 py-3 text-left">
+                                <input type="checkbox"
+                                       class="form-checkbox h-4 w-4 text-primary-600 rounded">
                             </th>
                             <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                 Voucher Type
                             </th>
                             <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                 Code/Abbreviation
+                            </th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Category
                             </th>
                             <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                 Numbering
@@ -392,6 +403,21 @@
                                     <div class="text-sm text-gray-500">
                                         {{ $voucherType->abbreviation }}
                                     </div>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    @php
+                                        $categoryColors = [
+                                            'accounting' => 'bg-blue-100 text-blue-800',
+                                            'inventory' => 'bg-green-100 text-green-800',
+                                            'pos' => 'bg-purple-100 text-purple-800',
+                                            'payroll' => 'bg-orange-100 text-orange-800',
+                                            'ecommerce' => 'bg-pink-100 text-pink-800',
+                                        ];
+                                        $color = $categoryColors[$voucherType->category ?? 'accounting'] ?? 'bg-gray-100 text-gray-800';
+                                    @endphp
+                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {{ $color }}">
+                                        {{ ucfirst($voucherType->category ?? 'Accounting') }}
+                                    </span>
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap">
                                     <div class="text-sm text-gray-900">
