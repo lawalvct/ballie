@@ -112,8 +112,8 @@ class InvoiceController extends Controller
 
         // Get customers or vendors based on type
         $parties = $type === 'sales'
-            ? Customer::where('tenant_id', $tenant->id)->where('is_active', true)->get()
-            : Vendor::where('tenant_id', $tenant->id)->where('is_active', true)->get();
+            ? Customer::where('tenant_id', $tenant->id)->where('status', 'active')->get()
+            : Vendor::where('tenant_id', $tenant->id)->where('status', 'active')->get();
 
         // Get products
         $products = Product::where('tenant_id', $tenant->id)
@@ -540,7 +540,7 @@ class InvoiceController extends Controller
 
         if ($type === 'customer') {
             $customers = Customer::where('tenant_id', $tenant->id)
-                ->where('is_active', true)
+                ->where('status', 'active')
                 ->where(function ($q) use ($search) {
                     $q->where('name', 'like', "%{$search}%")
                       ->orWhere('email', 'like', "%{$search}%")
@@ -556,7 +556,7 @@ class InvoiceController extends Controller
             ]);
         } else {
             $vendors = Vendor::where('tenant_id', $tenant->id)
-                ->where('is_active', true)
+                ->where('status', 'active')
                 ->where(function ($q) use ($search) {
                     $q->where('name', 'like', "%{$search}%")
                       ->orWhere('email', 'like', "%{$search}%")

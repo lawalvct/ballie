@@ -534,7 +534,7 @@ curl -X GET \
                 "phone": "08012345678",
                 "ledger_account_id": 45,
                 "outstanding_balance": 15000.0,
-                "is_active": true
+                "status": "active"
             },
             {
                 "id": 2,
@@ -543,7 +543,7 @@ curl -X GET \
                 "phone": "08098765432",
                 "ledger_account_id": 46,
                 "outstanding_balance": 0.0,
-                "is_active": true
+                "status": "active"
             }
         ],
         "products": [
