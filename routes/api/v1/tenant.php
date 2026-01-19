@@ -92,6 +92,21 @@ Route::middleware('auth:sanctum')->group(function () {
             Route::get('/{ledgerAccount}/children', [\App\Http\Controllers\Api\Tenant\Accounting\LedgerAccountController::class, 'children'])->name('children');
         });
 
+        // Invoices (Sales & Purchase)
+        Route::prefix('invoices')->name('invoices.')->group(function () {
+            Route::get('/search-customers', [\App\Http\Controllers\Api\Tenant\Accounting\InvoiceController::class, 'searchCustomers'])->name('search-customers');
+            Route::get('/search-products', [\App\Http\Controllers\Api\Tenant\Accounting\InvoiceController::class, 'searchProducts'])->name('search-products');
+            Route::get('/search-ledger-accounts', [\App\Http\Controllers\Api\Tenant\Accounting\InvoiceController::class, 'searchLedgerAccounts'])->name('search-ledger-accounts');
+            Route::get('/create', [\App\Http\Controllers\Api\Tenant\Accounting\InvoiceController::class, 'create'])->name('create');
+            Route::post('/', [\App\Http\Controllers\Api\Tenant\Accounting\InvoiceController::class, 'store'])->name('store');
+            Route::get('/', [\App\Http\Controllers\Api\Tenant\Accounting\InvoiceController::class, 'index'])->name('index');
+            Route::get('/{invoice}', [\App\Http\Controllers\Api\Tenant\Accounting\InvoiceController::class, 'show'])->name('show');
+            Route::put('/{invoice}', [\App\Http\Controllers\Api\Tenant\Accounting\InvoiceController::class, 'update'])->name('update');
+            Route::delete('/{invoice}', [\App\Http\Controllers\Api\Tenant\Accounting\InvoiceController::class, 'destroy'])->name('destroy');
+            Route::post('/{invoice}/post', [\App\Http\Controllers\Api\Tenant\Accounting\InvoiceController::class, 'post'])->name('post');
+            Route::post('/{invoice}/unpost', [\App\Http\Controllers\Api\Tenant\Accounting\InvoiceController::class, 'unpost'])->name('unpost');
+        });
+
         // Vouchers
         Route::prefix('vouchers')->name('vouchers.')->group(function () {
             Route::get('/search', [\App\Http\Controllers\Api\Tenant\Accounting\VoucherController::class, 'search'])->name('search');
