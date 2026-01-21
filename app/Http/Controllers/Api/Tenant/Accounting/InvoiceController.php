@@ -1112,6 +1112,7 @@ class InvoiceController extends Controller
                 : $invoice->entries->where('credit_amount', '>', 0)->first();
 
             $party = null;
+            $customer = null;
             $partyNameForFile = 'party';
 
             if ($partyLedgerEntry && $partyLedgerEntry->ledgerAccount) {
@@ -1124,6 +1125,7 @@ class InvoiceController extends Controller
 
                 if ($partyModel) {
                     $party = $partyModel;
+                    $customer = $partyModel;
                     $partyNameForFile = $partyModel->company_name
                         ?? trim(($partyModel->first_name ?? '') . ' ' . ($partyModel->last_name ?? ''))
                         ?: $ledger->name;
@@ -1138,7 +1140,7 @@ class InvoiceController extends Controller
             $prefix = preg_replace('/[^a-z0-9]+/i', '-', $prefix);
             $prefix = trim($prefix, '-') ?: 'party';
 
-            $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('tenant.accounting.invoices.pdf', compact('tenant', 'invoice', 'party'));
+            $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('tenant.accounting.invoices.pdf', compact('tenant', 'invoice', 'party', 'customer'));
 
             $filename = $prefix . '-invoice-' . ($invoice->voucherType->prefix ?? '') . $invoice->voucher_number . '.pdf';
 
