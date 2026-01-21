@@ -1194,6 +1194,14 @@ class InvoiceController extends Controller
                 : $invoice->entries->where('credit_amount', '>', 0)->first();
 
             $party = $partyLedgerEntry?->ledgerAccount;
+            $customer = null;
+
+            if ($partyLedgerEntry && $partyLedgerEntry->ledgerAccount) {
+                $ledger = $partyLedgerEntry->ledgerAccount;
+                $customer = $invoice->voucherType->inventory_effect === 'decrease'
+                    ? Customer::where('ledger_account_id', $ledger->id)->first()
+                    : Vendor::where('ledger_account_id', $ledger->id)->first();
+            }
 
             // Default subject if not provided
             $subject = $request->subject ?? 'Invoice ' . ($invoice->voucherType->prefix ?? '') . $invoice->voucher_number . ' from ' . $tenant->name;
@@ -1206,7 +1214,7 @@ class InvoiceController extends Controller
             $pdf = null;
 
             if ($attachPdf) {
-                $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('tenant.accounting.invoices.pdf', compact('tenant', 'invoice', 'party'));
+                $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('tenant.accounting.invoices.pdf', compact('tenant', 'invoice', 'party', 'customer'));
             }
 
             // Send email
