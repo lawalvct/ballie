@@ -411,9 +411,37 @@ class InvoiceController extends Controller
             }
         }
 
-        // Calculate balance due
-        $totalPaid = 0; // Implement payment tracking if needed
+        // Calculate balance due by finding related payment vouchers
+        // Payment vouchers reference the invoice in their narration or reference_number
+        $invoiceReference = ($invoice->voucherType->prefix ?? '') . $invoice->voucher_number;
+
+        $payments = Voucher::where('tenant_id', $tenant->id)
+            ->where('status', 'posted')
+            ->whereHas('voucherType', function($q) {
+                $q->where('code', 'RV'); // Receipt Voucher
+            })
+            ->where(function($q) use ($invoiceReference) {
+                $q->where('narration', 'like', '%' . $invoiceReference . '%')
+                  ->orWhere('reference_number', 'like', '%' . $invoiceReference . '%');
+            })
+            ->get();
+
+        $totalPaid = $payments->sum('total_amount');
         $balanceDue = $invoice->total_amount - $totalPaid;
+
+        // Calculate payment status
+        $paymentStatus = 'Unpaid';
+        $paymentPercentage = 0;
+
+        if ($invoice->total_amount > 0) {
+            $paymentPercentage = ($totalPaid / $invoice->total_amount) * 100;
+
+            if ($totalPaid >= $invoice->total_amount) {
+                $paymentStatus = 'Paid';
+            } elseif ($totalPaid > 0) {
+                $paymentStatus = 'Partially Paid';
+            }
+        }
 
         return response()->json([
             'success' => true,
@@ -423,6 +451,18 @@ class InvoiceController extends Controller
                 'party' => $party,
                 'balance_due' => $balanceDue,
                 'total_paid' => $totalPaid,
+                'payment_status' => $paymentStatus,
+                'payment_percentage' => round($paymentPercentage, 2),
+                'payments' => $payments->map(function($payment) {
+                    return [
+                        'id' => $payment->id,
+                        'voucher_number' => ($payment->voucherType->prefix ?? '') . $payment->voucher_number,
+                        'date' => $payment->voucher_date->format('Y-m-d'),
+                        'amount' => $payment->total_amount,
+                        'reference' => $payment->reference_number,
+                        'narration' => $payment->narration,
+                    ];
+                })
             ]
         ]);
     }
