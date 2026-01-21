@@ -105,6 +105,9 @@ Route::middleware('auth:sanctum')->group(function () {
             Route::delete('/{invoice}', [\App\Http\Controllers\Api\Tenant\Accounting\InvoiceController::class, 'destroy'])->name('destroy');
             Route::post('/{invoice}/post', [\App\Http\Controllers\Api\Tenant\Accounting\InvoiceController::class, 'post'])->name('post');
             Route::post('/{invoice}/unpost', [\App\Http\Controllers\Api\Tenant\Accounting\InvoiceController::class, 'unpost'])->name('unpost');
+            Route::get('/{invoice}/pdf', [\App\Http\Controllers\Api\Tenant\Accounting\InvoiceController::class, 'pdf'])->name('pdf');
+            Route::post('/{invoice}/email', [\App\Http\Controllers\Api\Tenant\Accounting\InvoiceController::class, 'email'])->name('email');
+            Route::post('/{invoice}/record-payment', [\App\Http\Controllers\Api\Tenant\Accounting\InvoiceController::class, 'recordPayment'])->name('record-payment');
         });
 
         // Vouchers

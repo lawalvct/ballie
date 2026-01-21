@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Tenant;
 use App\Models\Voucher;
 use App\Models\VoucherType;
+use App\Models\VoucherEntry;
 use App\Models\Customer;
 use App\Models\Vendor;
 use App\Models\Product;
@@ -977,6 +978,315 @@ class InvoiceController extends Controller
 
         foreach ($movements as $movement) {
             $movement->delete();
+        }
+    }
+
+    /**
+     * Download invoice as PDF
+     */
+    public function pdf(Tenant $tenant, Voucher $invoice)
+    {
+        // Ensure the invoice belongs to the tenant
+        if ($invoice->tenant_id !== $tenant->id) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Invoice not found'
+            ], 404);
+        }
+
+        try {
+            $invoice->load(['voucherType', 'entries.ledgerAccount', 'createdBy', 'postedBy', 'items']);
+
+            // Determine customer/vendor info
+            $partyLedgerEntry = $invoice->voucherType->inventory_effect === 'decrease'
+                ? $invoice->entries->where('debit_amount', '>', 0)->first()
+                : $invoice->entries->where('credit_amount', '>', 0)->first();
+
+            $party = null;
+            $partyNameForFile = 'party';
+
+            if ($partyLedgerEntry && $partyLedgerEntry->ledgerAccount) {
+                $ledger = $partyLedgerEntry->ledgerAccount;
+
+                // Try to find Customer or Vendor model
+                $partyModel = $invoice->voucherType->inventory_effect === 'decrease'
+                    ? Customer::where('ledger_account_id', $ledger->id)->first()
+                    : Vendor::where('ledger_account_id', $ledger->id)->first();
+
+                if ($partyModel) {
+                    $party = $partyModel;
+                    $partyNameForFile = $partyModel->company_name
+                        ?? trim(($partyModel->first_name ?? '') . ' ' . ($partyModel->last_name ?? ''))
+                        ?: $ledger->name;
+                } else {
+                    $party = $ledger;
+                    $partyNameForFile = $ledger->name ?? 'party';
+                }
+            }
+
+            // Sanitize filename
+            $prefix = strtolower($partyNameForFile);
+            $prefix = preg_replace('/[^a-z0-9]+/i', '-', $prefix);
+            $prefix = trim($prefix, '-') ?: 'party';
+
+            $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('tenant.accounting.invoices.pdf', compact('tenant', 'invoice', 'party'));
+
+            $filename = $prefix . '-invoice-' . ($invoice->voucherType->prefix ?? '') . $invoice->voucher_number . '.pdf';
+
+            return $pdf->download($filename);
+
+        } catch (\Exception $e) {
+            Log::error('Error generating PDF: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to generate PDF: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Email invoice to customer/vendor
+     */
+    public function email(Request $request, Tenant $tenant, Voucher $invoice)
+    {
+        // Ensure the invoice belongs to the tenant
+        if ($invoice->tenant_id !== $tenant->id) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Invoice not found'
+            ], 404);
+        }
+
+        $validator = Validator::make($request->all(), [
+            'to' => 'required|email',
+            'subject' => 'nullable|string|max:255',
+            'message' => 'nullable|string',
+            'cc' => 'nullable|array',
+            'cc.*' => 'email',
+            'attach_pdf' => 'nullable|boolean',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validation failed',
+                'errors' => $validator->errors()
+            ], 422);
+        }
+
+        try {
+            $invoice->load(['voucherType', 'entries.ledgerAccount', 'createdBy', 'postedBy', 'items']);
+
+            // Get party info
+            $partyLedgerEntry = $invoice->voucherType->inventory_effect === 'decrease'
+                ? $invoice->entries->where('debit_amount', '>', 0)->first()
+                : $invoice->entries->where('credit_amount', '>', 0)->first();
+
+            $party = $partyLedgerEntry?->ledgerAccount;
+
+            // Default subject if not provided
+            $subject = $request->subject ?? 'Invoice ' . ($invoice->voucherType->prefix ?? '') . $invoice->voucher_number . ' from ' . $tenant->name;
+
+            // Default message if not provided
+            $message = $request->message ?? "Please find attached your invoice.\n\nThank you for your business!";
+
+            // Generate PDF if attachment requested
+            $attachPdf = $request->attach_pdf ?? true;
+            $pdf = null;
+
+            if ($attachPdf) {
+                $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('tenant.accounting.invoices.pdf', compact('tenant', 'invoice', 'party'));
+            }
+
+            // Send email
+            \Illuminate\Support\Facades\Mail::send('emails.invoice', [
+                'invoice' => $invoice,
+                'tenant' => $tenant,
+                'emailMessage' => $message,
+            ], function ($mail) use ($request, $invoice, $pdf, $subject, $attachPdf) {
+                $mail->to($request->to)
+                     ->subject($subject);
+
+                // Add CC recipients if provided
+                if ($request->cc && count($request->cc) > 0) {
+                    $mail->cc($request->cc);
+                }
+
+                // Attach PDF if requested
+                if ($attachPdf && $pdf) {
+                    $mail->attachData($pdf->output(), 'invoice-' . $invoice->voucher_number . '.pdf', [
+                        'mime' => 'application/pdf',
+                    ]);
+                }
+            });
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Invoice emailed successfully',
+                'data' => [
+                    'sent_to' => $request->to,
+                    'sent_at' => now()->toIso8601String(),
+                ]
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('Error sending invoice email: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to send email: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Record payment against invoice
+     */
+    public function recordPayment(Request $request, Tenant $tenant, Voucher $invoice)
+    {
+        // Ensure the invoice belongs to the tenant
+        if ($invoice->tenant_id !== $tenant->id) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Invoice not found'
+            ], 404);
+        }
+
+        if ($invoice->status !== 'posted') {
+            return response()->json([
+                'success' => false,
+                'message' => 'Only posted invoices can receive payments'
+            ], 422);
+        }
+
+        // Calculate balance due
+        $totalPaid = $invoice->payments()->sum('total_amount');
+        $balanceDue = $invoice->total_amount - $totalPaid;
+
+        $validator = Validator::make($request->all(), [
+            'date' => 'required|date',
+            'amount' => 'required|numeric|min:0.01|max:' . $balanceDue,
+            'bank_account_id' => 'required|exists:ledger_accounts,id',
+            'reference' => 'nullable|string|max:255',
+            'notes' => 'nullable|string',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validation failed',
+                'errors' => $validator->errors()
+            ], 422);
+        }
+
+        try {
+            DB::beginTransaction();
+
+            // Get receipt voucher type
+            $receiptVoucherType = VoucherType::where('tenant_id', $tenant->id)
+                ->where('code', 'RV')
+                ->first();
+
+            if (!$receiptVoucherType) {
+                throw new \Exception('Receipt voucher type not found. Please create it first.');
+            }
+
+            // Get bank account
+            $bankAccount = LedgerAccount::findOrFail($request->bank_account_id);
+
+            // Get party account from the original invoice
+            $partyAccount = $invoice->voucherType->inventory_effect === 'decrease'
+                ? $invoice->entries->where('debit_amount', '>', 0)->first()?->ledgerAccount
+                : $invoice->entries->where('credit_amount', '>', 0)->first()?->ledgerAccount;
+
+            if (!$partyAccount) {
+                throw new \Exception('Party account not found in invoice entries');
+            }
+
+            // Generate voucher number for receipt
+            $lastReceipt = Voucher::where('tenant_id', $tenant->id)
+                ->where('voucher_type_id', $receiptVoucherType->id)
+                ->latest('id')
+                ->first();
+
+            $nextNumber = $lastReceipt ? $lastReceipt->voucher_number + 1 : 1;
+
+            // Create receipt voucher
+            $receiptVoucher = Voucher::create([
+                'tenant_id' => $tenant->id,
+                'voucher_type_id' => $receiptVoucherType->id,
+                'voucher_number' => $nextNumber,
+                'voucher_date' => $request->date,
+                'reference_number' => $request->reference,
+                'narration' => $request->notes ?? 'Payment received for Invoice ' . ($invoice->voucherType->prefix ?? '') . $invoice->voucher_number,
+                'total_amount' => $request->amount,
+                'status' => 'posted',
+                'created_by' => auth()->id(),
+                'posted_at' => now(),
+                'posted_by' => auth()->id(),
+            ]);
+
+            // Create accounting entries for receipt
+            // Debit: Bank/Cash Account
+            $receiptVoucher->entries()->create([
+                'ledger_account_id' => $bankAccount->id,
+                'debit_amount' => $request->amount,
+                'credit_amount' => 0,
+                'particulars' => 'Payment received from ' . $partyAccount->name,
+            ]);
+
+            // Credit: Party Account (reducing their outstanding balance)
+            $receiptVoucher->entries()->create([
+                'ledger_account_id' => $partyAccount->id,
+                'debit_amount' => 0,
+                'credit_amount' => $request->amount,
+                'particulars' => 'Payment received against Invoice ' . ($invoice->voucherType->prefix ?? '') . $invoice->voucher_number,
+            ]);
+
+            // Link payment to invoice
+            $invoice->payments()->attach($receiptVoucher->id);
+
+            DB::commit();
+
+            // Recalculate totals
+            $totalPaid = $invoice->payments()->sum('total_amount');
+            $balanceDue = $invoice->total_amount - $totalPaid;
+            $paymentStatus = $balanceDue <= 0 ? 'Paid' : ($totalPaid > 0 ? 'Partially Paid' : 'Unpaid');
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Payment recorded successfully',
+                'data' => [
+                    'payment_voucher' => [
+                        'id' => $receiptVoucher->id,
+                        'voucher_number' => ($receiptVoucherType->prefix ?? 'RV-') . $receiptVoucher->voucher_number,
+                        'voucher_type' => [
+                            'id' => $receiptVoucherType->id,
+                            'name' => $receiptVoucherType->name,
+                            'code' => $receiptVoucherType->code,
+                        ],
+                        'voucher_date' => $receiptVoucher->voucher_date,
+                        'amount' => $receiptVoucher->total_amount,
+                        'reference' => $receiptVoucher->reference_number,
+                        'notes' => $receiptVoucher->narration,
+                    ],
+                    'invoice' => [
+                        'id' => $invoice->id,
+                        'voucher_number' => ($invoice->voucherType->prefix ?? '') . $invoice->voucher_number,
+                        'total_amount' => $invoice->total_amount,
+                        'total_paid' => $totalPaid,
+                        'balance_due' => $balanceDue,
+                        'payment_status' => $paymentStatus,
+                    ],
+                ]
+            ], 201);
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('Error recording payment: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to record payment: ' . $e->getMessage()
+            ], 500);
         }
     }
 }
