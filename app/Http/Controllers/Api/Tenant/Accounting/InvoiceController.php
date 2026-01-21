@@ -1209,6 +1209,9 @@ class InvoiceController extends Controller
             // Default message if not provided
             $message = $request->message ?? "Please find attached your invoice.\n\nThank you for your business!";
 
+            // Download URL for email template
+            $downloadUrl = url("/api/v1/tenant/{$tenant->slug}/accounting/invoices/{$invoice->id}/pdf");
+
             // Generate PDF if attachment requested
             $attachPdf = $request->attach_pdf ?? true;
             $pdf = null;
@@ -1222,6 +1225,7 @@ class InvoiceController extends Controller
                 'invoice' => $invoice,
                 'tenant' => $tenant,
                 'emailMessage' => $message,
+                'downloadUrl' => $downloadUrl,
             ], function ($mail) use ($request, $invoice, $pdf, $subject, $attachPdf) {
                 $mail->to($request->to)
                      ->subject($subject);
