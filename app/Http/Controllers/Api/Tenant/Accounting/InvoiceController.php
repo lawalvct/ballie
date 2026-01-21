@@ -241,8 +241,10 @@ class InvoiceController extends Controller
                 ], 422);
             }
 
-            // Normalize items - calculate amounts
+            // Normalize items - calculate amounts and fetch product details
             $inventoryItems = collect($items)->map(function ($item) {
+                $product = Product::find($item['product_id']);
+                
                 $quantity = $item['quantity'];
                 $rate = $item['rate'];
                 $discount = $item['discount'] ?? 0;
@@ -250,9 +252,10 @@ class InvoiceController extends Controller
 
                 return [
                     'product_id' => $item['product_id'],
-                    'description' => $item['description'] ?? null,
+                    'product_name' => $product ? $product->name : null,
+                    'description' => $item['description'] ?? ($product ? $product->name : null),
                     'quantity' => $quantity,
-                    'unit_id' => $item['unit_id'] ?? null,
+                    'unit_id' => $item['unit_id'] ?? ($product ? $product->primary_unit_id : null),
                     'rate' => $rate,
                     'amount' => $amount,
                     'discount_percentage' => 0,
@@ -260,6 +263,7 @@ class InvoiceController extends Controller
                     'tax_percentage' => $item['vat_rate'] ?? 0,
                     'tax_amount' => 0,
                     'total' => $amount,
+                    'purchase_rate' => $product ? $product->purchase_rate : 0,
                 ];
             })->toArray();
 
@@ -295,9 +299,10 @@ class InvoiceController extends Controller
             foreach ($inventoryItems as $item) {
                 $voucher->items()->create([
                     'product_id' => $item['product_id'],
-                    'description' => $item['description'] ?? null,
+                    'product_name' => $item['product_name'],
+                    'description' => $item['description'],
                     'quantity' => $item['quantity'],
-                    'unit_id' => $item['unit_id'] ?? null,
+                    'unit_id' => $item['unit_id'],
                     'rate' => $item['rate'],
                     'amount' => $item['amount'],
                     'discount_percentage' => $item['discount_percentage'] ?? 0,
@@ -305,6 +310,7 @@ class InvoiceController extends Controller
                     'tax_percentage' => $item['tax_percentage'] ?? 0,
                     'tax_amount' => $item['tax_amount'] ?? 0,
                     'total' => $item['total'] ?? $item['amount'],
+                    'purchase_rate' => $item['purchase_rate'] ?? 0,
                 ]);
             }
 
@@ -458,18 +464,21 @@ class InvoiceController extends Controller
                 $partyLedgerAccount = $vendor->ledger_account_id;
             }
 
-            // Normalize items - calculate amounts
+// Normalize items - calculate amounts and fetch product details
             $inventoryItems = collect($items)->map(function ($item) {
+                $product = Product::find($item['product_id']);
+                
                 $quantity = $item['quantity'];
                 $rate = $item['rate'];
                 $discount = $item['discount'] ?? 0;
                 $amount = ($quantity * $rate) - $discount;
-
+                
                 return [
                     'product_id' => $item['product_id'],
-                    'description' => $item['description'] ?? null,
+                    'product_name' => $product ? $product->name : null,
+                    'description' => $item['description'] ?? ($product ? $product->name : null),
                     'quantity' => $quantity,
-                    'unit_id' => $item['unit_id'] ?? null,
+                    'unit_id' => $item['unit_id'] ?? ($product ? $product->primary_unit_id : null),
                     'rate' => $rate,
                     'amount' => $amount,
                     'discount_percentage' => 0,
@@ -477,6 +486,7 @@ class InvoiceController extends Controller
                     'tax_percentage' => $item['vat_rate'] ?? 0,
                     'tax_amount' => 0,
                     'total' => $amount,
+                    'purchase_rate' => $product ? $product->purchase_rate : 0,
                 ];
             })->toArray();
 
@@ -503,12 +513,18 @@ class InvoiceController extends Controller
             foreach ($inventoryItems as $item) {
                 $invoice->items()->create([
                     'product_id' => $item['product_id'],
-                    'description' => $item['description'] ?? null,
+                    'product_name' => $item['product_name'],
+                    'description' => $item['description'],
                     'quantity' => $item['quantity'],
-                    'unit_id' => $item['unit_id'] ?? null,
+                    'unit_id' => $item['unit_id'],
                     'rate' => $item['rate'],
                     'amount' => $item['amount'],
+                    'discount_percentage' => $item['discount_percentage'] ?? 0,
+                    'discount_amount' => $item['discount_amount'] ?? 0,
+                    'tax_percentage' => $item['tax_percentage'] ?? 0,
+                    'tax_amount' => $item['tax_amount'] ?? 0,
                     'total' => $item['total'] ?? $item['amount'],
+                    'purchase_rate' => $item['purchase_rate'] ?? 0,
                 ]);
             }
 
