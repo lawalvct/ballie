@@ -244,7 +244,7 @@ class InvoiceController extends Controller
             // Normalize items - calculate amounts and fetch product details
             $inventoryItems = collect($items)->map(function ($item) {
                 $product = Product::find($item['product_id']);
-                
+
                 $quantity = $item['quantity'];
                 $rate = $item['rate'];
                 $discount = $item['discount'] ?? 0;
@@ -467,12 +467,12 @@ class InvoiceController extends Controller
 // Normalize items - calculate amounts and fetch product details
             $inventoryItems = collect($items)->map(function ($item) {
                 $product = Product::find($item['product_id']);
-                
+
                 $quantity = $item['quantity'];
                 $rate = $item['rate'];
                 $discount = $item['discount'] ?? 0;
                 $amount = ($quantity * $rate) - $discount;
-                
+
                 return [
                     'product_id' => $item['product_id'],
                     'product_name' => $product ? $product->name : null,
@@ -920,34 +920,14 @@ class InvoiceController extends Controller
             $product = Product::find($item['product_id']);
             if (!$product) continue;
 
-            $quantity = $item['quantity'];
-
             if ($inventoryEffect === 'decrease') {
                 // Sales - decrease stock
-                $product->decrement('current_stock', $quantity);
-
-                StockMovement::create([
-                    'tenant_id' => $voucher->tenant_id,
-                    'product_id' => $product->id,
-                    'voucher_id' => $voucher->id,
-                    'movement_type' => 'out',
-                    'quantity' => $quantity,
-                    'reference' => $voucher->voucher_number,
-                    'date' => $voucher->voucher_date,
-                ]);
+                $movementType = 'out';
+                StockMovement::createFromVoucher($voucher, $item, $movementType);
             } elseif ($inventoryEffect === 'increase') {
                 // Purchase - increase stock
-                $product->increment('current_stock', $quantity);
-
-                StockMovement::create([
-                    'tenant_id' => $voucher->tenant_id,
-                    'product_id' => $product->id,
-                    'voucher_id' => $voucher->id,
-                    'movement_type' => 'in',
-                    'quantity' => $quantity,
-                    'reference' => $voucher->voucher_number,
-                    'date' => $voucher->voucher_date,
-                ]);
+                $movementType = 'in';
+                StockMovement::createFromVoucher($voucher, $item, $movementType);
             }
         }
     }
@@ -957,18 +937,11 @@ class InvoiceController extends Controller
      */
     private function reverseStockMovements($voucher)
     {
-        $movements = StockMovement::where('voucher_id', $voucher->id)->get();
+        $movements = StockMovement::where('source_transaction_type', get_class($voucher))
+            ->where('source_transaction_id', $voucher->id)
+            ->get();
 
         foreach ($movements as $movement) {
-            $product = Product::find($movement->product_id);
-            if (!$product) continue;
-
-            if ($movement->movement_type === 'out') {
-                $product->increment('current_stock', $movement->quantity);
-            } elseif ($movement->movement_type === 'in') {
-                $product->decrement('current_stock', $movement->quantity);
-            }
-
             $movement->delete();
         }
     }
