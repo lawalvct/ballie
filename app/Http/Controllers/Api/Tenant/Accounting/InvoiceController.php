@@ -162,23 +162,37 @@ class InvoiceController extends Controller
      */
     public function store(Request $request, Tenant $tenant)
     {
-        $validator = Validator::make($request->all(), [
+        // Normalize payload - accept both old and new field names
+        $partyId = $request->input('party_id') ?? $request->input('customer_id');
+        $items = $request->input('items') ?? $request->input('inventory_items');
+        $status = $request->input('status') ?? $request->input('action');
+
+        // Prepare normalized data for validation
+        $validationData = array_merge($request->all(), [
+            'party_id' => $partyId,
+            'items' => $items,
+            'status' => $status,
+        ]);
+
+        $validator = Validator::make($validationData, [
             'voucher_type_id' => 'required|exists:voucher_types,id',
             'voucher_date' => 'required|date',
-            'customer_id' => 'required|exists:ledger_accounts,id',
+            'party_id' => 'required|integer',
             'reference_number' => 'nullable|string|max:255',
             'narration' => 'nullable|string',
-            'inventory_items' => 'required|array|min:1',
-            'inventory_items.*.product_id' => 'required|exists:products,id',
-            'inventory_items.*.quantity' => 'required|numeric|min:0.01',
-            'inventory_items.*.rate' => 'required|numeric|min:0',
-            'inventory_items.*.description' => 'nullable|string',
+            'items' => 'required|array|min:1',
+            'items.*.product_id' => 'required|exists:products,id',
+            'items.*.quantity' => 'required|numeric|min:0.01',
+            'items.*.rate' => 'required|numeric|min:0',
+            'items.*.discount' => 'nullable|numeric|min:0',
+            'items.*.vat_rate' => 'nullable|numeric|min:0',
+            'items.*.description' => 'nullable|string',
             'additional_ledger_accounts' => 'nullable|array',
             'additional_ledger_accounts.*.ledger_account_id' => 'required|exists:ledger_accounts,id',
             'additional_ledger_accounts.*.amount' => 'required|numeric|min:0',
             'vat_enabled' => 'nullable|boolean',
             'vat_amount' => 'nullable|numeric|min:0',
-            'action' => 'nullable|in:save,save_and_post,save_and_post_new_sales'
+            'status' => 'nullable|in:draft,posted,save,save_and_post,save_and_post_new_sales'
         ]);
 
         if ($validator->fails()) {
@@ -192,7 +206,63 @@ class InvoiceController extends Controller
         DB::beginTransaction();
         try {
             $voucherType = VoucherType::findOrFail($request->voucher_type_id);
-            $inventoryItems = $request->inventory_items;
+
+            // Get party ledger account
+            $partyLedgerAccount = null;
+            if ($voucherType->inventory_effect === 'decrease') {
+                // Sales - party is customer
+                $customer = Customer::find($partyId);
+                if (!$customer) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Customer not found',
+                        'errors' => ['party_id' => ['Customer not found']]
+                    ], 422);
+                }
+                $partyLedgerAccount = $customer->ledger_account_id;
+            } else {
+                // Purchase - party is vendor
+                $vendor = Vendor::find($partyId);
+                if (!$vendor) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Vendor not found',
+                        'errors' => ['party_id' => ['Vendor not found']]
+                    ], 422);
+                }
+                $partyLedgerAccount = $vendor->ledger_account_id;
+            }
+
+            if (!$partyLedgerAccount) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Party does not have a ledger account',
+                    'errors' => ['party_id' => ['Party ledger account not found']]
+                ], 422);
+            }
+
+            // Normalize items - calculate amounts
+            $inventoryItems = collect($items)->map(function ($item) {
+                $quantity = $item['quantity'];
+                $rate = $item['rate'];
+                $discount = $item['discount'] ?? 0;
+                $amount = ($quantity * $rate) - $discount;
+
+                return [
+                    'product_id' => $item['product_id'],
+                    'description' => $item['description'] ?? null,
+                    'quantity' => $quantity,
+                    'unit_id' => $item['unit_id'] ?? null,
+                    'rate' => $rate,
+                    'amount' => $amount,
+                    'discount_percentage' => 0,
+                    'discount_amount' => $discount,
+                    'tax_percentage' => $item['vat_rate'] ?? 0,
+                    'tax_amount' => 0,
+                    'total' => $amount,
+                ];
+            })->toArray();
+
             $additionalLedgerAccounts = $request->additional_ledger_accounts ?? [];
 
             // Calculate total
@@ -204,7 +274,7 @@ class InvoiceController extends Controller
             $voucherNumber = $voucherType->getNextVoucherNumber();
 
             // Determine if should post
-            $shouldPost = in_array($request->action, ['save_and_post', 'save_and_post_new_sales']);
+            $shouldPost = in_array($status, ['posted', 'save_and_post', 'save_and_post_new_sales']);
 
             // Create voucher
             $voucher = Voucher::create([
@@ -243,7 +313,7 @@ class InvoiceController extends Controller
                 $voucher,
                 $inventoryItems,
                 $tenant,
-                $request->customer_id,
+                $partyLedgerAccount,
                 $additionalLedgerAccounts
             );
 
@@ -329,15 +399,27 @@ class InvoiceController extends Controller
             ], 422);
         }
 
-        $validator = Validator::make($request->all(), [
+        // Normalize payload - accept both old and new field names
+        $partyId = $request->input('party_id') ?? $request->input('customer_id');
+        $items = $request->input('items') ?? $request->input('inventory_items');
+
+        // Prepare normalized data for validation
+        $validationData = array_merge($request->all(), [
+            'party_id' => $partyId,
+            'items' => $items,
+        ]);
+
+        $validator = Validator::make($validationData, [
             'voucher_date' => 'required|date',
-            'customer_id' => 'required|exists:ledger_accounts,id',
+            'party_id' => 'required|integer',
             'reference_number' => 'nullable|string|max:255',
             'narration' => 'nullable|string',
-            'inventory_items' => 'required|array|min:1',
-            'inventory_items.*.product_id' => 'required|exists:products,id',
-            'inventory_items.*.quantity' => 'required|numeric|min:0.01',
-            'inventory_items.*.rate' => 'required|numeric|min:0',
+            'items' => 'required|array|min:1',
+            'items.*.product_id' => 'required|exists:products,id',
+            'items.*.quantity' => 'required|numeric|min:0.01',
+            'items.*.rate' => 'required|numeric|min:0',
+            'items.*.discount' => 'nullable|numeric|min:0',
+            'items.*.vat_rate' => 'nullable|numeric|min:0',
         ]);
 
         if ($validator->fails()) {
@@ -350,7 +432,54 @@ class InvoiceController extends Controller
 
         DB::beginTransaction();
         try {
-            $inventoryItems = $request->inventory_items;
+            // Get party ledger account
+            $partyLedgerAccount = null;
+            if ($invoice->voucherType->inventory_effect === 'decrease') {
+                // Sales - party is customer
+                $customer = Customer::find($partyId);
+                if (!$customer) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Customer not found',
+                        'errors' => ['party_id' => ['Customer not found']]
+                    ], 422);
+                }
+                $partyLedgerAccount = $customer->ledger_account_id;
+            } else {
+                // Purchase - party is vendor
+                $vendor = Vendor::find($partyId);
+                if (!$vendor) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Vendor not found',
+                        'errors' => ['party_id' => ['Vendor not found']]
+                    ], 422);
+                }
+                $partyLedgerAccount = $vendor->ledger_account_id;
+            }
+
+            // Normalize items - calculate amounts
+            $inventoryItems = collect($items)->map(function ($item) {
+                $quantity = $item['quantity'];
+                $rate = $item['rate'];
+                $discount = $item['discount'] ?? 0;
+                $amount = ($quantity * $rate) - $discount;
+
+                return [
+                    'product_id' => $item['product_id'],
+                    'description' => $item['description'] ?? null,
+                    'quantity' => $quantity,
+                    'unit_id' => $item['unit_id'] ?? null,
+                    'rate' => $rate,
+                    'amount' => $amount,
+                    'discount_percentage' => 0,
+                    'discount_amount' => $discount,
+                    'tax_percentage' => $item['vat_rate'] ?? 0,
+                    'tax_amount' => 0,
+                    'total' => $amount,
+                ];
+            })->toArray();
+
             $additionalLedgerAccounts = $request->additional_ledger_accounts ?? [];
 
             $totalAmount = collect($inventoryItems)->sum('amount')
@@ -388,7 +517,7 @@ class InvoiceController extends Controller
                 $invoice,
                 $inventoryItems,
                 $tenant,
-                $request->customer_id,
+                $partyLedgerAccount,
                 $additionalLedgerAccounts
             );
 
