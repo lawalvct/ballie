@@ -170,14 +170,28 @@ This comprehensive guide provides all the information needed to build the mobile
 - **Required:** Yes
 - **Label:** Changes based on type (Customer for sales, Vendor for purchase)
 - **Source:** GET `/api/v1/tenant/{tenant}/accounting/invoices/search-customers?search={query}&type={customer|vendor}`
-- **Display:** Name, Phone, Email, Outstanding Balance
+- **Display:** Name, Phone, Mobile, Email, Outstanding Balance, Address
+- **Response Fields:**
+    - `id` - Customer/Vendor ID (use for form submission)
+    - `ledger_account_id` - Associated ledger account ID
+    - `name` - Full name (auto-generated from first_name + last_name for individuals, or company_name for businesses)
+    - `customer_type` / `vendor_type` - "individual" or "business"
+    - `email` - Email address
+    - `phone` - Primary phone number
+    - `mobile` - Mobile phone number
+    - `outstanding_balance` - Current balance owed (numeric)
+    - `currency` - Currency code (e.g., "NGN")
+    - `payment_terms` - Payment terms (e.g., "Net 30")
+    - `address` - Full formatted address string
+- **Search Fields:** Searches across first_name, last_name, company_name, email, phone, and mobile
 - **Logic:**
     - Links to ledger account for accounting entries
     - For sales: Debits customer account
     - For purchase: Credits vendor account
 - **Features:**
-    - Real-time search
-    - Shows outstanding balance
+    - Real-time search as user types
+    - Shows outstanding balance for credit decisions
+    - Displays full name regardless of customer/vendor type
     - Quick add new customer/vendor button
 
 ---
@@ -1191,29 +1205,29 @@ curl -X GET \
     "data": [
         {
             "id": 1,
-            "name": "John Doe Enterprises",
+            "ledger_account_id": 45,
+            "name": "John Doe",
+            "customer_type": "individual",
             "email": "john@example.com",
             "phone": "08012345678",
-            "address": "123 Business Street, Lagos",
-            "city": "Lagos",
-            "state": "Lagos State",
-            "country": "Nigeria",
+            "mobile": "08012345678",
             "outstanding_balance": 2631875.0,
-            "is_active": true,
-            "ledger_account_id": 45,
-            "ledger_account": {
-                "id": 45,
-                "name": "John Doe Enterprises",
-                "code": "1020-001"
-            }
+            "currency": "NGN",
+            "payment_terms": "Net 30",
+            "address": "123 Business Street, Lagos, Lagos State, 10001, Nigeria"
         },
         {
             "id": 5,
+            "ledger_account_id": 49,
             "name": "Johnson Trading Co",
+            "customer_type": "business",
             "email": "johnson@example.com",
             "phone": "08055667788",
+            "mobile": null,
             "outstanding_balance": 150000.0,
-            "ledger_account_id": 49
+            "currency": "NGN",
+            "payment_terms": "Net 15",
+            "address": "456 Trade Avenue, Lagos, Nigeria"
         }
     ]
 }

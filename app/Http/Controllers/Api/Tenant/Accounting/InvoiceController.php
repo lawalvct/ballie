@@ -542,13 +542,31 @@ class InvoiceController extends Controller
             $customers = Customer::where('tenant_id', $tenant->id)
                 ->where('status', 'active')
                 ->where(function ($q) use ($search) {
-                    $q->where('name', 'like', "%{$search}%")
+                    $q->where('first_name', 'like', "%{$search}%")
+                      ->orWhere('last_name', 'like', "%{$search}%")
+                      ->orWhere('company_name', 'like', "%{$search}%")
                       ->orWhere('email', 'like', "%{$search}%")
-                      ->orWhere('phone', 'like', "%{$search}%");
+                      ->orWhere('phone', 'like', "%{$search}%")
+                      ->orWhere('mobile', 'like', "%{$search}%");
                 })
                 ->with('ledgerAccount')
                 ->limit(20)
-                ->get();
+                ->get()
+                ->map(function ($customer) {
+                    return [
+                        'id' => $customer->id,
+                        'ledger_account_id' => $customer->ledger_account_id,
+                        'name' => $customer->getFullNameAttribute(),
+                        'customer_type' => $customer->customer_type,
+                        'email' => $customer->email,
+                        'phone' => $customer->phone,
+                        'mobile' => $customer->mobile,
+                        'outstanding_balance' => $customer->outstanding_balance,
+                        'currency' => $customer->currency,
+                        'payment_terms' => $customer->payment_terms,
+                        'address' => $customer->getFullAddressAttribute(),
+                    ];
+                });
 
             return response()->json([
                 'success' => true,
@@ -558,13 +576,31 @@ class InvoiceController extends Controller
             $vendors = Vendor::where('tenant_id', $tenant->id)
                 ->where('status', 'active')
                 ->where(function ($q) use ($search) {
-                    $q->where('name', 'like', "%{$search}%")
+                    $q->where('first_name', 'like', "%{$search}%")
+                      ->orWhere('last_name', 'like', "%{$search}%")
+                      ->orWhere('company_name', 'like', "%{$search}%")
                       ->orWhere('email', 'like', "%{$search}%")
-                      ->orWhere('phone', 'like', "%{$search}%");
+                      ->orWhere('phone', 'like', "%{$search}%")
+                      ->orWhere('mobile', 'like', "%{$search}%");
                 })
                 ->with('ledgerAccount')
                 ->limit(20)
-                ->get();
+                ->get()
+                ->map(function ($vendor) {
+                    return [
+                        'id' => $vendor->id,
+                        'ledger_account_id' => $vendor->ledger_account_id,
+                        'name' => $vendor->getFullNameAttribute(),
+                        'vendor_type' => $vendor->vendor_type,
+                        'email' => $vendor->email,
+                        'phone' => $vendor->phone,
+                        'mobile' => $vendor->mobile,
+                        'outstanding_balance' => $vendor->outstanding_balance,
+                        'currency' => $vendor->currency,
+                        'payment_terms' => $vendor->payment_terms,
+                        'address' => $vendor->getFullAddressAttribute(),
+                    ];
+                });
 
             return response()->json([
                 'success' => true,
