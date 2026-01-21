@@ -1158,13 +1158,39 @@ class InvoiceController extends Controller
             ], 422);
         }
 
-        // Calculate balance due
-        $totalPaid = $invoice->payments()->sum('total_amount');
+        // Get party account from the original invoice
+        $partyAccount = $invoice->voucherType->inventory_effect === 'decrease'
+            ? $invoice->entries->where('debit_amount', '>', 0)->first()?->ledgerAccount
+            : $invoice->entries->where('credit_amount', '>', 0)->first()?->ledgerAccount;
+
+        if (!$partyAccount) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Party account not found in invoice entries'
+            ], 422);
+        }
+
+        // Calculate balance due by finding related payment vouchers
+        // Payment vouchers reference the invoice in their narration or reference_number
+        $invoiceReference = ($invoice->voucherType->prefix ?? '') . $invoice->voucher_number;
+
+        $payments = Voucher::where('tenant_id', $tenant->id)
+            ->where('status', 'posted')
+            ->whereHas('voucherType', function($q) {
+                $q->where('code', 'RV'); // Receipt Voucher
+            })
+            ->where(function($q) use ($invoiceReference) {
+                $q->where('narration', 'like', '%' . $invoiceReference . '%')
+                  ->orWhere('reference_number', 'like', '%' . $invoiceReference . '%');
+            })
+            ->get();
+
+        $totalPaid = $payments->sum('total_amount');
         $balanceDue = $invoice->total_amount - $totalPaid;
 
         $validator = Validator::make($request->all(), [
             'date' => 'required|date',
-            'amount' => 'required|numeric|min:0.01|max:' . $balanceDue,
+            'amount' => 'required|numeric|min:0.01|max:' . max($balanceDue, $invoice->total_amount),
             'bank_account_id' => 'required|exists:ledger_accounts,id',
             'reference' => 'nullable|string|max:255',
             'notes' => 'nullable|string',
@@ -1193,15 +1219,6 @@ class InvoiceController extends Controller
             // Get bank account
             $bankAccount = LedgerAccount::findOrFail($request->bank_account_id);
 
-            // Get party account from the original invoice
-            $partyAccount = $invoice->voucherType->inventory_effect === 'decrease'
-                ? $invoice->entries->where('debit_amount', '>', 0)->first()?->ledgerAccount
-                : $invoice->entries->where('credit_amount', '>', 0)->first()?->ledgerAccount;
-
-            if (!$partyAccount) {
-                throw new \Exception('Party account not found in invoice entries');
-            }
-
             // Generate voucher number for receipt
             $lastReceipt = Voucher::where('tenant_id', $tenant->id)
                 ->where('voucher_type_id', $receiptVoucherType->id)
@@ -1210,14 +1227,15 @@ class InvoiceController extends Controller
 
             $nextNumber = $lastReceipt ? $lastReceipt->voucher_number + 1 : 1;
 
-            // Create receipt voucher
+            // Create receipt voucher with invoice reference in narration
+            $invoiceReference = ($invoice->voucherType->prefix ?? '') . $invoice->voucher_number;
             $receiptVoucher = Voucher::create([
                 'tenant_id' => $tenant->id,
                 'voucher_type_id' => $receiptVoucherType->id,
                 'voucher_number' => $nextNumber,
                 'voucher_date' => $request->date,
                 'reference_number' => $request->reference,
-                'narration' => $request->notes ?? 'Payment received for Invoice ' . ($invoice->voucherType->prefix ?? '') . $invoice->voucher_number,
+                'narration' => $request->notes ?? 'Payment received for Invoice ' . $invoiceReference,
                 'total_amount' => $request->amount,
                 'status' => 'posted',
                 'created_by' => auth()->id(),
@@ -1242,15 +1260,23 @@ class InvoiceController extends Controller
                 'particulars' => 'Payment received against Invoice ' . ($invoice->voucherType->prefix ?? '') . $invoice->voucher_number,
             ]);
 
-            // Link payment to invoice
-            $invoice->payments()->attach($receiptVoucher->id);
-
             DB::commit();
 
-            // Recalculate totals
-            $totalPaid = $invoice->payments()->sum('total_amount');
-            $balanceDue = $invoice->total_amount - $totalPaid;
-            $paymentStatus = $balanceDue <= 0 ? 'Paid' : ($totalPaid > 0 ? 'Partially Paid' : 'Unpaid');
+            // Recalculate totals by querying all related payments
+            $allPayments = Voucher::where('tenant_id', $tenant->id)
+                ->where('status', 'posted')
+                ->whereHas('voucherType', function($q) {
+                    $q->where('code', 'RV');
+                })
+                ->where(function($q) use ($invoiceReference) {
+                    $q->where('narration', 'like', '%' . $invoiceReference . '%')
+                      ->orWhere('reference_number', 'like', '%' . $invoiceReference . '%');
+                })
+                ->get();
+
+            $newTotalPaid = $allPayments->sum('total_amount');
+            $newBalanceDue = $invoice->total_amount - $newTotalPaid;
+            $paymentStatus = $newBalanceDue <= 0 ? 'Paid' : ($newTotalPaid > 0 ? 'Partially Paid' : 'Unpaid');
 
             return response()->json([
                 'success' => true,
@@ -1273,8 +1299,8 @@ class InvoiceController extends Controller
                         'id' => $invoice->id,
                         'voucher_number' => ($invoice->voucherType->prefix ?? '') . $invoice->voucher_number,
                         'total_amount' => $invoice->total_amount,
-                        'total_paid' => $totalPaid,
-                        'balance_due' => $balanceDue,
+                        'total_paid' => $newTotalPaid,
+                        'balance_due' => $newBalanceDue,
                         'payment_status' => $paymentStatus,
                     ],
                 ]

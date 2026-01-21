@@ -181,14 +181,14 @@ class Voucher extends Model
     }
 
     public function items()
-{
-    return $this->hasMany(InvoiceItem::class);
-}
+    {
+        return $this->hasMany(InvoiceItem::class);
+    }
 
-public function updatedBy()
-{
-    return $this->belongsTo(User::class, 'updated_by');
-}
+    public function updatedBy()
+    {
+        return $this->belongsTo(User::class, 'updated_by');
+    }
 
 
 }
