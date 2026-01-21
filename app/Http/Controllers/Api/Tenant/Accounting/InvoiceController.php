@@ -25,7 +25,7 @@ class InvoiceController extends Controller
     public function index(Request $request, Tenant $tenant)
     {
         $query = Voucher::where('tenant_id', $tenant->id)
-            ->with(['voucherType', 'entries.ledgerAccount']);
+            ->with(['voucherType', 'entries.ledgerAccount.accountGroup']);
 
         // Filter by voucher type (sales or purchase)
         if ($request->filled('type')) {
@@ -72,6 +72,75 @@ class InvoiceController extends Controller
         // Pagination
         $perPage = $request->get('per_page', 15);
         $invoices = $query->paginate($perPage);
+
+        // Attach party_id and party_name for mobile list
+        $invoiceCollection = $invoices->getCollection();
+        $partyLedgerAccountIds = $invoiceCollection
+            ->flatMap(function ($invoice) {
+                $partyEntry = $invoice->entries->first(function ($entry) {
+                    $group = $entry->ledgerAccount->accountGroup ?? null;
+                    return $group && in_array($group->code, ['AR', 'AP']);
+                });
+
+                return $partyEntry ? [$partyEntry->ledger_account_id] : [];
+            })
+            ->unique()
+            ->values();
+
+        $customers = $partyLedgerAccountIds->isNotEmpty()
+            ? Customer::where('tenant_id', $tenant->id)
+                ->whereIn('ledger_account_id', $partyLedgerAccountIds)
+                ->get()
+            : collect();
+
+        $vendors = $partyLedgerAccountIds->isNotEmpty()
+            ? Vendor::where('tenant_id', $tenant->id)
+                ->whereIn('ledger_account_id', $partyLedgerAccountIds)
+                ->get()
+            : collect();
+
+        $customerMap = $customers->mapWithKeys(function ($customer) {
+            $name = $customer->display_name
+                ?? $customer->full_name
+                ?? trim(($customer->first_name ?? '') . ' ' . ($customer->last_name ?? ''))
+                ?? $customer->company_name
+                ?? $customer->email
+                ?? 'Customer';
+
+            return [$customer->ledger_account_id => ['id' => $customer->id, 'name' => $name]];
+        });
+
+        $vendorMap = $vendors->mapWithKeys(function ($vendor) {
+            $name = $vendor->display_name
+                ?? $vendor->full_name
+                ?? trim(($vendor->first_name ?? '') . ' ' . ($vendor->last_name ?? ''))
+                ?? $vendor->company_name
+                ?? $vendor->email
+                ?? 'Vendor';
+
+            return [$vendor->ledger_account_id => ['id' => $vendor->id, 'name' => $name]];
+        });
+
+        $invoiceCollection->transform(function ($invoice) use ($customerMap, $vendorMap) {
+            $partyEntry = $invoice->entries->first(function ($entry) {
+                $group = $entry->ledgerAccount->accountGroup ?? null;
+                return $group && in_array($group->code, ['AR', 'AP']);
+            });
+
+            $partyLedgerId = $partyEntry?->ledger_account_id;
+            $party = $partyLedgerId && $customerMap->has($partyLedgerId)
+                ? $customerMap->get($partyLedgerId)
+                : ($partyLedgerId && $vendorMap->has($partyLedgerId)
+                    ? $vendorMap->get($partyLedgerId)
+                    : null);
+
+            $invoice->party_id = $party['id'] ?? null;
+            $invoice->party_name = $party['name'] ?? ($partyEntry->ledgerAccount->name ?? null);
+
+            return $invoice;
+        });
+
+        $invoices->setCollection($invoiceCollection);
 
         // Calculate statistics
         $statistics = [
