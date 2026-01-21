@@ -364,16 +364,50 @@ class InvoiceController extends Controller
         ]);
 
         // Get customer/vendor info
+        // Find the entry with AR (Accounts Receivable) or AP (Accounts Payable)
         $partyEntry = $invoice->entries()
-            ->whereHas('ledgerAccount', function ($q) {
-                $q->whereHas('customers')->orWhereHas('vendors');
+            ->whereHas('ledgerAccount.accountGroup', function ($q) {
+                $q->whereIn('code', ['AR', 'AP']);
             })
             ->first();
 
         $party = null;
-        if ($partyEntry) {
-            $party = $partyEntry->ledgerAccount->customers()->first()
-                ?? $partyEntry->ledgerAccount->vendors()->first();
+        if ($partyEntry && $partyEntry->ledgerAccount) {
+            // Try to find customer by ledger_account_id
+            $customer = Customer::where('tenant_id', $tenant->id)
+                ->where('ledger_account_id', $partyEntry->ledgerAccount->id)
+                ->first();
+
+            if ($customer) {
+                $party = [
+                    'id' => $customer->id,
+                    'type' => 'customer',
+                    'name' => $customer->getFullNameAttribute(),
+                    'email' => $customer->email,
+                    'phone' => $customer->phone,
+                    'mobile' => $customer->mobile,
+                    'address' => $customer->getFullAddressAttribute(),
+                    'outstanding_balance' => $customer->outstanding_balance,
+                ];
+            } else {
+                // Try to find vendor by ledger_account_id
+                $vendor = Vendor::where('tenant_id', $tenant->id)
+                    ->where('ledger_account_id', $partyEntry->ledgerAccount->id)
+                    ->first();
+
+                if ($vendor) {
+                    $party = [
+                        'id' => $vendor->id,
+                        'type' => 'vendor',
+                        'name' => $vendor->getFullNameAttribute(),
+                        'email' => $vendor->email,
+                        'phone' => $vendor->phone,
+                        'mobile' => $vendor->mobile,
+                        'address' => $vendor->getFullAddressAttribute(),
+                        'outstanding_balance' => $vendor->outstanding_balance,
+                    ];
+                }
+            }
         }
 
         // Calculate balance due
