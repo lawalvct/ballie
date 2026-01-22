@@ -172,3 +172,11 @@ Route::middleware('auth:sanctum')->group(function () {
     // etc.
 
 });
+
+// Public download routes (token in query)
+Route::prefix('crm')->name('crm.')->group(function () {
+    Route::prefix('customers')->name('customers.')->group(function () {
+        Route::get('/{customer}/statement/pdf', [\App\Http\Controllers\Api\Tenant\Crm\CustomerController::class, 'statementPdf'])->name('statement-pdf-public');
+        Route::get('/{customer}/statement/excel', [\App\Http\Controllers\Api\Tenant\Crm\CustomerController::class, 'statementExcel'])->name('statement-excel-public');
+    });
+});

@@ -12,6 +12,7 @@ use App\Models\VoucherType;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
+use Laravel\Sanctum\PersonalAccessToken;
 
 class CustomerController extends Controller
 {
@@ -410,6 +411,13 @@ class CustomerController extends Controller
      */
     public function statementPdf(Request $request, Tenant $tenant, Customer $customer)
     {
+        if (!auth()->check() && !$this->authenticateFromToken($request)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Unauthenticated',
+            ], 401);
+        }
+
         if ($customer->tenant_id !== $tenant->id) {
             return response()->json([
                 'success' => false,
@@ -455,6 +463,13 @@ class CustomerController extends Controller
      */
     public function statementExcel(Request $request, Tenant $tenant, Customer $customer)
     {
+        if (!auth()->check() && !$this->authenticateFromToken($request)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Unauthenticated',
+            ], 401);
+        }
+
         if ($customer->tenant_id !== $tenant->id) {
             return response()->json([
                 'success' => false,
@@ -669,5 +684,25 @@ class CustomerController extends Controller
         }
 
         return $voucher;
+    }
+
+    /**
+     * Authenticate using token passed in query for download links.
+     */
+    private function authenticateFromToken(Request $request): bool
+    {
+        $tokenValue = $request->query('access_token') ?? $request->query('token');
+        if (!$tokenValue) {
+            return false;
+        }
+
+        $token = PersonalAccessToken::findToken($tokenValue);
+        if (!$token || !$token->tokenable) {
+            return false;
+        }
+
+        auth()->setUser($token->tokenable);
+
+        return true;
     }
 }
