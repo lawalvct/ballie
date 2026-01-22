@@ -13,6 +13,7 @@ use App\Models\VoucherType;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
+use Laravel\Sanctum\PersonalAccessToken;
 
 class VendorController extends Controller
 {
@@ -179,6 +180,255 @@ class VendorController extends Controller
                 'net_balance' => $netBalance,
             ],
         ]);
+    }
+
+    /**
+     * Vendor statement detail.
+     */
+    public function statement(Request $request, Tenant $tenant, Vendor $vendor)
+    {
+        if ($vendor->tenant_id !== $tenant->id) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Vendor not found',
+            ], 404);
+        }
+
+        $vendor->load('ledgerAccount');
+        if (!$vendor->ledgerAccount) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Vendor ledger account not found',
+            ], 422);
+        }
+
+        $startDate = $request->get('start_date', now()->startOfMonth()->format('Y-m-d'));
+        $endDate = $request->get('end_date', now()->endOfMonth()->format('Y-m-d'));
+
+        $statementData = $this->buildStatementData($tenant, $vendor, $startDate, $endDate);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Vendor statement retrieved successfully',
+            'data' => [
+                'vendor' => $statementData['vendor'],
+                'period' => $statementData['period'],
+                'opening_balance' => $statementData['opening_balance'],
+                'total_debits' => $statementData['total_debits'],
+                'total_credits' => $statementData['total_credits'],
+                'closing_balance' => $statementData['closing_balance'],
+                'transactions' => $statementData['transactions'],
+            ],
+        ]);
+    }
+
+    /**
+     * Download vendor statement as PDF.
+     */
+    public function statementPdf(Request $request, Tenant $tenant, Vendor $vendor)
+    {
+        if (!auth()->check() && !$this->authenticateFromToken($request)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Unauthenticated',
+            ], 401);
+        }
+
+        if ($vendor->tenant_id !== $tenant->id) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Vendor not found',
+            ], 404);
+        }
+
+        $vendor->load('ledgerAccount');
+        if (!$vendor->ledgerAccount) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Vendor ledger account not found',
+            ], 422);
+        }
+
+        $startDate = $request->get('start_date', now()->startOfMonth()->format('Y-m-d'));
+        $endDate = $request->get('end_date', now()->endOfMonth()->format('Y-m-d'));
+
+        $statementData = $this->buildStatementData($tenant, $vendor, $startDate, $endDate);
+
+        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView(
+            'tenant.crm.customers.statement-pdf',
+            [
+                'tenant' => $tenant,
+                'customer' => $statementData['vendor'],
+                'ledgerAccount' => $statementData['ledger_account'],
+                'period' => $statementData['period'],
+                'openingBalance' => $statementData['opening_balance'],
+                'totalDebits' => $statementData['total_debits'],
+                'totalCredits' => $statementData['total_credits'],
+                'closingBalance' => $statementData['closing_balance'],
+                'transactions' => $statementData['transactions'],
+            ]
+        );
+
+        $filename = 'vendor-statement-' . $vendor->id . '-' . $startDate . '-to-' . $endDate . '.pdf';
+
+        return $pdf->download($filename);
+    }
+
+    /**
+     * Download vendor statement as Excel (CSV).
+     */
+    public function statementExcel(Request $request, Tenant $tenant, Vendor $vendor)
+    {
+        if (!auth()->check() && !$this->authenticateFromToken($request)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Unauthenticated',
+            ], 401);
+        }
+
+        if ($vendor->tenant_id !== $tenant->id) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Vendor not found',
+            ], 404);
+        }
+
+        $vendor->load('ledgerAccount');
+        if (!$vendor->ledgerAccount) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Vendor ledger account not found',
+            ], 422);
+        }
+
+        $startDate = $request->get('start_date', now()->startOfMonth()->format('Y-m-d'));
+        $endDate = $request->get('end_date', now()->endOfMonth()->format('Y-m-d'));
+
+        $statementData = $this->buildStatementData($tenant, $vendor, $startDate, $endDate);
+
+        $filename = 'vendor-statement-' . $vendor->id . '-' . $startDate . '-to-' . $endDate . '.csv';
+
+        $headers = [
+            'Content-Type' => 'text/csv',
+            'Content-Disposition' => 'attachment; filename="' . $filename . '"',
+        ];
+
+        $callback = function () use ($statementData) {
+            $handle = fopen('php://output', 'w');
+
+            fputcsv($handle, ['Vendor Statement']);
+            fputcsv($handle, ['Vendor', $statementData['vendor']->display_name ?? $statementData['vendor']->company_name ?? $statementData['vendor']->email]);
+            fputcsv($handle, ['Period', $statementData['period']['start_date'] . ' to ' . $statementData['period']['end_date']]);
+            fputcsv($handle, []);
+
+            fputcsv($handle, ['Opening Balance', $statementData['opening_balance']]);
+            fputcsv($handle, ['Total Debits', $statementData['total_debits']]);
+            fputcsv($handle, ['Total Credits', $statementData['total_credits']]);
+            fputcsv($handle, ['Closing Balance', $statementData['closing_balance']]);
+            fputcsv($handle, []);
+
+            fputcsv($handle, ['Date', 'Particulars', 'Voucher Type', 'Voucher Number', 'Debit', 'Credit', 'Running Balance']);
+
+            foreach ($statementData['transactions'] as $row) {
+                fputcsv($handle, [
+                    $row['date'],
+                    $row['particulars'],
+                    $row['voucher_type'],
+                    $row['voucher_number'],
+                    $row['debit'],
+                    $row['credit'],
+                    $row['running_balance'],
+                ]);
+            }
+
+            fclose($handle);
+        };
+
+        return response()->stream($callback, 200, $headers);
+    }
+
+    /**
+     * Build vendor statement data (used by API + exports).
+     */
+    private function buildStatementData(Tenant $tenant, Vendor $vendor, string $startDate, string $endDate): array
+    {
+        $ledgerAccount = $vendor->ledgerAccount;
+
+        $openingBalance = VoucherEntry::where('ledger_account_id', $ledgerAccount->id)
+            ->whereHas('voucher', function ($q) use ($tenant, $startDate) {
+                $q->where('tenant_id', $tenant->id)
+                    ->where('status', Voucher::STATUS_POSTED)
+                    ->where('voucher_date', '<', $startDate);
+            })
+            ->selectRaw('SUM(debit_amount) as total_debits, SUM(credit_amount) as total_credits')
+            ->first();
+
+        $openingBalanceAmount = ($openingBalance->total_debits ?? 0) - ($openingBalance->total_credits ?? 0);
+
+        $transactions = VoucherEntry::with(['voucher.voucherType'])
+            ->where('ledger_account_id', $ledgerAccount->id)
+            ->whereHas('voucher', function ($q) use ($tenant, $startDate, $endDate, $ledgerAccount) {
+                $q->where('tenant_id', $tenant->id)
+                    ->where('status', Voucher::STATUS_POSTED)
+                    ->where('id', '!=', $ledgerAccount->opening_balance_voucher_id)
+                    ->whereBetween('voucher_date', [$startDate, $endDate]);
+            })
+            ->orderBy('id')
+            ->get();
+
+        $runningBalance = $openingBalanceAmount;
+        $transactionsWithBalance = [];
+
+        foreach ($transactions as $transaction) {
+            $runningBalance += ($transaction->debit_amount - $transaction->credit_amount);
+            $transactionsWithBalance[] = [
+                'date' => $transaction->voucher->voucher_date->format('Y-m-d'),
+                'particulars' => $transaction->particulars ?? ($transaction->voucher->voucherType->name ?? null),
+                'voucher_type' => $transaction->voucher->voucherType->name ?? null,
+                'voucher_number' => ($transaction->voucher->voucherType->prefix ?? '') . $transaction->voucher->voucher_number,
+                'debit' => (float) $transaction->debit_amount,
+                'credit' => (float) $transaction->credit_amount,
+                'running_balance' => (float) $runningBalance,
+            ];
+        }
+
+        $totalDebits = collect($transactionsWithBalance)->sum('debit');
+        $totalCredits = collect($transactionsWithBalance)->sum('credit');
+        $closingBalance = $runningBalance;
+
+        return [
+            'vendor' => $vendor,
+            'ledger_account' => $ledgerAccount,
+            'period' => [
+                'start_date' => $startDate,
+                'end_date' => $endDate,
+            ],
+            'opening_balance' => $openingBalanceAmount,
+            'total_debits' => $totalDebits,
+            'total_credits' => $totalCredits,
+            'closing_balance' => $closingBalance,
+            'transactions' => $transactionsWithBalance,
+        ];
+    }
+
+    /**
+     * Authenticate using token passed in query for download links.
+     */
+    private function authenticateFromToken(Request $request): bool
+    {
+        $tokenValue = $request->query('access_token') ?? $request->query('token');
+        if (!$tokenValue) {
+            return false;
+        }
+
+        $token = PersonalAccessToken::findToken($tokenValue);
+        if (!$token || !$token->tokenable) {
+            return false;
+        }
+
+        auth()->setUser($token->tokenable);
+
+        return true;
     }
 
     /**

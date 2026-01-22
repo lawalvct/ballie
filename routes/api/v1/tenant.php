@@ -170,6 +170,9 @@ Route::middleware('auth:sanctum')->group(function () {
             Route::put('/{vendor}', [\App\Http\Controllers\Api\Tenant\Crm\VendorController::class, 'update'])->name('update');
             Route::delete('/{vendor}', [\App\Http\Controllers\Api\Tenant\Crm\VendorController::class, 'destroy'])->name('destroy');
             Route::post('/{vendor}/toggle-status', [\App\Http\Controllers\Api\Tenant\Crm\VendorController::class, 'toggleStatus'])->name('toggle-status');
+            Route::get('/{vendor}/statement', [\App\Http\Controllers\Api\Tenant\Crm\VendorController::class, 'statement'])->name('statement');
+            Route::get('/{vendor}/statement/pdf', [\App\Http\Controllers\Api\Tenant\Crm\VendorController::class, 'statementPdf'])->name('statement-pdf');
+            Route::get('/{vendor}/statement/excel', [\App\Http\Controllers\Api\Tenant\Crm\VendorController::class, 'statementExcel'])->name('statement-excel');
         });
     });
 
@@ -188,5 +191,9 @@ Route::prefix('crm')->name('crm.')->group(function () {
     Route::prefix('customers')->name('customers.')->group(function () {
         Route::get('/{customer}/statement/pdf', [\App\Http\Controllers\Api\Tenant\Crm\CustomerController::class, 'statementPdf'])->name('statement-pdf-public');
         Route::get('/{customer}/statement/excel', [\App\Http\Controllers\Api\Tenant\Crm\CustomerController::class, 'statementExcel'])->name('statement-excel-public');
+    });
+    Route::prefix('vendors')->name('vendors.')->group(function () {
+        Route::get('/{vendor}/statement/pdf', [\App\Http\Controllers\Api\Tenant\Crm\VendorController::class, 'statementPdf'])->name('statement-pdf-public');
+        Route::get('/{vendor}/statement/excel', [\App\Http\Controllers\Api\Tenant\Crm\VendorController::class, 'statementExcel'])->name('statement-excel-public');
     });
 });
