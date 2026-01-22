@@ -147,6 +147,20 @@ Route::middleware('auth:sanctum')->group(function () {
 
     });
 
+    // CRM Module
+    Route::prefix('crm')->name('crm.')->group(function () {
+        Route::prefix('customers')->name('customers.')->group(function () {
+            Route::get('/', [\App\Http\Controllers\Api\Tenant\Crm\CustomerController::class, 'index'])->name('index');
+            Route::post('/', [\App\Http\Controllers\Api\Tenant\Crm\CustomerController::class, 'store'])->name('store');
+            Route::get('/statements', [\App\Http\Controllers\Api\Tenant\Crm\CustomerController::class, 'statements'])->name('statements');
+            Route::get('/{customer}', [\App\Http\Controllers\Api\Tenant\Crm\CustomerController::class, 'show'])->name('show');
+            Route::put('/{customer}', [\App\Http\Controllers\Api\Tenant\Crm\CustomerController::class, 'update'])->name('update');
+            Route::delete('/{customer}', [\App\Http\Controllers\Api\Tenant\Crm\CustomerController::class, 'destroy'])->name('destroy');
+            Route::post('/{customer}/toggle-status', [\App\Http\Controllers\Api\Tenant\Crm\CustomerController::class, 'toggleStatus'])->name('toggle-status');
+            Route::get('/{customer}/statement', [\App\Http\Controllers\Api\Tenant\Crm\CustomerController::class, 'statement'])->name('statement');
+        });
+    });
+
     // Future API routes will be added here:
     // Dashboard
     // Support Tickets
