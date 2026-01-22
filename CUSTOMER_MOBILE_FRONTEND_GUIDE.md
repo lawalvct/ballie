@@ -317,6 +317,22 @@ This guide mirrors the current web experience found in:
 
 ---
 
+### 2.8 Customer Statement PDF Export
+
+`GET /api/v1/tenant/{tenant}/crm/customers/{customer}/statement/pdf?start_date=YYYY-MM-DD&end_date=YYYY-MM-DD`
+
+**Response:** PDF file download
+
+---
+
+### 2.9 Customer Statement Excel Export (CSV)
+
+`GET /api/v1/tenant/{tenant}/crm/customers/{customer}/statement/excel?start_date=YYYY-MM-DD&end_date=YYYY-MM-DD`
+
+**Response:** CSV file download (Excel-compatible)
+
+---
+
 ## 3) Screen-to-API Mapping Summary
 
 - Customer List → `GET /crm/customers`

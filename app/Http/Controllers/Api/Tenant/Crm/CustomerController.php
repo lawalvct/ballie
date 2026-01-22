@@ -385,15 +385,149 @@ class CustomerController extends Controller
             ], 422);
         }
 
-        $ledgerAccount = $customer->ledgerAccount;
+        $startDate = $request->get('start_date', now()->startOfMonth()->format('Y-m-d'));
+        $endDate = $request->get('end_date', now()->endOfMonth()->format('Y-m-d'));
+
+        $statementData = $this->buildStatementData($tenant, $customer, $startDate, $endDate);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Customer statement retrieved successfully',
+            'data' => [
+                'customer' => $statementData['customer'],
+                'period' => $statementData['period'],
+                'opening_balance' => $statementData['opening_balance'],
+                'total_debits' => $statementData['total_debits'],
+                'total_credits' => $statementData['total_credits'],
+                'closing_balance' => $statementData['closing_balance'],
+                'transactions' => $statementData['transactions'],
+            ],
+        ]);
+    }
+
+    /**
+     * Download customer statement as PDF.
+     */
+    public function statementPdf(Request $request, Tenant $tenant, Customer $customer)
+    {
+        if ($customer->tenant_id !== $tenant->id) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Customer not found',
+            ], 404);
+        }
+
+        $customer->load('ledgerAccount');
+        if (!$customer->ledgerAccount) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Customer ledger account not found',
+            ], 422);
+        }
 
         $startDate = $request->get('start_date', now()->startOfMonth()->format('Y-m-d'));
         $endDate = $request->get('end_date', now()->endOfMonth()->format('Y-m-d'));
 
+        $statementData = $this->buildStatementData($tenant, $customer, $startDate, $endDate);
+
+        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView(
+            'tenant.crm.customers.statement-pdf',
+            [
+                'tenant' => $tenant,
+                'customer' => $statementData['customer'],
+                'ledgerAccount' => $statementData['ledger_account'],
+                'period' => $statementData['period'],
+                'openingBalance' => $statementData['opening_balance'],
+                'totalDebits' => $statementData['total_debits'],
+                'totalCredits' => $statementData['total_credits'],
+                'closingBalance' => $statementData['closing_balance'],
+                'transactions' => $statementData['transactions'],
+            ]
+        );
+
+        $filename = 'customer-statement-' . $customer->id . '-' . $startDate . '-to-' . $endDate . '.pdf';
+
+        return $pdf->download($filename);
+    }
+
+    /**
+     * Download customer statement as Excel (CSV).
+     */
+    public function statementExcel(Request $request, Tenant $tenant, Customer $customer)
+    {
+        if ($customer->tenant_id !== $tenant->id) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Customer not found',
+            ], 404);
+        }
+
+        $customer->load('ledgerAccount');
+        if (!$customer->ledgerAccount) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Customer ledger account not found',
+            ], 422);
+        }
+
+        $startDate = $request->get('start_date', now()->startOfMonth()->format('Y-m-d'));
+        $endDate = $request->get('end_date', now()->endOfMonth()->format('Y-m-d'));
+
+        $statementData = $this->buildStatementData($tenant, $customer, $startDate, $endDate);
+
+        $filename = 'customer-statement-' . $customer->id . '-' . $startDate . '-to-' . $endDate . '.csv';
+
+        $headers = [
+            'Content-Type' => 'text/csv',
+            'Content-Disposition' => 'attachment; filename="' . $filename . '"',
+        ];
+
+        $callback = function () use ($statementData) {
+            $handle = fopen('php://output', 'w');
+
+            fputcsv($handle, ['Customer Statement']);
+            fputcsv($handle, ['Customer', $statementData['customer']->display_name ?? $statementData['customer']->company_name ?? $statementData['customer']->email]);
+            fputcsv($handle, ['Period', $statementData['period']['start_date'] . ' to ' . $statementData['period']['end_date']]);
+            fputcsv($handle, []);
+
+            fputcsv($handle, ['Opening Balance', $statementData['opening_balance']]);
+            fputcsv($handle, ['Total Debits', $statementData['total_debits']]);
+            fputcsv($handle, ['Total Credits', $statementData['total_credits']]);
+            fputcsv($handle, ['Closing Balance', $statementData['closing_balance']]);
+            fputcsv($handle, []);
+
+            fputcsv($handle, ['Date', 'Particulars', 'Voucher Type', 'Voucher Number', 'Debit', 'Credit', 'Running Balance']);
+
+            foreach ($statementData['transactions'] as $row) {
+                fputcsv($handle, [
+                    $row['date'],
+                    $row['particulars'],
+                    $row['voucher_type'],
+                    $row['voucher_number'],
+                    $row['debit'],
+                    $row['credit'],
+                    $row['running_balance'],
+                ]);
+            }
+
+            fclose($handle);
+        };
+
+        return response()->stream($callback, 200, $headers);
+    }
+
+    /**
+     * Build customer statement data (used by API + exports).
+     */
+    private function buildStatementData(Tenant $tenant, Customer $customer, string $startDate, string $endDate): array
+    {
+        $ledgerAccount = $customer->ledgerAccount;
+
         $openingBalance = VoucherEntry::where('ledger_account_id', $ledgerAccount->id)
             ->whereHas('voucher', function ($q) use ($tenant, $startDate) {
                 $q->where('tenant_id', $tenant->id)
-                    ->whereDate('voucher_date', '<', $startDate);
+                    ->where('status', Voucher::STATUS_POSTED)
+                    ->where('voucher_date', '<', $startDate);
             })
             ->selectRaw('SUM(debit_amount) as total_debits, SUM(credit_amount) as total_credits')
             ->first();
@@ -402,15 +536,11 @@ class CustomerController extends Controller
 
         $transactions = VoucherEntry::with(['voucher.voucherType'])
             ->where('ledger_account_id', $ledgerAccount->id)
-            ->whereHas('voucher', function ($q) use ($tenant, $startDate, $endDate) {
+            ->whereHas('voucher', function ($q) use ($tenant, $startDate, $endDate, $ledgerAccount) {
                 $q->where('tenant_id', $tenant->id)
                     ->where('status', Voucher::STATUS_POSTED)
+                    ->where('id', '!=', $ledgerAccount->opening_balance_voucher_id)
                     ->whereBetween('voucher_date', [$startDate, $endDate]);
-            })
-            ->when($ledgerAccount->opening_balance_voucher_id, function ($query) use ($ledgerAccount) {
-                $query->whereHas('voucher', function ($q) use ($ledgerAccount) {
-                    $q->where('id', '!=', $ledgerAccount->opening_balance_voucher_id);
-                });
             })
             ->orderBy('id')
             ->get();
@@ -435,22 +565,19 @@ class CustomerController extends Controller
         $totalCredits = collect($transactionsWithBalance)->sum('credit');
         $closingBalance = $runningBalance;
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Customer statement retrieved successfully',
-            'data' => [
-                'customer' => $customer,
-                'period' => [
-                    'start_date' => $startDate,
-                    'end_date' => $endDate,
-                ],
-                'opening_balance' => $openingBalanceAmount,
-                'total_debits' => $totalDebits,
-                'total_credits' => $totalCredits,
-                'closing_balance' => $closingBalance,
-                'transactions' => $transactionsWithBalance,
+        return [
+            'customer' => $customer,
+            'ledger_account' => $ledgerAccount,
+            'period' => [
+                'start_date' => $startDate,
+                'end_date' => $endDate,
             ],
-        ]);
+            'opening_balance' => $openingBalanceAmount,
+            'total_debits' => $totalDebits,
+            'total_credits' => $totalCredits,
+            'closing_balance' => $closingBalance,
+            'transactions' => $transactionsWithBalance,
+        ];
     }
 
     /**

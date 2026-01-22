@@ -158,6 +158,8 @@ Route::middleware('auth:sanctum')->group(function () {
             Route::delete('/{customer}', [\App\Http\Controllers\Api\Tenant\Crm\CustomerController::class, 'destroy'])->name('destroy');
             Route::post('/{customer}/toggle-status', [\App\Http\Controllers\Api\Tenant\Crm\CustomerController::class, 'toggleStatus'])->name('toggle-status');
             Route::get('/{customer}/statement', [\App\Http\Controllers\Api\Tenant\Crm\CustomerController::class, 'statement'])->name('statement');
+            Route::get('/{customer}/statement/pdf', [\App\Http\Controllers\Api\Tenant\Crm\CustomerController::class, 'statementPdf'])->name('statement-pdf');
+            Route::get('/{customer}/statement/excel', [\App\Http\Controllers\Api\Tenant\Crm\CustomerController::class, 'statementExcel'])->name('statement-excel');
         });
     });
 
