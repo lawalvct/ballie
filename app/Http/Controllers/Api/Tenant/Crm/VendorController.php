@@ -109,6 +109,79 @@ class VendorController extends Controller
     }
 
     /**
+     * Vendor statements list with balances.
+     */
+    public function statements(Request $request, Tenant $tenant)
+    {
+        $query = Vendor::where('tenant_id', $tenant->id)
+            ->with('ledgerAccount');
+
+        if ($request->filled('search')) {
+            $search = $request->get('search');
+            $query->where(function ($q) use ($search) {
+                $q->where('first_name', 'like', "%{$search}%")
+                    ->orWhere('last_name', 'like', "%{$search}%")
+                    ->orWhere('company_name', 'like', "%{$search}%")
+                    ->orWhere('email', 'like', "%{$search}%")
+                    ->orWhere('phone', 'like', "%{$search}%")
+                    ->orWhere('mobile', 'like', "%{$search}%");
+            });
+        }
+
+        if ($request->filled('vendor_type')) {
+            $query->where('vendor_type', $request->get('vendor_type'));
+        }
+
+        if ($request->filled('status')) {
+            $query->where('status', $request->get('status'));
+        }
+
+        $vendors = $query->get()->map(function ($vendor) {
+            $balance = $vendor->ledgerAccount?->getCurrentBalance()
+                ?? $vendor->ledgerAccount?->current_balance
+                ?? 0;
+            $vendor->running_balance = $balance;
+            $vendor->balance_type = $balance >= 0 ? 'payable' : 'receivable';
+            $vendor->display_name = $vendor->display_name
+                ?? $vendor->full_name
+                ?? trim(($vendor->first_name ?? '') . ' ' . ($vendor->last_name ?? ''))
+                ?? $vendor->company_name
+                ?? $vendor->email;
+
+            return $vendor;
+        });
+
+        $totalVendors = $vendors->count();
+        $totalPayable = $vendors->where('running_balance', '>', 0)->sum('running_balance');
+        $totalReceivable = abs($vendors->where('running_balance', '<', 0)->sum('running_balance'));
+        $netBalance = $vendors->sum('running_balance');
+
+        $perPage = (int) $request->get('per_page', 50);
+        $currentPage = (int) $request->get('page', 1);
+        $items = $vendors->forPage($currentPage, $perPage)->values();
+
+        $paginated = new \Illuminate\Pagination\LengthAwarePaginator(
+            $items,
+            $totalVendors,
+            $perPage,
+            $currentPage,
+            ['path' => request()->url(), 'query' => request()->query()]
+        );
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Vendor statements retrieved successfully',
+            'data' => $paginated,
+            'statistics' => [
+                'total_vendors' => $totalVendors,
+                'total_payable' => $totalPayable,
+                'total_receivable' => $totalReceivable,
+                'net_balance' => $netBalance,
+            ],
+        ]);
+    }
+
+    /**
      * Create a new vendor.
      */
     public function store(Request $request, Tenant $tenant)

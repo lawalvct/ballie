@@ -400,7 +400,7 @@
                                 <input type="text"
                                        x-model="searchTerm"
                                        @input="searchVendors()"
-                                       @focus="showDropdown = true"
+                                       @focus="searchVendors()"
                                        placeholder="Type to search vendors..."
                                        class="w-full pl-3 pr-10 py-2 text-base border border-gray-300 focus:outline-none focus:ring-primary-500 focus:border-primary-500 rounded-lg"
                                        :class="selectedVendorId ? 'bg-green-50 border-green-300' : ''">
@@ -1394,12 +1394,6 @@ function vendorSearch() {
         searchTimeout: null,
 
         searchVendors() {
-            if (this.searchTerm.length < 2) {
-                this.vendors = [];
-                this.showDropdown = false;
-                return;
-            }
-
             if (this.searchTimeout) {
                 clearTimeout(this.searchTimeout);
             }
@@ -1408,7 +1402,8 @@ function vendorSearch() {
                 this.loading = true;
                 this.showDropdown = true;
 
-                fetch('/{{ $tenant->slug }}/api/vendors/search?q=' + encodeURIComponent(this.searchTerm))
+                const searchQuery = this.searchTerm || '';
+                fetch('/{{ $tenant->slug }}/api/vendors/search?q=' + encodeURIComponent(searchQuery))
                     .then(response => response.json())
                     .then(data => {
                         this.vendors = data;

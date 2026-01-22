@@ -6,6 +6,59 @@
 
 @section('content')
 <div class="max-w-4xl mx-auto">
+    <!-- Display success message if available -->
+    @if (session('success'))
+    <div class="bg-green-50 border-l-4 border-green-500 p-4 mb-6 rounded-md">
+        <div class="flex items-start">
+            <div class="flex-shrink-0">
+                <svg class="h-5 w-5 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+            </div>
+            <div class="ml-3">
+                <p class="text-sm font-medium text-green-800">{{ session('success') }}</p>
+            </div>
+        </div>
+    </div>
+    @endif
+
+    <!-- Display error message if available -->
+    @if (session('error'))
+    <div class="bg-red-50 border-l-4 border-red-500 p-4 mb-6 rounded-md">
+        <div class="flex items-start">
+            <div class="flex-shrink-0">
+                <svg class="h-5 w-5 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+            </div>
+            <div class="ml-3">
+                <p class="text-sm font-medium text-red-800">{{ session('error') }}</p>
+            </div>
+        </div>
+    </div>
+    @endif
+
+    <!-- Display validation errors summary if available -->
+    @if ($errors->any())
+    <div class="bg-red-50 border-l-4 border-red-500 p-4 mb-6 rounded-md">
+        <div class="flex items-start">
+            <div class="flex-shrink-0">
+                <svg class="h-5 w-5 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+            </div>
+            <div class="ml-3">
+                <h3 class="text-sm font-medium text-red-800">There were {{ $errors->count() }} error(s) with your submission:</h3>
+                <ul class="mt-2 text-sm text-red-700 list-disc list-inside">
+                    @foreach ($errors->all() as $error)
+                        <li>{{ $error }}</li>
+                    @endforeach
+                </ul>
+            </div>
+        </div>
+    </div>
+    @endif
+
     <div class="bg-white rounded-2xl shadow-lg p-8">
         <form action="{{ route('tenant.crm.vendors.update', ['tenant' => tenant()->slug, 'vendor' => $vendor->id]) }}" method="POST" id="vendorForm">
             @csrf

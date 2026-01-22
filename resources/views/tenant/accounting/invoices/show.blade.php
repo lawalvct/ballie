@@ -247,6 +247,7 @@
             </div>
         </div>
 
+        @if(($invoice->voucherType->inventory_effect ?? '') === 'decrease')
         <!-- Actions Card -->
         <div class="bg-white rounded-lg shadow-sm border border-gray-200">
             <div class="px-6 py-4 border-b border-gray-200">
@@ -340,6 +341,7 @@
                 </div>
             </div>
         </div>
+        @endif
 
         <!-- Invoice Summary Card -->
         <div class="bg-white rounded-lg shadow-sm border border-gray-200">

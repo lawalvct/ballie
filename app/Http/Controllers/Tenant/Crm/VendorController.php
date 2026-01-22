@@ -286,9 +286,63 @@ class VendorController extends Controller
         $vendor->load('ledgerAccount.accountGroup');
 
         // Update outstanding balance from ledger
-        $vendor->updateOutstandingBalance();
+        $outstandingBalance = $vendor->updateOutstandingBalance();
 
-        return view('tenant.crm.vendors.show', compact('vendor', 'tenant'));
+        $ledgerAccount = $vendor->ledgerAccount;
+        $ledgerAccountId = $ledgerAccount?->id;
+
+        $totalPurchases = 0;
+        $totalOrders = 0;
+        $lastPurchaseDate = null;
+        $recentTransactions = collect();
+
+        if ($ledgerAccountId) {
+            $purchaseEntriesQuery = VoucherEntry::where('ledger_account_id', $ledgerAccountId)
+                ->whereHas('voucher', function ($q) use ($tenant) {
+                    $q->where('tenant_id', $tenant->id)
+                        ->where('status', 'posted')
+                        ->whereHas('voucherType', function ($vt) {
+                            $vt->where('inventory_effect', 'increase');
+                        });
+                });
+
+            $totalPurchases = (float) $purchaseEntriesQuery->sum('credit_amount');
+            $totalOrders = (int) $purchaseEntriesQuery->distinct('voucher_id')->count('voucher_id');
+
+            $lastPurchaseDate = Voucher::where('tenant_id', $tenant->id)
+                ->whereHas('voucherType', function ($vt) {
+                    $vt->where('inventory_effect', 'increase');
+                })
+                ->whereHas('entries', function ($q) use ($ledgerAccountId) {
+                    $q->where('ledger_account_id', $ledgerAccountId);
+                })
+                ->max('voucher_date');
+
+            $recentTransactions = VoucherEntry::with(['voucher.voucherType'])
+                ->where('ledger_account_id', $ledgerAccountId)
+                ->whereHas('voucher', function ($q) use ($tenant) {
+                    $q->where('tenant_id', $tenant->id)
+                        ->where('status', 'posted');
+                })
+                ->orderByDesc('id')
+                ->limit(10)
+                ->get();
+        }
+
+        $ledgerStatementUrl = $ledgerAccountId
+            ? route('tenant.accounting.ledger-accounts.show', ['tenant' => $tenant->slug, 'ledgerAccount' => $ledgerAccountId])
+            : null;
+
+        return view('tenant.crm.vendors.show', compact(
+            'vendor',
+            'tenant',
+            'outstandingBalance',
+            'totalPurchases',
+            'totalOrders',
+            'lastPurchaseDate',
+            'recentTransactions',
+            'ledgerStatementUrl'
+        ));
     }
 
     public function edit(Tenant $tenant, Vendor $vendor)
@@ -310,9 +364,9 @@ class VendorController extends Controller
 
         $validator = Validator::make($request->all(), [
             'vendor_type' => 'required|in:individual,business',
-            'first_name' => 'required_if:vendor_type,individual|string|max:255',
-            'last_name' => 'required_if:vendor_type,individual|string|max:255',
-            'company_name' => 'required_if:vendor_type,business|string|max:255',
+            'first_name' => 'nullable|required_if:vendor_type,individual|string|max:255',
+            'last_name' => 'nullable|required_if:vendor_type,individual|string|max:255',
+            'company_name' => 'nullable|required_if:vendor_type,business|string|max:255',
             'email' => 'required|email|max:255',
             'phone' => 'nullable|string|max:20',
             'mobile' => 'nullable|string|max:20',
@@ -429,21 +483,25 @@ class VendorController extends Controller
      */
     public function search(Request $request, Tenant $tenant)
     {
-        $query = $request->get('q', '');
+        $query = trim($request->get('q', ''));
 
-        if (strlen($query) < 2) {
-            return response()->json([]);
-        }
+        $vendorsQuery = Vendor::where('tenant_id', $tenant->id)
+            ->with('ledgerAccount');
 
-        $vendors = Vendor::where('tenant_id', $tenant->id)
-            ->with('ledgerAccount')
-            ->where(function($q) use ($query) {
+        if (strlen($query) >= 2) {
+            $vendorsQuery->where(function($q) use ($query) {
                 $q->where('first_name', 'like', "%{$query}%")
                   ->orWhere('last_name', 'like', "%{$query}%")
                   ->orWhere('company_name', 'like', "%{$query}%")
                   ->orWhere('email', 'like', "%{$query}%")
                   ->orWhere('phone', 'like', "%{$query}%");
-            })
+            });
+        } else {
+            // Default list when user has not typed anything yet
+            $vendorsQuery->orderBy('updated_at', 'desc');
+        }
+
+        $vendors = $vendorsQuery
             ->limit(20)
             ->get()
             ->map(function($vendor) {

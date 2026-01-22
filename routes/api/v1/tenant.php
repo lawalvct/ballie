@@ -165,6 +165,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::prefix('vendors')->name('vendors.')->group(function () {
             Route::get('/', [\App\Http\Controllers\Api\Tenant\Crm\VendorController::class, 'index'])->name('index');
             Route::post('/', [\App\Http\Controllers\Api\Tenant\Crm\VendorController::class, 'store'])->name('store');
+            Route::get('/statements', [\App\Http\Controllers\Api\Tenant\Crm\VendorController::class, 'statements'])->name('statements');
             Route::get('/{vendor}', [\App\Http\Controllers\Api\Tenant\Crm\VendorController::class, 'show'])->name('show');
             Route::put('/{vendor}', [\App\Http\Controllers\Api\Tenant\Crm\VendorController::class, 'update'])->name('update');
             Route::delete('/{vendor}', [\App\Http\Controllers\Api\Tenant\Crm\VendorController::class, 'destroy'])->name('destroy');

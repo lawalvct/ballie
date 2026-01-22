@@ -56,7 +56,7 @@
                 </div>
                 <div class="ml-4">
                     <h3 class="text-lg font-medium text-gray-900">Total Purchases</h3>
-                    <p class="text-2xl font-bold text-blue-600">₦{{ number_format($vendor->total_purchases ?? 0, 2) }}</p>
+                    <p class="text-2xl font-bold text-blue-600">₦{{ number_format($totalPurchases ?? 0, 2) }}</p>
                 </div>
             </div>
         </div>
@@ -70,7 +70,7 @@
                 </div>
                 <div class="ml-4">
                     <h3 class="text-lg font-medium text-gray-900">Outstanding</h3>
-                    <p class="text-2xl font-bold text-red-600">₦{{ number_format($vendor->outstanding_amount ?? 0, 2) }}</p>
+                    <p class="text-2xl font-bold text-red-600">₦{{ number_format($outstandingBalance ?? 0, 2) }}</p>
                 </div>
             </div>
         </div>
@@ -84,7 +84,7 @@
                 </div>
                 <div class="ml-4">
                     <h3 class="text-lg font-medium text-gray-900">Total Orders</h3>
-                    <p class="text-2xl font-bold text-green-600">{{ $vendor->total_orders ?? 0 }}</p>
+                    <p class="text-2xl font-bold text-green-600">{{ $totalOrders ?? 0 }}</p>
                 </div>
             </div>
         </div>
@@ -98,7 +98,7 @@
                 </div>
                 <div class="ml-4">
                     <h3 class="text-lg font-medium text-gray-900">Last Purchase</h3>
-                    <p class="text-sm text-gray-600">{{ $vendor->last_purchase_date ? date('M d, Y', strtotime($vendor->last_purchase_date)) : 'Never' }}</p>
+                    <p class="text-sm text-gray-600">{{ $lastPurchaseDate ? \Carbon\Carbon::parse($lastPurchaseDate)->format('M d, Y') : 'Never' }}</p>
                 </div>
             </div>
         </div>
@@ -230,50 +230,49 @@
                         </svg>
                         Recent Transactions
                     </h3>
-                    <a href="#" class="text-sm font-medium text-purple-600 hover:text-purple-800">View All</a>
+                    @if($ledgerStatementUrl)
+                        <a href="{{ $ledgerStatementUrl }}" class="text-sm font-medium text-purple-600 hover:text-purple-800">View All</a>
+                    @endif
                 </div>
 
                 <div class="space-y-4">
-                    <!-- Placeholder for transactions - this would come from your actual transaction data -->
-                    <div class="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-                        <div class="flex items-center space-x-3">
-                            <div class="w-10 h-10 bg-red-100 rounded-full flex items-center justify-center">
-                                <svg class="w-5 h-5 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 12H4"></path>
-                                </svg>
+                    @forelse($recentTransactions as $transaction)
+                        @php
+                            $amount = $transaction->credit_amount > 0 ? $transaction->credit_amount : $transaction->debit_amount;
+                            $isCredit = $transaction->credit_amount > 0;
+                            $voucherType = $transaction->voucher?->voucherType;
+                            $voucherLabel = ($voucherType?->prefix ?? $voucherType?->abbreviation ?? $voucherType?->code ?? 'VCH') . ($transaction->voucher?->voucher_number ?? '');
+                            $narration = $transaction->particulars ?: ($transaction->voucher?->narration ?? 'Transaction');
+                            $dateLabel = $transaction->voucher?->voucher_date?->format('M d, Y') ?? $transaction->created_at?->format('M d, Y');
+                        @endphp
+                        <div class="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                            <div class="flex items-center space-x-3">
+                                <div class="w-10 h-10 {{ $isCredit ? 'bg-red-100' : 'bg-green-100' }} rounded-full flex items-center justify-center">
+                                    <svg class="w-5 h-5 {{ $isCredit ? 'text-red-600' : 'text-green-600' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        @if($isCredit)
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 12H4"></path>
+                                        @else
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                                        @endif
+                                    </svg>
+                                </div>
+                                <div>
+                                    <p class="font-medium text-gray-900">{{ $voucherLabel }}</p>
+                                    <p class="text-sm text-gray-500">{{ $narration }}</p>
+                                </div>
                             </div>
-                            <div>
-                                <p class="font-medium text-gray-900">Purchase Order #PO-2024-001</p>
-                                <p class="text-sm text-gray-500">Office Supplies</p>
+                            <div class="text-right">
+                                <p class="font-semibold {{ $isCredit ? 'text-red-600' : 'text-green-600' }}">
+                                    {{ $isCredit ? '-' : '+' }}₦{{ number_format($amount, 2) }}
+                                </p>
+                                <p class="text-xs text-gray-500">{{ $dateLabel }}</p>
                             </div>
                         </div>
-                        <div class="text-right">
-                            <p class="font-semibold text-red-600">-₦85,000</p>
-                            <p class="text-xs text-gray-500">2 days ago</p>
+                    @empty
+                        <div class="text-center py-4">
+                            <p class="text-sm text-gray-500">No recent transactions</p>
                         </div>
-                    </div>
-
-                    <div class="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-                        <div class="flex items-center space-x-3">
-                            <div class="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
-                                <svg class="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
-                                </svg>
-                            </div>
-                            <div>
-                                <p class="font-medium text-gray-900">Payment Made</p>
-                                <p class="text-sm text-gray-500">Invoice #INV-2024-045</p>
-                            </div>
-                        </div>
-                        <div class="text-right">
-                            <p class="font-semibold text-green-600">+₦125,000</p>
-                            <p class="text-xs text-gray-500">5 days ago</p>
-                        </div>
-                    </div>
-
-                    <div class="text-center py-4">
-                        <p class="text-sm text-gray-500">No recent transactions</p>
-                    </div>
+                    @endforelse
                 </div>
             </div>
         </div>
@@ -297,7 +296,7 @@
                         <span class="text-sm font-semibold text-gray-900">₦{{ number_format($vendor->credit_limit ?? 0, 2) }}</span>
                     </div>
                     <div class="w-full bg-gray-200 rounded-full h-2">
-                        <div class="bg-purple-600 h-2 rounded-full" style="width: {{ $vendor->credit_limit > 0 ? min(100, (($vendor->outstanding_amount ?? 0) / $vendor->credit_limit) * 100) : 0 }}%"></div>
+                        <div class="bg-purple-600 h-2 rounded-full" style="width: {{ ($vendor->credit_limit ?? 0) > 0 ? min(100, (($outstandingBalance ?? 0) / $vendor->credit_limit) * 100) : 0 }}%"></div>
                     </div>
                     <p class="text-xs text-gray-500">Credit utilization</p>
                 </div>
@@ -323,13 +322,15 @@
                                 {{ $vendor->ledgerAccount->getCurrentBalance() >= 0 ? 'CR' : 'DR' }}
                             </p>
                         </div>
-                        <a href="#" class="inline-flex items-center text-sm text-purple-600 hover:text-purple-800">
+                        @if($ledgerStatementUrl)
+                            <a href="{{ $ledgerStatementUrl }}" class="inline-flex items-center text-sm text-purple-600 hover:text-purple-800">
                             <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
                             </svg>
                             View Ledger Details
-                        </a>
+                            </a>
+                        @endif
                     </div>
                 </div>
             @endif
