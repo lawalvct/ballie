@@ -276,30 +276,37 @@ class VendorController extends Controller
         return $voucher;
     }
 
-    public function show(Tenant $tenant, $id)
+    public function show(Tenant $tenant, Vendor $vendor)
     {
-        $vendor = Vendor::where('tenant_id', $tenant->id)
-            ->with(['ledgerAccount.accountGroup'])
-            ->findOrFail($id);
+        // Ensure the vendor belongs to the tenant
+        if ($vendor->tenant_id !== $tenant->id) {
+            abort(404);
+        }
+
+        $vendor->load('ledgerAccount.accountGroup');
 
         // Update outstanding balance from ledger
         $vendor->updateOutstandingBalance();
 
-        return view('tenant.crm.vendors.show', compact('vendor'));
+        return view('tenant.crm.vendors.show', compact('vendor', 'tenant'));
     }
 
-    public function edit(Tenant $tenant, $id)
+    public function edit(Tenant $tenant, Vendor $vendor)
     {
-        $vendor = Vendor::where('tenant_id', $tenant->id)
-            ->findOrFail($id);
+        // Ensure the vendor belongs to the tenant
+        if ($vendor->tenant_id !== $tenant->id) {
+            abort(404);
+        }
 
-        return view('tenant.crm.vendors.edit', compact('vendor'));
+        return view('tenant.crm.vendors.edit', compact('vendor', 'tenant'));
     }
 
-    public function update(Request $request, $id)
+    public function update(Request $request, Tenant $tenant, Vendor $vendor)
     {
-        $vendor = Vendor::where('tenant_id', tenant()->id)
-            ->findOrFail($id);
+        // Ensure the vendor belongs to the tenant
+        if ($vendor->tenant_id !== $tenant->id) {
+            abort(404);
+        }
 
         $validator = Validator::make($request->all(), [
             'vendor_type' => 'required|in:individual,business',
@@ -339,21 +346,30 @@ class VendorController extends Controller
             ->with('success', 'Vendor updated successfully.');
     }
 
-    public function destroy($id)
+    public function destroy(Tenant $tenant, Vendor $vendor)
     {
-        $vendor = Vendor::where('tenant_id', tenant()->id)
-            ->findOrFail($id);
+        // Ensure the vendor belongs to the tenant
+        if ($vendor->tenant_id !== $tenant->id) {
+            abort(404);
+        }
 
         // Check if vendor has outstanding balance
         if ($vendor->outstanding_balance > 0) {
-            return redirect()->route('tenant.crm.vendors.index', ['tenant' => tenant()->slug])
+            return redirect()->route('tenant.crm.vendors.index', ['tenant' => $tenant->slug])
                 ->with('error', 'Cannot delete vendor with outstanding balance.');
         }
 
-        $vendor->delete();
+        try {
+            $vendor->delete();
 
-        return redirect()->route('tenant.crm.vendors.index', ['tenant' => tenant()->slug])
-            ->with('success', 'Vendor deleted successfully.');
+            return redirect()->route('tenant.crm.vendors.index', ['tenant' => $tenant->slug])
+                ->with('success', 'Vendor deleted successfully.');
+        } catch (\Exception $e) {
+            Log::error('Error deleting vendor: ' . $e->getMessage());
+
+            return redirect()->back()
+                ->with('error', 'An error occurred while deleting the vendor. Please try again.');
+        }
     }
 
     /**

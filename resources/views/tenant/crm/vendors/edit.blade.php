@@ -7,7 +7,7 @@
 @section('content')
 <div class="max-w-4xl mx-auto">
     <div class="bg-white rounded-2xl shadow-lg p-8">
-        <form action="{{ route('tenant.vendors.update', ['tenant' => tenant()->slug, 'vendor' => $vendor->id]) }}" method="POST" id="vendorForm">
+        <form action="{{ route('tenant.crm.vendors.update', ['tenant' => tenant()->slug, 'vendor' => $vendor->id]) }}" method="POST" id="vendorForm">
             @csrf
             @method('PUT')
 
@@ -328,7 +328,7 @@
 
             <!-- Form Actions -->
             <div class="flex items-center justify-end space-x-4 pt-6 border-t border-gray-200">
-                <a href="{{ route('tenant.vendors.show', ['tenant' => tenant()->slug, 'vendor' => $vendor->id]) }}" class="px-6 py-2 border border-gray-300 rounded-xl text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 transition-all duration-200">
+                <a href="{{ route('tenant.crm.vendors.show', ['tenant' => tenant()->slug, 'vendor' => $vendor->id]) }}" class="px-6 py-2 border border-gray-300 rounded-xl text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 transition-all duration-200">
                     Cancel
                 </a>
                 <button type="submit" class="px-6 py-2 bg-gradient-to-r from-purple-600 to-purple-700 text-white rounded-xl hover:from-purple-700 hover:to-purple-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 transition-all duration-200 shadow-md">

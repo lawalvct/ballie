@@ -577,12 +577,12 @@ Route::prefix('ledger-accounts')->name('ledger-accounts.')->group(function () {
             Route::resource('customers', CustomerController::class);
 
             // Vendors
-            Route::resource('vendors', VendorController::class);
             Route::get('vendors/export/all', [VendorController::class, 'export'])->name('vendors.export');
             Route::get('vendors/export/template', [VendorController::class, 'exportTemplate'])->name('vendors.export.template');
             Route::post('vendors/import', [VendorController::class, 'import'])->name('vendors.import');
             Route::post('vendors/bulk', [VendorController::class, 'bulk'])->name('vendors.bulk');
             Route::post('vendors/bulk-action', [VendorController::class, 'bulkAction'])->name('vendors.bulk-action');
+            Route::resource('vendors', VendorController::class);
 
             // CRM Dashboard
             Route::get('/', [CrmController::class, 'index'])->name('index');
