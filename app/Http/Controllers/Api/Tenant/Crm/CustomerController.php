@@ -404,9 +404,15 @@ class CustomerController extends Controller
             ->where('ledger_account_id', $ledgerAccount->id)
             ->whereHas('voucher', function ($q) use ($tenant, $startDate, $endDate) {
                 $q->where('tenant_id', $tenant->id)
+                    ->where('status', Voucher::STATUS_POSTED)
                     ->whereBetween('voucher_date', [$startDate, $endDate]);
             })
-            ->orderBy('voucher_date')
+            ->when($ledgerAccount->opening_balance_voucher_id, function ($query) use ($ledgerAccount) {
+                $query->whereHas('voucher', function ($q) use ($ledgerAccount) {
+                    $q->where('id', '!=', $ledgerAccount->opening_balance_voucher_id);
+                });
+            })
+            ->orderBy('id')
             ->get();
 
         $runningBalance = $openingBalanceAmount;
@@ -416,7 +422,7 @@ class CustomerController extends Controller
             $runningBalance += ($transaction->debit_amount - $transaction->credit_amount);
             $transactionsWithBalance[] = [
                 'date' => $transaction->voucher->voucher_date->format('Y-m-d'),
-                'particulars' => $transaction->particulars,
+                'particulars' => $transaction->particulars ?? ($transaction->voucher->voucherType->name ?? null),
                 'voucher_type' => $transaction->voucher->voucherType->name ?? null,
                 'voucher_number' => ($transaction->voucher->voucherType->prefix ?? '') . $transaction->voucher->voucher_number,
                 'debit' => (float) $transaction->debit_amount,
