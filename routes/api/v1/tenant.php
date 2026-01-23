@@ -127,6 +127,19 @@ Route::middleware('auth:sanctum')->group(function () {
 
     });
 
+    // Banking Module
+    Route::prefix('banking')->name('banking.')->group(function () {
+        Route::prefix('banks')->name('banks.')->group(function () {
+            Route::get('/create', [\App\Http\Controllers\Api\Tenant\Banking\BankController::class, 'create'])->name('create');
+            Route::get('/', [\App\Http\Controllers\Api\Tenant\Banking\BankController::class, 'index'])->name('index');
+            Route::post('/', [\App\Http\Controllers\Api\Tenant\Banking\BankController::class, 'store'])->name('store');
+            Route::get('/{bank}', [\App\Http\Controllers\Api\Tenant\Banking\BankController::class, 'show'])->name('show');
+            Route::put('/{bank}', [\App\Http\Controllers\Api\Tenant\Banking\BankController::class, 'update'])->name('update');
+            Route::delete('/{bank}', [\App\Http\Controllers\Api\Tenant\Banking\BankController::class, 'destroy'])->name('destroy');
+            Route::get('/{bank}/statement', [\App\Http\Controllers\Api\Tenant\Banking\BankController::class, 'statement'])->name('statement');
+        });
+    });
+
     // Inventory Module
     Route::prefix('inventory')->name('inventory.')->group(function () {
 
