@@ -118,7 +118,6 @@ Route::middleware('auth:sanctum')->group(function () {
             Route::post('/bulk-action', [\App\Http\Controllers\Api\Tenant\Accounting\VoucherController::class, 'bulkAction'])->name('bulk-action');
             Route::get('/', [\App\Http\Controllers\Api\Tenant\Accounting\VoucherController::class, 'index'])->name('index');
             Route::get('/{voucher}', [\App\Http\Controllers\Api\Tenant\Accounting\VoucherController::class, 'show'])->name('show');
-            Route::get('/{voucher}/pdf', [\App\Http\Controllers\Api\Tenant\Accounting\VoucherController::class, 'pdf'])->name('pdf');
             Route::put('/{voucher}', [\App\Http\Controllers\Api\Tenant\Accounting\VoucherController::class, 'update'])->name('update');
             Route::delete('/{voucher}', [\App\Http\Controllers\Api\Tenant\Accounting\VoucherController::class, 'destroy'])->name('destroy');
             Route::post('/{voucher}/post', [\App\Http\Controllers\Api\Tenant\Accounting\VoucherController::class, 'post'])->name('post');

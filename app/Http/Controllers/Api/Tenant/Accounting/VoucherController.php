@@ -1067,6 +1067,10 @@ class VoucherController extends Controller
     {
         $tokenValue = $request->query('access_token') ?? $request->query('token');
         if (!$tokenValue) {
+            $tokenValue = $request->bearerToken();
+        }
+
+        if (!$tokenValue) {
             return false;
         }
 
