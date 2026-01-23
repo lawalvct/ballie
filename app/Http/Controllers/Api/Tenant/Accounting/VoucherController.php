@@ -127,7 +127,9 @@ class VoucherController extends Controller
                         'entries.*.ledger_account_id' => 'required|exists:ledger_accounts,id',
                         'entries.*.debit_amount' => 'nullable|numeric|min:0',
                         'entries.*.credit_amount' => 'nullable|numeric|min:0',
+                        'entries.*.particulars' => 'nullable|string|max:500',
                         'entries.*.description' => 'nullable|string|max:500',
+                        'entries.*.document' => 'nullable|file|mimes:jpg,jpeg,png,pdf|max:5120',
                     ],
                 ],
                 'message' => 'Form data retrieved successfully',
@@ -233,7 +235,9 @@ class VoucherController extends Controller
                 'entries.*.ledger_account_id' => 'required|exists:ledger_accounts,id',
                 'entries.*.debit_amount' => 'nullable|numeric|min:0',
                 'entries.*.credit_amount' => 'nullable|numeric|min:0',
+                'entries.*.particulars' => 'nullable|string|max:500',
                 'entries.*.description' => 'nullable|string|max:500',
+                'entries.*.document' => 'nullable|file|mimes:jpg,jpeg,png,pdf|max:5120',
             ]);
 
             // Validate that entries are balanced
@@ -303,13 +307,21 @@ class VoucherController extends Controller
             ]);
 
                 // Create entries
-                foreach ($validated['entries'] as $entryData) {
+                foreach ($validated['entries'] as $index => $entryData) {
+                    $documentPath = null;
+                    if ($request->hasFile("entries.{$index}.document")) {
+                        $file = $request->file("entries.{$index}.document");
+                        $filename = time() . '_' . $index . '_' . $file->getClientOriginalName();
+                        $documentPath = $file->storeAs('voucher_documents', $filename, 'public');
+                    }
+
                     VoucherEntry::create([
                         'voucher_id' => $voucher->id,
                         'ledger_account_id' => $entryData['ledger_account_id'],
                         'debit_amount' => $entryData['debit_amount'] ?? 0,
                         'credit_amount' => $entryData['credit_amount'] ?? 0,
-                        'description' => $entryData['description'] ?? null,
+                        'particulars' => $entryData['particulars'] ?? $entryData['description'] ?? null,
+                        'document_path' => $documentPath,
                     ]);
                 }
 
@@ -552,7 +564,9 @@ class VoucherController extends Controller
                 'entries.*.ledger_account_id' => 'required|exists:ledger_accounts,id',
                 'entries.*.debit_amount' => 'nullable|numeric|min:0',
                 'entries.*.credit_amount' => 'nullable|numeric|min:0',
+                'entries.*.particulars' => 'nullable|string|max:500',
                 'entries.*.description' => 'nullable|string|max:500',
+                'entries.*.document' => 'nullable|file|mimes:jpg,jpeg,png,pdf|max:5120',
             ]);
 
             // Validate that entries are balanced
@@ -582,13 +596,21 @@ class VoucherController extends Controller
                 $voucher->entries()->delete();
 
                 // Create new entries
-                foreach ($validated['entries'] as $entryData) {
+                foreach ($validated['entries'] as $index => $entryData) {
+                    $documentPath = null;
+                    if ($request->hasFile("entries.{$index}.document")) {
+                        $file = $request->file("entries.{$index}.document");
+                        $filename = time() . '_' . $index . '_' . $file->getClientOriginalName();
+                        $documentPath = $file->storeAs('voucher_documents', $filename, 'public');
+                    }
+
                     VoucherEntry::create([
                         'voucher_id' => $voucher->id,
                         'ledger_account_id' => $entryData['ledger_account_id'],
                         'debit_amount' => $entryData['debit_amount'] ?? 0,
                         'credit_amount' => $entryData['credit_amount'] ?? 0,
-                        'description' => $entryData['description'] ?? null,
+                        'particulars' => $entryData['particulars'] ?? $entryData['description'] ?? null,
+                        'document_path' => $documentPath,
                     ]);
                 }
             });
@@ -1014,7 +1036,8 @@ class VoucherController extends Controller
                     'account_group_name' => $entry->ledgerAccount->accountGroup->name ?? '',
                     'debit_amount' => $entry->debit_amount,
                     'credit_amount' => $entry->credit_amount,
-                    'description' => $entry->description,
+                    'particulars' => $entry->particulars,
+                    'document_url' => $entry->document_path ? asset('storage/' . $entry->document_path) : null,
                 ];
             })->toArray();
 

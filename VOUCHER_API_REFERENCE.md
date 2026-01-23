@@ -243,7 +243,8 @@ Accept: application/json
             "entries.*.ledger_account_id": "required|exists:ledger_accounts,id",
             "entries.*.debit_amount": "nullable|numeric|min:0",
             "entries.*.credit_amount": "nullable|numeric|min:0",
-            "entries.*.description": "nullable|string|max:500"
+            "entries.*.particulars": "nullable|string|max:500",
+            "entries.*.document": "nullable|file|mimes:jpg,jpeg,png,pdf|max:5120"
         }
     },
     "message": "Form data retrieved successfully"
@@ -303,13 +304,13 @@ Example payload:
             "ledger_account_id": 2,
             "debit_amount": 25000,
             "credit_amount": 0,
-            "description": "Bank deposit"
+            "particulars": "Bank deposit"
         },
         {
             "ledger_account_id": 3,
             "debit_amount": 0,
             "credit_amount": 25000,
-            "description": "Customer payment"
+            "particulars": "Customer payment"
         }
     ]
 }
@@ -322,11 +323,220 @@ Example payload:
 
 ---
 
+## Frontend UI Guide: Payment Voucher Entry
+
+Payment vouchers follow the web layout:
+
+### Payment Entry Layout (Frontend)
+
+1. **Bank/Cash Entry (Credit side)**
+    - **Single line** (auto-calculated).
+    - Credit amount = **sum of all payment debit lines**.
+    - Ledger account must be **Bank/Cash** only.
+
+2. **Payment Entries (Debit side)**
+    - **Multiple lines**.
+    - Each line selects a ledger account being paid and a **debit amount**.
+    - Optional attachment per line (receipt/invoice) just like the web form.
+
+### How to Filter Ledger Accounts (From `GET /create`)
+
+**A) Bank/Cash (Credit Side)**
+
+- Show only ledger accounts where:
+    - `account_type` is **asset** or **current asset**, and
+    - `name` contains **"bank"** or **"cash"** (case-insensitive).
+
+**B) Payment Lines (Debit Side)**
+
+- Show all active ledger accounts **except** bank/cash if you want to avoid duplicates.
+
+### Expected Entry Structure (Payment Voucher)
+
+- **One credit entry** (bank/cash) with total amount.
+- **One or more debit entries** with line amounts.
+
+Example payload:
+
+```json
+{
+    "voucher_type_id": 2,
+    "voucher_date": "2025-12-30",
+    "narration": "Payment to suppliers",
+    "entries": [
+        {
+            "ledger_account_id": 2,
+            "debit_amount": 0,
+            "credit_amount": 15000,
+            "particulars": "Bank payment"
+        },
+        {
+            "ledger_account_id": 25,
+            "debit_amount": 15000,
+            "credit_amount": 0,
+            "particulars": "Vendor payment"
+        }
+    ]
+}
+```
+
+### Document Upload (Optional)
+
+To attach documents per entry, send the create/update request as `multipart/form-data` and include files as:
+
+- `entries[0][document]`, `entries[1][document]`, etc.
+
+Allowed file types: **jpg, jpeg, png, pdf** (max 5MB).
+
+---
+
+## Frontend UI Guide: Contra Voucher Entry
+
+Contra vouchers record **bank/cash transfers** (no P&L impact).
+
+### Contra Entry Layout (Frontend)
+
+1. **From Account (Credit side)** - Select a **Bank/Cash** ledger account. - Enter **transfer amount**.
+
+2. **To Account (Debit side)** - Select a **Bank/Cash** ledger account. - Optional **particulars**/description.
+
+### How to Filter Ledger Accounts (From `GET /create`)
+
+- Bank/Cash only:
+    - `account_type` is **asset** or **current asset**, and
+    - `name` contains **"bank"** or **"cash"** (case-insensitive).
+
+### Expected Entry Structure (Contra Voucher)
+
+Contra is submitted using the **special fields** (like the web form):
+
+- `cv_from_account_id`
+- `cv_to_account_id`
+- `cv_transfer_amount`
+- `cv_particulars` (optional)
+
+Example payload:
+
+```json
+{
+    "voucher_type_id": 4,
+    "voucher_date": "2025-12-30",
+    "cv_from_account_id": 2,
+    "cv_to_account_id": 1,
+    "cv_transfer_amount": 10000,
+    "cv_particulars": "Transfer to cash"
+}
+```
+
+---
+
+## Frontend UI Guide: Credit Note Entry
+
+Credit notes **reduce** customer receivables.
+
+### Credit Note Layout (Frontend)
+
+1. **Customer Account (Debit side)** - Select customer ledger account. - Enter **credit note amount**.
+
+2. **Sales/Revenue Lines (Credit side)** - Multiple lines with **account + amount + description**.
+
+### How to Filter Ledger Accounts (From `GET /create`)
+
+- Customer accounts:
+    - Use AR accounts (Accounts Receivable) or customer-coded ledgers (if available).
+
+- Sales/Revenue accounts:
+    - `account_type` is **income** or **revenue**.
+
+### Expected Entry Structure (Credit Note)
+
+Use the **special fields** (like the web form):
+
+- `cn_customer_account_id`
+- `cn_customer_amount`
+- `credit_entries[]` with:
+    - `account_id`
+    - `amount`
+    - `description` (optional)
+
+Example payload:
+
+```json
+{
+    "voucher_type_id": 5,
+    "voucher_date": "2025-12-30",
+    "narration": "Return discount",
+    "cn_customer_account_id": 3,
+    "cn_customer_amount": 5000,
+    "credit_entries": [
+        {
+            "account_id": 15,
+            "amount": 5000,
+            "description": "Sales return"
+        }
+    ]
+}
+```
+
+---
+
+## Frontend UI Guide: Debit Note Entry
+
+Debit notes **increase** customer receivables.
+
+### Debit Note Layout (Frontend)
+
+1. **Customer Account (Debit side)** - Select customer ledger account. - Enter **debit note amount**.
+
+2. **Additional Charge Lines (Credit side)** - Multiple lines with **account + amount + description**.
+
+### How to Filter Ledger Accounts (From `GET /create`)
+
+- Customer accounts:
+    - Use AR accounts (Accounts Receivable) or customer-coded ledgers (if available).
+
+- Charge accounts:
+    - `account_type` is **income** or **revenue**.
+
+### Expected Entry Structure (Debit Note)
+
+Use the **special fields** supported by the API:
+
+- `dn_customer_account_id`
+- `dn_customer_amount`
+- `debit_entries[]` with:
+    - `ledger_account_id`
+    - `amount`
+    - `description` (optional)
+
+Example payload:
+
+```json
+{
+    "voucher_type_id": 6,
+    "voucher_date": "2025-12-30",
+    "narration": "Additional charges",
+    "dn_customer_account_id": 3,
+    "dn_customer_amount": 3000,
+    "debit_entries": [
+        {
+            "ledger_account_id": 15,
+            "amount": 3000,
+            "description": "Late fee"
+        }
+    ]
+}
+```
+
+---
+
 ### 2. Create Voucher
 
 **Endpoint:** `POST /`
 
 **Description:** Create a new voucher with entries.
+
+**Note:** If you attach documents to entries, send the request as `multipart/form-data` and include files as `entries[0][document]`, `entries[1][document]`, etc.
 
 **Payload Example:**
 
@@ -342,13 +552,13 @@ Example payload:
             "ledger_account_id": 1,
             "debit_amount": 50000,
             "credit_amount": 0,
-            "description": "Cash received as capital"
+            "particulars": "Cash received as capital"
         },
         {
             "ledger_account_id": 10,
             "debit_amount": 0,
             "credit_amount": 50000,
-            "description": "Capital introduced by owner"
+            "particulars": "Capital introduced by owner"
         }
     ],
     "action": "save"
@@ -390,7 +600,7 @@ Example payload:
                 "account_group_name": "Current Assets",
                 "debit_amount": 50000.0,
                 "credit_amount": 0.0,
-                "description": "Cash received as capital"
+                "particulars": "Cash received as capital"
             },
             {
                 "id": 2,
@@ -401,7 +611,7 @@ Example payload:
                 "account_group_name": "Equity",
                 "debit_amount": 0.0,
                 "credit_amount": 50000.0,
-                "description": "Capital introduced by owner"
+                "particulars": "Capital introduced by owner"
             }
         ],
         "created_by": {
@@ -567,7 +777,7 @@ Accept: application/json
                 "account_group_name": "Current Assets",
                 "debit_amount": 50000.0,
                 "credit_amount": 0.0,
-                "description": "Cash received as capital"
+                "particulars": "Cash received as capital"
             },
             {
                 "id": 2,
@@ -578,7 +788,7 @@ Accept: application/json
                 "account_group_name": "Equity",
                 "debit_amount": 0.0,
                 "credit_amount": 50000.0,
-                "description": "Capital introduced by owner"
+                "particulars": "Capital introduced by owner"
             }
         ],
         "created_by": {
@@ -649,7 +859,6 @@ Use the `GET /{id}` response to populate the show screen. The following UI block
 
 **Planned response additions (to match web UI):**
 
-- Add `entries[].particulars` and `entries[].document_url`.
 - Add `affects_inventory` and `affects_cashbank` to the voucher payload (from voucher type).
 
 ---
@@ -698,13 +907,13 @@ Accept: application/pdf
             "ledger_account_id": 1,
             "debit_amount": 55000,
             "credit_amount": 0,
-            "description": "Cash received - updated amount"
+            "particulars": "Cash received - updated amount"
         },
         {
             "ledger_account_id": 10,
             "debit_amount": 0,
             "credit_amount": 55000,
-            "description": "Capital - updated amount"
+            "particulars": "Capital - updated amount"
         }
     ]
 }
@@ -900,14 +1109,14 @@ Accept: application/json
                 "ledger_account_name": "Cash in Hand (1001)",
                 "debit_amount": 50000.0,
                 "credit_amount": 0.0,
-                "description": "Cash received"
+                "particulars": "Cash received"
             },
             {
                 "ledger_account_id": 10,
                 "ledger_account_name": "Capital Account (3001)",
                 "debit_amount": 0.0,
                 "credit_amount": 50000.0,
-                "description": "Capital"
+                "particulars": "Capital"
             }
         ]
     }
@@ -1050,7 +1259,9 @@ Accept: application/json
 - `ledger_account_id`: Required, must exist in ledger_accounts table
 - `debit_amount`: Optional, numeric, minimum 0
 - `credit_amount`: Optional, numeric, minimum 0
-- `description`: Optional, max 500 characters
+- `particulars`: Optional, max 500 characters (preferred)
+- `description`: Optional, max 500 characters (legacy)
+- `document`: Optional file (jpg, jpeg, png, pdf) max 5MB
 - **Each entry must have EITHER debit OR credit (not both)**
 - **Total debits MUST equal total credits (balanced)**
 
@@ -1101,13 +1312,13 @@ Posted (status: "posted")
             "ledger_account_id": 1,
             "debit_amount": 50000,
             "credit_amount": 0,
-            "description": "Cash in hand"
+            "particulars": "Cash in hand"
         },
         {
             "ledger_account_id": 10,
             "debit_amount": 0,
             "credit_amount": 50000,
-            "description": "Capital"
+            "particulars": "Capital"
         }
     ]
 }
@@ -1126,13 +1337,13 @@ Posted (status: "posted")
             "ledger_account_id": 20,
             "debit_amount": 15000,
             "credit_amount": 0,
-            "description": "Rent expense"
+            "particulars": "Rent expense"
         },
         {
             "ledger_account_id": 2,
             "debit_amount": 0,
             "credit_amount": 15000,
-            "description": "Payment from bank"
+            "particulars": "Payment from bank"
         }
     ]
 }
@@ -1151,13 +1362,13 @@ Posted (status: "posted")
             "ledger_account_id": 2,
             "debit_amount": 25000,
             "credit_amount": 0,
-            "description": "Bank deposit"
+            "particulars": "Bank deposit"
         },
         {
             "ledger_account_id": 3,
             "debit_amount": 0,
             "credit_amount": 25000,
-            "description": "Customer payment"
+            "particulars": "Customer payment"
         }
     ]
 }
@@ -1175,13 +1386,13 @@ Posted (status: "posted")
             "ledger_account_id": 3,
             "debit_amount": 10000,
             "credit_amount": 0,
-            "description": "Transferred to XYZ Bank"
+            "particulars": "Transferred to XYZ Bank"
         },
         {
             "ledger_account_id": 2,
             "debit_amount": 0,
             "credit_amount": 10000,
-            "description": "Transferred from ABC Bank"
+            "particulars": "Transferred from ABC Bank"
         }
     ]
 }
