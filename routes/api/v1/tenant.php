@@ -138,6 +138,16 @@ Route::middleware('auth:sanctum')->group(function () {
             Route::delete('/{bank}', [\App\Http\Controllers\Api\Tenant\Banking\BankController::class, 'destroy'])->name('destroy');
             Route::get('/{bank}/statement', [\App\Http\Controllers\Api\Tenant\Banking\BankController::class, 'statement'])->name('statement');
         });
+        Route::prefix('reconciliations')->name('reconciliations.')->group(function () {
+            Route::get('/create', [\App\Http\Controllers\Api\Tenant\Banking\BankReconciliationController::class, 'create'])->name('create');
+            Route::get('/', [\App\Http\Controllers\Api\Tenant\Banking\BankReconciliationController::class, 'index'])->name('index');
+            Route::post('/', [\App\Http\Controllers\Api\Tenant\Banking\BankReconciliationController::class, 'store'])->name('store');
+            Route::get('/{reconciliation}', [\App\Http\Controllers\Api\Tenant\Banking\BankReconciliationController::class, 'show'])->name('show');
+            Route::post('/{reconciliation}/items/status', [\App\Http\Controllers\Api\Tenant\Banking\BankReconciliationController::class, 'updateItemStatus'])->name('items.status');
+            Route::post('/{reconciliation}/complete', [\App\Http\Controllers\Api\Tenant\Banking\BankReconciliationController::class, 'complete'])->name('complete');
+            Route::post('/{reconciliation}/cancel', [\App\Http\Controllers\Api\Tenant\Banking\BankReconciliationController::class, 'cancel'])->name('cancel');
+            Route::delete('/{reconciliation}', [\App\Http\Controllers\Api\Tenant\Banking\BankReconciliationController::class, 'destroy'])->name('destroy');
+        });
     });
 
     // Inventory Module
