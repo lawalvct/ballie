@@ -160,15 +160,17 @@ class VoucherController extends Controller
                     'entries' => [
                         [
                             'ledger_account_id' => $request->cv_to_account_id,
-                            'debit_amount' => $request->amount,
+                            'debit_amount' => $request->cv_transfer_amount,
                             'credit_amount' => 0,
-                            'description' => $request->narration ?? 'Contra transfer',
+                            'particulars' => $request->cv_particulars ?? $request->narration ?? 'Contra transfer',
+                            'description' => $request->cv_particulars ?? $request->narration ?? 'Contra transfer',
                         ],
                         [
                             'ledger_account_id' => $request->cv_from_account_id,
                             'debit_amount' => 0,
-                            'credit_amount' => $request->amount,
-                            'description' => $request->narration ?? 'Contra transfer',
+                            'credit_amount' => $request->cv_transfer_amount,
+                            'particulars' => $request->cv_particulars ?? $request->narration ?? 'Contra transfer',
+                            'description' => $request->cv_particulars ?? $request->narration ?? 'Contra transfer',
                         ],
                     ],
                 ]);

@@ -415,6 +415,8 @@ Contra is submitted using the **special fields** (like the web form):
 - `cv_transfer_amount`
 - `cv_particulars` (optional)
 
+**Note:** Do **not** send `entries` for contra. The API generates the two entries automatically from these fields.
+
 Example payload:
 
 ```json
