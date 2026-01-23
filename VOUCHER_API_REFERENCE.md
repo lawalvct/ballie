@@ -1,5 +1,7 @@
 # Voucher Management API Reference
 
+**Update marker:** 23-jan.-2026 1:24am
+
 ## Base URL
 
 ```
@@ -28,7 +30,7 @@ Content-Type: application/json
 
 **Query Parameters:**
 
--   `type` (optional): Pre-select voucher type (jv, pv, rv, cv, cn, dn)
+- `type` (optional): Pre-select voucher type (jv, pv, rv, cv, cn, dn)
 
 **Request Example:**
 
@@ -250,6 +252,76 @@ Accept: application/json
 
 ---
 
+## Frontend UI Guide: Receipt Voucher Entry
+
+By default, the create voucher form should render the standard journal entry layout. When the selected voucher type is **Receipt Voucher** (code `RV`, or name contains “Receipt”), switch to the **Receipt Entry** component (same behavior as the web UI).
+
+### Receipt Entry Layout (Frontend)
+
+1. **Receipt Entries (Credit side)**
+    - Allow **multiple lines**.
+    - Each line selects a **customer/vendor ledger account** and a **credit amount**.
+    - These are the AR/AP accounts (customer/vendor control accounts).
+
+2. **Bank/Cash Entry (Debit side)**
+    - **Single line** (auto-calculated).
+    - Debit amount = **sum of all receipt credit lines**.
+    - Ledger account must be **Bank/Cash** only.
+
+### How to Filter Ledger Accounts (From `GET /create`)
+
+Use the `ledger_accounts` array returned by the create endpoint and filter it as follows:
+
+**A) Customer/Vendor (Credit Side)**
+
+- Show only ledger accounts that belong to **Accounts Receivable (AR)** or **Accounts Payable (AP)**.
+- Preferred filter: account group **code** in `['AR', 'AP']` (if your mobile data source includes it).
+- If your client only has `account_group_name`, use names that map to **Accounts Receivable** and **Accounts Payable**.
+
+**B) Bank/Cash (Debit Side)**
+
+- Show only ledger accounts where:
+    - `account_type` is **asset** or **current asset**, and
+    - `name` contains **"bank"** or **"cash"** (case-insensitive).
+
+### Expected Entry Structure (Receipt Voucher)
+
+When submitting the voucher, use the standard `entries` array:
+
+- **One debit entry** (bank/cash) with total amount.
+- **One or more credit entries** (customer/vendor) with line amounts.
+
+Example payload:
+
+```json
+{
+    "voucher_type_id": 3,
+    "voucher_date": "2025-12-30",
+    "narration": "Receipt from customer",
+    "entries": [
+        {
+            "ledger_account_id": 2,
+            "debit_amount": 25000,
+            "credit_amount": 0,
+            "description": "Bank deposit"
+        },
+        {
+            "ledger_account_id": 3,
+            "debit_amount": 0,
+            "credit_amount": 25000,
+            "description": "Customer payment"
+        }
+    ]
+}
+```
+
+**Validation notes:**
+
+- Total debits **must equal** total credits.
+- Each entry must have **either** debit or credit (not both).
+
+---
+
 ### 2. Create Voucher
 
 **Endpoint:** `POST /`
@@ -285,8 +357,8 @@ Accept: application/json
 
 **Payload Options:**
 
--   `action`: "save" (saves as draft) or "save_and_post" (saves and posts immediately)
--   `voucher_number`: Optional - auto-generated if not provided
+- `action`: "save" (saves as draft) or "save_and_post" (saves and posts immediately)
+- `voucher_number`: Optional - auto-generated if not provided
 
 **Response Example:**
 
@@ -376,14 +448,14 @@ Accept: application/json
 
 **Query Parameters:**
 
--   `per_page` (optional): Items per page (default: 20)
--   `search` (optional): Search in voucher number, narration, reference
--   `voucher_type_id` (optional): Filter by voucher type
--   `status` (optional): Filter by status (draft, posted)
--   `date_from` (optional): Start date (YYYY-MM-DD)
--   `date_to` (optional): End date (YYYY-MM-DD)
--   `sort_by` (optional): Sort field (default: voucher_date)
--   `sort_direction` (optional): Sort direction (asc, desc, default: desc)
+- `per_page` (optional): Items per page (default: 20)
+- `search` (optional): Search in voucher number, narration, reference
+- `voucher_type_id` (optional): Filter by voucher type
+- `status` (optional): Filter by status (draft, posted)
+- `date_from` (optional): Start date (YYYY-MM-DD)
+- `date_to` (optional): End date (YYYY-MM-DD)
+- `sort_by` (optional): Sort field (default: voucher_date)
+- `sort_direction` (optional): Sort direction (asc, desc, default: desc)
 
 **Request Example:**
 
@@ -529,6 +601,80 @@ Accept: application/json
     "message": "Voucher retrieved successfully"
 }
 ```
+
+### Voucher Show Screen (Frontend Mapping)
+
+Use the `GET /{id}` response to populate the show screen. The following UI blocks map directly to fields in the response:
+
+1. **Header**
+    - Title: `voucher_number`
+    - Status badge: `status` (draft/posted)
+    - Subtitle: `voucher_type_name`, `created_at`
+
+2. **Actions**
+    - Edit: show when `can_be_edited` is `true`.
+    - Post: show when `can_be_posted` is `true`.
+    - Delete: show when `can_be_deleted` is `true`.
+    - Unpost: show when `can_be_unposted` is `true`.
+
+3. **Summary Card**
+    - Voucher type: `voucher_type_name`, `voucher_type_code`
+    - Amount: `total_amount`
+    - Date: `voucher_date`
+    - Reference: `reference_number`
+    - Entry count: `entries.length`
+    - Narration: `narration` (if present)
+
+4. **Entries Table / List**
+    - Per entry:
+        - Ledger name: `entries[].ledger_account_name`
+        - Group: `entries[].account_group_name`
+        - Particulars: `entries[].particulars` (nullable)
+        - Debit/Credit: `entries[].debit_amount`, `entries[].credit_amount`
+        - Document: `entries[].document_url` (nullable)
+
+5. **Totals**
+    - Total debits: sum of `entries[].debit_amount`
+    - Total credits: sum of `entries[].credit_amount`
+
+6. **Audit Trail**
+    - Created by: `created_by.name`, `created_at`
+    - Updated by: `updated_by.name`, `updated_at` (only if updated)
+    - Posted by: `posted_by.name`, `posted_at` (only if posted)
+
+7. **Related Information**
+    - Reference document: `reference_number` (if present)
+    - Inventory impact: add boolean `affects_inventory` (planned)
+    - Cash/bank impact: add boolean `affects_cashbank` (planned)
+
+**Planned response additions (to match web UI):**
+
+- Add `entries[].particulars` and `entries[].document_url`.
+- Add `affects_inventory` and `affects_cashbank` to the voucher payload (from voucher type).
+
+---
+
+### 4.1 Download Voucher PDF
+
+**Endpoint:** `GET /{id}/pdf`
+
+**Description:** Download the voucher as PDF (similar to customer statement PDF). Supports Bearer auth or `access_token` for mobile public download.
+
+**Query Parameters:**
+
+- `access_token` (optional): Sanctum token for public/mobile download
+
+**Request Example:**
+
+```http
+GET /api/v1/tenant/demo-company/accounting/vouchers/1/pdf?access_token=YOUR_TOKEN
+Accept: application/pdf
+```
+
+**Response:**
+
+- Content-Type: `application/pdf`
+- Binary PDF stream
 
 ---
 
@@ -805,9 +951,9 @@ Accept: application/json
 
 **Actions:**
 
--   `post` - Post multiple draft vouchers
--   `unpost` - Unpost multiple posted vouchers
--   `delete` - Delete multiple draft vouchers
+- `post` - Post multiple draft vouchers
+- `unpost` - Unpost multiple posted vouchers
+- `delete` - Delete multiple draft vouchers
 
 **Response Example:**
 
@@ -833,9 +979,9 @@ Accept: application/json
 
 **Query Parameters:**
 
--   `q` (optional): Search term (voucher number, narration, reference)
--   `status` (optional): Filter by status
--   `voucher_type_id` (optional): Filter by type
+- `q` (optional): Search term (voucher number, narration, reference)
+- `status` (optional): Filter by status
+- `voucher_type_id` (optional): Filter by type
 
 **Request Example:**
 
@@ -892,21 +1038,21 @@ Accept: application/json
 
 ### Voucher Creation/Update:
 
--   `voucher_type_id`: Required, must exist in voucher_types table
--   `voucher_date`: Required, valid date format (YYYY-MM-DD)
--   `voucher_number`: Optional, max 50 characters (auto-generated if empty)
--   `narration`: Optional, max 1000 characters
--   `reference_number`: Optional, max 100 characters
--   `entries`: Required, array with minimum 2 entries
+- `voucher_type_id`: Required, must exist in voucher_types table
+- `voucher_date`: Required, valid date format (YYYY-MM-DD)
+- `voucher_number`: Optional, max 50 characters (auto-generated if empty)
+- `narration`: Optional, max 1000 characters
+- `reference_number`: Optional, max 100 characters
+- `entries`: Required, array with minimum 2 entries
 
 ### Entry Rules:
 
--   `ledger_account_id`: Required, must exist in ledger_accounts table
--   `debit_amount`: Optional, numeric, minimum 0
--   `credit_amount`: Optional, numeric, minimum 0
--   `description`: Optional, max 500 characters
--   **Each entry must have EITHER debit OR credit (not both)**
--   **Total debits MUST equal total credits (balanced)**
+- `ledger_account_id`: Required, must exist in ledger_accounts table
+- `debit_amount`: Optional, numeric, minimum 0
+- `credit_amount`: Optional, numeric, minimum 0
+- `description`: Optional, max 500 characters
+- **Each entry must have EITHER debit OR credit (not both)**
+- **Total debits MUST equal total credits (balanced)**
 
 ---
 

@@ -14,6 +14,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\ValidationException;
+use Laravel\Sanctum\PersonalAccessToken;
 
 /**
  * Voucher Management API Controller
@@ -463,6 +464,51 @@ class VoucherController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to retrieve voucher',
+                'error' => $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    /**
+     * Download voucher PDF.
+     *
+     * @param Request $request
+     * @param Tenant $tenant
+     * @param Voucher $voucher
+     * @return \Symfony\Component\HttpFoundation\BinaryFileResponse|\Illuminate\Http\JsonResponse
+     */
+    public function pdf(Request $request, Tenant $tenant, Voucher $voucher)
+    {
+        try {
+            if (!auth()->check() && !$this->authenticateFromToken($request)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Unauthenticated',
+                ], 401);
+            }
+
+            if ($voucher->tenant_id !== $tenant->id) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Voucher not found',
+                ], 404);
+            }
+
+            $voucher->load(['voucherType', 'entries.ledgerAccount.accountGroup', 'createdBy', 'postedBy']);
+
+            $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('tenant.accounting.vouchers.pdf', [
+                'tenant' => $tenant,
+                'voucher' => $voucher,
+            ]);
+
+            $filename = 'voucher-' . $voucher->voucher_number . '.pdf';
+
+            return $pdf->download($filename);
+        } catch (\Exception $e) {
+            Log::error('Voucher pdf API error: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to generate voucher PDF',
                 'error' => $e->getMessage(),
             ], 500);
         }
@@ -1012,5 +1058,25 @@ class VoucherController extends Controller
                 'updated_by' => Auth::id(),
             ]);
         });
+    }
+
+    /**
+     * Authenticate using token passed in query for download links.
+     */
+    private function authenticateFromToken(Request $request): bool
+    {
+        $tokenValue = $request->query('access_token') ?? $request->query('token');
+        if (!$tokenValue) {
+            return false;
+        }
+
+        $token = PersonalAccessToken::findToken($tokenValue);
+        if (!$token || !$token->tokenable) {
+            return false;
+        }
+
+        auth()->setUser($token->tokenable);
+
+        return true;
     }
 }

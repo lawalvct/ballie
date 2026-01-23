@@ -41,9 +41,11 @@
                         >
                             <option value="">Select Account</option>
                             @foreach($ledgerAccounts as $account)
-                                <option :value="{{ $account->id }}">
-                                    {{ $account->name }} ({{ $account->code }})
-                                </option>
+                                @if(in_array($account->accountGroup?->code, ['AR', 'AP']))
+                                    <option :value="{{ $account->id }}">
+                                        {{ $account->name }} ({{ $account->code }})
+                                    </option>
+                                @endif
                             @endforeach
                         </select>
                     </div>
