@@ -153,6 +153,21 @@ Route::middleware('auth:sanctum')->group(function () {
     // Inventory Module
     Route::prefix('inventory')->name('inventory.')->group(function () {
 
+        // Stock Journal
+        Route::prefix('stock-journal')->name('stock-journal.')->group(function () {
+            Route::get('/create', [\App\Http\Controllers\Api\Tenant\Inventory\StockJournalController::class, 'create'])->name('create');
+            Route::get('/product-stock/{product}', [\App\Http\Controllers\Api\Tenant\Inventory\StockJournalController::class, 'productStock'])->name('product-stock');
+            Route::post('/calculate-stock', [\App\Http\Controllers\Api\Tenant\Inventory\StockJournalController::class, 'calculateStock'])->name('calculate-stock');
+            Route::get('/', [\App\Http\Controllers\Api\Tenant\Inventory\StockJournalController::class, 'index'])->name('index');
+            Route::post('/', [\App\Http\Controllers\Api\Tenant\Inventory\StockJournalController::class, 'store'])->name('store');
+            Route::get('/{stockJournal}', [\App\Http\Controllers\Api\Tenant\Inventory\StockJournalController::class, 'show'])->name('show');
+            Route::put('/{stockJournal}', [\App\Http\Controllers\Api\Tenant\Inventory\StockJournalController::class, 'update'])->name('update');
+            Route::delete('/{stockJournal}', [\App\Http\Controllers\Api\Tenant\Inventory\StockJournalController::class, 'destroy'])->name('destroy');
+            Route::post('/{stockJournal}/post', [\App\Http\Controllers\Api\Tenant\Inventory\StockJournalController::class, 'post'])->name('post');
+            Route::post('/{stockJournal}/cancel', [\App\Http\Controllers\Api\Tenant\Inventory\StockJournalController::class, 'cancel'])->name('cancel');
+            Route::get('/{stockJournal}/duplicate', [\App\Http\Controllers\Api\Tenant\Inventory\StockJournalController::class, 'duplicate'])->name('duplicate');
+        });
+
         // Categories
         Route::prefix('categories')->name('categories.')->group(function () {
             Route::get('/create', [\App\Http\Controllers\Api\Tenant\Inventory\ProductCategoryController::class, 'create'])->name('create');
