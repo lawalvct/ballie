@@ -153,6 +153,19 @@ Route::middleware('auth:sanctum')->group(function () {
     // Inventory Module
     Route::prefix('inventory')->name('inventory.')->group(function () {
 
+        // Categories
+        Route::prefix('categories')->name('categories.')->group(function () {
+            Route::get('/create', [\App\Http\Controllers\Api\Tenant\Inventory\ProductCategoryController::class, 'create'])->name('create');
+            Route::get('/', [\App\Http\Controllers\Api\Tenant\Inventory\ProductCategoryController::class, 'index'])->name('index');
+            Route::post('/', [\App\Http\Controllers\Api\Tenant\Inventory\ProductCategoryController::class, 'store'])->name('store');
+            Route::post('/quick-store', [\App\Http\Controllers\Api\Tenant\Inventory\ProductCategoryController::class, 'quickStore'])->name('quick-store');
+            Route::post('/reorder', [\App\Http\Controllers\Api\Tenant\Inventory\ProductCategoryController::class, 'reorder'])->name('reorder');
+            Route::get('/{category}', [\App\Http\Controllers\Api\Tenant\Inventory\ProductCategoryController::class, 'show'])->name('show');
+            Route::put('/{category}', [\App\Http\Controllers\Api\Tenant\Inventory\ProductCategoryController::class, 'update'])->name('update');
+            Route::patch('/{category}/toggle-status', [\App\Http\Controllers\Api\Tenant\Inventory\ProductCategoryController::class, 'toggleStatus'])->name('toggle-status');
+            Route::delete('/{category}', [\App\Http\Controllers\Api\Tenant\Inventory\ProductCategoryController::class, 'destroy'])->name('destroy');
+        });
+
         // Units
         Route::prefix('units')->name('units.')->group(function () {
             Route::get('/create', [\App\Http\Controllers\Api\Tenant\Inventory\UnitController::class, 'create'])->name('create');
