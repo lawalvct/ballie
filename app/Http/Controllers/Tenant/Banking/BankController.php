@@ -67,7 +67,10 @@ class BankController extends Controller
             'active_banks' => Bank::where('tenant_id', $tenant->id)->where('status', 'active')->count(),
             'total_balance' => Bank::where('tenant_id', $tenant->id)
                 ->where('status', 'active')
-                ->sum('current_balance'),
+                ->get()
+                ->sum(function (Bank $bank) {
+                    return $bank->getCurrentBalance();
+                }),
             'needs_reconciliation' => Bank::where('tenant_id', $tenant->id)
                 ->where('enable_reconciliation', true)
                 ->where(function($q) {
