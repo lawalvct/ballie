@@ -226,7 +226,7 @@ class Bank extends Model
     public function getCurrentBalance()
     {
         if ($this->ledgerAccount) {
-            return $this->ledgerAccount->getCurrentBalance();
+            return $this->ledgerAccount->getCurrentBalance(null, false);
         }
 
         return $this->current_balance;
