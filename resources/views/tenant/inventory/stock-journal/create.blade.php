@@ -7,10 +7,10 @@
 @section('content')
 <div class="space-y-6">
     <!-- Header with Back Button -->
-    <div class="flex items-center justify-between">
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div class="flex items-center space-x-4">
             <a href="{{ route('tenant.inventory.stock-journal.index', ['tenant' => $tenant->slug]) }}"
-               class="inline-flex items-center p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors duration-200">
+               class="inline-flex items-center px-3 py-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors duration-200">
                 <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
                 </svg>
@@ -19,13 +19,13 @@
         </div>
         <div class="flex items-center space-x-3">
             <span class="text-sm text-gray-500">{{ isset($stockJournal) ? 'Editing' : 'Creating' }} journal entry</span>
-            <div class="w-3 h-3 bg-blue-500 rounded-full animate-pulse"></div>
+            <div class="w-2.5 h-2.5 bg-blue-500 rounded-full animate-pulse"></div>
         </div>
     </div>
 
     <!-- Display validation errors -->
     @if ($errors->any())
-    <div class="bg-red-50 border-l-4 border-red-500 p-4 mb-6 rounded-md">
+    <div class="bg-red-50/80 border border-red-200 p-4 mb-6 rounded-lg">
         <div class="flex items-start">
             <div class="flex-shrink-0">
                 <svg class="h-5 w-5 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -58,8 +58,11 @@
         @endif
 
         <!-- Header Information Card -->
-        <div class="bg-white rounded-lg shadow p-6">
-            <h3 class="text-lg font-semibold text-gray-900 mb-6">Journal Entry Details</h3>
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+            <div class="flex items-center justify-between mb-6">
+                <h3 class="text-lg font-semibold text-gray-900">Journal Entry Details</h3>
+                <span class="text-xs font-medium text-gray-500">Required fields marked *</span>
+            </div>
 
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                 <!-- Journal Date -->
@@ -67,9 +70,9 @@
                     <label for="journal_date" class="block text-sm font-medium text-gray-700 mb-1">
                         Journal Date <span class="text-red-500">*</span>
                     </label>
-                    <input type="date" name="journal_date" id="journal_date" required
-                           value="{{ old('journal_date', isset($stockJournal) ? $stockJournal->journal_date->format('Y-m-d') : date('Y-m-d')) }}"
-                           class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-green-500 focus:border-green-500">
+                          <input type="date" name="journal_date" id="journal_date" required
+                              value="{{ old('journal_date', isset($stockJournal) ? $stockJournal->journal_date->format('Y-m-d') : date('Y-m-d')) }}"
+                              class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500/20 focus:border-green-500">
                 </div>
 
                 <!-- Entry Type -->
@@ -77,8 +80,8 @@
                     <label for="entry_type" class="block text-sm font-medium text-gray-700 mb-1">
                         Entry Type <span class="text-red-500">*</span>
                     </label>
-                    <select name="entry_type" id="entry_type" required x-model="entryType"
-                            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-green-500 focus:border-green-500">
+                        <select name="entry_type" id="entry_type" required x-model="entryType"
+                            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500/20 focus:border-green-500">
                         <option value="consumption" {{ old('entry_type', $entryType ?? 'consumption') === 'consumption' ? 'selected' : '' }}>Material Consumption</option>
                         <option value="production" {{ old('entry_type', $entryType ?? '') === 'production' ? 'selected' : '' }}>Production Receipt</option>
                         <option value="adjustment" {{ old('entry_type', $entryType ?? '') === 'adjustment' ? 'selected' : '' }}>Stock Adjustment</option>
@@ -91,9 +94,9 @@
                     <label for="reference_number" class="block text-sm font-medium text-gray-700 mb-1">
                         Reference Number
                     </label>
-                    <input type="text" name="reference_number" id="reference_number"
+                          <input type="text" name="reference_number" id="reference_number"
                            value="{{ old('reference_number', isset($stockJournal) ? $stockJournal->reference_number : '') }}"
-                           class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-green-500 focus:border-green-500"
+                              class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500/20 focus:border-green-500"
                            placeholder="Optional reference">
                 </div>
 
@@ -101,8 +104,8 @@
                 @if(isset($stockJournal))
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Journal Number</label>
-                    <input type="text" readonly value="{{ $stockJournal->journal_number }}"
-                           class="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50 text-gray-500">
+                          <input type="text" readonly value="{{ $stockJournal->journal_number }}"
+                              class="w-full px-3 py-2 border border-gray-200 rounded-lg bg-gray-50 text-gray-500">
                 </div>
                 @endif
             </div>
@@ -113,7 +116,7 @@
                     Narration
                 </label>
                 <textarea name="narration" id="narration" rows="2"
-                          class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-green-500 focus:border-green-500"
+                          class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500/20 focus:border-green-500"
                           placeholder="Enter narration or description for this journal entry">{{ old('narration', isset($stockJournal) ? $stockJournal->narration : '') }}</textarea>
             </div>
         </div>
@@ -133,11 +136,11 @@
 
         <!-- Line Items Card (Tally-like interface) - For other entry types -->
         <template x-if="entryType !== 'production' && entryType !== 'transfer'">
-        <div class="bg-white rounded-lg shadow p-6">
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
             <div class="flex items-center justify-between mb-6">
                 <h3 class="text-lg font-semibold text-gray-900">Journal Entry Items</h3>
                 <button type="button" @click="addItem()"
-                        class="inline-flex items-center px-3 py-2 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500">
+                        class="inline-flex items-center px-3 py-2 bg-green-600 text-white text-sm font-medium rounded-lg shadow-sm hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500">
                     <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
                     </svg>
@@ -148,27 +151,27 @@
             <!-- Items Table Header -->
             <div class="overflow-x-auto">
                 <table class="min-w-full">
-                    <thead>
+                    <thead class="bg-gray-50">
                         <tr class="border-b border-gray-200">
-                            <th class="text-left py-2 px-3 text-sm font-medium text-gray-700 w-1/5">Product</th>
-                            <th class="text-left py-2 px-3 text-sm font-medium text-gray-700 w-20">Movement</th>
-                            <th class="text-right py-2 px-3 text-sm font-medium text-gray-700 w-24">Current Stock</th>
-                            <th class="text-right py-2 px-3 text-sm font-medium text-gray-700 w-20">Quantity</th>
-                            <th class="text-right py-2 px-3 text-sm font-medium text-gray-700 w-20">Rate</th>
-                            <th class="text-right py-2 px-3 text-sm font-medium text-gray-700 w-24">Amount</th>
-                            <th class="text-left py-2 px-3 text-sm font-medium text-gray-700 w-24">Batch/Expiry</th>
-                            <th class="text-center py-2 px-3 text-sm font-medium text-gray-700 w-16">Action</th>
+                            <th class="text-left py-3 px-3 text-xs font-semibold text-gray-600 uppercase tracking-wider w-1/5">Product</th>
+                            <th class="text-left py-3 px-3 text-xs font-semibold text-gray-600 uppercase tracking-wider w-20">Movement</th>
+                            <th class="text-right py-3 px-3 text-xs font-semibold text-gray-600 uppercase tracking-wider w-24">Current Stock</th>
+                            <th class="text-right py-3 px-3 text-xs font-semibold text-gray-600 uppercase tracking-wider w-20">Quantity</th>
+                            <th class="text-right py-3 px-3 text-xs font-semibold text-gray-600 uppercase tracking-wider w-28">Rate</th>
+                            <th class="text-right py-3 px-3 text-xs font-semibold text-gray-600 uppercase tracking-wider w-24">Amount</th>
+                            <th class="text-left py-3 px-3 text-xs font-semibold text-gray-600 uppercase tracking-wider w-24">Batch/Expiry</th>
+                            <th class="text-center py-3 px-3 text-xs font-semibold text-gray-600 uppercase tracking-wider w-16">Action</th>
                         </tr>
                     </thead>
                     <tbody>
                         <!-- Dynamic Items will be rendered here by Alpine.js -->
                         <template x-for="(item, index) in items" :key="index">
-                            <tr class="border-b border-gray-100">
+                            <tr class="border-b border-gray-100 hover:bg-gray-50">
                                 <!-- Product Selection -->
                                 <td class="py-2 px-3">
-                                    <select :name="`items[${index}][product_id]`" x-model="item.product_id"
+                                        <select :name="`items[${index}][product_id]`" x-model="item.product_id"
                                             @change="updateProductInfo(index)"
-                                            class="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-green-500 focus:border-green-500">
+                                            class="w-full px-2 py-1 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500/20 focus:border-green-500">
                                         <option value="">Select Product</option>
                                         @foreach($products as $product)
                                             <option value="{{ $product->id }}"
@@ -183,9 +186,9 @@
 
                                 <!-- Movement Type -->
                                 <td class="py-2 px-3">
-                                    <select :name="`items[${index}][movement_type]`" x-model="item.movement_type"
+                                        <select :name="`items[${index}][movement_type]`" x-model="item.movement_type"
                                             @change="calculateAmount(index)"
-                                            class="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-green-500 focus:border-green-500">
+                                            class="w-full px-2 py-1 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500/20 focus:border-green-500">
                                         <option value="in" x-show="entryType === 'production' || entryType === 'adjustment' ">In</option>
                                         <option value="out" x-show="entryType === 'consumption' || entryType === 'adjustment' || entryType === 'transfer'">Out</option>
                                     </select>
@@ -198,18 +201,18 @@
 
                                 <!-- Quantity -->
                                 <td class="py-2 px-3">
-                                    <input type="number" :name="`items[${index}][quantity]`" x-model="item.quantity"
-                                           @input="calculateAmount(index)"
-                                           step="0.0001" min="0.0001" required
-                                           class="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-green-500 focus:border-green-500 text-right">
+                                     <input type="number" :name="`items[${index}][quantity]`" x-model="item.quantity"
+                                         @input="calculateAmount(index)"
+                                         step="0.0001" min="0.0001" required
+                                         class="w-full px-2 py-1 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500/20 focus:border-green-500 text-right">
                                 </td>
 
                                 <!-- Rate -->
                                 <td class="py-2 px-3">
-                                    <input type="number" :name="`items[${index}][rate]`" x-model="item.rate"
-                                           @input="calculateAmount(index)"
-                                           step="0.01" min="0" required
-                                           class="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-green-500 focus:border-green-500 text-right">
+                                     <input type="number" :name="`items[${index}][rate]`" x-model="item.rate"
+                                         @input="calculateAmount(index)"
+                                         step="0.01" min="0" required
+                                         class="w-full px-2 py-1 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500/20 focus:border-green-500 text-right">
                                 </td>
 
                                 <!-- Amount (Calculated) -->
@@ -219,17 +222,17 @@
 
                                 <!-- Batch Number & Expiry -->
                                 <td class="py-2 px-3">
-                                    <input type="text" :name="`items[${index}][batch_number]`" x-model="item.batch_number"
-                                           placeholder="Batch"
-                                           class="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-green-500 focus:border-green-500 mb-1">
-                                    <input type="date" :name="`items[${index}][expiry_date]`" x-model="item.expiry_date"
-                                           class="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-green-500 focus:border-green-500">
+                                     <input type="text" :name="`items[${index}][batch_number]`" x-model="item.batch_number"
+                                         placeholder="Batch"
+                                         class="w-full px-2 py-1 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500/20 focus:border-green-500 mb-1">
+                                     <input type="date" :name="`items[${index}][expiry_date]`" x-model="item.expiry_date"
+                                         class="w-full px-2 py-1 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500/20 focus:border-green-500">
                                 </td>
 
                                 <!-- Remove Button -->
                                 <td class="py-2 px-3 text-center">
-                                    <button type="button" @click="removeItem(index)"
-                                            class="text-red-600 hover:text-red-900 focus:outline-none">
+                                        <button type="button" @click="removeItem(index)"
+                                            class="p-1 rounded text-red-600 hover:text-red-900 hover:bg-red-50 focus:outline-none">
                                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
                                         </svg>
@@ -255,7 +258,7 @@
 
             <!-- Total Summary -->
             <div class="mt-6 flex justify-end">
-                <div class="bg-gray-50 rounded-lg p-4 min-w-64">
+                <div class="bg-gray-50 rounded-lg p-4 min-w-64 border border-gray-200">
                     <div class="flex justify-between items-center text-sm">
                         <span class="font-medium text-gray-700">Total Items:</span>
                         <span x-text="items.length"></span>
@@ -277,15 +280,15 @@
         <template x-if="entryType !== 'production' && entryType !== 'transfer'">
         <div class="flex items-center justify-between">
             <div class="flex space-x-3">
-                <a href="{{ route('tenant.inventory.stock-journal.index', ['tenant' => $tenant->slug]) }}"
-                   class="inline-flex items-center px-4 py-2 bg-gray-300 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-500">
+                     <a href="{{ route('tenant.inventory.stock-journal.index', ['tenant' => $tenant->slug]) }}"
+                         class="inline-flex items-center px-4 py-2 bg-white border border-gray-300 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-300">
                     Cancel
                 </a>
             </div>
 
             <div class="flex space-x-3">
                 <button type="submit" name="action" value="save"
-                        class="inline-flex items-center px-6 py-2 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500">
+                    class="inline-flex items-center px-6 py-2 bg-green-600 text-white text-sm font-medium rounded-lg shadow-sm hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500">
                     <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"></path>
                     </svg>
@@ -294,7 +297,7 @@
 
                 @if(!isset($stockJournal))
                 <button type="submit" name="action" value="save_and_post"
-                        class="inline-flex items-center px-6 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    class="inline-flex items-center px-6 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
                     <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                     </svg>

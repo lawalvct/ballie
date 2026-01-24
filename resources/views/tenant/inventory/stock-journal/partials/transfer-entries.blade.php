@@ -1,30 +1,30 @@
 <!-- Transfer Entries: Two-sided view (FROM location → TO location) -->
-<div class="bg-white rounded-lg shadow p-6">
+<div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
     <h3 class="text-lg font-semibold text-gray-900 mb-6">Stock Transfer Entry</h3>
 
     <!-- Location Selection -->
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6 p-4 bg-gray-50 rounded-lg">
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6 p-4 bg-gray-50 rounded-lg border border-gray-200">
         <div>
             <label class="block text-sm font-medium text-gray-700 mb-2">
                 FROM Location/Branch <span class="text-red-500">*</span>
             </label>
-            <input type="text" name="from_location" x-model="fromLocation" required
-                   class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                 <input type="text" name="from_location" x-model="fromLocation" required
+                     class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500/20 focus:border-red-500"
                    placeholder="e.g., Main Warehouse, Lagos Branch">
         </div>
         <div>
             <label class="block text-sm font-medium text-gray-700 mb-2">
                 TO Location/Branch <span class="text-red-500">*</span>
             </label>
-            <input type="text" name="to_location" x-model="toLocation" required
-                   class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                 <input type="text" name="to_location" x-model="toLocation" required
+                     class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500/20 focus:border-green-500"
                    placeholder="e.g., Retail Store, Abuja Branch">
         </div>
     </div>
 
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <!-- LEFT SIDE: FROM Location (OUT) -->
-        <div class="border-2 border-red-200 rounded-lg p-4 bg-red-50">
+        <div class="border border-red-200 rounded-xl p-4 bg-red-50/60">
             <div class="flex items-center justify-between mb-4">
                 <h4 class="font-semibold text-red-800 flex items-center">
                     <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -33,19 +33,19 @@
                     FROM Location (OUT)
                 </h4>
                 <button type="button" @click="addFromItem()"
-                        class="px-3 py-1 bg-red-600 text-white text-sm rounded hover:bg-red-700">
+                    class="px-3 py-1 bg-red-600 text-white text-sm rounded-lg shadow-sm hover:bg-red-700">
                     + Add Item
                 </button>
             </div>
 
             <div class="space-y-3">
                 <template x-for="(item, index) in fromItems" :key="index">
-                    <div class="bg-white rounded p-3 border border-red-200">
+                    <div class="bg-white rounded-lg p-3 border border-red-200">
                         <div class="grid grid-cols-12 gap-2 items-start">
                             <div class="col-span-5">
                                 <label class="text-xs text-gray-600">Product</label>
                                 <select x-model="item.product_id" @change="updateFromProductInfo(index)"
-                                        class="w-full px-2 py-1 text-sm border rounded focus:ring-1 focus:ring-red-500">
+                                    class="w-full px-2 py-1 text-sm border rounded-lg focus:ring-2 focus:ring-red-500/20">
                                     <option value="">Select</option>
                                     @foreach($products as $product)
                                         <option value="{{ $product->id }}"
@@ -58,22 +58,22 @@
                             </div>
                             <div class="col-span-2">
                                 <label class="text-xs text-gray-600">Stock</label>
-                                <input type="text" x-model="item.current_stock" readonly
-                                       class="w-full px-2 py-1 text-sm border rounded bg-gray-50 text-gray-600">
+                                    <input type="text" x-model="item.current_stock" readonly
+                                        class="w-full px-2 py-1 text-sm border rounded-lg bg-gray-50 text-gray-600">
                             </div>
                             <div class="col-span-2">
                                 <label class="text-xs text-gray-600">Qty</label>
-                                <input type="number" x-model="item.quantity" @input="calculateFromAmount(index)"
-                                       class="w-full px-2 py-1 text-sm border rounded focus:ring-1 focus:ring-red-500" step="0.01" min="0">
+                                    <input type="number" x-model="item.quantity" @input="calculateFromAmount(index)"
+                                        class="w-full px-2 py-1 text-sm border rounded-lg focus:ring-2 focus:ring-red-500/20" step="0.01" min="0">
                             </div>
                             <div class="col-span-2">
                                 <label class="text-xs text-gray-600">Rate</label>
-                                <input type="number" x-model="item.rate" @input="calculateFromAmount(index)"
-                                       class="w-full px-2 py-1 text-sm border rounded focus:ring-1 focus:ring-red-500" step="0.01" min="0">
+                                    <input type="number" x-model="item.rate" @input="calculateFromAmount(index)"
+                                        class="w-full px-2 py-1 text-sm border rounded-lg focus:ring-2 focus:ring-red-500/20" step="0.01" min="0">
                             </div>
                             <div class="col-span-1 flex items-end">
                                 <button type="button" @click="removeFromItem(index)"
-                                        class="p-1 text-red-600 hover:bg-red-100 rounded">
+                                    class="p-1 text-red-600 hover:bg-red-100 rounded-lg">
                                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
                                     </svg>
@@ -97,7 +97,7 @@
         </div>
 
         <!-- RIGHT SIDE: TO Location (IN) -->
-        <div class="border-2 border-green-200 rounded-lg p-4 bg-green-50">
+        <div class="border border-green-200 rounded-xl p-4 bg-green-50/60">
             <div class="flex items-center justify-between mb-4">
                 <h4 class="font-semibold text-green-800 flex items-center">
                     <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -106,19 +106,19 @@
                     TO Location (IN)
                 </h4>
                 <button type="button" @click="addToItem()"
-                        class="px-3 py-1 bg-green-600 text-white text-sm rounded hover:bg-green-700">
+                    class="px-3 py-1 bg-green-600 text-white text-sm rounded-lg shadow-sm hover:bg-green-700">
                     + Add Item
                 </button>
             </div>
 
             <div class="space-y-3">
                 <template x-for="(item, index) in toItems" :key="index">
-                    <div class="bg-white rounded p-3 border border-green-200">
+                    <div class="bg-white rounded-lg p-3 border border-green-200">
                         <div class="grid grid-cols-12 gap-2 items-start">
                             <div class="col-span-5">
                                 <label class="text-xs text-gray-600">Product</label>
                                 <select x-model="item.product_id" @change="updateToProductInfo(index)"
-                                        class="w-full px-2 py-1 text-sm border rounded focus:ring-1 focus:ring-green-500">
+                                    class="w-full px-2 py-1 text-sm border rounded-lg focus:ring-2 focus:ring-green-500/20">
                                     <option value="">Select</option>
                                     @foreach($products as $product)
                                         <option value="{{ $product->id }}"
@@ -131,22 +131,22 @@
                             </div>
                             <div class="col-span-2">
                                 <label class="text-xs text-gray-600">Stock</label>
-                                <input type="text" x-model="item.current_stock" readonly
-                                       class="w-full px-2 py-1 text-sm border rounded bg-gray-50 text-gray-600">
+                                    <input type="text" x-model="item.current_stock" readonly
+                                        class="w-full px-2 py-1 text-sm border rounded-lg bg-gray-50 text-gray-600">
                             </div>
                             <div class="col-span-2">
                                 <label class="text-xs text-gray-600">Qty</label>
-                                <input type="number" x-model="item.quantity" @input="calculateToAmount(index)"
-                                       class="w-full px-2 py-1 text-sm border rounded focus:ring-1 focus:ring-green-500" step="0.01" min="0">
+                                    <input type="number" x-model="item.quantity" @input="calculateToAmount(index)"
+                                        class="w-full px-2 py-1 text-sm border rounded-lg focus:ring-2 focus:ring-green-500/20" step="0.01" min="0">
                             </div>
                             <div class="col-span-2">
                                 <label class="text-xs text-gray-600">Rate</label>
-                                <input type="number" x-model="item.rate" @input="calculateToAmount(index)"
-                                       class="w-full px-2 py-1 text-sm border rounded focus:ring-1 focus:ring-green-500" step="0.01" min="0">
+                                    <input type="number" x-model="item.rate" @input="calculateToAmount(index)"
+                                        class="w-full px-2 py-1 text-sm border rounded-lg focus:ring-2 focus:ring-green-500/20" step="0.01" min="0">
                             </div>
                             <div class="col-span-1 flex items-end">
                                 <button type="button" @click="removeToItem(index)"
-                                        class="p-1 text-red-600 hover:bg-red-100 rounded">
+                                    class="p-1 text-red-600 hover:bg-red-100 rounded-lg">
                                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
                                     </svg>
@@ -215,11 +215,11 @@
             Cancel
         </a>
         <button type="submit" name="action" value="save"
-                class="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700">
+                class="px-4 py-2 bg-gray-600 text-white rounded-lg shadow-sm hover:bg-gray-700">
             Save as Draft
         </button>
         <button type="submit" name="action" value="save_and_post"
-                class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700">
+                class="px-4 py-2 bg-green-600 text-white rounded-lg shadow-sm hover:bg-green-700">
             Save & Post
         </button>
     </div>
