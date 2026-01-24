@@ -110,6 +110,25 @@ Route::middleware('auth:sanctum')->group(function () {
             Route::post('/{invoice}/record-payment', [\App\Http\Controllers\Api\Tenant\Accounting\InvoiceController::class, 'recordPayment'])->name('record-payment');
         });
 
+        // Quotations
+        Route::prefix('quotations')->name('quotations.')->group(function () {
+            Route::get('/search-customers', [\App\Http\Controllers\Api\Tenant\Accounting\QuotationController::class, 'searchCustomers'])->name('search-customers');
+            Route::get('/search-products', [\App\Http\Controllers\Api\Tenant\Accounting\QuotationController::class, 'searchProducts'])->name('search-products');
+            Route::get('/create', [\App\Http\Controllers\Api\Tenant\Accounting\QuotationController::class, 'create'])->name('create');
+            Route::post('/', [\App\Http\Controllers\Api\Tenant\Accounting\QuotationController::class, 'store'])->name('store');
+            Route::get('/', [\App\Http\Controllers\Api\Tenant\Accounting\QuotationController::class, 'index'])->name('index');
+            Route::get('/{quotation}', [\App\Http\Controllers\Api\Tenant\Accounting\QuotationController::class, 'show'])->name('show');
+            Route::put('/{quotation}', [\App\Http\Controllers\Api\Tenant\Accounting\QuotationController::class, 'update'])->name('update');
+            Route::delete('/{quotation}', [\App\Http\Controllers\Api\Tenant\Accounting\QuotationController::class, 'destroy'])->name('destroy');
+            Route::post('/{quotation}/send', [\App\Http\Controllers\Api\Tenant\Accounting\QuotationController::class, 'send'])->name('send');
+            Route::post('/{quotation}/accept', [\App\Http\Controllers\Api\Tenant\Accounting\QuotationController::class, 'accept'])->name('accept');
+            Route::post('/{quotation}/reject', [\App\Http\Controllers\Api\Tenant\Accounting\QuotationController::class, 'reject'])->name('reject');
+            Route::post('/{quotation}/convert', [\App\Http\Controllers\Api\Tenant\Accounting\QuotationController::class, 'convert'])->name('convert');
+            Route::post('/{quotation}/duplicate', [\App\Http\Controllers\Api\Tenant\Accounting\QuotationController::class, 'duplicate'])->name('duplicate');
+            Route::get('/{quotation}/pdf', [\App\Http\Controllers\Api\Tenant\Accounting\QuotationController::class, 'pdf'])->name('pdf');
+            Route::post('/{quotation}/email', [\App\Http\Controllers\Api\Tenant\Accounting\QuotationController::class, 'email'])->name('email');
+        });
+
         // Vouchers
         Route::prefix('vouchers')->name('vouchers.')->group(function () {
             Route::get('/search', [\App\Http\Controllers\Api\Tenant\Accounting\VoucherController::class, 'search'])->name('search');
