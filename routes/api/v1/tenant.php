@@ -228,6 +228,20 @@ Route::middleware('auth:sanctum')->group(function () {
 
     });
 
+    // Procurement Module
+    Route::prefix('procurement')->name('procurement.')->group(function () {
+        Route::prefix('purchase-orders')->name('purchase-orders.')->group(function () {
+            Route::get('/search-vendors', [\App\Http\Controllers\Api\Tenant\Procurement\PurchaseOrderController::class, 'searchVendors'])->name('search-vendors');
+            Route::get('/search-products', [\App\Http\Controllers\Api\Tenant\Procurement\PurchaseOrderController::class, 'searchProducts'])->name('search-products');
+            Route::get('/create', [\App\Http\Controllers\Api\Tenant\Procurement\PurchaseOrderController::class, 'create'])->name('create');
+            Route::post('/', [\App\Http\Controllers\Api\Tenant\Procurement\PurchaseOrderController::class, 'store'])->name('store');
+            Route::get('/', [\App\Http\Controllers\Api\Tenant\Procurement\PurchaseOrderController::class, 'index'])->name('index');
+            Route::get('/{purchaseOrder}', [\App\Http\Controllers\Api\Tenant\Procurement\PurchaseOrderController::class, 'show'])->name('show');
+            Route::get('/{purchaseOrder}/pdf', [\App\Http\Controllers\Api\Tenant\Procurement\PurchaseOrderController::class, 'pdf'])->name('pdf');
+            Route::post('/{purchaseOrder}/email', [\App\Http\Controllers\Api\Tenant\Procurement\PurchaseOrderController::class, 'email'])->name('email');
+        });
+    });
+
     // CRM Module
     Route::prefix('crm')->name('crm.')->group(function () {
         Route::prefix('customers')->name('customers.')->group(function () {
