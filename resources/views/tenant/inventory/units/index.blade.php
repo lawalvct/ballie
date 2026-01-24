@@ -92,7 +92,7 @@
 
     <!-- Filters and Search -->
     <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-        <form method="GET" action="{{ route('tenant.inventory.units.index', ['tenant' => $tenant->slug]) }}" class="space-y-4">
+        <form method="GET" action="{{ route('tenant.inventory.units.index', ['tenant' => $tenant->slug]) }}" class="space-y-4" id="filterForm">
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                 <!-- Search -->
                 <div>
@@ -350,7 +350,10 @@
                 <script>
                     // Auto-submit form when filters change
                     document.addEventListener('DOMContentLoaded', function() {
-                        const form = document.querySelector('form');
+                        const form = document.getElementById('filterForm');
+                        if (!form) {
+                            return;
+                        }
                         const selects = form.querySelectorAll('select');
 
                         selects.forEach(select => {
@@ -362,6 +365,10 @@
                         // Handle search input with debounce
                         const searchInput = document.getElementById('search');
                         let searchTimeout;
+
+                        if (!searchInput) {
+                            return;
+                        }
 
                         searchInput.addEventListener('input', function() {
                             clearTimeout(searchTimeout);

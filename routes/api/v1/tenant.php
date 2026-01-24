@@ -153,6 +153,17 @@ Route::middleware('auth:sanctum')->group(function () {
     // Inventory Module
     Route::prefix('inventory')->name('inventory.')->group(function () {
 
+        // Units
+        Route::prefix('units')->name('units.')->group(function () {
+            Route::get('/create', [\App\Http\Controllers\Api\Tenant\Inventory\UnitController::class, 'create'])->name('create');
+            Route::get('/', [\App\Http\Controllers\Api\Tenant\Inventory\UnitController::class, 'index'])->name('index');
+            Route::post('/', [\App\Http\Controllers\Api\Tenant\Inventory\UnitController::class, 'store'])->name('store');
+            Route::get('/{unit}', [\App\Http\Controllers\Api\Tenant\Inventory\UnitController::class, 'show'])->name('show');
+            Route::put('/{unit}', [\App\Http\Controllers\Api\Tenant\Inventory\UnitController::class, 'update'])->name('update');
+            Route::patch('/{unit}/toggle-status', [\App\Http\Controllers\Api\Tenant\Inventory\UnitController::class, 'toggleStatus'])->name('toggle-status');
+            Route::delete('/{unit}', [\App\Http\Controllers\Api\Tenant\Inventory\UnitController::class, 'destroy'])->name('destroy');
+        });
+
         // Products
         Route::prefix('products')->name('products.')->group(function () {
             Route::get('/search', [\App\Http\Controllers\Api\Tenant\Inventory\ProductController::class, 'search'])->name('search');
