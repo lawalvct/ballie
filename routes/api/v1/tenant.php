@@ -302,6 +302,24 @@ Route::middleware('auth:sanctum')->group(function () {
             Route::delete('/{period}/reset', [\App\Http\Controllers\Api\Tenant\Payroll\PayrollProcessingController::class, 'reset'])->name('reset');
             Route::get('/{period}/export-bank-file', [\App\Http\Controllers\Api\Tenant\Payroll\PayrollProcessingController::class, 'exportBankFile'])->name('export-bank-file');
         });
+
+        Route::prefix('attendance')->name('attendance.')->group(function () {
+            Route::get('/', [\App\Http\Controllers\Api\Tenant\Payroll\AttendanceController::class, 'index'])->name('index');
+            Route::post('/clock-in', [\App\Http\Controllers\Api\Tenant\Payroll\AttendanceController::class, 'clockIn'])->name('clock-in');
+            Route::post('/clock-out', [\App\Http\Controllers\Api\Tenant\Payroll\AttendanceController::class, 'clockOut'])->name('clock-out');
+            Route::post('/mark-absent', [\App\Http\Controllers\Api\Tenant\Payroll\AttendanceController::class, 'markAbsent'])->name('mark-absent');
+            Route::post('/mark-leave', [\App\Http\Controllers\Api\Tenant\Payroll\AttendanceController::class, 'markLeave'])->name('mark-leave');
+            Route::post('/manual-entry', [\App\Http\Controllers\Api\Tenant\Payroll\AttendanceController::class, 'manualEntry'])->name('manual-entry');
+
+            Route::put('/{attendance}', [\App\Http\Controllers\Api\Tenant\Payroll\AttendanceController::class, 'update'])->name('update');
+            Route::post('/{attendance}/half-day', [\App\Http\Controllers\Api\Tenant\Payroll\AttendanceController::class, 'markHalfDay'])->name('half-day');
+            Route::post('/{attendance}/approve', [\App\Http\Controllers\Api\Tenant\Payroll\AttendanceController::class, 'approve'])->name('approve');
+            Route::post('/bulk-approve', [\App\Http\Controllers\Api\Tenant\Payroll\AttendanceController::class, 'bulkApprove'])->name('bulk-approve');
+
+            Route::get('/monthly-report', [\App\Http\Controllers\Api\Tenant\Payroll\AttendanceController::class, 'monthlyReport'])->name('monthly-report');
+            Route::get('/employee/{employee}', [\App\Http\Controllers\Api\Tenant\Payroll\AttendanceController::class, 'employeeAttendance'])->name('employee');
+            Route::get('/qr-code', [\App\Http\Controllers\Api\Tenant\Payroll\AttendanceController::class, 'generateQr'])->name('qr-code');
+        });
     });
 
     // CRM Module
