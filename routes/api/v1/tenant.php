@@ -242,6 +242,42 @@ Route::middleware('auth:sanctum')->group(function () {
         });
     });
 
+    // Payroll Module
+    Route::prefix('payroll')->name('payroll.')->group(function () {
+        Route::prefix('departments')->name('departments.')->group(function () {
+            Route::get('/', [\App\Http\Controllers\Api\Tenant\Payroll\DepartmentController::class, 'index'])->name('index');
+            Route::post('/', [\App\Http\Controllers\Api\Tenant\Payroll\DepartmentController::class, 'store'])->name('store');
+            Route::get('/{department}', [\App\Http\Controllers\Api\Tenant\Payroll\DepartmentController::class, 'show'])->name('show');
+            Route::put('/{department}', [\App\Http\Controllers\Api\Tenant\Payroll\DepartmentController::class, 'update'])->name('update');
+            Route::delete('/{department}', [\App\Http\Controllers\Api\Tenant\Payroll\DepartmentController::class, 'destroy'])->name('destroy');
+        });
+
+        Route::prefix('salary-components')->name('salary-components.')->group(function () {
+            Route::get('/', [\App\Http\Controllers\Api\Tenant\Payroll\SalaryComponentController::class, 'index'])->name('index');
+            Route::post('/', [\App\Http\Controllers\Api\Tenant\Payroll\SalaryComponentController::class, 'store'])->name('store');
+            Route::get('/{component}', [\App\Http\Controllers\Api\Tenant\Payroll\SalaryComponentController::class, 'show'])->name('show');
+            Route::put('/{component}', [\App\Http\Controllers\Api\Tenant\Payroll\SalaryComponentController::class, 'update'])->name('update');
+            Route::delete('/{component}', [\App\Http\Controllers\Api\Tenant\Payroll\SalaryComponentController::class, 'destroy'])->name('destroy');
+        });
+
+        Route::prefix('positions')->name('positions.')->group(function () {
+            Route::get('/', [\App\Http\Controllers\Api\Tenant\Payroll\PositionController::class, 'index'])->name('index');
+            Route::get('/by-department', [\App\Http\Controllers\Api\Tenant\Payroll\PositionController::class, 'byDepartment'])->name('by-department');
+            Route::post('/', [\App\Http\Controllers\Api\Tenant\Payroll\PositionController::class, 'store'])->name('store');
+            Route::get('/{position}', [\App\Http\Controllers\Api\Tenant\Payroll\PositionController::class, 'show'])->name('show');
+            Route::put('/{position}', [\App\Http\Controllers\Api\Tenant\Payroll\PositionController::class, 'update'])->name('update');
+            Route::delete('/{position}', [\App\Http\Controllers\Api\Tenant\Payroll\PositionController::class, 'destroy'])->name('destroy');
+        });
+
+        Route::prefix('employees')->name('employees.')->group(function () {
+            Route::get('/', [\App\Http\Controllers\Api\Tenant\Payroll\EmployeeController::class, 'index'])->name('index');
+            Route::post('/', [\App\Http\Controllers\Api\Tenant\Payroll\EmployeeController::class, 'store'])->name('store');
+            Route::get('/{employee}', [\App\Http\Controllers\Api\Tenant\Payroll\EmployeeController::class, 'show'])->name('show');
+            Route::put('/{employee}', [\App\Http\Controllers\Api\Tenant\Payroll\EmployeeController::class, 'update'])->name('update');
+            Route::delete('/{employee}', [\App\Http\Controllers\Api\Tenant\Payroll\EmployeeController::class, 'destroy'])->name('destroy');
+        });
+    });
+
     // CRM Module
     Route::prefix('crm')->name('crm.')->group(function () {
         Route::prefix('customers')->name('customers.')->group(function () {
