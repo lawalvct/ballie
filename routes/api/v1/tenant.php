@@ -307,6 +307,7 @@ Route::middleware('auth:sanctum')->group(function () {
             Route::get('/', [\App\Http\Controllers\Api\Tenant\Payroll\AttendanceController::class, 'index'])->name('index');
             Route::post('/clock-in', [\App\Http\Controllers\Api\Tenant\Payroll\AttendanceController::class, 'clockIn'])->name('clock-in');
             Route::post('/clock-out', [\App\Http\Controllers\Api\Tenant\Payroll\AttendanceController::class, 'clockOut'])->name('clock-out');
+            Route::post('/scan-qr', [\App\Http\Controllers\Api\Tenant\Payroll\AttendanceController::class, 'scanQr'])->name('scan-qr');
             Route::post('/mark-absent', [\App\Http\Controllers\Api\Tenant\Payroll\AttendanceController::class, 'markAbsent'])->name('mark-absent');
             Route::post('/mark-leave', [\App\Http\Controllers\Api\Tenant\Payroll\AttendanceController::class, 'markLeave'])->name('mark-leave');
             Route::post('/manual-entry', [\App\Http\Controllers\Api\Tenant\Payroll\AttendanceController::class, 'manualEntry'])->name('manual-entry');

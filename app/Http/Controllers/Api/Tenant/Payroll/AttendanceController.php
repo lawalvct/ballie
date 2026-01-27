@@ -684,6 +684,80 @@ class AttendanceController extends Controller
         }
     }
 
+    /**
+     * Scan attendance QR and clock in/out.
+     */
+    public function scanQr(Request $request, Tenant $tenant)
+    {
+        $validator = Validator::make($request->all(), [
+            'employee_id' => 'required|exists:employees,id',
+            'qr_payload' => 'required|string',
+            'notes' => 'nullable|string|max:500',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validation error',
+                'errors' => $validator->errors(),
+            ], 422);
+        }
+
+        try {
+            $payload = decrypt($request->get('qr_payload'));
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Invalid or unreadable QR payload',
+            ], 400);
+        }
+
+        if (!is_array($payload)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Invalid QR payload format',
+            ], 400);
+        }
+
+        if (($payload['tenant_id'] ?? null) !== $tenant->id) {
+            return response()->json([
+                'success' => false,
+                'message' => 'QR code is not valid for this tenant',
+            ], 403);
+        }
+
+        $payloadDate = Carbon::parse($payload['date'] ?? now())->toDateString();
+        if ($payloadDate !== now()->toDateString()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'QR code is not valid for today',
+            ], 400);
+        }
+
+        $expiresAt = Carbon::parse($payload['expires_at'] ?? now()->endOfDay());
+        if (now()->greaterThan($expiresAt)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'QR code has expired',
+            ], 400);
+        }
+
+        $type = $payload['type'] ?? 'clock_in';
+
+        if ($type === 'clock_in') {
+            return $this->clockIn($request, $tenant);
+        }
+
+        if ($type === 'clock_out') {
+            return $this->clockOut($request, $tenant);
+        }
+
+        return response()->json([
+            'success' => false,
+            'message' => 'Unsupported QR action',
+        ], 400);
+    }
+
     private function formatAttendance(AttendanceRecord $record): array
     {
         return [

@@ -426,6 +426,44 @@ These endpoints are used to populate filters and actions:
 }
 ```
 
+### 14) Scan Attendance QR (Clock In/Out)
+
+**POST** `/api/v1/tenant/{tenant}/payroll/attendance/scan-qr`
+
+**Payload:**
+
+```json
+{
+    "employee_id": 12,
+    "qr_payload": "<encrypted payload from QR>",
+    "notes": "Arrived via QR scan"
+}
+```
+
+**Sample Response (Clock In):**
+
+```json
+{
+    "success": true,
+    "message": "Clocked in successfully",
+    "clock_in_time": "08:00 AM",
+    "status": "present",
+    "late_minutes": 0
+}
+```
+
+**Sample Response (Clock Out):**
+
+```json
+{
+    "success": true,
+    "message": "Clocked out successfully",
+    "clock_out_time": "05:00 PM",
+    "work_hours": 8,
+    "overtime_hours": 0
+}
+```
+
 ## Notes
 
 - All endpoints require `auth:sanctum`.
