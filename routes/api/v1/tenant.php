@@ -276,6 +276,19 @@ Route::middleware('auth:sanctum')->group(function () {
             Route::put('/{employee}', [\App\Http\Controllers\Api\Tenant\Payroll\EmployeeController::class, 'update'])->name('update');
             Route::delete('/{employee}', [\App\Http\Controllers\Api\Tenant\Payroll\EmployeeController::class, 'destroy'])->name('destroy');
         });
+
+        Route::prefix('shifts')->name('shifts.')->group(function () {
+            Route::get('/', [\App\Http\Controllers\Api\Tenant\Payroll\ShiftController::class, 'index'])->name('index');
+            Route::post('/', [\App\Http\Controllers\Api\Tenant\Payroll\ShiftController::class, 'store'])->name('store');
+            Route::get('/{shift}', [\App\Http\Controllers\Api\Tenant\Payroll\ShiftController::class, 'show'])->name('show');
+            Route::put('/{shift}', [\App\Http\Controllers\Api\Tenant\Payroll\ShiftController::class, 'update'])->name('update');
+            Route::delete('/{shift}', [\App\Http\Controllers\Api\Tenant\Payroll\ShiftController::class, 'destroy'])->name('destroy');
+
+            Route::get('/assignments', [\App\Http\Controllers\Api\Tenant\Payroll\ShiftController::class, 'assignments'])->name('assignments');
+            Route::post('/assignments', [\App\Http\Controllers\Api\Tenant\Payroll\ShiftController::class, 'storeAssignment'])->name('assignments.store');
+            Route::post('/assignments/bulk', [\App\Http\Controllers\Api\Tenant\Payroll\ShiftController::class, 'bulkAssign'])->name('assignments.bulk');
+            Route::patch('/assignments/{assignment}/end', [\App\Http\Controllers\Api\Tenant\Payroll\ShiftController::class, 'endAssignment'])->name('assignments.end');
+        });
     });
 
     // CRM Module
