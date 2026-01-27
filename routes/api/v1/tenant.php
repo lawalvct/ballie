@@ -289,6 +289,19 @@ Route::middleware('auth:sanctum')->group(function () {
             Route::post('/assignments/bulk', [\App\Http\Controllers\Api\Tenant\Payroll\ShiftController::class, 'bulkAssign'])->name('assignments.bulk');
             Route::patch('/assignments/{assignment}/end', [\App\Http\Controllers\Api\Tenant\Payroll\ShiftController::class, 'endAssignment'])->name('assignments.end');
         });
+
+        Route::prefix('processing')->name('processing.')->group(function () {
+            Route::get('/', [\App\Http\Controllers\Api\Tenant\Payroll\PayrollProcessingController::class, 'index'])->name('index');
+            Route::post('/', [\App\Http\Controllers\Api\Tenant\Payroll\PayrollProcessingController::class, 'store'])->name('store');
+            Route::get('/{period}', [\App\Http\Controllers\Api\Tenant\Payroll\PayrollProcessingController::class, 'show'])->name('show');
+            Route::put('/{period}', [\App\Http\Controllers\Api\Tenant\Payroll\PayrollProcessingController::class, 'update'])->name('update');
+            Route::delete('/{period}', [\App\Http\Controllers\Api\Tenant\Payroll\PayrollProcessingController::class, 'destroy'])->name('destroy');
+
+            Route::post('/{period}/generate', [\App\Http\Controllers\Api\Tenant\Payroll\PayrollProcessingController::class, 'generate'])->name('generate');
+            Route::post('/{period}/approve', [\App\Http\Controllers\Api\Tenant\Payroll\PayrollProcessingController::class, 'approve'])->name('approve');
+            Route::delete('/{period}/reset', [\App\Http\Controllers\Api\Tenant\Payroll\PayrollProcessingController::class, 'reset'])->name('reset');
+            Route::get('/{period}/export-bank-file', [\App\Http\Controllers\Api\Tenant\Payroll\PayrollProcessingController::class, 'exportBankFile'])->name('export-bank-file');
+        });
     });
 
     // CRM Module
