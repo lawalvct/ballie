@@ -353,6 +353,11 @@ Route::middleware('auth:sanctum')->group(function () {
             Route::post('/{announcement}/send', [\App\Http\Controllers\Api\Tenant\Payroll\AnnouncementController::class, 'send'])->name('send');
             Route::post('/preview-recipients', [\App\Http\Controllers\Api\Tenant\Payroll\AnnouncementController::class, 'previewRecipients'])->name('preview-recipients');
         });
+
+        Route::prefix('settings')->name('settings.')->group(function () {
+            Route::get('/', [\App\Http\Controllers\Api\Tenant\Payroll\PayrollSettingsController::class, 'show'])->name('show');
+            Route::put('/', [\App\Http\Controllers\Api\Tenant\Payroll\PayrollSettingsController::class, 'update'])->name('update');
+        });
     });
 
     // CRM Module
