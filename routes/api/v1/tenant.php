@@ -336,6 +336,13 @@ Route::middleware('auth:sanctum')->group(function () {
             Route::post('/{overtime}/mark-paid', [\App\Http\Controllers\Api\Tenant\Payroll\OvertimeController::class, 'markPaid'])->name('mark-paid');
             Route::post('/bulk-approve', [\App\Http\Controllers\Api\Tenant\Payroll\OvertimeController::class, 'bulkApprove'])->name('bulk-approve');
         });
+
+        Route::prefix('loans')->name('loans.')->group(function () {
+            Route::get('/', [\App\Http\Controllers\Api\Tenant\Payroll\LoanController::class, 'index'])->name('index');
+            Route::get('/{loan}', [\App\Http\Controllers\Api\Tenant\Payroll\LoanController::class, 'show'])->name('show');
+        });
+
+        Route::post('/salary-advance', [\App\Http\Controllers\Api\Tenant\Payroll\LoanController::class, 'storeSalaryAdvance'])->name('salary-advance.store');
     });
 
     // CRM Module
