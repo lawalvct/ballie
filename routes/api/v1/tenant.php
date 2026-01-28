@@ -321,6 +321,21 @@ Route::middleware('auth:sanctum')->group(function () {
             Route::get('/employee/{employee}', [\App\Http\Controllers\Api\Tenant\Payroll\AttendanceController::class, 'employeeAttendance'])->name('employee');
             Route::get('/qr-code', [\App\Http\Controllers\Api\Tenant\Payroll\AttendanceController::class, 'generateQr'])->name('qr-code');
         });
+
+        Route::prefix('overtime')->name('overtime.')->group(function () {
+            Route::get('/', [\App\Http\Controllers\Api\Tenant\Payroll\OvertimeController::class, 'index'])->name('index');
+            Route::post('/', [\App\Http\Controllers\Api\Tenant\Payroll\OvertimeController::class, 'store'])->name('store');
+            Route::get('/report/monthly', [\App\Http\Controllers\Api\Tenant\Payroll\OvertimeController::class, 'report'])->name('report');
+            Route::get('/{overtime}', [\App\Http\Controllers\Api\Tenant\Payroll\OvertimeController::class, 'show'])->name('show');
+            Route::get('/{overtime}/payment-slip', [\App\Http\Controllers\Api\Tenant\Payroll\OvertimeController::class, 'downloadPaymentSlip'])->name('payment-slip');
+            Route::put('/{overtime}', [\App\Http\Controllers\Api\Tenant\Payroll\OvertimeController::class, 'update'])->name('update');
+            Route::delete('/{overtime}', [\App\Http\Controllers\Api\Tenant\Payroll\OvertimeController::class, 'destroy'])->name('destroy');
+
+            Route::post('/{overtime}/approve', [\App\Http\Controllers\Api\Tenant\Payroll\OvertimeController::class, 'approve'])->name('approve');
+            Route::post('/{overtime}/reject', [\App\Http\Controllers\Api\Tenant\Payroll\OvertimeController::class, 'reject'])->name('reject');
+            Route::post('/{overtime}/mark-paid', [\App\Http\Controllers\Api\Tenant\Payroll\OvertimeController::class, 'markPaid'])->name('mark-paid');
+            Route::post('/bulk-approve', [\App\Http\Controllers\Api\Tenant\Payroll\OvertimeController::class, 'bulkApprove'])->name('bulk-approve');
+        });
     });
 
     // CRM Module
