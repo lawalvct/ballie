@@ -146,6 +146,23 @@ Route::middleware('auth:sanctum')->group(function () {
 
     });
 
+    // Reports Module
+    Route::prefix('reports')->name('reports.')->group(function () {
+        Route::prefix('sales')->name('sales.')->group(function () {
+            Route::get('/summary', [\App\Http\Controllers\Api\Tenant\Reports\SalesReportsController::class, 'summary'])->name('summary');
+            Route::get('/customers', [\App\Http\Controllers\Api\Tenant\Reports\SalesReportsController::class, 'customerSales'])->name('customers');
+            Route::get('/products', [\App\Http\Controllers\Api\Tenant\Reports\SalesReportsController::class, 'productSales'])->name('products');
+            Route::get('/by-period', [\App\Http\Controllers\Api\Tenant\Reports\SalesReportsController::class, 'byPeriod'])->name('by-period');
+        });
+
+        Route::prefix('purchases')->name('purchases.')->group(function () {
+            Route::get('/summary', [\App\Http\Controllers\Api\Tenant\Reports\PurchaseReportsController::class, 'summary'])->name('summary');
+            Route::get('/vendors', [\App\Http\Controllers\Api\Tenant\Reports\PurchaseReportsController::class, 'vendorPurchases'])->name('vendors');
+            Route::get('/products', [\App\Http\Controllers\Api\Tenant\Reports\PurchaseReportsController::class, 'productPurchases'])->name('products');
+            Route::get('/by-period', [\App\Http\Controllers\Api\Tenant\Reports\PurchaseReportsController::class, 'byPeriod'])->name('by-period');
+        });
+    });
+
     // Banking Module
     Route::prefix('banking')->name('banking.')->group(function () {
         Route::prefix('banks')->name('banks.')->group(function () {
