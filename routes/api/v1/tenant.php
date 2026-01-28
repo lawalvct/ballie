@@ -343,6 +343,16 @@ Route::middleware('auth:sanctum')->group(function () {
         });
 
         Route::post('/salary-advance', [\App\Http\Controllers\Api\Tenant\Payroll\LoanController::class, 'storeSalaryAdvance'])->name('salary-advance.store');
+
+        Route::prefix('announcements')->name('announcements.')->group(function () {
+            Route::get('/', [\App\Http\Controllers\Api\Tenant\Payroll\AnnouncementController::class, 'index'])->name('index');
+            Route::post('/', [\App\Http\Controllers\Api\Tenant\Payroll\AnnouncementController::class, 'store'])->name('store');
+            Route::get('/{announcement}', [\App\Http\Controllers\Api\Tenant\Payroll\AnnouncementController::class, 'show'])->name('show');
+            Route::put('/{announcement}', [\App\Http\Controllers\Api\Tenant\Payroll\AnnouncementController::class, 'update'])->name('update');
+            Route::delete('/{announcement}', [\App\Http\Controllers\Api\Tenant\Payroll\AnnouncementController::class, 'destroy'])->name('destroy');
+            Route::post('/{announcement}/send', [\App\Http\Controllers\Api\Tenant\Payroll\AnnouncementController::class, 'send'])->name('send');
+            Route::post('/preview-recipients', [\App\Http\Controllers\Api\Tenant\Payroll\AnnouncementController::class, 'previewRecipients'])->name('preview-recipients');
+        });
     });
 
     // CRM Module
