@@ -59,7 +59,7 @@ class SalesReportsController extends Controller
             ->whereBetween('vouchers.voucher_date', [$fromDate, $toDate])
             ->join('voucher_entries', function ($join) {
                 $join->on('voucher_entries.voucher_id', '=', 'vouchers.id')
-                    ->where('voucher_entries.entry_type', 'credit');
+                    ->where('voucher_entries.type', 'credit');
             })
             ->join('ledger_accounts', 'ledger_accounts.id', '=', 'voucher_entries.ledger_account_id')
             ->select('ledger_accounts.id', 'ledger_accounts.name', DB::raw('SUM(vouchers.total_amount) as total_sales'), DB::raw('COUNT(DISTINCT vouchers.id) as invoice_count'))
@@ -114,7 +114,7 @@ class SalesReportsController extends Controller
             ->whereBetween('vouchers.voucher_date', [$fromDate, $toDate])
             ->join('voucher_entries', function ($join) {
                 $join->on('voucher_entries.voucher_id', '=', 'vouchers.id')
-                    ->where('voucher_entries.entry_type', 'credit');
+                    ->where('voucher_entries.type', 'credit');
             })
             ->join('ledger_accounts', 'ledger_accounts.id', '=', 'voucher_entries.ledger_account_id');
 

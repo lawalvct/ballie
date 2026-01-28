@@ -58,7 +58,7 @@ class PurchaseReportsController extends Controller
             ->whereBetween('vouchers.voucher_date', [$fromDate, $toDate])
             ->join('voucher_entries', function ($join) {
                 $join->on('voucher_entries.voucher_id', '=', 'vouchers.id')
-                    ->where('voucher_entries.entry_type', 'debit');
+                    ->where('voucher_entries.type', 'debit');
             })
             ->join('ledger_accounts', 'ledger_accounts.id', '=', 'voucher_entries.ledger_account_id')
             ->select('ledger_accounts.id', 'ledger_accounts.name', DB::raw('SUM(vouchers.total_amount) as total_purchases'), DB::raw('COUNT(DISTINCT vouchers.id) as purchase_count'))
@@ -113,7 +113,7 @@ class PurchaseReportsController extends Controller
             ->whereBetween('vouchers.voucher_date', [$fromDate, $toDate])
             ->join('voucher_entries', function ($join) {
                 $join->on('voucher_entries.voucher_id', '=', 'vouchers.id')
-                    ->where('voucher_entries.entry_type', 'debit');
+                    ->where('voucher_entries.type', 'debit');
             })
             ->join('ledger_accounts', 'ledger_accounts.id', '=', 'voucher_entries.ledger_account_id');
 
