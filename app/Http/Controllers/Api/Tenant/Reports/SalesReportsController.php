@@ -452,8 +452,8 @@ class SalesReportsController extends Controller
         };
 
         $selectFormat = $periodType === 'quarterly'
-            ? DB::raw("CONCAT(YEAR(voucher_date), '-Q', QUARTER(voucher_date))")
-            : DB::raw("DATE_FORMAT(voucher_date, '{$dateFormat}')");
+            ? "CONCAT(YEAR(voucher_date), '-Q', QUARTER(voucher_date))"
+            : "DATE_FORMAT(voucher_date, '{$dateFormat}')";
 
         return Voucher::where('tenant_id', $tenant->id)
             ->whereIn('voucher_type_id', $salesVoucherTypes)
