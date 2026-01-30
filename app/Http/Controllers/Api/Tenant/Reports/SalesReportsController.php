@@ -114,7 +114,7 @@ class SalesReportsController extends Controller
             ->whereBetween('vouchers.voucher_date', [$fromDate, $toDate])
             ->join('voucher_entries', function ($join) {
                 $join->on('voucher_entries.voucher_id', '=', 'vouchers.id')
-                    ->where('voucher_entries.type', 'credit');
+                    ->where('voucher_entries.debit_amount', '>', 0);
             })
             ->join('ledger_accounts', 'ledger_accounts.id', '=', 'voucher_entries.ledger_account_id');
 
