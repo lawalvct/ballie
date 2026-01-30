@@ -161,6 +161,17 @@ Route::middleware('auth:sanctum')->group(function () {
             Route::get('/products', [\App\Http\Controllers\Api\Tenant\Reports\PurchaseReportsController::class, 'productPurchases'])->name('products');
             Route::get('/by-period', [\App\Http\Controllers\Api\Tenant\Reports\PurchaseReportsController::class, 'byPeriod'])->name('by-period');
         });
+            Route::prefix('financial')->name('financial.')->group(function () {
+                Route::get('/profit-loss', [\App\Http\Controllers\Api\Tenant\Reports\FinancialReportsController::class, 'profitLoss'])->name('profit-loss');
+                Route::get('/profit-loss/table', [\App\Http\Controllers\Api\Tenant\Reports\FinancialReportsController::class, 'profitLossTable'])->name('profit-loss-table');
+                Route::get('/profit-loss/pdf', [\App\Http\Controllers\Api\Tenant\Reports\FinancialReportsController::class, 'profitLossPdf'])->name('profit-loss-pdf');
+                Route::get('/balance-sheet', [\App\Http\Controllers\Api\Tenant\Reports\FinancialReportsController::class, 'balanceSheet'])->name('balance-sheet');
+                Route::get('/balance-sheet/pdf', [\App\Http\Controllers\Api\Tenant\Reports\FinancialReportsController::class, 'balanceSheetPdf'])->name('balance-sheet-pdf');
+                Route::get('/trial-balance', [\App\Http\Controllers\Api\Tenant\Reports\FinancialReportsController::class, 'trialBalance'])->name('trial-balance');
+                Route::get('/trial-balance/pdf', [\App\Http\Controllers\Api\Tenant\Reports\FinancialReportsController::class, 'trialBalancePdf'])->name('trial-balance-pdf');
+                Route::get('/cash-flow', [\App\Http\Controllers\Api\Tenant\Reports\FinancialReportsController::class, 'cashFlow'])->name('cash-flow');
+                Route::get('/cash-flow/pdf', [\App\Http\Controllers\Api\Tenant\Reports\FinancialReportsController::class, 'cashFlowPdf'])->name('cash-flow-pdf');
+            });
     });
 
     // Banking Module
