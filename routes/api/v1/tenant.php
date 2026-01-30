@@ -161,6 +161,13 @@ Route::middleware('auth:sanctum')->group(function () {
             Route::get('/products', [\App\Http\Controllers\Api\Tenant\Reports\PurchaseReportsController::class, 'productPurchases'])->name('products');
             Route::get('/by-period', [\App\Http\Controllers\Api\Tenant\Reports\PurchaseReportsController::class, 'byPeriod'])->name('by-period');
         });
+        Route::prefix('inventory')->name('inventory.')->group(function () {
+            Route::get('/stock-summary', [\App\Http\Controllers\Api\Tenant\Reports\InventoryReportsController::class, 'stockSummary'])->name('stock-summary');
+            Route::get('/low-stock-alert', [\App\Http\Controllers\Api\Tenant\Reports\InventoryReportsController::class, 'lowStockAlert'])->name('low-stock-alert');
+            Route::get('/stock-valuation', [\App\Http\Controllers\Api\Tenant\Reports\InventoryReportsController::class, 'stockValuation'])->name('stock-valuation');
+            Route::get('/stock-movement', [\App\Http\Controllers\Api\Tenant\Reports\InventoryReportsController::class, 'stockMovement'])->name('stock-movement');
+            Route::get('/bin-card', [\App\Http\Controllers\Api\Tenant\Reports\InventoryReportsController::class, 'binCard'])->name('bin-card');
+        });
             Route::prefix('financial')->name('financial.')->group(function () {
                 Route::get('/profit-loss', [\App\Http\Controllers\Api\Tenant\Reports\FinancialReportsController::class, 'profitLoss'])->name('profit-loss');
                 Route::get('/profit-loss/table', [\App\Http\Controllers\Api\Tenant\Reports\FinancialReportsController::class, 'profitLossTable'])->name('profit-loss-table');
