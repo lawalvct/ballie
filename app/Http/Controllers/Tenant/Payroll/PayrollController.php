@@ -553,6 +553,11 @@ class PayrollController extends Controller
                 // Add salary components
                 if (!empty($validated['components'])) {
                     foreach ($validated['components'] as $component) {
+                        // Skip if component doesn't have an id (unchecked or invalid data)
+                        if (empty($component['id'])) {
+                            continue;
+                        }
+
                         if (!empty($component['amount']) || !empty($component['percentage'])) {
                             EmployeeSalaryComponent::create([
                                 'employee_salary_id' => $salary->id,
@@ -572,6 +577,11 @@ class PayrollController extends Controller
 
                     // Add new components
                     foreach ($validated['components'] as $component) {
+                        // Skip if component doesn't have an id (unchecked or invalid data)
+                        if (empty($component['id'])) {
+                            continue;
+                        }
+
                         if (!empty($component['amount']) || !empty($component['percentage'])) {
                             EmployeeSalaryComponent::create([
                                 'employee_salary_id' => $currentSalary->id,

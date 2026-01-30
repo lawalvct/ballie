@@ -189,22 +189,45 @@
                     <template x-for="(entry, index) in entries" :key="index">
                         <tr class="border-b border-gray-100 hover:bg-gray-50">
                             <td class="py-3 px-2">
-                                <select :name="`entries[${index}][ledger_account_id]`"
-                                        x-model="entry.ledger_account_id"
-                                        @change="updateEntryAccount(index); showAccountHint($event.target, index)"
+                                <div class="relative" @click.away="entry.showLedgerDropdown = false">
+                                    <input
+                                        type="text"
+                                        x-model="entry.ledger_search"
+                                        @focus="entry.showLedgerDropdown = true"
+                                        @input="entry.showLedgerDropdown = true; entry.ledger_account_id = ''"
+                                        @keydown.escape.prevent="entry.showLedgerDropdown = false"
+                                        placeholder="Search account"
                                         class="block w-full pl-3 pr-10 py-2 text-sm border border-gray-300 focus:outline-none focus:ring-primary-500 focus:border-primary-500 rounded-md"
-                                        required>
-                                    <option value="">Select Account</option>
-                                    @foreach($ledgerAccounts as $account)
-                                        <option value="{{ $account->id }}"
-                                                data-type="{{ strtolower($account->accountGroup->name) }}"
-                                                data-hint="{{ $account->accountGroup->name }}">
-                                            {{ $account->name }} ({{ $account->accountGroup->name }})
-                                        </option>
-                                    @endforeach
-                                </select>
+                                        required
+                                    >
+                                    <input type="hidden" :name="`entries[${index}][ledger_account_id]`" :value="entry.ledger_account_id">
+                                    <div
+                                        x-show="entry.showLedgerDropdown"
+                                        x-transition
+                                        class="absolute z-20 mt-1 w-full max-h-56 overflow-y-auto rounded-md border border-gray-200 bg-white shadow-lg"
+                                    >
+                                        <template x-for="account in getFilteredLedgerAccounts(entry)" :key="account.id">
+                                            <button
+                                                type="button"
+                                                @click="selectLedgerAccount(entry, account, index)"
+                                                class="w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-blue-50"
+                                            >
+                                                <span x-text="account.display"></span>
+                                            </button>
+                                        </template>
+                                        <div x-show="getFilteredLedgerAccounts(entry).length === 0" class="px-3 py-2 text-sm text-gray-500">
+                                            No matching accounts
+                                        </div>
+                                    </div>
+                                </div>
                                 <!-- Account Type Hint -->
-                                <div :id="`account-hint-${index}`" class="account-hint hidden mt-1 p-2 text-xs rounded-lg"></div>
+                                <div
+                                    :id="`account-hint-${index}`"
+                                    class="account-hint mt-1 p-2 text-xs rounded-lg"
+                                    x-show="entry.account_hint"
+                                    x-text="entry.account_hint"
+                                    :class="entry.account_hint_class"
+                                ></div>
                             </td>
                             <td class="py-3 px-2">
                                 <input type="text"
@@ -363,6 +386,19 @@
         </div>
     </div>
 </div>
+
+@php
+    $ledgerAccountsJson = $ledgerAccounts->map(function ($account) {
+        return [
+            'id' => $account->id,
+            'name' => $account->name,
+            'code' => $account->code,
+            'display' => $account->name . ' (' . ($account->accountGroup->name ?? $account->code) . ')',
+            'account_group_name' => $account->accountGroup->name ?? 'Account',
+            'account_type' => $account->account_type ?? '',
+        ];
+    })->values();
+@endphp
 
 <script>
 // Global functions
@@ -1032,9 +1068,10 @@ window.showNotification = function(message, type = 'info') {
 // Alpine.js component
 window.voucherEntries = function() {
     return {
+        ledgerAccounts: @json($ledgerAccountsJson),
         entries: [
-            { ledger_account_id: '', particulars: '', debit_amount: '', credit_amount: '' },
-            { ledger_account_id: '', particulars: '', debit_amount: '', credit_amount: '' }
+            { ledger_account_id: '', ledger_search: '', showLedgerDropdown: false, account_hint: '', account_hint_class: '', particulars: '', debit_amount: '', credit_amount: '' },
+            { ledger_account_id: '', ledger_search: '', showLedgerDropdown: false, account_hint: '', account_hint_class: '', particulars: '', debit_amount: '', credit_amount: '' }
         ],
         voucherTypeId: '',
         quickTemplates: [],
@@ -1058,7 +1095,37 @@ window.voucherEntries = function() {
         },
 
         addEntry() {
-            this.entries.push({ ledger_account_id: '', particulars: '', debit_amount: '', credit_amount: '' });
+            this.entries.push({ ledger_account_id: '', ledger_search: '', showLedgerDropdown: false, account_hint: '', account_hint_class: '', particulars: '', debit_amount: '', credit_amount: '' });
+        },
+
+        getFilteredLedgerAccounts(entry) {
+            const query = (entry.ledger_search || '').toLowerCase();
+            if (!query) {
+                return this.ledgerAccounts;
+            }
+            return this.ledgerAccounts.filter(account =>
+                account.name.toLowerCase().includes(query) ||
+                account.code.toLowerCase().includes(query)
+            );
+        },
+
+        selectLedgerAccount(entry, account, index) {
+            entry.ledger_account_id = account.id;
+            entry.ledger_search = account.display;
+            entry.showLedgerDropdown = false;
+            entry.account_hint = account.account_group_name;
+            entry.account_hint_class = this.getHintClass(account.account_type);
+            this.updateEntryAccount(index);
+        },
+
+        getHintClass(accountType) {
+            const type = (accountType || '').toLowerCase();
+            if (type.includes('asset')) return 'bg-green-50 text-green-700';
+            if (type.includes('liability')) return 'bg-red-50 text-red-700';
+            if (type.includes('income')) return 'bg-blue-50 text-blue-700';
+            if (type.includes('expense')) return 'bg-yellow-50 text-yellow-700';
+            if (type.includes('equity')) return 'bg-purple-50 text-purple-700';
+            return 'bg-gray-50 text-gray-700';
         },
 
         removeEntry(index) {
@@ -1082,11 +1149,9 @@ window.voucherEntries = function() {
         updateEntryAccount(index) {
             const entry = this.entries[index];
             if (!entry.particulars && entry.ledger_account_id) {
-                const selectElement = document.querySelector(`select[name="entries[${index}][ledger_account_id]"]`);
-                if (selectElement) {
-                    const selectedOption = selectElement.options[selectElement.selectedIndex];
-                    const accountName = selectedOption.text.split(' (')[0];
-                    entry.particulars = `Being entry for ${accountName}`;
+                const account = this.ledgerAccounts.find(acc => acc.id === entry.ledger_account_id);
+                if (account) {
+                    entry.particulars = `Being entry for ${account.name}`;
                 }
             }
         },

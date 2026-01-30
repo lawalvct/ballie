@@ -18,6 +18,7 @@ use Barryvdh\DomPDF\Facade\Pdf;
 use Maatwebsite\Excel\Facades\Excel;
 use App\Imports\PaymentEntriesImport;
 use App\Exports\PaymentEntriesTemplateExport;
+use App\Exports\VouchersExport;
 
 
 use App\Services\VoucherTypeService;
@@ -41,7 +42,7 @@ class VoucherController extends Controller
      */
     public function index(Request $request, Tenant $tenant)
     {
-        $query = Voucher::with(['voucherType', 'createdBy'])
+        $query = Voucher::with(['voucherType', 'createdBy', 'entries.ledgerAccount'])
             ->where('tenant_id', $tenant->id)
             ->latest('voucher_date');
 
@@ -52,6 +53,42 @@ class VoucherController extends Controller
         return view('tenant.accounting.vouchers.index', compact(
             'tenant', 'vouchers', 'voucherTypes', 'stats', 'primaryVoucherTypes'
         ));
+    }
+
+    /**
+     * Export vouchers to Excel or PDF.
+     */
+    public function export(Request $request, Tenant $tenant)
+    {
+        $query = Voucher::with(['voucherType', 'createdBy', 'entries.ledgerAccount'])
+            ->where('tenant_id', $tenant->id);
+
+        $this->applyFilters($query, $request);
+
+        $allowedSorts = ['voucher_date', 'voucher_number', 'total_amount', 'status', 'created_at'];
+        $sort = $request->get('sort', 'voucher_date');
+        $direction = $request->get('direction', 'desc');
+
+        if (!in_array($sort, $allowedSorts)) {
+            $sort = 'voucher_date';
+        }
+
+        $direction = strtolower($direction) === 'asc' ? 'asc' : 'desc';
+        $query->orderBy($sort, $direction);
+
+        $vouchers = $query->get();
+        $format = strtolower($request->get('format', 'excel'));
+
+        if ($format === 'pdf') {
+            $pdf = Pdf::loadView('tenant.accounting.vouchers.export-pdf', compact('tenant', 'vouchers'));
+            $filename = 'vouchers-' . now()->format('Y-m-d') . '.pdf';
+
+            return $pdf->download($filename);
+        }
+
+        $filename = 'vouchers-' . now()->format('Y-m-d') . '.xlsx';
+
+        return Excel::download(new VouchersExport($vouchers), $filename);
     }
 
     private function applyFilters($query, Request $request)
@@ -857,7 +894,7 @@ class VoucherController extends Controller
 
         try {
             $voucher = $this->createVoucher($request, $tenant);
-            
+
             $voucher->update([
                 'status' => 'posted',
                 'posted_at' => now(),

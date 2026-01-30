@@ -123,23 +123,38 @@
             <div class="space-y-4">
                 <template x-for="(entry, index) in paymentEntries" :key="index">
                     <div class="grid grid-cols-12 gap-4 items-start p-5 bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl border-2 border-blue-200 hover:border-blue-400 transition-all shadow-sm hover:shadow-md">
-                    {{-- Ledger Account Dropdown --}}
-                    <div class="col-span-3">
+                    {{-- Ledger Account Searchable Dropdown --}}
+                    <div class="col-span-3 relative" @click.away="entry.showLedgerDropdown = false">
                         <label class="block text-sm font-medium text-gray-700 mb-1">
                             Ledger Account <span class="text-red-500">*</span>
                         </label>
-                        <select
-                            x-model="entry.ledger_account_id"
-                            required
+                        <input
+                            type="text"
+                            x-model="entry.ledger_search"
+                            @focus="entry.showLedgerDropdown = true"
+                            @input="entry.showLedgerDropdown = true; entry.ledger_account_id = ''"
+                            @keydown.escape.prevent="entry.showLedgerDropdown = false"
+                            placeholder="Search ledger account"
                             class="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
                         >
-                            <option value="">Select Account</option>
-                            @foreach($ledgerAccounts as $account)
-                                <option value="{{ $account->id }}">
-                                    {{ $account->name }} ({{ $account->code }})
-                                </option>
-                            @endforeach
-                        </select>
+                        <div
+                            x-show="entry.showLedgerDropdown"
+                            x-transition
+                            class="absolute z-20 mt-1 w-full max-h-56 overflow-y-auto rounded-md border border-gray-200 bg-white shadow-lg"
+                        >
+                            <template x-for="account in getFilteredLedgerAccounts(entry)" :key="account.id">
+                                <button
+                                    type="button"
+                                    @click="selectLedgerAccount(entry, account)"
+                                    class="w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-blue-50"
+                                >
+                                    <span x-text="account.display"></span>
+                                </button>
+                            </template>
+                            <div x-show="getFilteredLedgerAccounts(entry).length === 0" class="px-3 py-2 text-sm text-gray-500">
+                                No matching accounts
+                            </div>
+                        </div>
                     </div>
 
                     {{-- Particulars --}}
@@ -266,6 +281,7 @@
 
         {{-- Submit Section --}}
         <div class="flex justify-end space-x-3 pt-6 border-t-2 border-gray-200">
+            <input type="hidden" name="action" :value="submitAction">
             <a
                 href="{{ route('tenant.accounting.vouchers.index', ['tenant' => $tenant->slug]) }}"
                 class="inline-flex items-center justify-center rounded-lg border-2 border-gray-300 bg-white px-6 py-3 text-sm font-semibold text-gray-700 shadow-sm hover:bg-gray-50 hover:border-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-all"
@@ -277,8 +293,7 @@
             </a>
             <button
                 type="submit"
-                name="action"
-                value="save"
+                @click="submitAction = 'save'"
                 :disabled="isSubmitting"
                 :class="isSubmitting ? 'opacity-50 cursor-not-allowed' : ''"
                 class="inline-flex items-center justify-center rounded-lg border-2 border-blue-600 bg-white px-6 py-3 text-sm font-semibold text-blue-600 shadow-sm hover:bg-blue-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-all"
@@ -294,8 +309,7 @@
             </button>
             <button
                 type="submit"
-                name="action"
-                value="save_and_post"
+                @click="submitAction = 'save_and_post'"
                 :disabled="isSubmitting"
                 :class="isSubmitting ? 'opacity-50 cursor-not-allowed' : ''"
                 class="inline-flex items-center justify-center rounded-lg border border-transparent bg-gradient-to-r from-green-600 to-emerald-600 px-6 py-3 text-sm font-semibold text-white shadow-lg hover:from-green-700 hover:to-emerald-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 hover:shadow-xl transition-all transform hover:-translate-y-0.5"
@@ -308,6 +322,22 @@
                     <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                 </svg>
                 <span x-text="isSubmitting ? 'Posting...' : 'Save & Post'"></span>
+            </button>
+            <button
+                type="submit"
+                @click="submitAction = 'save_and_post_return'"
+                :disabled="isSubmitting"
+                :class="isSubmitting ? 'opacity-50 cursor-not-allowed' : ''"
+                class="inline-flex items-center justify-center rounded-lg border border-transparent bg-gradient-to-r from-indigo-600 to-blue-600 px-6 py-3 text-sm font-semibold text-white shadow-lg hover:from-indigo-700 hover:to-blue-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 hover:shadow-xl transition-all transform hover:-translate-y-0.5"
+            >
+                <svg x-show="!isSubmitting" class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582M20 20v-5h-.581M5 9a7 7 0 0111-4.39M19 15a7 7 0 01-11 4.39" />
+                </svg>
+                <svg x-show="isSubmitting" class="animate-spin w-5 h-5 mr-2" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                <span x-text="isSubmitting ? 'Posting...' : 'Save, Post & New'"></span>
             </button>
         </div>
     </div>
@@ -487,6 +517,17 @@
     </div>
 </div>
 
+@php
+    $ledgerAccountsJson = $ledgerAccounts->map(function ($account) {
+        return [
+            'id' => $account->id,
+            'name' => $account->name,
+            'code' => $account->code,
+            'display' => $account->name . ' (' . $account->code . ')',
+        ];
+    })->values();
+@endphp
+
 @push('scripts')
 <script>
 function paymentVoucherEntries() {
@@ -495,9 +536,12 @@ function paymentVoucherEntries() {
             ledger_account_id: '',
             particulars: ''
         },
+        ledgerAccounts: @json($ledgerAccountsJson),
         paymentEntries: [
             {
                 ledger_account_id: '',
+                ledger_search: '',
+                showLedgerDropdown: false,
                 particulars: '',
                 debit_amount: 0,
                 fileName: '',
@@ -506,6 +550,7 @@ function paymentVoucherEntries() {
         ],
         totalPaymentAmount: 0,
         isSubmitting: false,
+        submitAction: 'save',
         lastBankParticulars: '',
         showBulkUploadModal: false,
         bulkUpload: {
@@ -563,11 +608,30 @@ function paymentVoucherEntries() {
         addEntry() {
             this.paymentEntries.push({
                 ledger_account_id: '',
+                ledger_search: '',
+                showLedgerDropdown: false,
                 particulars: this.bankEntry.particulars,
                 debit_amount: 0,
                 fileName: '',
                 search: ''
             });
+        },
+
+        getFilteredLedgerAccounts(entry) {
+            const query = (entry.ledger_search || '').toLowerCase();
+            if (!query) {
+                return this.ledgerAccounts;
+            }
+            return this.ledgerAccounts.filter(account =>
+                account.name.toLowerCase().includes(query) ||
+                account.code.toLowerCase().includes(query)
+            );
+        },
+
+        selectLedgerAccount(entry, account) {
+            entry.ledger_account_id = account.id;
+            entry.ledger_search = account.display;
+            entry.showLedgerDropdown = false;
         },
 
         syncParticulars() {

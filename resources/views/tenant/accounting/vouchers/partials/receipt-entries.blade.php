@@ -29,25 +29,39 @@
             <div class="space-y-4">
                 <template x-for="(entry, index) in receiptEntries" :key="index">
                     <div class="grid grid-cols-12 gap-4 items-start p-5 bg-gradient-to-br from-red-50 to-rose-50 rounded-xl border-2 border-red-200 hover:border-red-400 transition-all shadow-sm hover:shadow-md">
-                    {{-- Ledger Account Dropdown --}}
-                    <div class="col-span-4">
+                    {{-- Ledger Account Searchable Dropdown --}}
+                    <div class="col-span-4 relative" @click.away="entry.showLedgerDropdown = false">
                         <label class="block text-sm font-medium text-gray-700 mb-1">
                             Ledger Account <span class="text-red-500">*</span>
                         </label>
-                        <select
-                            x-model="entry.ledger_account_id"
-                            required
+                        <input
+                            type="text"
+                            x-model="entry.ledger_search"
+                            @focus="entry.showLedgerDropdown = true"
+                            @input="entry.showLedgerDropdown = true; entry.ledger_account_id = ''"
+                            @keydown.escape.prevent="entry.showLedgerDropdown = false"
+                            placeholder="Search account"
                             class="w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500 sm:text-sm"
+                            required
                         >
-                            <option value="">Select Account</option>
-                            @foreach($ledgerAccounts as $account)
-                                @if(in_array($account->accountGroup?->code, ['AR', 'AP']))
-                                    <option :value="{{ $account->id }}">
-                                        {{ $account->name }} ({{ $account->code }})
-                                    </option>
-                                @endif
-                            @endforeach
-                        </select>
+                        <div
+                            x-show="entry.showLedgerDropdown"
+                            x-transition
+                            class="absolute z-20 mt-1 w-full max-h-56 overflow-y-auto rounded-md border border-gray-200 bg-white shadow-lg"
+                        >
+                            <template x-for="account in getFilteredLedgerAccounts(entry)" :key="account.id">
+                                <button
+                                    type="button"
+                                    @click="selectLedgerAccount(entry, account)"
+                                    class="w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-green-50"
+                                >
+                                    <span x-text="account.display"></span>
+                                </button>
+                            </template>
+                            <div x-show="getFilteredLedgerAccounts(entry).length === 0" class="px-3 py-2 text-sm text-gray-500">
+                                No matching accounts
+                            </div>
+                        </div>
                     </div>
 
                     {{-- Particulars --}}
@@ -297,6 +311,26 @@
     </div>
 </div>
 
+@php
+    $receiptLedgerAccountsJson = $ledgerAccounts
+        ->filter(function ($account) {
+            $groupCode = $account->accountGroup?->code;
+            $name = strtolower($account->name ?? '');
+            return in_array($groupCode, ['AR', 'AP'])
+                && !str_contains($name, 'bank')
+                && !str_contains($name, 'cash');
+        })
+        ->map(function ($account) {
+            return [
+                'id' => $account->id,
+                'name' => $account->name,
+                'code' => $account->code,
+                'display' => $account->name . ' (' . $account->code . ')',
+            ];
+        })
+        ->values();
+@endphp
+
 @push('scripts')
 <script>
 function receiptVoucherEntries() {
@@ -305,9 +339,12 @@ function receiptVoucherEntries() {
             ledger_account_id: '',
             particulars: ''
         },
+        ledgerAccounts: @json($receiptLedgerAccountsJson),
         receiptEntries: [
             {
                 ledger_account_id: '',
+                ledger_search: '',
+                showLedgerDropdown: false,
                 particulars: '',
                 credit_amount: 0
             }
@@ -322,9 +359,28 @@ function receiptVoucherEntries() {
         addEntry() {
             this.receiptEntries.push({
                 ledger_account_id: '',
+                ledger_search: '',
+                showLedgerDropdown: false,
                 particulars: '',
                 credit_amount: 0
             });
+        },
+
+        getFilteredLedgerAccounts(entry) {
+            const query = (entry.ledger_search || '').toLowerCase();
+            if (!query) {
+                return this.ledgerAccounts;
+            }
+            return this.ledgerAccounts.filter(account =>
+                account.name.toLowerCase().includes(query) ||
+                account.code.toLowerCase().includes(query)
+            );
+        },
+
+        selectLedgerAccount(entry, account) {
+            entry.ledger_account_id = account.id;
+            entry.ledger_search = account.display;
+            entry.showLedgerDropdown = false;
         },
 
         removeEntry(index) {
