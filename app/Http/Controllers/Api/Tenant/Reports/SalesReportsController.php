@@ -214,8 +214,8 @@ class SalesReportsController extends Controller
                 'product_categories.name as category_name',
                 DB::raw('SUM(invoice_items.quantity) as quantity_sold'),
                 DB::raw('SUM(invoice_items.amount) as total_revenue'),
-                DB::raw('AVG(invoice_items.unit_price) as avg_selling_price'),
-                DB::raw('SUM(invoice_items.cost_price * invoice_items.quantity) as total_cost'),
+                DB::raw('AVG(invoice_items.rate) as avg_selling_price'),
+                DB::raw('SUM(invoice_items.quantity * COALESCE(invoice_items.purchase_rate, products.purchase_rate, 0)) as total_cost'),
                 DB::raw('COUNT(DISTINCT invoice_items.voucher_id) as invoice_count')
             )
             ->groupBy('products.id', 'products.name', 'products.sku', 'product_categories.name')
@@ -250,7 +250,8 @@ class SalesReportsController extends Controller
         $totalRevenue = (clone $baseQuery)->sum('invoice_items.amount');
         $totalCost = (clone $baseQuery)
             ->join('products', 'invoice_items.product_id', '=', 'products.id')
-            ->sum(DB::raw('products.cost_price * invoice_items.quantity'));
+            ->selectRaw('SUM(invoice_items.quantity * COALESCE(invoice_items.purchase_rate, products.purchase_rate, 0)) as total_cost')
+            ->value('total_cost') ?? 0;
 
         $totalProfit = $totalRevenue - $totalCost;
 
