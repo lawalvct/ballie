@@ -168,6 +168,14 @@ Route::middleware('auth:sanctum')->group(function () {
             Route::get('/stock-movement', [\App\Http\Controllers\Api\Tenant\Reports\InventoryReportsController::class, 'stockMovement'])->name('stock-movement');
             Route::get('/bin-card', [\App\Http\Controllers\Api\Tenant\Reports\InventoryReportsController::class, 'binCard'])->name('bin-card');
         });
+        Route::prefix('payroll')->name('payroll.')->group(function () {
+            Route::get('/summary', [\App\Http\Controllers\Api\Tenant\Reports\PayrollReportsController::class, 'summary'])->name('summary');
+            Route::get('/tax-report', [\App\Http\Controllers\Api\Tenant\Reports\PayrollReportsController::class, 'taxReport'])->name('tax-report');
+            Route::get('/tax-summary', [\App\Http\Controllers\Api\Tenant\Reports\PayrollReportsController::class, 'taxSummary'])->name('tax-summary');
+            Route::get('/employee-summary', [\App\Http\Controllers\Api\Tenant\Reports\PayrollReportsController::class, 'employeeSummary'])->name('employee-summary');
+            Route::get('/bank-schedule', [\App\Http\Controllers\Api\Tenant\Reports\PayrollReportsController::class, 'bankSchedule'])->name('bank-schedule');
+            Route::get('/detailed', [\App\Http\Controllers\Api\Tenant\Reports\PayrollReportsController::class, 'detailedReport'])->name('detailed');
+        });
             Route::prefix('financial')->name('financial.')->group(function () {
                 Route::get('/profit-loss', [\App\Http\Controllers\Api\Tenant\Reports\FinancialReportsController::class, 'profitLoss'])->name('profit-loss');
                 Route::get('/profit-loss/table', [\App\Http\Controllers\Api\Tenant\Reports\FinancialReportsController::class, 'profitLossTable'])->name('profit-loss-table');
