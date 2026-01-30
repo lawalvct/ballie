@@ -58,7 +58,7 @@ class PurchaseReportsController extends Controller
             ->whereBetween('vouchers.voucher_date', [$fromDate, $toDate])
             ->join('voucher_entries', function ($join) {
                 $join->on('voucher_entries.voucher_id', '=', 'vouchers.id')
-                    ->where('voucher_entries.type', 'debit');
+                    ->where('voucher_entries.debit_amount', '>', 0);
             })
             ->join('ledger_accounts', 'ledger_accounts.id', '=', 'voucher_entries.ledger_account_id')
             ->select('ledger_accounts.id', 'ledger_accounts.name', DB::raw('SUM(vouchers.total_amount) as total_purchases'), DB::raw('COUNT(DISTINCT vouchers.id) as purchase_count'))
@@ -113,7 +113,7 @@ class PurchaseReportsController extends Controller
             ->whereBetween('vouchers.voucher_date', [$fromDate, $toDate])
             ->join('voucher_entries', function ($join) {
                 $join->on('voucher_entries.voucher_id', '=', 'vouchers.id')
-                    ->where('voucher_entries.type', 'debit');
+                    ->where('voucher_entries.debit_amount', '>', 0);
             })
             ->join('ledger_accounts', 'ledger_accounts.id', '=', 'voucher_entries.ledger_account_id');
 
@@ -213,9 +213,9 @@ class PurchaseReportsController extends Controller
                 'product_categories.name as category_name',
                 DB::raw('SUM(invoice_items.quantity) as quantity_purchased'),
                 DB::raw('SUM(invoice_items.amount) as total_cost'),
-                DB::raw('AVG(invoice_items.unit_price) as avg_purchase_price'),
-                DB::raw('MIN(invoice_items.unit_price) as min_purchase_price'),
-                DB::raw('MAX(invoice_items.unit_price) as max_purchase_price'),
+                DB::raw('AVG(invoice_items.rate) as avg_purchase_price'),
+                DB::raw('MIN(invoice_items.rate) as min_purchase_price'),
+                DB::raw('MAX(invoice_items.rate) as max_purchase_price'),
                 DB::raw('COUNT(DISTINCT invoice_items.voucher_id) as purchase_count')
             )
             ->groupBy('products.id', 'products.name', 'products.sku', 'product_categories.name')
@@ -439,14 +439,18 @@ class PurchaseReportsController extends Controller
         };
 
         $selectFormat = $periodType === 'quarterly'
-            ? DB::raw("CONCAT(YEAR(voucher_date), '-Q', QUARTER(voucher_date))")
-            : DB::raw("DATE_FORMAT(voucher_date, '{$dateFormat}')");
+            ? "CONCAT(YEAR(voucher_date), '-Q', QUARTER(voucher_date))"
+            : "DATE_FORMAT(voucher_date, '{$dateFormat}')";
 
         return Voucher::where('tenant_id', $tenant->id)
             ->whereIn('voucher_type_id', $purchaseVoucherTypes)
             ->where('status', 'posted')
             ->whereBetween('voucher_date', [$fromDate, $toDate])
-            ->select($selectFormat . ' as period', DB::raw('MIN(voucher_date) as start_date'), DB::raw('MAX(voucher_date) as end_date'), DB::raw('SUM(total_amount) as total_purchases'), DB::raw('COUNT(*) as purchase_count'))
+            ->selectRaw("{$selectFormat} as period")
+            ->selectRaw('MIN(voucher_date) as start_date')
+            ->selectRaw('MAX(voucher_date) as end_date')
+            ->selectRaw('SUM(total_amount) as total_purchases')
+            ->selectRaw('COUNT(*) as purchase_count')
             ->groupBy('period')
             ->orderBy('period')
             ->get()
