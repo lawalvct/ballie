@@ -84,7 +84,7 @@
                         <button type="button" onclick="setBalanceSheetDate('end_of_last_year')" class="px-3 py-1.5 text-xs font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors">End of Last Year</button>
                     </div>
                 </div>
-                
+
                 <!-- Date Input & Compare -->
                 <div class="flex flex-wrap items-end gap-4">
                     <div class="flex-1 min-w-[200px]">
@@ -620,6 +620,120 @@
                 </div>
             </div>
         </div>
+
+        <!-- BallieAI Interpretation CTA -->
+        <div class="mt-6 bg-gradient-to-r from-purple-50 to-indigo-50 border border-purple-200 rounded-xl p-5 no-print">
+            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                <div>
+                    <h4 class="text-lg font-semibold text-purple-800">BallieAI Interpretation</h4>
+                    <p class="text-sm text-purple-600">Get an AI-powered explanation of your Balance Sheet performance.</p>
+                </div>
+                <button onclick="openAIInterpretation()" class="inline-flex items-center px-4 py-2 border border-purple-300 rounded-lg shadow-sm text-sm font-medium text-white bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 transition-all duration-200">
+                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"></path>
+                    </svg>
+                    Ask BallieAI to Interpret
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- AI Interpretation Modal -->
+<div id="aiInterpretationModal" class="fixed inset-0 z-50 hidden overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+    <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+        <!-- Background overlay -->
+        <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" onclick="closeAIInterpretation()"></div>
+
+        <!-- Modal panel -->
+        <div class="inline-block align-bottom bg-white rounded-xl text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-4xl sm:w-full">
+            <!-- Header -->
+            <div class="bg-gradient-to-r from-purple-600 to-indigo-600 px-6 py-4">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center">
+                        <div class="w-10 h-10 bg-white bg-opacity-20 rounded-full flex items-center justify-center mr-3">
+                            <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"></path>
+                            </svg>
+                        </div>
+                        <div>
+                            <h3 class="text-lg font-bold text-white" id="modal-title">BallieAI Financial Analysis</h3>
+                            <p class="text-sm text-purple-200">Powered by AI - Balance Sheet Interpretation</p>
+                        </div>
+                    </div>
+                    <button onclick="closeAIInterpretation()" class="text-white hover:text-purple-200 transition-colors">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Content -->
+            <div class="px-6 py-4 max-h-[70vh] overflow-y-auto">
+                <!-- Loading State -->
+                <div id="aiLoadingState" class="flex flex-col items-center justify-center py-12">
+                    <div class="relative">
+                        <div class="w-16 h-16 border-4 border-purple-200 border-t-purple-600 rounded-full animate-spin"></div>
+                        <div class="absolute inset-0 flex items-center justify-center">
+                            <svg class="w-8 h-8 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"></path>
+                            </svg>
+                        </div>
+                    </div>
+                    <p class="mt-4 text-gray-600 font-medium">BallieAI is analyzing your financial data...</p>
+                    <p class="text-sm text-gray-500 mt-1">This may take a few seconds</p>
+                </div>
+
+                <!-- Interpretation Content -->
+                <div id="aiInterpretationContent" class="hidden prose prose-purple max-w-none">
+                    <!-- AI response will be inserted here -->
+                </div>
+
+                <!-- Error State -->
+                <div id="aiErrorState" class="hidden">
+                    <div class="bg-red-50 border border-red-200 rounded-xl p-6 text-center">
+                        <div class="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                            <svg class="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                            </svg>
+                        </div>
+                        <h4 class="text-lg font-semibold text-red-800 mb-2">Analysis Unavailable</h4>
+                        <p id="aiErrorMessage" class="text-red-600 mb-4">Unable to generate analysis at this time.</p>
+                        <button onclick="requestAIInterpretation()" class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors">
+                            Try Again
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Footer -->
+            <div class="bg-gray-50 px-6 py-4 flex justify-between items-center border-t border-gray-200">
+                <div class="text-xs text-gray-500 flex items-center">
+                    <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
+                    AI-generated insights. Always verify with professional advice.
+                </div>
+                <div class="flex gap-2">
+                    <button onclick="copyInterpretation()" id="copyBtn" class="hidden px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-100 transition-colors text-sm">
+                        <svg class="w-4 h-4 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path>
+                        </svg>
+                        Copy
+                    </button>
+                    <button onclick="downloadInterpretationPdf()" id="downloadPdfBtn" class="hidden px-4 py-2 border border-purple-300 text-purple-700 rounded-lg hover:bg-purple-50 transition-colors text-sm">
+                        <svg class="w-4 h-4 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                        </svg>
+                        Download PDF
+                    </button>
+                    <button onclick="closeAIInterpretation()" class="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors text-sm">
+                        Close
+                    </button>
+                </div>
+            </div>
+        </div>
     </div>
 </div>
 
@@ -676,7 +790,7 @@
 function setBalanceSheetDate(preset) {
     const today = new Date();
     let asOfDate;
-    
+
     switch(preset) {
         case 'today':
             asOfDate = today;
@@ -704,7 +818,7 @@ function setBalanceSheetDate(preset) {
             asOfDate = new Date(today.getFullYear() - 1, 11, 31);
             break;
     }
-    
+
     document.getElementById('as_of_date').value = asOfDate.toISOString().split('T')[0];
     document.getElementById('dateFilterForm').submit();
 }
@@ -720,6 +834,206 @@ document.addEventListener('DOMContentLoaded', function() {
             card.style.transform = 'translateY(0)';
         }, index * 100);
     });
+});
+
+// Store current interpretation for PDF export
+let currentInterpretation = '';
+
+// BallieAI Interpretation Functions
+function openAIInterpretation() {
+    const modal = document.getElementById('aiInterpretationModal');
+    modal.classList.remove('hidden');
+    document.body.style.overflow = 'hidden';
+    requestAIInterpretation();
+}
+
+function closeAIInterpretation() {
+    const modal = document.getElementById('aiInterpretationModal');
+    modal.classList.add('hidden');
+    document.body.style.overflow = '';
+}
+
+async function requestAIInterpretation() {
+    // Show loading, hide others
+    document.getElementById('aiLoadingState').classList.remove('hidden');
+    document.getElementById('aiInterpretationContent').classList.add('hidden');
+    document.getElementById('aiErrorState').classList.add('hidden');
+    document.getElementById('copyBtn').classList.add('hidden');
+    document.getElementById('downloadPdfBtn').classList.add('hidden');
+
+    try {
+        // Prepare balance sheet data
+        const reportData = {
+            asOfDate: '{{ $asOfDate ?? "N/A" }}',
+            totalAssets: {{ $totalAssets ?? 0 }},
+            totalLiabilities: {{ $totalLiabilities ?? 0 }},
+            totalEquity: {{ $totalEquity ?? 0 }},
+            assets: @json($assets ?? []),
+            liabilities: @json($liabilities ?? []),
+            equity: @json($equity ?? []),
+            companyName: '{{ $tenant->business_name ?? "Your Business" }}',
+            isBalanced: {{ abs($totalAssets - ($totalLiabilities + $totalEquity)) < 0.01 ? 'true' : 'false' }},
+            debtToEquityRatio: {{ $totalEquity > 0 ? ($totalLiabilities / $totalEquity) : 0 }},
+            debtRatio: {{ $totalAssets > 0 ? (($totalLiabilities / $totalAssets) * 100) : 0 }},
+            equityRatio: {{ $totalAssets > 0 ? (($totalEquity / $totalAssets) * 100) : 0 }},
+            netWorkingCapital: {{ $totalAssets - $totalLiabilities }}
+        };
+
+        // Make API request
+        const response = await fetch('/api/ai/interpret-balance-sheet', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                'Accept': 'application/json'
+            },
+            body: JSON.stringify({ reportData })
+        });
+
+        const data = await response.json();
+
+        document.getElementById('aiLoadingState').classList.add('hidden');
+
+        if (data.success || data.interpretation) {
+            const interpretation = data.interpretation || data.message;
+            displayInterpretation(interpretation);
+        } else {
+            showAIError(data.message || 'Unable to generate analysis.');
+        }
+    } catch (error) {
+        console.error('AI Interpretation Error:', error);
+        document.getElementById('aiLoadingState').classList.add('hidden');
+        showAIError('Network error. Please check your connection and try again.');
+    }
+}
+
+function displayInterpretation(interpretation) {
+    // Store the original interpretation text for PDF export
+    currentInterpretation = interpretation;
+
+    const contentDiv = document.getElementById('aiInterpretationContent');
+
+    // Convert markdown-like formatting to HTML
+    let html = interpretation
+        // Headers
+        .replace(/^### (.*$)/gim, '<h3 class="text-lg font-bold text-gray-900 mt-6 mb-3 flex items-center"><span class="mr-2">$1</span></h3>')
+        .replace(/^## (.*$)/gim, '<h2 class="text-xl font-bold text-purple-800 mt-6 mb-4 pb-2 border-b border-purple-200">$1</h2>')
+        .replace(/^# (.*$)/gim, '<h1 class="text-2xl font-bold text-purple-900 mb-4">$1</h1>')
+        // Bold
+        .replace(/\*\*(.*?)\*\*/g, '<strong class="font-semibold text-gray-900">$1</strong>')
+        // Lists
+        .replace(/^\d+\. (.*$)/gim, '<li class="ml-4 mb-2">$1</li>')
+        .replace(/^- (.*$)/gim, '<li class="ml-4 mb-1 list-disc">$1</li>')
+        .replace(/^• (.*$)/gim, '<li class="ml-4 mb-1 list-disc">$1</li>')
+        // Paragraphs
+        .replace(/\n\n/g, '</p><p class="mb-4 text-gray-700">')
+        // Line breaks
+        .replace(/\n/g, '<br>');
+
+    // Wrap in paragraph tags
+    html = '<p class="mb-4 text-gray-700">' + html + '</p>';
+
+    // Fix list items
+    html = html.replace(/<\/p><li/g, '</p><ul class="list-disc ml-6 mb-4"><li');
+    html = html.replace(/<\/li><p/g, '</li></ul><p');
+
+    contentDiv.innerHTML = `
+        <div class="bg-gradient-to-r from-purple-50 to-indigo-50 rounded-xl p-6 mb-6">
+            <div class="flex items-start">
+                <div class="flex-shrink-0">
+                    <div class="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center">
+                        <svg class="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"></path>
+                        </svg>
+                    </div>
+                </div>
+                <div class="ml-4">
+                    <h4 class="text-lg font-semibold text-purple-800">BallieAI Analysis</h4>
+                    <p class="text-sm text-purple-600">As of: {{ $asOfDate ?? 'N/A' }}</p>
+                </div>
+            </div>
+        </div>
+        <div class="interpretation-content">
+            ${html}
+        </div>
+    `;
+
+    contentDiv.classList.remove('hidden');
+    document.getElementById('copyBtn').classList.remove('hidden');
+    document.getElementById('downloadPdfBtn').classList.remove('hidden');
+}
+
+function showAIError(message) {
+    document.getElementById('aiErrorMessage').textContent = message;
+    document.getElementById('aiErrorState').classList.remove('hidden');
+}
+
+function copyInterpretation() {
+    const content = document.getElementById('aiInterpretationContent');
+    const text = content.innerText || content.textContent;
+
+    navigator.clipboard.writeText(text).then(() => {
+        const btn = document.getElementById('copyBtn');
+        const originalText = btn.innerHTML;
+        btn.innerHTML = '<svg class="w-4 h-4 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg> Copied!';
+        btn.classList.add('bg-green-50', 'text-green-700', 'border-green-300');
+
+        setTimeout(() => {
+            btn.innerHTML = originalText;
+            btn.classList.remove('bg-green-50', 'text-green-700', 'border-green-300');
+        }, 2000);
+    });
+}
+
+// Download Interpretation as PDF
+function downloadInterpretationPdf() {
+    if (!currentInterpretation) return;
+
+    // Create a form and submit it to download PDF
+    const form = document.createElement('form');
+    form.method = 'POST';
+    form.action = '/api/ai/export-balance-sheet-interpretation-pdf';
+    form.target = '_blank';
+
+    // Add CSRF token
+    const csrfInput = document.createElement('input');
+    csrfInput.type = 'hidden';
+    csrfInput.name = '_token';
+    csrfInput.value = '{{ csrf_token() }}';
+    form.appendChild(csrfInput);
+
+    // Add interpretation
+    const interpretationInput = document.createElement('input');
+    interpretationInput.type = 'hidden';
+    interpretationInput.name = 'interpretation';
+    interpretationInput.value = currentInterpretation;
+    form.appendChild(interpretationInput);
+
+    // Add report data
+    const reportDataInput = document.createElement('input');
+    reportDataInput.type = 'hidden';
+    reportDataInput.name = 'reportData';
+    const reportData = {
+        asOfDate: '{{ $asOfDate ?? "N/A" }}',
+        totalAssets: {{ $totalAssets ?? 0 }},
+        totalLiabilities: {{ $totalLiabilities ?? 0 }},
+        totalEquity: {{ $totalEquity ?? 0 }},
+        companyName: '{{ $tenant->business_name ?? "Your Business" }}'
+    };
+    reportDataInput.value = JSON.stringify(reportData);
+    form.appendChild(reportDataInput);
+
+    // Submit form
+    document.body.appendChild(form);
+    form.submit();
+    document.body.removeChild(form);
+}
+
+// Close modal on Escape key
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+        closeAIInterpretation();
+    }
 });
 </script>
 @endsection

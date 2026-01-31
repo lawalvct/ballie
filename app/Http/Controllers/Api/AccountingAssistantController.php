@@ -319,22 +319,41 @@ class AccountingAssistantController extends Controller
 
     private function callAI($prompt)
     {
-        try {
-            $response = OpenAI::chat()->create([
-                'model' => config('ai.model', 'gpt-3.5-turbo'),
-                'messages' => [
-                    ['role' => 'system', 'content' => 'You are an expert Nigerian accounting assistant that helps with voucher entries following Nigerian GAAP standards.'],
-                    ['role' => 'user', 'content' => $prompt]
-                ],
-                'max_tokens' => (int) config('ai.max_tokens', 800),
-                'temperature' => (float) config('ai.temperature', 0.3),
-            ]);
+        $model = config('ai.model', 'gpt-3.5-turbo');
+        $systemMessage = 'You are an expert Nigerian accounting assistant that helps with voucher entries following Nigerian GAAP standards.';
 
-            return $response->choices[0]->message->content ?? '';
-        } catch (\Exception $e) {
-            Log::error('OpenAI API error: ' . $e->getMessage());
-            throw new \Exception('AI service unavailable');
+        $apiKey = config('openai.api_key') ?: config('ai.api_key');
+        if (empty($apiKey)) {
+            throw new \Exception('OpenAI API key is missing');
         }
+
+        try {
+            $response = Http::withToken($apiKey)
+                ->timeout((int) config('openai.request_timeout', 30))
+                ->post('https://api.openai.com/v1/chat/completions', [
+                    'model' => $model,
+                    'messages' => [
+                        ['role' => 'system', 'content' => $systemMessage],
+                        ['role' => 'user', 'content' => $prompt],
+                    ],
+                    'max_tokens' => (int) config('ai.max_tokens', 800),
+                    'temperature' => (float) config('ai.temperature', 0.3),
+                ]);
+
+            if ($response->failed()) {
+                Log::error('OpenAI HTTP error: ' . $response->body());
+                throw new \Exception('AI service unavailable');
+            }
+
+            $text = data_get($response->json(), 'choices.0.message.content', '');
+            if (!empty($text)) {
+                return $text;
+            }
+        } catch (\Throwable $e) {
+            Log::error('OpenAI HTTP error: ' . $e->getMessage());
+        }
+
+        throw new \Exception('AI service unavailable');
     }
 
     private function parseSuggestions($response)
@@ -398,7 +417,7 @@ class AccountingAssistantController extends Controller
                 $amount = $entry['debit_amount'] ?: $entry['credit_amount'];
                 $type = $entry['debit_amount'] ? 'DEBIT' : 'CREDIT';
                 $particulars = $entry['particulars'] ?: 'Entry ' . ($index + 1);
-                
+
                 $explanation['steps'][] = "{$type}: {$particulars} - ₦" . number_format($amount, 2);
             }
         }
@@ -408,7 +427,7 @@ class AccountingAssistantController extends Controller
         $totalCredits = array_sum(array_column($entries, 'credit_amount'));
         $isBalanced = abs($totalDebits - $totalCredits) < 0.01;
 
-        $explanation['balanceCheck'] = $isBalanced && $totalDebits > 0 
+        $explanation['balanceCheck'] = $isBalanced && $totalDebits > 0
             ? "✅ Transaction is balanced (₦" . number_format($totalDebits, 2) . ")"
             : "⚠️ Transaction needs balancing";
 
@@ -441,12 +460,12 @@ class AccountingAssistantController extends Controller
             if ($accountId) {
                 // Generate context-aware particulars
                 $particular = $this->generateContextualParticular(
-                    $voucherType, 
-                    $narration, 
-                    $isDebit, 
+                    $voucherType,
+                    $narration,
+                    $isDebit,
                     $index
                 );
-                
+
                 $suggestions[] = [
                     'index' => $index,
                     'suggested_particular' => $particular,
@@ -621,7 +640,7 @@ class AccountingAssistantController extends Controller
             $prompt = $this->buildValidationPrompt($context);
             $response = $this->callAI($prompt);
             $validation = $this->parseValidationResponse($response);
-            
+
             return $validation;
         } catch (\Exception $e) {
             Log::warning('AI validation failed, using fallback: ' . $e->getMessage());
@@ -674,7 +693,7 @@ class AccountingAssistantController extends Controller
     private function parseValidationResponse($response)
     {
         $decoded = json_decode($response, true);
-        
+
         if (json_last_error() === JSON_ERROR_NONE && isset($decoded['isValid'])) {
             return $decoded;
         }
@@ -704,16 +723,16 @@ class AccountingAssistantController extends Controller
         try {
             $prompt = $this->buildQuestionPrompt($question, $context);
             $response = $this->callAI($prompt);
-            
+
             return response()->json([
                 'success' => true,
                 'answer' => $response,
                 'question' => $question
             ]);
-            
+
         } catch (\Exception $e) {
             Log::error('AI Q&A error: ' . $e->getMessage());
-            
+
             return response()->json([
                 'success' => false,
                 'message' => 'AI assistant temporarily unavailable.',
@@ -726,7 +745,7 @@ class AccountingAssistantController extends Controller
     {
         $voucherType = $context['voucherType'] ?? '';
         $narration = $context['narration'] ?? '';
-        
+
         return "
         You are an expert Nigerian accounting consultant and bookkeeper. A user is asking you a question while working on their accounting vouchers.
 
@@ -751,19 +770,475 @@ class AccountingAssistantController extends Controller
     {
         // Check for common question patterns and provide basic answers
         $questionLower = strtolower($question);
-        
+
         if (strpos($questionLower, 'debit') !== false && strpos($questionLower, 'credit') !== false) {
             return "Debit and Credit are the two sides of every accounting transaction:\n\n• DEBIT (Dr.) increases: Assets, Expenses, Dividends\n• DEBIT decreases: Liabilities, Equity, Revenue\n\n• CREDIT (Cr.) increases: Liabilities, Equity, Revenue\n• CREDIT decreases: Assets, Expenses, Dividends\n\nRemember: Total Debits must always equal Total Credits in every transaction.";
         }
-        
+
         if (strpos($questionLower, 'voucher') !== false) {
             return "Vouchers are accounting documents that record financial transactions:\n\n• Payment Voucher: Records money going out\n• Receipt Voucher: Records money coming in\n• Journal Voucher: Records adjustments and transfers\n\nEach voucher must have balanced debit and credit entries following double-entry bookkeeping principles.";
         }
-        
+
         if (strpos($questionLower, 'gaap') !== false || strpos($questionLower, 'nigerian') !== false) {
             return "Nigerian GAAP (Generally Accepted Accounting Principles) requires:\n\n• Double-entry bookkeeping\n• Proper documentation for all transactions\n• Consistent accounting methods\n• Regular financial reporting\n• Compliance with local tax regulations\n\nAlways maintain proper records and follow established accounting standards.";
         }
-        
+
         return "I apologize, but I cannot provide a specific answer right now. Please try asking your question again, or consult with a qualified accountant for detailed guidance on complex accounting matters.";
     }
+
+    /**
+     * Interpret Profit & Loss report data using AI
+     */
+    public function interpretProfitLoss(Request $request)
+    {
+        $reportData = $request->input('reportData', []);
+
+        if (empty($reportData)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'No report data provided.'
+            ]);
+        }
+
+        try {
+            $prompt = $this->buildProfitLossInterpretationPrompt($reportData);
+            $response = $this->callAI($prompt);
+
+            return response()->json([
+                'success' => true,
+                'interpretation' => $response
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('AI Profit & Loss interpretation error: ' . $e->getMessage());
+
+            return response()->json([
+                'success' => false,
+                'message' => 'AI assistant temporarily unavailable.',
+                'interpretation' => $this->getFallbackProfitLossInterpretation($reportData)
+            ]);
+        }
+    }
+
+    /**
+     * Build the prompt for Profit & Loss interpretation
+     */
+    private function buildProfitLossInterpretationPrompt(array $reportData): string
+    {
+        $fromDate = $reportData['fromDate'] ?? 'N/A';
+        $toDate = $reportData['toDate'] ?? 'N/A';
+        $totalIncome = $reportData['totalIncome'] ?? 0;
+        $totalExpenses = $reportData['totalExpenses'] ?? 0;
+        $netProfit = $reportData['netProfit'] ?? 0;
+        $profitMargin = $totalIncome > 0 ? round(($netProfit / $totalIncome) * 100, 2) : 0;
+        $incomeAccounts = $reportData['incomeAccounts'] ?? [];
+        $expenseAccounts = $reportData['expenseAccounts'] ?? [];
+        $openingStock = $reportData['openingStock'] ?? 0;
+        $closingStock = $reportData['closingStock'] ?? 0;
+        $compareData = $reportData['compareData'] ?? null;
+
+        $incomeBreakdown = '';
+        foreach ($incomeAccounts as $account) {
+            $name = $account['name'] ?? 'Unknown';
+            $amount = number_format($account['amount'] ?? 0, 2);
+            $incomeBreakdown .= "   - {$name}: ₦{$amount}\n";
+        }
+
+        $expenseBreakdown = '';
+        foreach ($expenseAccounts as $account) {
+            $name = $account['name'] ?? 'Unknown';
+            $amount = number_format($account['amount'] ?? 0, 2);
+            $expenseBreakdown .= "   - {$name}: ₦{$amount}\n";
+        }
+
+        $comparisonInfo = '';
+        if ($compareData) {
+            $prevIncome = $compareData['totalIncome'] ?? 0;
+            $prevExpenses = $compareData['totalExpenses'] ?? 0;
+            $prevProfit = $compareData['netProfit'] ?? 0;
+            $incomeChange = $prevIncome > 0 ? round((($totalIncome - $prevIncome) / $prevIncome) * 100, 2) : 0;
+            $expenseChange = $prevExpenses > 0 ? round((($totalExpenses - $prevExpenses) / $prevExpenses) * 100, 2) : 0;
+            $profitChange = $prevProfit != 0 ? round((($netProfit - $prevProfit) / abs($prevProfit)) * 100, 2) : 0;
+
+            $comparisonInfo = "
+COMPARISON WITH PREVIOUS PERIOD ({$compareData['fromDate']} to {$compareData['toDate']}):
+- Previous Income: ₦" . number_format($prevIncome, 2) . " | Change: {$incomeChange}%
+- Previous Expenses: ₦" . number_format($prevExpenses, 2) . " | Change: {$expenseChange}%
+- Previous Net Profit: ₦" . number_format($prevProfit, 2) . " | Change: {$profitChange}%
+";
+        }
+
+        return "
+You are BallieAI, an expert Nigerian business and accounting analyst. Analyze this Profit & Loss report and provide clear, actionable insights for the business owner.
+
+PROFIT & LOSS REPORT
+Period: {$fromDate} to {$toDate}
+
+INCOME BREAKDOWN:
+{$incomeBreakdown}
+Total Income: ₦" . number_format($totalIncome, 2) . "
+
+EXPENSE BREAKDOWN:
+{$expenseBreakdown}
+Total Expenses: ₦" . number_format($totalExpenses, 2) . "
+
+STOCK INFORMATION:
+- Opening Stock: ₦" . number_format($openingStock, 2) . "
+- Closing Stock: ₦" . number_format($closingStock, 2) . "
+
+KEY METRICS:
+- Net " . ($netProfit >= 0 ? 'Profit' : 'Loss') . ": ₦" . number_format(abs($netProfit), 2) . "
+- Profit Margin: {$profitMargin}%
+{$comparisonInfo}
+
+Please provide a comprehensive interpretation that includes:
+
+1. **Overall Performance Summary** - A brief overview of the business's financial health for this period.
+
+2. **Income Analysis** - Identify top income sources, patterns, and opportunities to grow revenue.
+
+3. **Expense Analysis** - Identify major expense categories, flag any unusually high expenses, suggest cost-cutting opportunities.
+
+4. **Profitability Insights** - Comment on the profit margin, compare to industry standards for Nigerian SMEs if applicable.
+
+5. **Stock Movement** - Analyze the stock movement and its implications on cash flow.
+
+6. **Actionable Recommendations** - Provide 3-5 specific, actionable recommendations to improve profitability.
+
+7. **Risk Alerts** - Flag any concerning trends or potential financial risks.
+
+Use clear, simple language suitable for a Nigerian business owner who may not be an accounting expert. Use Naira (₦) for currency. Be encouraging but honest.
+";
+    }
+
+    /**
+     * Fallback interpretation when AI is unavailable
+     */
+    private function getFallbackProfitLossInterpretation(array $reportData): string
+    {
+        $totalIncome = $reportData['totalIncome'] ?? 0;
+        $totalExpenses = $reportData['totalExpenses'] ?? 0;
+        $netProfit = $reportData['netProfit'] ?? 0;
+        $profitMargin = $totalIncome > 0 ? round(($netProfit / $totalIncome) * 100, 2) : 0;
+
+        $status = $netProfit >= 0 ? 'profit' : 'loss';
+        $statusEmoji = $netProfit >= 0 ? '✅' : '⚠️';
+
+        $interpretation = "## {$statusEmoji} Financial Summary\n\n";
+
+        if ($netProfit >= 0) {
+            $interpretation .= "Your business generated a **net profit of ₦" . number_format($netProfit, 2) . "** during this period. ";
+        } else {
+            $interpretation .= "Your business recorded a **net loss of ₦" . number_format(abs($netProfit), 2) . "** during this period. ";
+        }
+
+        $interpretation .= "Your profit margin is **{$profitMargin}%**.\n\n";
+
+        $interpretation .= "### 📊 Quick Analysis\n\n";
+        $interpretation .= "- **Total Income:** ₦" . number_format($totalIncome, 2) . "\n";
+        $interpretation .= "- **Total Expenses:** ₦" . number_format($totalExpenses, 2) . "\n";
+        $interpretation .= "- **Expense Ratio:** " . ($totalIncome > 0 ? round(($totalExpenses / $totalIncome) * 100, 2) : 0) . "% of income\n\n";
+
+        $interpretation .= "### 💡 General Recommendations\n\n";
+        $interpretation .= "1. Review your largest expense categories for cost-saving opportunities\n";
+        $interpretation .= "2. Focus on increasing your top-performing income streams\n";
+        $interpretation .= "3. Monitor cash flow regularly to ensure operational stability\n";
+        $interpretation .= "4. Consider diversifying income sources to reduce risk\n\n";
+
+        $interpretation .= "*For a more detailed AI-powered analysis, please try again later or contact support.*";
+
+        return $interpretation;
+    }
+
+    /**
+     * Export Profit & Loss interpretation as PDF
+     */
+    public function exportProfitLossInterpretationPdf(Request $request)
+    {
+        $interpretation = $request->input('interpretation', '');
+        $reportDataJson = $request->input('reportData', '{}');
+
+        if (empty($interpretation)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'No interpretation data provided.'
+            ], 400);
+        }
+
+        try {
+            // Parse report data JSON string
+            $reportData = is_string($reportDataJson) ? json_decode($reportDataJson, true) : $reportDataJson;
+
+            $tenant = auth()->user()->tenant;
+            $fromDate = $reportData['fromDate'] ?? 'N/A';
+            $toDate = $reportData['toDate'] ?? 'N/A';
+            $totalIncome = $reportData['totalIncome'] ?? 0;
+            $totalExpenses = $reportData['totalExpenses'] ?? 0;
+            $netProfit = $reportData['netProfit'] ?? 0;
+
+            $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('tenant.reports.profit-loss-interpretation-pdf', compact(
+                'tenant',
+                'interpretation',
+                'reportData',
+                'fromDate',
+                'toDate',
+                'totalIncome',
+                'totalExpenses',
+                'netProfit'
+            ));
+
+            return $pdf->download('profit_loss_interpretation_' . $fromDate . '_to_' . $toDate . '.pdf');
+
+        } catch (\Exception $e) {
+            Log::error('PDF generation error: ' . $e->getMessage(), [
+                'trace' => $e->getTraceAsString(),
+                'interpretation_length' => strlen($interpretation),
+                'report_data' => $reportDataJson
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to generate PDF. Please try again.',
+                'error' => config('app.debug') ? $e->getMessage() : null
+            ], 500);
+        }
+    }
+
+    /**
+     * Interpret Balance Sheet using AI
+     */
+    public function interpretBalanceSheet(Request $request)
+    {
+        try {
+            $reportData = $request->input('reportData');
+
+            // Build the prompt for AI
+            $prompt = $this->buildBalanceSheetInterpretationPrompt($reportData);
+
+            // Call AI API
+            $interpretation = $this->callAI($prompt);
+
+            if (!$interpretation) {
+                // Return fallback interpretation if AI is unavailable
+                $interpretation = $this->getFallbackBalanceSheetInterpretation($reportData);
+            }
+
+            return response()->json([
+                'success' => true,
+                'interpretation' => $interpretation
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('Balance Sheet interpretation error: ' . $e->getMessage());
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to generate interpretation. Please try again.',
+                'error' => config('app.debug') ? $e->getMessage() : null
+            ], 500);
+        }
+    }
+
+    /**
+     * Build Balance Sheet interpretation prompt
+     */
+    private function buildBalanceSheetInterpretationPrompt(array $reportData): string
+    {
+        $asOfDate = $reportData['asOfDate'] ?? 'N/A';
+        $totalAssets = $reportData['totalAssets'] ?? 0;
+        $totalLiabilities = $reportData['totalLiabilities'] ?? 0;
+        $totalEquity = $reportData['totalEquity'] ?? 0;
+        $companyName = $reportData['companyName'] ?? 'the business';
+        $isBalanced = $reportData['isBalanced'] ?? true;
+        $debtToEquityRatio = $reportData['debtToEquityRatio'] ?? 0;
+        $debtRatio = $reportData['debtRatio'] ?? 0;
+        $equityRatio = $reportData['equityRatio'] ?? 0;
+        $netWorkingCapital = $reportData['netWorkingCapital'] ?? 0;
+
+        $prompt = "You are BallieAI, an expert financial analyst. Analyze the following Balance Sheet for {$companyName} as of {$asOfDate} and provide a comprehensive, professional interpretation.\n\n";
+
+        $prompt .= "## BALANCE SHEET SUMMARY\n";
+        $prompt .= "**As of Date:** {$asOfDate}\n";
+        $prompt .= "**Company:** {$companyName}\n\n";
+
+        $prompt .= "### Financial Position:\n";
+        $prompt .= "- **Total Assets:** ₦" . number_format($totalAssets, 2) . "\n";
+        $prompt .= "- **Total Liabilities:** ₦" . number_format($totalLiabilities, 2) . "\n";
+        $prompt .= "- **Total Equity:** ₦" . number_format($totalEquity, 2) . "\n";
+        $prompt .= "- **Balance Status:** " . ($isBalanced ? 'Balanced' : 'Out of Balance') . "\n\n";
+
+        $prompt .= "### Key Financial Ratios:\n";
+        $prompt .= "- **Debt-to-Equity Ratio:** " . number_format($debtToEquityRatio, 2) . "\n";
+        $prompt .= "- **Debt Ratio:** " . number_format($debtRatio, 1) . "%\n";
+        $prompt .= "- **Equity Ratio:** " . number_format($equityRatio, 1) . "%\n";
+        $prompt .= "- **Net Working Capital:** ₦" . number_format($netWorkingCapital, 2) . "\n\n";
+
+        // Add asset details if available
+        if (!empty($reportData['assets'])) {
+            $prompt .= "### Assets Breakdown:\n";
+            foreach ($reportData['assets'] as $asset) {
+                $assetName = $asset['name'] ?? $asset['account_name'] ?? 'Unknown Asset';
+                $assetBalance = $asset['balance'] ?? $asset['closing_balance'] ?? 0;
+                $prompt .= "- **{$assetName}:** ₦" . number_format($assetBalance, 2) . "\n";
+            }
+            $prompt .= "\n";
+        }
+
+        // Add liability details if available
+        if (!empty($reportData['liabilities'])) {
+            $prompt .= "### Liabilities Breakdown:\n";
+            foreach ($reportData['liabilities'] as $liability) {
+                $liabilityName = $liability['name'] ?? $liability['account_name'] ?? 'Unknown Liability';
+                $liabilityBalance = $liability['balance'] ?? $liability['closing_balance'] ?? 0;
+                $prompt .= "- **{$liabilityName}:** ₦" . number_format($liabilityBalance, 2) . "\n";
+            }
+            $prompt .= "\n";
+        }
+
+        // Add equity details if available
+        if (!empty($reportData['equity'])) {
+            $prompt .= "### Equity Breakdown:\n";
+            foreach ($reportData['equity'] as $equityItem) {
+                $equityName = $equityItem['name'] ?? $equityItem['account_name'] ?? 'Unknown Equity';
+                $equityBalance = $equityItem['balance'] ?? $equityItem['closing_balance'] ?? 0;
+                $prompt .= "- **{$equityName}:** ₦" . number_format($equityBalance, 2) . "\n";
+            }
+            $prompt .= "\n";
+        }
+
+        $prompt .= "## ANALYSIS REQUIREMENTS\n\n";
+        $prompt .= "Provide a detailed, professional analysis covering:\n\n";
+        $prompt .= "1. **Financial Position Overview:** Assess the overall financial health and stability\n";
+        $prompt .= "2. **Liquidity Analysis:** Evaluate the company's ability to meet short-term obligations\n";
+        $prompt .= "3. **Solvency Analysis:** Assess long-term financial stability and debt management\n";
+        $prompt .= "4. **Asset Management:** Review asset composition and efficiency\n";
+        $prompt .= "5. **Capital Structure:** Analyze the mix of debt and equity financing\n";
+        $prompt .= "6. **Key Strengths:** Highlight positive aspects of the financial position\n";
+        $prompt .= "7. **Areas of Concern:** Identify potential risks or weaknesses\n";
+        $prompt .= "8. **Strategic Recommendations:** Provide actionable insights for improvement\n\n";
+
+        $prompt .= "Format your response in clear, professional markdown with appropriate headings and bullet points. ";
+        $prompt .= "Use Nigerian Naira (₦) for all currency amounts. Keep the analysis concise but comprehensive.";
+
+        return $prompt;
+    }
+
+    /**
+     * Get fallback balance sheet interpretation
+     */
+    private function getFallbackBalanceSheetInterpretation(array $reportData): string
+    {
+        $asOfDate = $reportData['asOfDate'] ?? 'N/A';
+        $totalAssets = $reportData['totalAssets'] ?? 0;
+        $totalLiabilities = $reportData['totalLiabilities'] ?? 0;
+        $totalEquity = $reportData['totalEquity'] ?? 0;
+        $companyName = $reportData['companyName'] ?? 'Your Business';
+        $debtToEquityRatio = $reportData['debtToEquityRatio'] ?? 0;
+        $netWorkingCapital = $reportData['netWorkingCapital'] ?? 0;
+
+        $interpretation = "# Balance Sheet Interpretation\n\n";
+        $interpretation .= "**Company:** {$companyName}\n";
+        $interpretation .= "**As of Date:** {$asOfDate}\n\n";
+
+        $interpretation .= "## Financial Position Summary\n\n";
+        $interpretation .= "### Key Figures:\n";
+        $interpretation .= "- **Total Assets:** ₦" . number_format($totalAssets, 2) . "\n";
+        $interpretation .= "- **Total Liabilities:** ₦" . number_format($totalLiabilities, 2) . "\n";
+        $interpretation .= "- **Owner's Equity:** ₦" . number_format($totalEquity, 2) . "\n";
+        $interpretation .= "- **Net Working Capital:** ₦" . number_format($netWorkingCapital, 2) . "\n\n";
+
+        $interpretation .= "## Financial Health Analysis\n\n";
+
+        // Liquidity Assessment
+        if ($netWorkingCapital > 0) {
+            $interpretation .= "### Liquidity Position: Positive\n";
+            $interpretation .= "The company maintains positive net working capital of ₦" . number_format($netWorkingCapital, 2) . ", ";
+            $interpretation .= "indicating sufficient short-term resources to meet obligations.\n\n";
+        } else {
+            $interpretation .= "### Liquidity Position: Concern\n";
+            $interpretation .= "The company has negative net working capital of ₦" . number_format(abs($netWorkingCapital), 2) . ", ";
+            $interpretation .= "which may indicate potential short-term liquidity challenges.\n\n";
+        }
+
+        // Capital Structure Assessment
+        if ($debtToEquityRatio < 1) {
+            $interpretation .= "### Capital Structure: Conservative\n";
+            $interpretation .= "With a debt-to-equity ratio of " . number_format($debtToEquityRatio, 2) . ", ";
+            $interpretation .= "the company maintains a conservative capital structure with lower financial leverage.\n\n";
+        } elseif ($debtToEquityRatio < 2) {
+            $interpretation .= "### Capital Structure: Moderate\n";
+            $interpretation .= "The debt-to-equity ratio of " . number_format($debtToEquityRatio, 2) . " ";
+            $interpretation .= "indicates a balanced approach to financing with moderate leverage.\n\n";
+        } else {
+            $interpretation .= "### Capital Structure: Highly Leveraged\n";
+            $interpretation .= "A debt-to-equity ratio of " . number_format($debtToEquityRatio, 2) . " ";
+            $interpretation .= "suggests high financial leverage, which may increase financial risk.\n\n";
+        }
+
+        // Owner's Equity Assessment
+        if ($totalEquity > 0) {
+            $equityPercentage = ($totalEquity / $totalAssets) * 100;
+            $interpretation .= "### Ownership Position\n";
+            $interpretation .= "Owner's equity represents " . number_format($equityPercentage, 1) . "% of total assets, ";
+            $interpretation .= "reflecting the owner's stake in the business after all liabilities are paid.\n\n";
+        }
+
+        $interpretation .= "## Key Recommendations\n\n";
+        $interpretation .= "1. **Monitor Liquidity:** Maintain adequate cash reserves for operational needs\n";
+        $interpretation .= "2. **Optimize Asset Utilization:** Ensure assets are generating appropriate returns\n";
+        $interpretation .= "3. **Manage Debt Levels:** Keep debt at sustainable levels relative to equity\n";
+        $interpretation .= "4. **Build Equity:** Focus on profitable operations to strengthen financial position\n";
+        $interpretation .= "5. **Regular Review:** Conduct quarterly balance sheet reviews to track progress\n\n";
+
+        $interpretation .= "---\n\n";
+        $interpretation .= "*Note: This is a basic interpretation. For detailed analysis, consult with a financial professional.*";
+
+        return $interpretation;
+    }
+
+    /**
+     * Export Balance Sheet interpretation as PDF
+     */
+    public function exportBalanceSheetInterpretationPdf(Request $request)
+    {
+        try {
+            $interpretation = $request->input('interpretation');
+            $reportDataJson = $request->input('reportData');
+
+            // Parse report data
+            $reportData = is_string($reportDataJson) ? json_decode($reportDataJson, true) : $reportDataJson;
+
+            $tenant = auth()->user()->tenant;
+            $asOfDate = $reportData['asOfDate'] ?? 'N/A';
+            $totalAssets = $reportData['totalAssets'] ?? 0;
+            $totalLiabilities = $reportData['totalLiabilities'] ?? 0;
+            $totalEquity = $reportData['totalEquity'] ?? 0;
+
+            $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('tenant.reports.balance-sheet-interpretation-pdf', compact(
+                'tenant',
+                'interpretation',
+                'reportData',
+                'asOfDate',
+                'totalAssets',
+                'totalLiabilities',
+                'totalEquity'
+            ));
+
+            return $pdf->download('balance_sheet_interpretation_' . $asOfDate . '.pdf');
+
+        } catch (\Exception $e) {
+            Log::error('Balance Sheet PDF generation error: ' . $e->getMessage(), [
+                'trace' => $e->getTraceAsString(),
+                'interpretation_length' => strlen($interpretation ?? ''),
+                'report_data' => $reportDataJson ?? 'N/A'
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to generate PDF. Please try again.',
+                'error' => config('app.debug') ? $e->getMessage() : null
+            ], 500);
+        }
+    }
+
 }

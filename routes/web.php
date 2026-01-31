@@ -204,6 +204,10 @@ Route::prefix('api')->middleware(['web', 'auth'])->group(function () {
         Route::post('/generate-particulars', [AccountingAssistantController::class, 'generateParticulars']);
         Route::post('/suggest-accounts', [AccountingAssistantController::class, 'suggestAccounts']);
         Route::post('/ask-question', [AccountingAssistantController::class, 'askQuestion']);
+        Route::post('/interpret-profit-loss', [AccountingAssistantController::class, 'interpretProfitLoss']);
+        Route::post('/export-profit-loss-interpretation-pdf', [AccountingAssistantController::class, 'exportProfitLossInterpretationPdf']);
+        Route::post('/interpret-balance-sheet', [AccountingAssistantController::class, 'interpretBalanceSheet']);
+        Route::post('/export-balance-sheet-interpretation-pdf', [AccountingAssistantController::class, 'exportBalanceSheetInterpretationPdf']);
 
     });
 });

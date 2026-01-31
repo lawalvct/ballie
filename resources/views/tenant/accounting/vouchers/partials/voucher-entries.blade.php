@@ -141,6 +141,9 @@
                     <button onclick="getAISuggestions()" class="text-purple-600 hover:text-purple-800 text-sm">
                         🔄 Refresh
                     </button>
+                    <button onclick="showAccountingChat(); event.stopPropagation();" class="text-green-600 hover:text-green-800 text-sm">
+                        💬 Ask Question
+                    </button>
                     <button onclick="toggleAISuggestions()" class="text-purple-600 hover:text-purple-800">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
@@ -775,7 +778,7 @@ window.showAccountingChat = function(event) {
     const aiContent = document.getElementById('ai-suggestions-content');
     aiContent.innerHTML = `
         <div class="bg-gradient-to-r from-green-50 to-blue-50 border border-green-200 rounded-lg p-4 mb-4">
-            <h5 class="font-semibold text-green-800 mb-3">💬 Ask Ballie Your Accounting Question</h5>
+            <h5 class="font-semibold text-green-800 mb-3">💬 Ask BallieAI Your Accounting Question</h5>
 
             <div class="space-y-3">
                 <div>
@@ -961,7 +964,12 @@ window.toggleAISuggestions = function() {
     const panel = document.getElementById('ai-suggestions-panel');
     panel.classList.toggle('hidden');
     if (!panel.classList.contains('hidden')) {
-        setTimeout(getAISuggestions, 500);
+        const narration = document.querySelector('textarea[name="narration"]')?.value?.trim() || '';
+        if (narration) {
+            setTimeout(getAISuggestions, 500);
+        } else {
+            showAccountingChat();
+        }
     }
 };
 
