@@ -15,6 +15,7 @@ use Maatwebsite\Excel\Facades\Excel;
 use App\Imports\LedgerAccountsImport;
 use App\Exports\LedgerAccountsTemplateExport;
 use App\Exports\AccountGroupsReferenceExport;
+use App\Exports\ChartOfAccountsExport;
 
 class LedgerAccountController extends Controller
 {
@@ -66,10 +67,10 @@ class LedgerAccountController extends Controller
             $query->orderBy($sortField, $sortDirection);
         }
 
-        // For tree view, get all accounts without pagination
-        if ($viewType === 'tree') {
+        // For tree and chart views, get all accounts without pagination
+        if ($viewType === 'tree' || $viewType === 'chart') {
             $accounts = $query->orderBy('code')->get();
-            $ledgerAccounts = null; // Not needed for tree view
+            $ledgerAccounts = null; // Not needed for tree/chart view
         } else {
             $ledgerAccounts = $query->paginate(100)->withQueryString();
             $accounts = $ledgerAccounts; // For list view compatibility
@@ -665,6 +666,49 @@ public function show(Request $request, Tenant $tenant, LedgerAccount $ledgerAcco
         };
 
         return response()->stream($callback, 200, $headers);
+    }
+
+    public function exportChart(Request $request, Tenant $tenant)
+    {
+        $query = LedgerAccount::with(['accountGroup', 'parent'])
+            ->where('tenant_id', $tenant->id);
+
+        if ($request->filled('search')) {
+            $search = $request->get('search');
+            $query->where(function ($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                  ->orWhere('code', 'like', "%{$search}%")
+                  ->orWhere('description', 'like', "%{$search}%");
+            });
+        }
+
+        if ($request->filled('account_group_id')) {
+            $query->where('account_group_id', $request->get('account_group_id'));
+        }
+
+        if ($request->filled('account_type')) {
+            $query->where('account_type', $request->get('account_type'));
+        }
+
+        if ($request->filled('is_active')) {
+            $query->where('is_active', $request->get('is_active'));
+        }
+
+        if ($request->filled('nature')) {
+            $isSystem = $request->get('nature') === 'system';
+            $query->where('is_system_account', $isSystem);
+        }
+
+        $accounts = $query->orderBy('code')->get();
+
+        $accountGroups = AccountGroup::where('tenant_id', $tenant->id)
+            ->where('is_active', true)
+            ->orderBy('name')
+            ->get();
+
+        $filename = 'chart-of-accounts-' . now()->format('Y-m-d') . '.xlsx';
+
+        return Excel::download(new ChartOfAccountsExport($accounts, $accountGroups), $filename);
     }
 
     public function resetBalance(Request $request, Tenant $tenant, LedgerAccount $ledgerAccount)

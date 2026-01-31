@@ -234,6 +234,13 @@
                     </svg>
                     Tree
                 </a>
+                <a href="{{ route('tenant.accounting.ledger-accounts.index', ['tenant' => $tenant->slug, 'view' => 'chart']) }}"
+                   class="inline-flex items-center px-3 py-2 text-sm font-medium rounded-md {{ $viewType === 'chart' ? 'bg-primary-100 text-primary-700' : 'text-gray-500 hover:text-gray-700' }}">
+                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 10V7m0 10a2 2 0 002 2h2a2 2 0 002-2V7a2 2 0 00-2-2h-2a2 2 0 00-2 2"></path>
+                    </svg>
+                    Chart
+                </a>
             </div>
 
             <a href="{{ route('tenant.accounting.ledger-accounts.create', $tenant) }}"
@@ -244,13 +251,23 @@
                 Create Account
             </a>
 
-            <a href="{{ route('tenant.accounting.ledger-accounts.export', $tenant) }}"
-               class="inline-flex items-center px-4 py-2 bg-gray-600 border border-transparent rounded-lg font-semibold text-xs text-white uppercase tracking-widest hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500 transition">
-                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-                </svg>
-                Export
-            </a>
+            @if($viewType === 'chart')
+                <a href="{{ route('tenant.accounting.ledger-accounts.export.chart', ['tenant' => $tenant->slug] + request()->only(['search', 'account_group_id', 'account_type', 'is_active', 'nature'])) }}"
+                   class="inline-flex items-center px-4 py-2 bg-emerald-600 border border-transparent rounded-lg font-semibold text-xs text-white uppercase tracking-widest hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 transition">
+                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                    </svg>
+                    Export Excel
+                </a>
+            @else
+                <a href="{{ route('tenant.accounting.ledger-accounts.export', $tenant) }}"
+                   class="inline-flex items-center px-4 py-2 bg-gray-600 border border-transparent rounded-lg font-semibold text-xs text-white uppercase tracking-widest hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500 transition">
+                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                    </svg>
+                    Export
+                </a>
+            @endif
 
             <a href="{{ route('tenant.accounting.ledger-accounts.download-pdf', $tenant) }}"
                class="inline-flex items-center px-4 py-2 bg-red-600 border border-transparent rounded-lg font-semibold text-xs text-white uppercase tracking-widest hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 transition">
@@ -603,7 +620,15 @@
 
     <!-- Accounts Display -->
     <div class="bg-white shadow-sm rounded-lg border border-gray-200 overflow-hidden">
-        @if($viewType === 'tree')
+        @if($viewType === 'chart')
+            <div class="px-6 py-4 border-b border-gray-200">
+                <h3 class="text-lg font-medium text-gray-900">Chart of Accounts</h3>
+                <p class="mt-1 text-sm text-gray-500">View accounts grouped by account groups in columns (scroll horizontally for more)</p>
+            </div>
+            <div class="p-6 overflow-x-auto">
+                @include('tenant.accounting.ledger-accounts.partials.account-chart', ['accounts' => $accounts, 'accountGroups' => $accountGroups])
+            </div>
+        @elseif($viewType === 'tree')
             <div class="px-6 py-4 border-b border-gray-200">
                 <h3 class="text-lg font-medium text-gray-900">Account Hierarchy</h3>
                 <p class="mt-1 text-sm text-gray-500">View accounts in a hierarchical tree structure</p>
