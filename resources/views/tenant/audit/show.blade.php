@@ -37,78 +37,81 @@
     </div>
 
     <!-- Audit Timeline -->
-    <div class="bg-white rounded-lg shadow-sm border border-gray-200">
-        <div class="px-6 py-4 border-b border-gray-200">
-            <h2 class="text-lg font-semibold text-gray-900">Activity Timeline</h2>
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200">
+        <div class="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
+            <div>
+                <h2 class="text-lg font-semibold text-gray-900">Activity Timeline</h2>
+                <p class="text-sm text-gray-500">Most recent activity first</p>
+            </div>
+            <div class="text-xs text-gray-400">
+                {{ count($auditTrail) }} events
+            </div>
         </div>
 
         <div class="p-6">
             @if(count($auditTrail) > 0)
                 <div class="relative">
-                    <!-- Timeline Line -->
-                    <div class="absolute left-5 top-0 bottom-0 w-0.5 bg-gray-200"></div>
+                    <div class="absolute left-4 sm:left-6 top-2 bottom-2 w-px bg-gradient-to-b from-gray-200 via-gray-200 to-transparent"></div>
 
-                    <!-- Timeline Items -->
                     <div class="space-y-6">
                         @foreach($auditTrail as $index => $activity)
-                            <div class="relative flex items-start space-x-4">
-                                <!-- Timeline Dot -->
+                            @php
+                                $actionBadge = match($activity['action'] ?? '') {
+                                    'created' => ['bg' => 'bg-emerald-100', 'text' => 'text-emerald-700', 'ring' => 'ring-emerald-200', 'icon' => 'fa-plus'],
+                                    'updated' => ['bg' => 'bg-amber-100', 'text' => 'text-amber-700', 'ring' => 'ring-amber-200', 'icon' => 'fa-pen'],
+                                    'deleted' => ['bg' => 'bg-rose-100', 'text' => 'text-rose-700', 'ring' => 'ring-rose-200', 'icon' => 'fa-trash'],
+                                    'posted' => ['bg' => 'bg-violet-100', 'text' => 'text-violet-700', 'ring' => 'ring-violet-200', 'icon' => 'fa-check'],
+                                    default => ['bg' => 'bg-gray-100', 'text' => 'text-gray-600', 'ring' => 'ring-gray-200', 'icon' => 'fa-circle'],
+                                };
+                            @endphp
+                            <div class="relative flex gap-4 sm:gap-6">
                                 <div class="relative z-10 flex-shrink-0">
-                                    <div class="w-10 h-10 rounded-full flex items-center justify-center
-                                        {{ $activity['action'] == 'created' ? 'bg-green-500 text-white' : '' }}
-                                        {{ $activity['action'] == 'updated' ? 'bg-yellow-500 text-white' : '' }}
-                                        {{ $activity['action'] == 'deleted' ? 'bg-red-500 text-white' : '' }}
-                                        {{ $activity['action'] == 'posted' ? 'bg-purple-500 text-white' : '' }}
-                                        shadow-lg">
-                                        @if($activity['action'] == 'created')
-                                            <i class="fas fa-plus"></i>
-                                        @elseif($activity['action'] == 'updated')
-                                            <i class="fas fa-edit"></i>
-                                        @elseif($activity['action'] == 'deleted')
-                                            <i class="fas fa-trash"></i>
-                                        @elseif($activity['action'] == 'posted')
-                                            <i class="fas fa-check"></i>
-                                        @endif
+                                    <div class="w-9 h-9 sm:w-10 sm:h-10 rounded-full flex items-center justify-center {{ $actionBadge['bg'] }} {{ $actionBadge['text'] }} ring-4 ring-white shadow">
+                                        <i class="fas {{ $actionBadge['icon'] }} text-sm"></i>
                                     </div>
                                 </div>
 
-                                <!-- Activity Content -->
-                                <div class="flex-1 bg-gray-50 rounded-lg p-4 shadow-sm">
-                                    <div class="flex items-start justify-between">
-                                        <div class="flex-1">
-                                            <div class="flex items-center space-x-3 mb-2">
-                                                <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium
-                                                    {{ $activity['action'] == 'created' ? 'bg-green-100 text-green-800' : '' }}
-                                                    {{ $activity['action'] == 'updated' ? 'bg-yellow-100 text-yellow-800' : '' }}
-                                                    {{ $activity['action'] == 'deleted' ? 'bg-red-100 text-red-800' : '' }}
-                                                    {{ $activity['action'] == 'posted' ? 'bg-purple-100 text-purple-800' : '' }}">
-                                                    {{ ucfirst($activity['action']) }}
-                                                </span>
-                                                <span class="text-sm text-gray-500">
-                                                    {{ $activity['timestamp']->format('F d, Y') }} at {{ $activity['timestamp']->format('h:i A') }}
-                                                </span>
-                                            </div>
+                                <div class="flex-1">
+                                    <div class="bg-white border border-gray-200 rounded-xl shadow-sm hover:shadow-md transition-shadow">
+                                        <div class="p-4 sm:p-5">
+                                            <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+                                                <div class="flex-1">
+                                                    <div class="flex flex-wrap items-center gap-2 mb-2">
+                                                        <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold {{ $actionBadge['bg'] }} {{ $actionBadge['text'] }} {{ $actionBadge['ring'] }} ring-1">
+                                                            {{ ucfirst($activity['action'] ?? 'activity') }}
+                                                        </span>
+                                                        <span class="text-xs text-gray-500">
+                                                            {{ $activity['timestamp']->format('F d, Y') }} • {{ $activity['timestamp']->format('h:i A') }}
+                                                        </span>
+                                                    </div>
 
-                                            <p class="text-base font-medium text-gray-900 mb-2">
-                                                {{ $activity['details'] }}
-                                            </p>
+                                                    <p class="text-base font-semibold text-gray-900 mb-2">
+                                                        {{ $activity['details'] }}
+                                                    </p>
 
-                                            <div class="flex items-center space-x-4 text-sm text-gray-600">
-                                                <div class="flex items-center">
-                                                    <i class="fas fa-user mr-2"></i>
-                                                    <span>{{ $activity['user']->name ?? 'System' }}</span>
+                                                    <div class="flex flex-wrap items-center gap-x-6 gap-y-2 text-sm text-gray-600">
+                                                        <div class="flex items-center">
+                                                            <span class="inline-flex items-center justify-center w-8 h-8 rounded-full bg-gray-100 text-gray-600 mr-2">
+                                                                <i class="fas fa-user text-xs"></i>
+                                                            </span>
+                                                            <div>
+                                                                <div class="font-medium text-gray-800">{{ $activity['user']->name ?? 'System' }}</div>
+                                                                <div class="text-xs text-gray-500">{{ $activity['user']->email ?? 'N/A' }}</div>
+                                                            </div>
+                                                        </div>
+                                                        <div class="flex items-center text-xs text-gray-500">
+                                                            <i class="fas fa-clock mr-2"></i>
+                                                            <span>{{ $activity['timestamp']->diffForHumans() }}</span>
+                                                        </div>
+                                                    </div>
                                                 </div>
-                                                <div class="flex items-center">
-                                                    <i class="fas fa-envelope mr-2"></i>
-                                                    <span>{{ $activity['user']->email ?? 'N/A' }}</span>
+
+                                                <div class="text-right">
+                                                    <span class="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-medium bg-gray-50 text-gray-600">
+                                                        #{{ $index + 1 }}
+                                                    </span>
                                                 </div>
                                             </div>
-                                        </div>
-
-                                        <div class="text-right ml-4">
-                                            <span class="text-xs text-gray-500">
-                                                {{ $activity['timestamp']->diffForHumans() }}
-                                            </span>
                                         </div>
                                     </div>
                                 </div>

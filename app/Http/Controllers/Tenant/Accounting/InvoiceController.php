@@ -20,6 +20,8 @@ use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Log;
 use Barryvdh\DomPDF\Facade\Pdf;
+use App\Exports\InvoicesExport;
+use Maatwebsite\Excel\Facades\Excel;
 use App\Helpers\PaymentHelper;
 use App\Helpers\PaystackPaymentHelper;
 
@@ -79,6 +81,59 @@ class InvoiceController extends Controller
         $invoices = $query->latest('voucher_date')->paginate(15);
 
         return view('tenant.accounting.invoices.index', compact('invoices', 'tenant'));
+    }
+
+    public function export(Request $request, Tenant $tenant)
+    {
+        $query = Voucher::where('tenant_id', $tenant->id)
+            ->whereHas('voucherType', function($q) use ($request) {
+                $q->where('affects_inventory', true);
+
+                $type = $request->input('type', 'sales');
+                if ($type === 'sales') {
+                    $q->where('inventory_effect', 'decrease');
+                } elseif ($type === 'purchase') {
+                    $q->where('inventory_effect', 'increase');
+                }
+            })
+            ->with(['voucherType', 'createdBy', 'entries.ledgerAccount']);
+
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function($q) use ($search) {
+                $q->where('voucher_number', 'like', "%{$search}%")
+                  ->orWhere('reference_number', 'like', "%{$search}%")
+                  ->orWhere('narration', 'like', "%{$search}%")
+                  ->orWhereHas('entries.ledgerAccount', function($subQ) use ($search) {
+                      $subQ->where('name', 'like', "%{$search}%");
+                  });
+            });
+        }
+
+        if ($request->filled('status')) {
+            $query->where('status', $request->status);
+        }
+
+        if ($request->filled('date_from')) {
+            $query->where('voucher_date', '>=', $request->date_from);
+        }
+        if ($request->filled('date_to')) {
+            $query->where('voucher_date', '<=', $request->date_to);
+        }
+
+        $invoices = $query->latest('voucher_date')->get();
+        $format = strtolower($request->get('format', 'excel'));
+
+        if ($format === 'pdf') {
+            $pdf = Pdf::loadView('tenant.accounting.invoices.export-pdf', compact('tenant', 'invoices'));
+            $filename = 'invoices-' . now()->format('Y-m-d') . '.pdf';
+
+            return $pdf->download($filename);
+        }
+
+        $filename = 'invoices-' . now()->format('Y-m-d') . '.xlsx';
+
+        return Excel::download(new InvoicesExport($invoices), $filename);
     }
 
     public function create(Tenant $tenant)

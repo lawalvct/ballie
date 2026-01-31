@@ -286,108 +286,133 @@
 
             <div class="p-6">
                 @if(($activities ?? collect())->count() > 0)
-                    <div id="timeline-view" class="space-y-6">
+                    <div id="timeline-view" class="space-y-0">
                         @foreach($activities ?? [] as $activity)
-                            <div class="relative flex flex-col items-start space-x-0 p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors group">
+                            <div class="relative flex gap-6 pb-8">
                                 {{-- Timeline Line --}}
                                 @if(!$loop->last)
-                                    <div class="absolute left-8 top-16 w-0.5 h-full bg-gray-200"></div>
+                                    <div class="absolute left-6 top-12 w-0.5 h-full bg-gradient-to-b from-gray-300 via-gray-200 to-gray-100"></div>
                                 @endif
 
                                 {{-- Action Icon --}}
-                                <div class="flex-shrink-0">
+                                <div class="relative flex-shrink-0">
                                     @php
                                         $actionConfig = match($activity['action'] ?? 'default') {
-                                            'created' => ['bg' => 'bg-green-100', 'text' => 'text-green-600', 'icon' => 'M12 6v6m0 0v6m0-6h6m-6 0H6'],
-                                            'updated' => ['bg' => 'bg-yellow-100', 'text' => 'text-yellow-600', 'icon' => 'M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z'],
-                                            'deleted' => ['bg' => 'bg-red-100', 'text' => 'text-red-600', 'icon' => 'M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16'],
-                                            'posted' => ['bg' => 'bg-purple-100', 'text' => 'text-purple-600', 'icon' => 'M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z'],
-                                            'restored' => ['bg' => 'bg-blue-100', 'text' => 'text-blue-600', 'icon' => 'M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15'],
-                                            default => ['bg' => 'bg-gray-100', 'text' => 'text-gray-600', 'icon' => 'M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z']
+                                            'created' => ['bg' => 'bg-emerald-100', 'ring' => 'ring-emerald-100', 'text' => 'text-emerald-600', 'icon' => 'M12 6v6m0 0v6m0-6h6m-6 0H6'],
+                                            'updated' => ['bg' => 'bg-amber-100', 'ring' => 'ring-amber-100', 'text' => 'text-amber-600', 'icon' => 'M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z'],
+                                            'deleted' => ['bg' => 'bg-rose-100', 'ring' => 'ring-rose-100', 'text' => 'text-rose-600', 'icon' => 'M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16'],
+                                            'posted' => ['bg' => 'bg-violet-100', 'ring' => 'ring-violet-100', 'text' => 'text-violet-600', 'icon' => 'M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z'],
+                                            'restored' => ['bg' => 'bg-sky-100', 'ring' => 'ring-sky-100', 'text' => 'text-sky-600', 'icon' => 'M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15'],
+                                            default => ['bg' => 'bg-gray-100', 'ring' => 'ring-gray-100', 'text' => 'text-gray-600', 'icon' => 'M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z']
                                         };
                                     @endphp
-                                    <div class="w-12 h-12 rounded-full flex items-center justify-center {{ $actionConfig['bg'] }} {{ $actionConfig['text'] }} ring-4 ring-white shadow-sm">
+                                    <div class="w-12 h-12 rounded-full flex items-center justify-center {{ $actionConfig['bg'] }} {{ $actionConfig['text'] }} ring-4 {{ $actionConfig['ring'] }} shadow-sm border-2 border-white">
                                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="{{ $actionConfig['icon'] }}" />
                                         </svg>
                                     </div>
                                 </div>
 
-                                {{-- Activity Content --}}
-                                <div class="flex-1">
-                                    <div class="flex items-start justify-between">
-                                        <div class="flex-1">
-                                            <div class="flex items-center space-x-2 mb-1">
-                                                <h4 class="text-sm font-semibold text-gray-900">{{ $activity['details'] ?? 'Activity performed' }}</h4>
-                                                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium {{ $actionConfig['bg'] }} {{ $actionConfig['text'] }}">
-                                                    {{ ucfirst($activity['action'] ?? 'unknown') }}
-                                                </span>
-                                            </div>
-                                            <div class="flex flex-col items-start space-y-2 text-sm text-gray-600">
-                                                <div class="flex items-center space-x-1">
-                                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                                                    </svg>
-                                                    <span class="font-medium">{{ $activity['user']->name ?? 'System' }}</span>
+                                {{-- Activity Card --}}
+                                <div class="flex-1 bg-white rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-all duration-200 overflow-hidden">
+                                    <div class="p-5">
+                                        <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
+                                            <div class="flex-1 min-w-0">
+                                                {{-- Header with Title and Badge --}}
+                                                <div class="flex items-start gap-3 mb-3">
+                                                    <h4 class="text-base font-semibold text-gray-900 flex-1">{{ $activity['details'] ?? 'Activity performed' }}</h4>
+                                                    <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold {{ $actionConfig['bg'] }} {{ $actionConfig['text'] }} ring-1 {{ $actionConfig['ring'] }}">
+                                                        {{ ucfirst($activity['action'] ?? 'unknown') }}
+                                                    </span>
                                                 </div>
-                                                <div class="flex items-center space-x-1">
-                                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-                                                    </svg>
-                                                    <span>{{ $activity['model'] ?? 'Unknown' }}</span>
-                                                </div>
-                                                @if(isset($activity['ip_address']))
-                                                    <div class="flex items-center space-x-1">
-                                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9v-9m0-9v9" />
+
+                                                {{-- Meta Information --}}
+                                                <div class="flex flex-wrap gap-4 text-sm text-gray-600 mb-3">
+                                                    <div class="flex items-center gap-2">
+                                                        <div class="w-8 h-8 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white text-xs font-semibold">
+                                                            {{ strtoupper(substr($activity['user']->name ?? 'S', 0, 1)) }}
+                                                        </div>
+                                                        <div class="flex flex-col">
+                                                            <span class="font-medium text-gray-900">{{ $activity['user']->name ?? 'System' }}</span>
+                                                            @if(isset($activity['user']->email))
+                                                                <span class="text-xs text-gray-500">{{ $activity['user']->email }}</span>
+                                                            @endif
+                                                        </div>
+                                                    </div>
+
+                                                    <div class="flex items-center gap-2 px-3 py-1.5 bg-gray-50 rounded-lg">
+                                                        <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
                                                         </svg>
-                                                        <span class="text-xs">{{ $activity['ip_address'] }}</span>
+                                                        <span class="font-medium">{{ $activity['model'] ?? 'Unknown' }}</span>
+                                                    </div>
+
+                                                    @if(isset($activity['ip_address']))
+                                                        <div class="flex items-center gap-2 px-3 py-1.5 bg-gray-50 rounded-lg">
+                                                            <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9v-9m0-9v9" />
+                                                            </svg>
+                                                            <span class="text-xs font-mono">{{ $activity['ip_address'] }}</span>
+                                                        </div>
+                                                    @endif
+                                                </div>
+
+                                                {{-- Changes Details --}}
+                                                @if(isset($activity['changes']) && !empty($activity['changes']))
+                                                    <div class="mt-3 p-3 bg-gray-50 rounded-lg border border-gray-200">
+                                                        <details class="text-sm group">
+                                                            <summary class="cursor-pointer text-gray-700 hover:text-gray-900 font-medium flex items-center gap-2">
+                                                                <svg class="w-4 h-4 transition-transform group-open:rotate-90" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                                                                </svg>
+                                                                View Changes ({{ count($activity['changes']) }})
+                                                            </summary>
+                                                            <div class="mt-3 space-y-2 pl-6">
+                                                                @foreach($activity['changes'] as $field => $change)
+                                                                    <div class="flex flex-col gap-1 text-xs">
+                                                                        <span class="font-semibold text-gray-700">{{ ucfirst(str_replace('_', ' ', $field)) }}:</span>
+                                                                        <div class="flex items-center gap-2">
+                                                                            <span class="px-2 py-1 bg-rose-100 text-rose-700 rounded font-mono">{{ $change['old'] ?? 'null' }}</span>
+                                                                            <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                                                                            </svg>
+                                                                            <span class="px-2 py-1 bg-emerald-100 text-emerald-700 rounded font-mono">{{ $change['new'] ?? 'null' }}</span>
+                                                                        </div>
+                                                                    </div>
+                                                                @endforeach
+                                                            </div>
+                                                        </details>
                                                     </div>
                                                 @endif
                                             </div>
-                                            @if(isset($activity['changes']) && !empty($activity['changes']))
-                                                <div class="mt-2 p-2 bg-white rounded border border-gray-200">
-                                                    <details class="text-xs">
-                                                        <summary class="cursor-pointer text-gray-600 hover:text-gray-800">View Changes</summary>
-                                                        <div class="mt-2 space-y-1">
-                                                            @foreach($activity['changes'] as $field => $change)
-                                                                <div class="flex flex-col justify-between">
-                                                                    <span class="font-medium">{{ $field }}:</span>
-                                                                    <span class="text-red-600">{{ $change['old'] ?? 'null' }}</span>
-                                                                    <span>→</span>
-                                                                    <span class="text-green-600">{{ $change['new'] ?? 'null' }}</span>
-                                                                </div>
-                                                            @endforeach
-                                                        </div>
-                                                    </details>
+
+                                            {{-- Right Side: Time and Actions --}}
+                                            <div class="flex sm:flex-col items-end gap-3">
+                                                <div class="text-right">
+                                                    <div class="text-sm font-semibold text-gray-900">{{ $activity['timestamp']->format('M d, Y') }}</div>
+                                                    <div class="text-xs text-gray-500">{{ $activity['timestamp']->format('H:i:s') }}</div>
+                                                    <div class="text-xs text-gray-400 mt-1">{{ $activity['timestamp']->diffForHumans() }}</div>
                                                 </div>
-                                            @endif
-                                        </div>
-                                        <div class="flex flex-col items-start space-y-2 ml-0 mt-2">
-                                            <div class="text-right">
-                                                <div class="text-sm text-gray-900">{{ $activity['timestamp']->format('M d, Y') }}</div>
-                                                <div class="text-xs text-gray-500">{{ $activity['timestamp']->format('H:i:s') }}</div>
-                                                <div class="text-xs text-gray-400">{{ $activity['timestamp']->diffForHumans() }}</div>
+                                                @if(isset($activity['model']) && isset($activity['id']))
+                                                    @php
+                                                        $showRoute = match(strtolower($activity['model'])) {
+                                                            'customer' => route('tenant.crm.customers.show', ['tenant' => $tenant->slug, 'customer' => $activity['id']]),
+                                                            'vendor' => route('tenant.crm.vendors.show', ['tenant' => $tenant->slug, 'vendor' => $activity['id']]),
+                                                            'product' => route('tenant.inventory.products.show', ['tenant' => $tenant->slug, 'product' => $activity['id']]),
+                                                            'voucher' => route('tenant.accounting.vouchers.show', ['tenant' => $tenant->slug, 'voucher' => $activity['id']]),
+                                                            default => '#'
+                                                        };
+                                                    @endphp
+                                                    <a href="{{ $showRoute }}"
+                                                       class="inline-flex items-center justify-center w-10 h-10 text-indigo-600 hover:text-white hover:bg-indigo-600 bg-indigo-50 rounded-lg transition-colors duration-200"
+                                                       title="View {{ $activity['model'] }}">
+                                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                                        </svg>
+                                                    </a>
+                                                @endif
                                             </div>
-                                            @if(isset($activity['model']) && isset($activity['id']))
-                                                @php
-                                                    $showRoute = match(strtolower($activity['model'])) {
-                                                        'customer' => route('tenant.crm.customers.show', ['tenant' => $tenant->slug, 'customer' => $activity['id']]),
-                                                        'vendor' => route('tenant.crm.vendors.show', ['tenant' => $tenant->slug, 'vendor' => $activity['id']]),
-                                                        'product' => route('tenant.inventory.products.show', ['tenant' => $tenant->slug, 'product' => $activity['id']]),
-                                                        'voucher' => route('tenant.accounting.vouchers.show', ['tenant' => $tenant->slug, 'voucher' => $activity['id']]),
-                                                        default => '#'
-                                                    };
-                                                @endphp
-                                                <a href="{{ $showRoute }}"
-                                                   class="p-2 text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50 rounded-md transition-colors"
-                                                   title="View {{ $activity['model'] }}">
-                                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                                                    </svg>
-                                                </a>
-                                            @endif
                                         </div>
                                     </div>
                                 </div>

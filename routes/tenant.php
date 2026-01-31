@@ -196,6 +196,7 @@ Route::middleware(['auth'])->group(function () {
          // Sales Invoices
 Route::prefix('invoices')->name('invoices.')->group(function () {
     Route::get('/', [InvoiceController::class, 'index'])->name('index');
+    Route::get('/export', [InvoiceController::class, 'export'])->name('export');
     Route::get('/create', [InvoiceController::class, 'create'])->name('create');
     Route::post('/', [InvoiceController::class, 'store'])->name('store');
     Route::get('/{invoice}', [InvoiceController::class, 'show'])->name('show');
