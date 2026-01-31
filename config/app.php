@@ -171,6 +171,7 @@ return [
         App\Providers\TelescopeServiceProvider::class,
         App\Providers\HelperServiceProvider::class,
         App\Providers\PermissionServiceProvider::class,
+        App\Providers\BrandServiceProvider::class,
     ])->toArray(),
 
     /*
@@ -185,7 +186,7 @@ return [
     */
 
     'aliases' => Facade::defaultAliases()->merge([
-        // 'Example' => App\Facades\Example::class,
+        'Brand' => App\Facades\Brand::class,
     ])->toArray(),
 
 ];

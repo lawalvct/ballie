@@ -5,44 +5,44 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
 
-    <title>@yield('title', ($brand['name'] ?? 'Ballie') . ' - ' . ($brand['tagline'] ?? 'Business Management Software'))</title>
-    <meta name="description" content="@yield('description', $brand['description'] ?? 'Comprehensive business management software built specifically for Nigerian businesses. Manage accounting, inventory, sales, and more in one platform.')">
+    <title>@yield('title', 'Budlite - Nigerian Business Management Software')</title>
+    <meta name="description" content="@yield('description', 'Comprehensive business management software built specifically for Nigerian businesses. Manage accounting, inventory, sales, and more in one platform.')">
 
     <!-- Open Graph / Facebook -->
     <meta property="og:type" content="website">
     <meta property="og:url" content="{{ url()->current() }}">
-    <meta property="og:title" content="@yield('og_title', ($brand['name'] ?? 'Ballie') . ' - ' . ($brand['tagline'] ?? 'Business Management Software'))">
-    <meta property="og:description" content="@yield('og_description', $brand['description'] ?? 'Comprehensive business management software. Manage accounting, inventory, sales, and more in one platform.')">
-    <meta property="og:image" content="{{ $brandService->logo() }}">
+    <meta property="og:title" content="@yield('og_title', 'Budlite - Nigerian Business Management Software')">
+    <meta property="og:description" content="@yield('og_description', 'Comprehensive business management software built specifically for Nigerian businesses. Manage accounting, inventory, sales, and more in one platform.')">
+    <meta property="og:image" content="{{ asset('images/budlite-logo.png') }}">
     <meta property="og:image:width" content="1200">
     <meta property="og:image:height" content="630">
-    <meta property="og:image:alt" content="{{ $brand['name'] ?? 'Ballie' }} - Business Management Software">
-    <meta property="og:site_name" content="{{ $brand['name'] ?? 'Ballie' }}">
+    <meta property="og:image:alt" content="Budlite - Business Management Software">
+    <meta property="og:site_name" content="Budlite">
     <meta property="og:locale" content="en_US">
 
     <!-- Twitter Card -->
     <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:url" content="{{ url()->current() }}">
-    <meta name="twitter:title" content="@yield('twitter_title', ($brand['name'] ?? 'Ballie') . ' - ' . ($brand['tagline'] ?? 'Business Management Software'))">
-    <meta name="twitter:description" content="@yield('twitter_description', $brand['description'] ?? 'Comprehensive business management software. Manage accounting, inventory, sales, and more in one platform.')">
-    <meta name="twitter:image" content="{{ $brandService->logo() }}">
-    <meta name="twitter:image:alt" content="{{ $brand['name'] ?? 'Ballie' }} - Business Management Software">
+    <meta name="twitter:title" content="@yield('twitter_title', 'Budlite - Nigerian Business Management Software')">
+    <meta name="twitter:description" content="@yield('twitter_description', 'Comprehensive business management software built specifically for Nigerian businesses. Manage accounting, inventory, sales, and more in one platform.')">
+    <meta name="twitter:image" content="{{ asset('images/budlite-logo.png') }}">
+    <meta name="twitter:image:alt" content="Budlite - Business Management Software">
 
     <!-- WhatsApp specific (uses Open Graph) -->
     <meta property="og:image:type" content="image/png">
 
     <!-- Additional meta tags -->
     <meta name="robots" content="index, follow">
-    <meta name="author" content="{{ $brand['name'] ?? 'Ballie' }}">
-    <meta name="keywords" content="@yield('keywords', $brand['meta']['keywords'] ?? 'business management software, accounting software Nigeria, inventory management, invoicing, Nigerian business, ERP software')">
+    <meta name="author" content="Budlite">
+    <meta name="keywords" content="@yield('keywords', 'business management software, accounting software Nigeria, inventory management, invoicing, Nigerian business, ERP software')">
 
     <!-- Canonical URL -->
     <link rel="canonical" href="{{ url()->current() }}">
 
     <!-- Favicon -->
-    <link rel="icon" type="image/png" sizes="32x32" href="{{ $brandService->logo() }}">
-    <link rel="icon" type="image/png" sizes="16x16" href="{{ $brandService->logo() }}">
-    <link rel="apple-touch-icon" href="{{ $brandService->logo() }}">
+    <link rel="icon" type="image/png" sizes="32x32" href="{{ asset('images/budlite-logo.png') }}">
+    <link rel="icon" type="image/png" sizes="16x16" href="{{ asset('images/budlite-logo.png') }}">
+    <link rel="apple-touch-icon" href="{{ asset('images/budlite-logo.png') }}">
 
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.bunny.net">
@@ -95,14 +95,14 @@
     </script>
 </head>
 <!-- Google tag (gtag.js) -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-YSBPVPWC3Q"></script>
+{{-- <script async src="https://www.googletagmanager.com/gtag/js?id=G-YSBPVPWC3Q"></script>
 <script>
   window.dataLayer = window.dataLayer || [];
   function gtag(){dataLayer.push(arguments);}
   gtag('js', new Date());
 
   gtag('config', 'G-YSBPVPWC3Q');
-</script>
+</script> --}}
 <body class="font-sans antialiased">
     <div class="min-h-screen bg-gray-100">
         <!-- Navigation -->
@@ -113,9 +113,9 @@
                     <div class="flex items-center">
                         <a href="{{ route('home') }}" class="flex items-center">
                             <div class="w-24 h-8 rounded-lg flex items-center justify-center mr-3">
-                                <img src="{{ $brandService->logo() }}" alt="{{ $brand['name'] ?? 'Ballie' }} Logo" class="w-36 h-12">
+                                {{-- <img src="{{ asset('images/budlite-logo.png') }}" alt="Budlite Logo" class="w-36 h-12"> --}}
                             </div>
-                            <span class="text-xl font-bold" style="color: {{ $brand['theme']['primary'] ?? '#2b6399' }}">{{ $brand['name'] ?? 'Ballie' }}</span>
+                            <span class="text-xl font-bold text-brand-blue">Budlite Group of Company</span>
                         </a>
                     </div>
 
@@ -123,12 +123,10 @@
                     <div class="hidden md:flex items-center space-x-8">
                         @if(!request()->is('*/dashboard*') && !request()->is('*/invoices*') && !request()->is('*/customers*'))
                             <!-- Public navigation links -->
-                            <a href="{{ route('features') }}" class="text-gray-600 hover:text-brand-blue font-medium transition-colors">Features</a>
-                            @if($brand['show_pricing'] ?? true)
-                            <a href="{{ route('pricing') }}" class="text-gray-600 hover:text-brand-blue font-medium transition-colors">Pricing</a>
-                            @endif
-                            <a href="{{ route('about') }}" class="text-gray-600 hover:text-brand-blue font-medium transition-colors">About</a>
-                            <a href="{{ route('contact') }}" class="text-gray-600 hover:text-brand-blue font-medium transition-colors">Contact</a>
+                            <a href="{{ route('home') }}" class="text-gray-600 hover:text-brand-blue font-medium transition-colors">Home</a>
+                            <a href="#about" class="text-gray-600 hover:text-brand-blue font-medium transition-colors">About</a>
+                            <a href="#services" class="text-gray-600 hover:text-brand-blue font-medium transition-colors">Services</a>
+                            <a href="#contact" class="text-gray-600 hover:text-brand-blue font-medium transition-colors">Contact</a>
                         @endif
 
                         @auth
@@ -175,9 +173,7 @@
                             </div>
                         @else
                             <a href="{{ route('login') }}" class="text-gray-600 hover:text-brand-blue font-medium transition-colors">Login</a>
-                            @if($brand['allow_registration'] ?? true)
-                            <a href="{{ route('register') }}" class="bg-brand-blue text-white px-4 py-2 rounded-lg hover:bg-brand-dark-purple font-medium transition-colors">Get Started</a>
-                            @endif
+                            {{-- <a href="{{ route('register') }}" class="bg-brand-blue text-white px-4 py-2 rounded-lg hover:bg-brand-dark-purple font-medium transition-colors">Get Started</a> --}}
                         @endauth
                     </div>
 
@@ -195,12 +191,10 @@
                 <div id="mobileMenu" class="hidden md:hidden pb-4">
                     <div class="space-y-2">
                         @if(!request()->is('*/dashboard*') && !request()->is('*/invoices*') && !request()->is('*/customers*'))
-                            <a href="{{ route('features') }}" class="block text-gray-600 hover:text-brand-blue font-medium py-2">Features</a>
-                            @if($brand['show_pricing'] ?? true)
-                            <a href="{{ route('pricing') }}" class="block text-gray-600 hover:text-brand-blue font-medium py-2">Pricing</a>
-                            @endif
-                            <a href="{{ route('about') }}" class="block text-gray-600 hover:text-brand-blue font-medium py-2">About</a>
-                            <a href="{{ route('contact') }}" class="block text-gray-600 hover:text-brand-blue font-medium py-2">Contact</a>
+                            <a href="{{ route('home') }}" class="block text-gray-600 hover:text-brand-blue font-medium py-2">Home</a>
+                            <a href="#about" class="block text-gray-600 hover:text-brand-blue font-medium py-2">About</a>
+                            <a href="#services" class="block text-gray-600 hover:text-brand-blue font-medium py-2">Services</a>
+                            <a href="#contact" class="block text-gray-600 hover:text-brand-blue font-medium py-2">Contact</a>
                         @endif
 
                         @auth
@@ -218,9 +212,7 @@
                             </form>
                         @else
                             <a href="{{ route('login') }}" class="block text-gray-600 hover:text-brand-blue font-medium py-2">Login</a>
-                            @if($brand['allow_registration'] ?? true)
-                            <a href="{{ route('register') }}" class="block bg-brand-blue text-white px-4 py-2 rounded-lg hover:bg-brand-dark-purple font-medium text-center">Get Started</a>
-                            @endif
+                            {{-- <a href="{{ route('register') }}" class="block bg-brand-blue text-white px-4 py-2 rounded-lg hover:bg-brand-dark-purple font-medium text-center">Get Started</a> --}}
                         @endauth
                     </div>
                 </div>

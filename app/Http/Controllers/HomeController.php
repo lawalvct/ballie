@@ -8,7 +8,14 @@ class HomeController extends Controller
 {
     public function welcome()
     {
-        return view('welcome');
+        $brand = app()->bound('brand') ? app('brand') : null;
+        $view = $brand['landing_view'] ?? 'welcome';
+
+        if (!view()->exists($view)) {
+            $view = 'welcome';
+        }
+
+        return view($view, compact('brand'));
     }
 
     public function features()

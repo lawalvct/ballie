@@ -16,6 +16,7 @@
                    {{ $tenant->name ?? 'Ballie' }}
                 </span>
                 @if(isset($tenant))
+                @if(($brandService->toArray()['show_subscription'] ?? true))
                 <div class="flex items-center space-x-2 mt-1">
                     <div class="text-xs text-gray-300">
                         {{ $tenant->plan ? $tenant->plan->name : 'Free' }}
@@ -38,6 +39,7 @@
                         </span>
                     @endif
                 </div>
+                @endif
                 @endif
             </div>
         </div>
@@ -240,6 +242,7 @@
             </li>
             @endpermission
 
+            @if(($brandService->toArray()['show_subscription'] ?? true))
             <!-- Subscription/Plan Management -->
             <li>
                 <a href="{{ route('tenant.subscription.index', ['tenant' => tenant()->slug]) }}"
@@ -253,6 +256,7 @@
                     <span class="menu-title whitespace-nowrap font-medium">Subscription</span>
                 </a>
             </li>
+            @endif
 
             <!-- Settings -->
             @permission('settings.view')

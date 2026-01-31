@@ -1,13 +1,13 @@
-@extends('layouts.app')
+@extends($brandService->view('layouts.app'))
 
-@section('title', 'Sign In - Ballie')
-@section('description', 'Sign in to your Ballie account and manage your business operations.')
+@section('title', 'Sign In - ' . $brandService->name())
+@section('description', 'Sign in to your ' . $brandService->name() . ' account and manage your business operations.')
 
 @section('content')
 <style>
     :root {
-        --color-gold: #d1b05e;
-        --color-blue: #2b6399;
+        --color-gold: {{ $brandService->secondaryColor() }};
+        --color-blue: {{ $brandService->primaryColor() }};
         --color-dark-purple: #3c2c64;
         --color-teal: #69a2a4;
         --color-purple: #85729d;
@@ -43,11 +43,11 @@
         <!-- Header -->
         <div class="text-center">
             <div class="w-16 h-16 bg-white bg-opacity-70 rounded-full flex items-center justify-center mx-auto mb-4">
-                <img src="{{ asset('images/ballie.png') }}" alt="Ballie Logo" class="w-10 h-10" onerror="this.style.display='none'; this.nextElementSibling.style.display='inline';">
-                <span class="text-white font-bold text-2xl" style="display: none;">B'</span>
+                <img src="{{ $brandService->logo() }}" alt="{{ $brandService->name() }} Logo" class="w-10 h-10" onerror="this.style.display='none'; this.nextElementSibling.style.display='inline';">
+                <span class="text-white font-bold text-2xl" style="display: none;">{{ strtoupper(substr($brandService->name(), 0, 1)) }}</span>
             </div>
             <h1 class="text-3xl font-bold text-white mb-2">Welcome Back</h1>
-            <p class="text-gray-200">Sign in to your Ballie account</p>
+            <p class="text-gray-200">Sign in to your {{ $brandService->name() }} account</p>
         </div>
 
         <!-- Login Form -->
@@ -142,6 +142,7 @@
             </form>
 
             <!-- Register Link -->
+            @if(($brandService->toArray()['allow_registration'] ?? true))
             <div class="text-center mt-8 pt-6 border-t border-gray-200">
                 <p class="text-gray-600">
                     Don't have an account?
@@ -150,6 +151,7 @@
                     </a>
                 </p>
             </div>
+            @endif
         </div>
 
         <!-- Trust Indicators -->

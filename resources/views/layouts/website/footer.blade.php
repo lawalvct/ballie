@@ -1,19 +1,19 @@
  <!-- Footer -->
         @if(!request()->is('register') && !request()->is('*/register'))
-        <footer class="bg-gradient-to-br from-brand-dark-purple via-brand-deep-purple to-brand-violet text-white">
+        <footer class="bg-gradient-to-br from-brand-dark-purple via-brand-deep-purple to-brand-violet text-white" style="background: linear-gradient(to bottom right, {{ $brand['theme']['gradient_from'] ?? '#3c2c64' }}, {{ $brand['theme']['gradient_via'] ?? '#4a3570' }}, {{ $brand['theme']['gradient_to'] ?? '#614c80' }});">
             <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
                 <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
                     <!-- Company Info -->
                     <div class="col-span-1 md:col-span-2">
                         <div class="flex items-center mb-4">
                             <div class="w-24 h-8 rounded-lg flex items-center justify-center mr-3">
-                                <img src="{{ asset('images/ballie_logo.png') }}" alt="Ballie Logo" class="w-36 h-12 ">
+                                <img src="{{ $brandService->logo() }}" alt="{{ $brand['name'] ?? 'Ballie' }} Logo" class="w-36 h-12 ">
                             </div>
-                            <span class="text-xl font-bold text-brand-gold">Ballie</span>
+                            <span class="text-xl font-bold" style="color: {{ $brand['theme']['secondary'] ?? '#d1b05e' }}">{{ $brand['name'] ?? 'Ballie' }}</span>
                         </div>
                         <p class="text-gray-300 mb-4 max-w-md">
-                            Comprehensive business management software built specifically for Nigerian businesses.
-                            Manage your entire business from one powerful platform with <strong class="text-brand-gold">Availability & Affordability</strong> at its finest.
+                            {{ $brand['description'] ?? 'Comprehensive business management software built specifically for Nigerian businesses.' }}
+                            Manage your entire business from one powerful platform.
                         </p>
                         <div class="flex space-x-4">
                             <a href="#" class="text-gray-400 hover:text-brand-gold transition-colors">
@@ -44,10 +44,14 @@
                         <h3 class="text-lg font-semibold mb-4 text-brand-gold">Product</h3>
                         <ul class="space-y-2">
                             <li><a href="{{ route('features') }}" class="text-gray-300 hover:text-brand-gold transition-colors">Features</a></li>
+                            @if($brand['show_pricing'] ?? true)
                             <li><a href="{{ route('pricing') }}" class="text-gray-300 hover:text-brand-gold transition-colors">Pricing</a></li>
+                            @endif
                             <li><a href="#" class="text-gray-300 hover:text-brand-gold transition-colors">Integrations</a></li>
                             <li><a href="#" class="text-gray-300 hover:text-brand-gold transition-colors">API</a></li>
+                            @if($brand['show_demo'] ?? true)
                             <li><a href="{{ route('demo') }}" class="text-gray-300 hover:text-brand-gold transition-colors">Demo</a></li>
+                            @endif
                         </ul>
                     </div>
 
@@ -58,12 +62,11 @@
                             <li><a href="{{ route('contact') }}" class="text-gray-300 hover:text-brand-gold transition-colors">Contact Us</a></li>
                             <li><a href="#" class="text-gray-300 hover:text-brand-gold transition-colors">Help Center</a></li>
                             <li><a href="#" class="text-gray-300 hover:text-brand-gold transition-colors">Documentation</a></li>
+                            @if($brand['show_affiliate'] ?? true)
                             <li><a href="{{ route('affiliate.index') }}" class="text-gray-300 hover:text-brand-gold transition-colors flex items-center">
-                                {{-- <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                                </svg> --}}
                                 Become an Affiliate
                             </li>
+                            @endif
                             <li><a href="{{ route('about') }}" class="text-gray-300 hover:text-brand-gold transition-colors">About Us</a></li>
                         </ul>
                     </div>
@@ -72,7 +75,7 @@
                 <!-- Footer Bottom -->
                 <div class="border-t border-brand-purple mt-8 pt-8 flex flex-col md:flex-row justify-between items-center">
                     <p class="text-gray-400 text-sm">
-                        © {{ date('Y') }} Ballie. All rights reserved. Built with ❤️ for Nigerian businesses.
+                        © {{ date('Y') }} {{ $brand['name'] ?? 'Ballie' }}. All rights reserved.
                     </p>
                     <div class="flex space-x-6 mt-4 md:mt-0">
                         <a href="{{ route('privacy') }}" class="text-gray-400 hover:text-brand-gold text-sm transition-colors">Privacy Policy</a>
