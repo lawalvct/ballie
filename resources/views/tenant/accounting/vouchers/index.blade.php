@@ -61,45 +61,6 @@
             </div>
         </div>
         <div class="flex flex-wrap items-center gap-2 lg:justify-end">
-            <div class="relative" x-data="{ exportOpen: false }">
-                <button type="button"
-                        @click="exportOpen = !exportOpen"
-                        @keydown.escape.window="exportOpen = false"
-                        class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500">
-                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 5v8m0 0l-3-3m3 3l3-3M4 16v1a2 2 0 002 2h12a2 2 0 002-2v-1"></path>
-                    </svg>
-                    Export
-                    <svg class="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
-                    </svg>
-                </button>
-
-                <div x-show="exportOpen"
-                     @click.outside="exportOpen = false"
-                     x-transition:enter="transition ease-out duration-200"
-                     x-transition:enter-start="opacity-0 scale-95"
-                     x-transition:enter-end="opacity-100 scale-100"
-                     x-transition:leave="transition ease-in duration-150"
-                     x-transition:leave-start="opacity-100 scale-100"
-                     x-transition:leave-end="opacity-0 scale-95"
-                     class="absolute right-0 mt-2 w-44 rounded-lg border border-gray-200 bg-white shadow-lg z-20">
-                    <a href="{{ route('tenant.accounting.vouchers.export', array_merge(['tenant' => $tenant->slug, 'format' => 'excel'], request()->query())) }}"
-                       class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">
-                        <svg class="w-4 h-4 mr-2 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a2 2 0 002 2h12a2 2 0 002-2v-1M12 12v7m0 0l-3-3m3 3l3-3M8 7h8m-8 4h8"></path>
-                        </svg>
-                        Export Excel
-                    </a>
-                    <a href="{{ route('tenant.accounting.vouchers.export', array_merge(['tenant' => $tenant->slug, 'format' => 'pdf'], request()->query())) }}"
-                       class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">
-                        <svg class="w-4 h-4 mr-2 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2a2 2 0 012-2h2a2 2 0 012 2v2m-6 4h6m2 1H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-                        </svg>
-                        Export PDF
-                    </a>
-                </div>
-            </div>
             <a href="{{ route('tenant.accounting.index', ['tenant' => $tenant->slug]) }}"
                class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500">
                 <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -308,6 +269,45 @@
                 <!-- Action Buttons -->
                 <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pt-4 border-t border-gray-200">
                     <div class="flex items-center space-x-2">
+                        <div class="relative" x-data="{ exportOpen: false }">
+                            <button type="button"
+                                    @click="exportOpen = !exportOpen"
+                                    @keydown.escape.window="exportOpen = false"
+                                    class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500">
+                                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 5v8m0 0l-3-3m3 3l3-3M4 16v1a2 2 0 002 2h12a2 2 0 002-2v-1"></path>
+                                </svg>
+                                Export
+                                <svg class="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                                </svg>
+                            </button>
+
+                            <div x-show="exportOpen"
+                                 @click.outside="exportOpen = false"
+                                 x-transition:enter="transition ease-out duration-200"
+                                 x-transition:enter-start="opacity-0 scale-95"
+                                 x-transition:enter-end="opacity-100 scale-100"
+                                 x-transition:leave="transition ease-in duration-150"
+                                 x-transition:leave-start="opacity-100 scale-100"
+                                 x-transition:leave-end="opacity-0 scale-95"
+                                 class="absolute left-0 mt-2 w-44 rounded-lg border border-gray-200 bg-white shadow-lg z-20">
+                                <a href="{{ route('tenant.accounting.vouchers.export', array_merge(['tenant' => $tenant->slug, 'format' => 'excel'], request()->query())) }}"
+                                   class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">
+                                    <svg class="w-4 h-4 mr-2 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a2 2 0 002 2h12a2 2 0 002-2v-1M12 12v7m0 0l-3-3m3 3l3-3M8 7h8m-8 4h8"></path>
+                                    </svg>
+                                    Export Excel
+                                </a>
+                                <a href="{{ route('tenant.accounting.vouchers.export', array_merge(['tenant' => $tenant->slug, 'format' => 'pdf'], request()->query())) }}"
+                                   class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">
+                                    <svg class="w-4 h-4 mr-2 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2a2 2 0 012-2h2a2 2 0 012 2v2m-6 4h6m2 1H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                                    </svg>
+                                    Export PDF
+                                </a>
+                            </div>
+                        </div>
                         <button type="submit"
                                 class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg shadow-sm text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500">
                             <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
