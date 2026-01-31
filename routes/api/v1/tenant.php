@@ -181,6 +181,10 @@ Route::middleware('auth:sanctum')->group(function () {
                 Route::get('/customer-statements', [\App\Http\Controllers\Api\Tenant\Reports\CrmReportsController::class, 'customerStatements'])->name('customer-statements');
                 Route::get('/payment-reports', [\App\Http\Controllers\Api\Tenant\Reports\CrmReportsController::class, 'paymentReports'])->name('payment-reports');
             });
+            Route::prefix('audit')->name('audit.')->group(function () {
+                Route::get('/', [\App\Http\Controllers\Api\Tenant\Reports\AuditReportsController::class, 'index'])->name('index');
+                Route::get('/{model}/{id}', [\App\Http\Controllers\Api\Tenant\Reports\AuditReportsController::class, 'show'])->name('show');
+            });
             Route::prefix('financial')->name('financial.')->group(function () {
                 Route::get('/profit-loss', [\App\Http\Controllers\Api\Tenant\Reports\FinancialReportsController::class, 'profitLoss'])->name('profit-loss');
                 Route::get('/profit-loss/table', [\App\Http\Controllers\Api\Tenant\Reports\FinancialReportsController::class, 'profitLossTable'])->name('profit-loss-table');
