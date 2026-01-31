@@ -176,6 +176,11 @@ Route::middleware('auth:sanctum')->group(function () {
             Route::get('/bank-schedule', [\App\Http\Controllers\Api\Tenant\Reports\PayrollReportsController::class, 'bankSchedule'])->name('bank-schedule');
             Route::get('/detailed', [\App\Http\Controllers\Api\Tenant\Reports\PayrollReportsController::class, 'detailedReport'])->name('detailed');
         });
+            Route::prefix('crm')->name('crm.')->group(function () {
+                Route::get('/activities', [\App\Http\Controllers\Api\Tenant\Reports\CrmReportsController::class, 'activities'])->name('activities');
+                Route::get('/customer-statements', [\App\Http\Controllers\Api\Tenant\Reports\CrmReportsController::class, 'customerStatements'])->name('customer-statements');
+                Route::get('/payment-reports', [\App\Http\Controllers\Api\Tenant\Reports\CrmReportsController::class, 'paymentReports'])->name('payment-reports');
+            });
             Route::prefix('financial')->name('financial.')->group(function () {
                 Route::get('/profit-loss', [\App\Http\Controllers\Api\Tenant\Reports\FinancialReportsController::class, 'profitLoss'])->name('profit-loss');
                 Route::get('/profit-loss/table', [\App\Http\Controllers\Api\Tenant\Reports\FinancialReportsController::class, 'profitLossTable'])->name('profit-loss-table');
