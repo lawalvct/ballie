@@ -1207,7 +1207,10 @@ class InvoiceController extends Controller
                     'ledger_account_id' => $ledgerAccount?->id,
                     'ledger_account_name' => $ledgerAccount?->name,
                     'display_name' => $customer->company_name ?: trim($customer->first_name . ' ' . $customer->last_name),
-                    'email' => $customer->email
+                    'email' => $customer->email,
+                    'current_balance' => $ledgerAccount?->current_balance ?? 0,
+                    'account_type' => $ledgerAccount?->account_type,
+                    'balance_type' => $ledgerAccount?->balance_type
                 ];
             })
             ->filter(function($customer) {

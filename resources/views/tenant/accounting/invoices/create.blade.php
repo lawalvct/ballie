@@ -361,6 +361,7 @@
                                             <div>
                                                 <div class="text-sm font-medium text-gray-900" x-text="selectedCustomerName"></div>
                                                 <div class="text-xs text-gray-600" x-text="'Ledger: ' + selectedLedgerName"></div>
+                                                <div class="text-xs" :class="selectedBalanceLabel === 'Cr' ? 'text-red-600' : 'text-emerald-600'" x-show="selectedBalanceDisplay" x-text="'Balance: ' + selectedBalanceDisplay"></div>
                                             </div>
                                         </div>
                                         <button type="button"
@@ -462,6 +463,7 @@
                                             <div>
                                                 <div class="text-sm font-medium text-gray-900" x-text="selectedVendorName"></div>
                                                 <div class="text-xs text-gray-600" x-text="'Ledger: ' + selectedLedgerName"></div>
+                                                <div class="text-xs" :class="selectedBalanceLabel === 'Cr' ? 'text-red-600' : 'text-emerald-600'" x-show="selectedBalanceDisplay" x-text="'Balance: ' + selectedBalanceDisplay"></div>
                                             </div>
                                         </div>
                                         <button type="button"
@@ -1311,6 +1313,10 @@ function customerSearch() {
         selectedCustomerId: '{{ old('customer_id') }}',
         selectedCustomerName: '',
         selectedLedgerName: '',
+        selectedBalanceDisplay: '',
+        selectedBalanceLabel: '',
+        selectedBalanceValue: 0,
+        selectedAccountType: '',
         showDropdown: false,
         loading: false,
         searchTimeout: null,
@@ -1345,6 +1351,7 @@ function customerSearch() {
             this.selectedCustomerId = customer.ledger_account_id;
             this.selectedCustomerName = customer.display_name;
             this.selectedLedgerName = customer.ledger_account_name || customer.display_name;
+            this.updateBalanceDisplay(customer);
             this.showDropdown = false;
             this.customers = [];
 
@@ -1360,11 +1367,42 @@ function customerSearch() {
             this.selectedCustomerId = '';
             this.selectedCustomerName = '';
             this.selectedLedgerName = '';
+            this.selectedBalanceDisplay = '';
+            this.selectedBalanceLabel = '';
+            this.selectedBalanceValue = 0;
+            this.selectedAccountType = '';
             const hiddenInput = document.getElementById('selectedPartyId');
             if (hiddenInput) {
                 hiddenInput.value = '';
                 hiddenInput.dispatchEvent(new Event('input'));
             }
+        },
+
+        formatNumber(num) {
+            if (num === null || num === undefined || isNaN(num)) return '0.00';
+            return parseFloat(num).toLocaleString('en-US', {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2
+            });
+        },
+
+        getBalanceLabel(balance, accountType) {
+            const type = (accountType || '').toLowerCase();
+            const creditTypes = ['liability', 'equity', 'income'];
+            if (!type) {
+                return balance >= 0 ? 'Dr' : 'Cr';
+            }
+            const isCreditType = creditTypes.includes(type);
+            const isCredit = balance >= 0 ? isCreditType : !isCreditType;
+            return isCredit ? 'Cr' : 'Dr';
+        },
+
+        updateBalanceDisplay(customer) {
+            const rawBalance = parseFloat(customer.current_balance || 0);
+            this.selectedBalanceValue = rawBalance;
+            this.selectedAccountType = customer.account_type || '';
+            this.selectedBalanceLabel = this.getBalanceLabel(rawBalance, this.selectedAccountType);
+            this.selectedBalanceDisplay = `₦${this.formatNumber(Math.abs(rawBalance))} ${this.selectedBalanceLabel}`;
         },
 
         init() {
@@ -1389,6 +1427,10 @@ function vendorSearch() {
         selectedVendorId: '{{ old('customer_id') }}',
         selectedVendorName: '',
         selectedLedgerName: '',
+        selectedBalanceDisplay: '',
+        selectedBalanceLabel: '',
+        selectedBalanceValue: 0,
+        selectedAccountType: '',
         showDropdown: false,
         loading: false,
         searchTimeout: null,
@@ -1423,6 +1465,7 @@ function vendorSearch() {
             this.selectedVendorId = vendor.ledger_account_id;
             this.selectedVendorName = vendor.display_name;
             this.selectedLedgerName = vendor.ledger_account_name || vendor.display_name;
+            this.updateBalanceDisplay(vendor);
             this.showDropdown = false;
             this.vendors = [];
 
@@ -1438,11 +1481,42 @@ function vendorSearch() {
             this.selectedVendorId = '';
             this.selectedVendorName = '';
             this.selectedLedgerName = '';
+            this.selectedBalanceDisplay = '';
+            this.selectedBalanceLabel = '';
+            this.selectedBalanceValue = 0;
+            this.selectedAccountType = '';
             const hiddenInput = document.getElementById('selectedPartyId');
             if (hiddenInput) {
                 hiddenInput.value = '';
                 hiddenInput.dispatchEvent(new Event('input'));
             }
+        },
+
+        formatNumber(num) {
+            if (num === null || num === undefined || isNaN(num)) return '0.00';
+            return parseFloat(num).toLocaleString('en-US', {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2
+            });
+        },
+
+        getBalanceLabel(balance, accountType) {
+            const type = (accountType || '').toLowerCase();
+            const creditTypes = ['liability', 'equity', 'income'];
+            if (!type) {
+                return balance >= 0 ? 'Dr' : 'Cr';
+            }
+            const isCreditType = creditTypes.includes(type);
+            const isCredit = balance >= 0 ? isCreditType : !isCreditType;
+            return isCredit ? 'Cr' : 'Dr';
+        },
+
+        updateBalanceDisplay(vendor) {
+            const rawBalance = parseFloat(vendor.current_balance || 0);
+            this.selectedBalanceValue = rawBalance;
+            this.selectedAccountType = vendor.account_type || '';
+            this.selectedBalanceLabel = this.getBalanceLabel(rawBalance, this.selectedAccountType);
+            this.selectedBalanceDisplay = `₦${this.formatNumber(Math.abs(rawBalance))} ${this.selectedBalanceLabel}`;
         },
 
         init() {

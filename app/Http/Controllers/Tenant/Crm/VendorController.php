@@ -514,6 +514,9 @@ class VendorController extends Controller
                     'display_name' => $vendor->company_name ?: trim($vendor->first_name . ' ' . $vendor->last_name),
                     'email' => $vendor->email,
                     'phone' => $vendor->phone,
+                    'current_balance' => $ledgerAccount?->current_balance ?? 0,
+                    'account_type' => $ledgerAccount?->account_type,
+                    'balance_type' => $ledgerAccount?->balance_type
                 ];
             })
             ->filter(function($vendor) {
