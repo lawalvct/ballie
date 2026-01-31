@@ -120,6 +120,10 @@ Route::middleware(['guest'])->group(function () {
     Route::get('/auth/facebook', [SocialAuthController::class, 'redirectToFacebook'])->name('tenant.auth.facebook');
 });
 
+Route::get('/', function (Tenant $tenant) {
+    return redirect()->route('tenant.dashboard', ['tenant' => $tenant->slug]);
+})->middleware('auth')->name('tenant.home');
+
 // Authenticated routes
 Route::middleware(['auth'])->group(function () {
     // Logout route
