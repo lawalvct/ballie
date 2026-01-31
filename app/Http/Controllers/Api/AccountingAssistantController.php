@@ -1241,4 +1241,468 @@ Use clear, simple language suitable for a Nigerian business owner who may not be
         }
     }
 
+    /**
+     * Parse natural language invoice description into structured invoice data
+     */
+    public function parseInvoiceFromNaturalLanguage(Request $request)
+    {
+        try {
+            $description = $request->input('description', '');
+            $tenantId = $request->input('tenant_id');
+            $voucherTypeId = $request->input('voucher_type_id');
+
+            if (empty($description)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Please provide a description of the invoice you want to create.'
+                ], 400);
+            }
+
+            // Get available customers, vendors, and products for matching
+            $tenant = \App\Models\Tenant::find($tenantId);
+            if (!$tenant) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Tenant not found.'
+                ], 404);
+            }
+
+            // Fetch customers with ledger accounts
+            $customers = \App\Models\Customer::where('tenant_id', $tenantId)
+                ->with('ledgerAccount')
+                ->get()
+                ->map(function ($c) {
+                    $name = $c->type === 'individual'
+                        ? trim(($c->first_name ?? '') . ' ' . ($c->last_name ?? ''))
+                        : ($c->company_name ?? '');
+                    return [
+                        'id' => $c->ledger_account_id,
+                        'name' => $name,
+                        'type' => 'customer',
+                        'email' => $c->email
+                    ];
+                });
+
+            // Fetch vendors with ledger accounts
+            $vendors = \App\Models\Vendor::where('tenant_id', $tenantId)
+                ->with('ledgerAccount')
+                ->get()
+                ->map(function ($v) {
+                    $name = $v->type === 'individual'
+                        ? trim(($v->first_name ?? '') . ' ' . ($v->last_name ?? ''))
+                        : ($v->company_name ?? '');
+                    return [
+                        'id' => $v->ledger_account_id,
+                        'name' => $name,
+                        'type' => 'vendor',
+                        'email' => $v->email
+                    ];
+                });
+
+            // Fetch products
+            $products = \App\Models\Product::where('tenant_id', $tenantId)
+                ->where('is_active', true)
+                ->get()
+                ->map(function ($p) {
+                    return [
+                        'id' => $p->id,
+                        'name' => $p->name,
+                        'sku' => $p->sku,
+                        'sales_rate' => $p->sales_rate,
+                        'purchase_rate' => $p->purchase_rate,
+                        'current_stock' => $p->current_stock,
+                        'unit' => $p->unit?->name ?? 'Pcs'
+                    ];
+                });
+
+            // Fetch voucher types (limit to Sales or Purchase only)
+            $voucherTypes = \App\Models\VoucherType::where('tenant_id', $tenantId)
+                ->where('affects_inventory', true)
+                ->get()
+                ->filter(function ($vt) {
+                    $name = strtolower($vt->name ?? '');
+                    $code = strtolower($vt->code ?? '');
+
+                    // Exclude returns
+                    if (str_contains($name, 'return') || str_contains($code, 'return')) {
+                        return false;
+                    }
+
+                    // Allow only sales or purchase types
+                    return str_contains($name, 'sales') || str_contains($code, 'sales') || str_contains($code, 'sv')
+                        || str_contains($name, 'purchase') || str_contains($code, 'pur');
+                })
+                ->map(function ($vt) {
+                    return [
+                        'id' => $vt->id,
+                        'name' => $vt->name,
+                        'code' => $vt->code,
+                        'is_purchase' => str_contains(strtolower($vt->code), 'pur') || str_contains(strtolower($vt->name), 'purchase')
+                    ];
+                });
+
+            // Build AI prompt
+            $prompt = $this->buildInvoiceParsingPrompt(
+                $description,
+                $customers->toArray(),
+                $vendors->toArray(),
+                $products->toArray(),
+                $voucherTypes->toArray()
+            );
+
+            // Call AI
+            try {
+                $response = $this->callAI($prompt);
+                // Parse AI response
+                $parsedInvoice = $this->parseInvoiceResponse($response, $customers, $vendors, $products, $voucherTypes);
+            } catch (\Exception $e) {
+                // Fallback to heuristic parser if AI is unavailable
+                Log::warning('AI unavailable, using heuristic invoice parser: ' . $e->getMessage());
+                $parsedInvoice = $this->buildHeuristicInvoiceFromDescription(
+                    $description,
+                    $customers,
+                    $vendors,
+                    $products,
+                    $voucherTypes
+                );
+            }
+
+            return response()->json([
+                'success' => true,
+                'parsed_invoice' => $parsedInvoice,
+                'ai_interpretation' => $parsedInvoice['interpretation'] ?? null
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('AI Invoice parsing error: ' . $e->getMessage(), [
+                'description' => $description ?? 'N/A',
+                'trace' => $e->getTraceAsString()
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'AI assistant temporarily unavailable. Please fill the invoice manually.',
+                'error' => config('app.debug') ? $e->getMessage() : null
+            ], 500);
+        }
+    }
+
+    /**
+     * Build the prompt for invoice parsing
+     */
+    private function buildInvoiceParsingPrompt(
+        string $description,
+        array $customers,
+        array $vendors,
+        array $products,
+        array $voucherTypes
+    ): string {
+        $customerList = collect($customers)->take(50)->pluck('name')->implode(', ');
+        $vendorList = collect($vendors)->take(50)->pluck('name')->implode(', ');
+        $productList = collect($products)->take(100)->map(function ($p) {
+            return "{$p['name']} (₦" . number_format($p['sales_rate'], 0) . ")";
+        })->implode(', ');
+        $voucherTypeList = collect($voucherTypes)->pluck('name')->implode(', ');
+
+        return "
+You are BallieAI, an expert invoice assistant for a Nigerian business accounting system.
+
+Parse the following natural language invoice description and extract structured invoice data.
+
+USER DESCRIPTION:
+\"{$description}\"
+
+AVAILABLE DATA:
+
+Customers (for Sales invoices): {$customerList}
+
+Vendors (for Purchase invoices): {$vendorList}
+
+Products/Services: {$productList}
+
+Invoice Types: {$voucherTypeList}
+
+INSTRUCTIONS:
+1. Determine if this is a Sales or Purchase invoice based on context
+2. Match the customer/vendor name to the closest available option (fuzzy matching OK)
+3. Match product names to available products (fuzzy matching OK)
+4. Extract quantities and rates if mentioned, otherwise use product's default rate
+5. Determine if VAT should be applied (look for keywords like 'VAT', 'with tax', '7.5%')
+6. Extract any reference number if mentioned
+7. Extract invoice date if mentioned, otherwise use today
+
+RESPOND IN THIS EXACT JSON FORMAT:
+{
+    \"invoice_type\": \"sales\" or \"purchase\",
+    \"voucher_type_name\": \"matched voucher type name or null\",
+    \"party_name\": \"matched customer/vendor name or null\",
+    \"party_type\": \"customer\" or \"vendor\",
+    \"invoice_date\": \"YYYY-MM-DD or null for today\",
+    \"reference_number\": \"string or null\",
+    \"narration\": \"invoice description/notes\",
+    \"items\": [
+        {
+            \"product_name\": \"matched product name\",
+            \"quantity\": number,
+            \"rate\": number (use mentioned rate or 0 for default),
+            \"description\": \"optional item description\"
+        }
+    ],
+    \"vat_enabled\": true or false,
+    \"interpretation\": \"Brief explanation of what you understood from the description\"
+}
+
+If you cannot confidently match something, set it to null and explain in the interpretation field.
+Use Naira (₦) amounts. Respond ONLY with valid JSON, no additional text.
+";
+    }
+
+    /**
+     * Parse AI response and match to actual database records
+     */
+    private function parseInvoiceResponse($response, $customers, $vendors, $products, $voucherTypes)
+    {
+        // Clean response - remove markdown code blocks if present
+        $cleanResponse = preg_replace('/^```json\s*|\s*```$/m', '', trim($response));
+
+        $data = json_decode($cleanResponse, true);
+
+        if (json_last_error() !== JSON_ERROR_NONE) {
+            Log::warning('AI invoice parsing JSON error', ['response' => $response]);
+            return [
+                'success' => false,
+                'interpretation' => 'Could not parse AI response. Please try again with a clearer description.'
+            ];
+        }
+
+        $result = [
+            'invoice_type' => $data['invoice_type'] ?? 'sales',
+            'voucher_type_id' => null,
+            'voucher_type_name' => null,
+            'party_id' => null,
+            'party_name' => null,
+            'party_type' => $data['party_type'] ?? 'customer',
+            'invoice_date' => $data['invoice_date'] ?? date('Y-m-d'),
+            'reference_number' => $data['reference_number'] ?? null,
+            'narration' => $data['narration'] ?? null,
+            'items' => [],
+            'vat_enabled' => $data['vat_enabled'] ?? false,
+            'interpretation' => $data['interpretation'] ?? 'Invoice parsed successfully.'
+        ];
+
+        // Match voucher type
+        if (!empty($data['voucher_type_name'])) {
+            $matchedVoucherType = $voucherTypes->first(function ($vt) use ($data) {
+                return stripos($vt['name'], $data['voucher_type_name']) !== false ||
+                       stripos($data['voucher_type_name'], $vt['name']) !== false;
+            });
+            if ($matchedVoucherType) {
+                $result['voucher_type_id'] = $matchedVoucherType['id'];
+                $result['voucher_type_name'] = $matchedVoucherType['name'];
+            }
+        }
+
+        // If no voucher type matched, infer from invoice type
+        if (!$result['voucher_type_id']) {
+            $isPurchase = $result['invoice_type'] === 'purchase';
+            $matchedVoucherType = $voucherTypes->first(function ($vt) use ($isPurchase) {
+                return $vt['is_purchase'] === $isPurchase;
+            });
+            if ($matchedVoucherType) {
+                $result['voucher_type_id'] = $matchedVoucherType['id'];
+                $result['voucher_type_name'] = $matchedVoucherType['name'];
+            }
+        }
+
+        // Match party (customer or vendor)
+        if (!empty($data['party_name'])) {
+            $partyCollection = $result['party_type'] === 'vendor' ? $vendors : $customers;
+            $matchedParty = $partyCollection->first(function ($p) use ($data) {
+                $partyName = strtolower($data['party_name']);
+                $recordName = strtolower($p['name']);
+                return str_contains($recordName, $partyName) || str_contains($partyName, $recordName);
+            });
+
+            if ($matchedParty) {
+                $result['party_id'] = $matchedParty['id'];
+                $result['party_name'] = $matchedParty['name'];
+            } else {
+                $result['party_name_suggested'] = $data['party_name'];
+            }
+        }
+
+        // Match items/products
+        $isPurchase = $result['invoice_type'] === 'purchase';
+        foreach ($data['items'] ?? [] as $item) {
+            $matchedProduct = $products->first(function ($p) use ($item) {
+                $itemName = strtolower($item['product_name'] ?? '');
+                $productName = strtolower($p['name']);
+                return str_contains($productName, $itemName) || str_contains($itemName, $productName);
+            });
+
+            if ($matchedProduct) {
+                $rate = !empty($item['rate']) && $item['rate'] > 0
+                    ? $item['rate']
+                    : ($isPurchase ? $matchedProduct['purchase_rate'] : $matchedProduct['sales_rate']);
+
+                $quantity = $item['quantity'] ?? 1;
+
+                $result['items'][] = [
+                    'product_id' => $matchedProduct['id'],
+                    'product_name' => $matchedProduct['name'],
+                    'description' => $item['description'] ?? $matchedProduct['name'],
+                    'quantity' => $quantity,
+                    'rate' => $rate,
+                    'amount' => $quantity * $rate,
+                    'purchase_rate' => $matchedProduct['purchase_rate'],
+                    'current_stock' => $matchedProduct['current_stock'],
+                    'unit' => $matchedProduct['unit']
+                ];
+            } else {
+                // Product not found - add with suggested name
+                $result['items'][] = [
+                    'product_id' => null,
+                    'product_name_suggested' => $item['product_name'] ?? 'Unknown Product',
+                    'description' => $item['description'] ?? $item['product_name'] ?? '',
+                    'quantity' => $item['quantity'] ?? 1,
+                    'rate' => $item['rate'] ?? 0,
+                    'amount' => ($item['quantity'] ?? 1) * ($item['rate'] ?? 0),
+                    'not_found' => true
+                ];
+            }
+        }
+
+        return $result;
+    }
+
+    /**
+     * Heuristic parser when AI is unavailable
+     */
+    private function buildHeuristicInvoiceFromDescription($description, $customers, $vendors, $products, $voucherTypes)
+    {
+        $text = strtolower($description);
+
+        $isPurchase = str_contains($text, 'purchase') || str_contains($text, 'bought') || str_contains($text, 'from supplier') || str_contains($text, 'from vendor');
+        $isSales = str_contains($text, 'sale') || str_contains($text, 'sold') || str_contains($text, 'invoice') || str_contains($text, 'to customer');
+
+        $invoiceType = $isPurchase && !$isSales ? 'purchase' : 'sales';
+        $partyType = $invoiceType === 'purchase' ? 'vendor' : 'customer';
+
+        $vatEnabled = str_contains($text, 'vat') || str_contains($text, 'tax') || str_contains($text, '7.5');
+
+        $quantity = 1;
+        if (preg_match('/\b(\d+(?:\.\d+)?)\b/', $text, $qtyMatch)) {
+            $quantity = (float) $qtyMatch[1];
+        }
+
+        $rate = 0;
+        if (preg_match('/\b(?:at|@)\s*(\d+(?:\.\d+)?)(\s?[km])?\b/', $text, $rateMatch)) {
+            $rate = (float) $rateMatch[1];
+            $suffix = strtolower(trim($rateMatch[2] ?? ''));
+            if ($suffix === 'k') {
+                $rate *= 1000;
+            } elseif ($suffix === 'm') {
+                $rate *= 1000000;
+            }
+        }
+
+        $productName = null;
+        if (preg_match('/\b(?:sold|sell|purchase|bought)\s+\d+(?:\.\d+)?\s+(.+?)\s+(?:to|from)\b/', $text, $productMatch)) {
+            $productName = trim($productMatch[1]);
+        }
+
+        $partyName = null;
+        if (preg_match('/\b(?:to|from)\s+([a-z0-9&\-\s]+?)(?:\s+customer|\s+vendor|\s+client|\s+supplier|$)/i', $description, $partyMatch)) {
+            $partyName = trim($partyMatch[1]);
+        }
+
+        $result = [
+            'invoice_type' => $invoiceType,
+            'voucher_type_id' => null,
+            'voucher_type_name' => null,
+            'party_id' => null,
+            'party_name' => null,
+            'party_type' => $partyType,
+            'invoice_date' => date('Y-m-d'),
+            'reference_number' => null,
+            'narration' => $description,
+            'items' => [],
+            'vat_enabled' => $vatEnabled,
+            'interpretation' => 'Parsed using offline rules because AI is temporarily unavailable.'
+        ];
+
+        // Match voucher type by invoice type
+        $matchedVoucherType = $voucherTypes->first(function ($vt) use ($invoiceType) {
+            return $vt['is_purchase'] === ($invoiceType === 'purchase');
+        });
+        if ($matchedVoucherType) {
+            $result['voucher_type_id'] = $matchedVoucherType['id'];
+            $result['voucher_type_name'] = $matchedVoucherType['name'];
+        }
+
+        // Match party
+        if (!empty($partyName)) {
+            $partyCollection = $partyType === 'vendor' ? $vendors : $customers;
+            $matchedParty = $partyCollection->first(function ($p) use ($partyName) {
+                $needle = strtolower($partyName);
+                $haystack = strtolower($p['name']);
+                return str_contains($haystack, $needle) || str_contains($needle, $haystack);
+            });
+            if ($matchedParty) {
+                $result['party_id'] = $matchedParty['id'];
+                $result['party_name'] = $matchedParty['name'];
+            } else {
+                $result['party_name_suggested'] = $partyName;
+            }
+        }
+
+        // Match product
+        if (!empty($productName)) {
+            $matchedProduct = $products->first(function ($p) use ($productName) {
+                $needle = strtolower($productName);
+                $haystack = strtolower($p['name']);
+                return str_contains($haystack, $needle) || str_contains($needle, $haystack);
+            });
+
+            if ($matchedProduct) {
+                $finalRate = $rate > 0 ? $rate : ($invoiceType === 'purchase' ? $matchedProduct['purchase_rate'] : $matchedProduct['sales_rate']);
+                $result['items'][] = [
+                    'product_id' => $matchedProduct['id'],
+                    'product_name' => $matchedProduct['name'],
+                    'description' => $matchedProduct['name'],
+                    'quantity' => $quantity,
+                    'rate' => $finalRate,
+                    'amount' => $quantity * $finalRate,
+                    'purchase_rate' => $matchedProduct['purchase_rate'],
+                    'current_stock' => $matchedProduct['current_stock'],
+                    'unit' => $matchedProduct['unit']
+                ];
+            } else {
+                $result['items'][] = [
+                    'product_id' => null,
+                    'product_name_suggested' => $productName,
+                    'description' => $productName,
+                    'quantity' => $quantity,
+                    'rate' => $rate,
+                    'amount' => $quantity * $rate,
+                    'not_found' => true
+                ];
+            }
+        }
+
+        if (empty($result['items'])) {
+            $result['items'][] = [
+                'product_id' => null,
+                'product_name_suggested' => 'Unknown Item',
+                'description' => 'Item not detected',
+                'quantity' => $quantity,
+                'rate' => $rate,
+                'amount' => $quantity * $rate,
+                'not_found' => true
+            ];
+        }
+
+        return $result;
+    }
+
 }

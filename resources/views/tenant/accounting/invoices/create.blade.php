@@ -236,6 +236,15 @@
                         @error('voucher_type_id')
                             <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                         @enderror
+                        <!-- Create with AI Button -->
+                        <button type="button"
+                                onclick="openAIInvoiceModal()"
+                                class="mt-2 inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-purple-700 bg-purple-50 border border-purple-200 rounded-lg hover:bg-purple-100 hover:border-purple-300 transition-colors">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"></path>
+                            </svg>
+                            Create with AI
+                        </button>
                     </div>
 
                     <!-- Invoice Date -->
@@ -857,10 +866,644 @@
     </div>
 </div>
 
+<!-- AI Invoice Creation Modal -->
+<div id="aiInvoiceModal" class="fixed inset-0 z-50 hidden overflow-y-auto" aria-labelledby="ai-modal-title" role="dialog" aria-modal="true">
+    <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+        <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" aria-hidden="true" onclick="closeAIInvoiceModal()"></div>
+        <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+
+        <div class="inline-block align-bottom bg-white rounded-xl text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-2xl sm:w-full">
+            <!-- Header -->
+            <div class="bg-gradient-to-r from-purple-600 to-indigo-600 px-6 py-4">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 bg-white/20 rounded-lg flex items-center justify-center">
+                            <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"></path>
+                            </svg>
+                        </div>
+                        <div>
+                            <h3 id="ai-modal-title" class="text-lg font-semibold text-white">Create Invoice with AI</h3>
+                            <p class="text-purple-200 text-sm">Describe your invoice in plain English</p>
+                        </div>
+                    </div>
+                    <button type="button" onclick="closeAIInvoiceModal()" class="text-white/80 hover:text-white transition-colors">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Content -->
+            <div class="px-6 py-5">
+                <!-- Input Section -->
+                <div id="aiInputSection">
+                    <label for="aiInvoiceDescription" class="block text-sm font-medium text-gray-700 mb-2">
+                        Describe your invoice
+                    </label>
+                    <textarea id="aiInvoiceDescription"
+                              rows="4"
+                              class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 resize-none"
+                              placeholder="Example: Create a sales invoice for John Doe for 5 bags of rice at ₦50,000 each with VAT"></textarea>
+
+                    <!-- Example Suggestions -->
+                    <div class="mt-4">
+                        <p class="text-xs font-medium text-gray-500 uppercase tracking-wide mb-2">Quick Examples (click to use)</p>
+                        <div class="flex flex-wrap gap-2">
+                            <button type="button" onclick="useAIExample('Sales invoice for 10 units of laptop at ₦350,000 each for Acme Corp with VAT')" class="text-xs px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-full transition-colors">
+                                Sales with VAT
+                            </button>
+                            <button type="button" onclick="useAIExample('Purchase 50 bags of cement from BuildMart at ₦5,000 per bag')" class="text-xs px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-full transition-colors">
+                                Purchase order
+                            </button>
+                            <button type="button" onclick="useAIExample('Invoice for 3 consulting hours at ₦25,000/hour for client XYZ Ltd')" class="text-xs px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-full transition-colors">
+                                Service invoice
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Loading State -->
+                <div id="aiLoadingSection" class="hidden py-8">
+                    <div class="flex flex-col items-center justify-center">
+                        <div class="relative">
+                            <div class="w-16 h-16 border-4 border-purple-200 rounded-full"></div>
+                            <div class="w-16 h-16 border-4 border-purple-600 rounded-full animate-spin absolute top-0 left-0" style="border-top-color: transparent;"></div>
+                        </div>
+                        <p class="mt-4 text-gray-600 font-medium">BallieAI is analyzing your request...</p>
+                        <p class="text-sm text-gray-400 mt-1">This usually takes a few seconds</p>
+                    </div>
+                </div>
+
+                <!-- Preview Section -->
+                <div id="aiPreviewSection" class="hidden">
+                    <div class="flex items-center justify-between mb-4">
+                        <h4 class="text-sm font-semibold text-gray-900">Preview Invoice Details</h4>
+                        <button type="button" onclick="resetAIModal()" class="text-xs text-purple-600 hover:text-purple-800 font-medium">
+                            ← Try again
+                        </button>
+                    </div>
+
+                    <!-- AI Interpretation -->
+                    <div id="aiInterpretation" class="mb-4 p-3 bg-purple-50 border border-purple-200 rounded-lg text-sm text-purple-800">
+                        <!-- Will be filled by JS -->
+                    </div>
+
+                    <!-- Parsed Data Preview -->
+                    <div class="space-y-4">
+                        <!-- Invoice Type & Party -->
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-xs font-medium text-gray-500 uppercase">Invoice Type</label>
+                                <p id="previewInvoiceType" class="mt-1 font-medium text-gray-900">-</p>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-medium text-gray-500 uppercase">Customer/Vendor</label>
+                                <p id="previewParty" class="mt-1 font-medium text-gray-900">-</p>
+                            </div>
+                        </div>
+
+                        <!-- Date & Reference -->
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-xs font-medium text-gray-500 uppercase">Invoice Date</label>
+                                <p id="previewDate" class="mt-1 font-medium text-gray-900">-</p>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-medium text-gray-500 uppercase">VAT</label>
+                                <p id="previewVat" class="mt-1 font-medium text-gray-900">-</p>
+                            </div>
+                        </div>
+
+                        <!-- Items -->
+                        <div>
+                            <label class="block text-xs font-medium text-gray-500 uppercase mb-2">Items</label>
+                            <div id="previewItems" class="bg-gray-50 rounded-lg overflow-hidden">
+                                <!-- Will be filled by JS -->
+                            </div>
+                        </div>
+
+                        <!-- Warnings -->
+                        <div id="previewWarnings" class="hidden p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+                            <div class="flex items-start gap-2">
+                                <svg class="w-5 h-5 text-yellow-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+                                </svg>
+                                <div id="previewWarningsText" class="text-sm text-yellow-800">
+                                    <!-- Will be filled by JS -->
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Total -->
+                        <div class="flex justify-between items-center p-3 bg-gray-100 rounded-lg">
+                            <span class="font-medium text-gray-700">Estimated Total:</span>
+                            <span id="previewTotal" class="text-lg font-bold text-gray-900">₦0.00</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Error Section -->
+                <div id="aiErrorSection" class="hidden py-6">
+                    <div class="text-center">
+                        <div class="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                            <svg class="w-8 h-8 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                            </svg>
+                        </div>
+                        <h4 class="text-lg font-medium text-gray-900 mb-2">Couldn't process your request</h4>
+                        <p id="aiErrorMessage" class="text-gray-600 mb-4">Please try again with a clearer description.</p>
+                        <button type="button" onclick="resetAIModal()" class="text-purple-600 hover:text-purple-800 font-medium">
+                            Try again
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Footer -->
+            <div class="bg-gray-50 px-6 py-4 flex flex-col sm:flex-row-reverse gap-3">
+                <button type="button"
+                        id="aiGenerateBtn"
+                        onclick="generateAIInvoice()"
+                        class="w-full sm:w-auto inline-flex justify-center items-center px-6 py-2.5 bg-purple-600 text-white font-medium rounded-lg hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 transition-colors">
+                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                    </svg>
+                    Generate Invoice
+                </button>
+                <button type="button"
+                        id="aiSubmitBtn"
+                        onclick="submitAIInvoice()"
+                        class="hidden w-full sm:w-auto inline-flex justify-center items-center px-6 py-2.5 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors">
+                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path>
+                    </svg>
+                    <span id="aiSubmitBtnText">Submit Invoice</span>
+                </button>
+                <button type="button"
+                        id="aiApplyBtn"
+                        onclick="applyAIInvoice()"
+                        class="hidden w-full sm:w-auto inline-flex justify-center items-center px-6 py-2.5 bg-green-600 text-white font-medium rounded-lg hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-colors">
+                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                    </svg>
+                    Apply to Form
+                </button>
+                <button type="button"
+                        onclick="closeAIInvoiceModal()"
+                        class="w-full sm:w-auto inline-flex justify-center items-center px-6 py-2.5 bg-white text-gray-700 font-medium rounded-lg border border-gray-300 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 transition-colors">
+                    Cancel
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
 @push('scripts')
 <script>
 let currentModalType = 'customer';
 let currentProductRowIndex = null;
+let parsedAIInvoice = null; // Store the parsed AI invoice data
+
+// ========== AI INVOICE CREATION FUNCTIONS ==========
+
+function openAIInvoiceModal() {
+    const modal = document.getElementById('aiInvoiceModal');
+    modal.classList.remove('hidden');
+    document.body.style.overflow = 'hidden';
+    resetAIModal();
+    document.getElementById('aiInvoiceDescription').focus();
+}
+
+function closeAIInvoiceModal() {
+    const modal = document.getElementById('aiInvoiceModal');
+    modal.classList.add('hidden');
+    document.body.style.overflow = 'auto';
+    resetAIModal();
+}
+
+function resetAIModal() {
+    parsedAIInvoice = null;
+
+    // Reset input
+    document.getElementById('aiInvoiceDescription').value = '';
+
+    // Show/hide sections
+    document.getElementById('aiInputSection').classList.remove('hidden');
+    document.getElementById('aiLoadingSection').classList.add('hidden');
+    document.getElementById('aiPreviewSection').classList.add('hidden');
+    document.getElementById('aiErrorSection').classList.add('hidden');
+
+    // Show/hide buttons
+    document.getElementById('aiGenerateBtn').classList.remove('hidden');
+    document.getElementById('aiApplyBtn').classList.add('hidden');
+    document.getElementById('aiSubmitBtn').classList.add('hidden');
+    document.getElementById('aiSubmitBtnText').textContent = 'Submit Invoice';
+}
+
+function useAIExample(example) {
+    document.getElementById('aiInvoiceDescription').value = example;
+}
+
+async function generateAIInvoice() {
+    const description = document.getElementById('aiInvoiceDescription').value.trim();
+
+    if (!description) {
+        showNotification('error', 'Please describe the invoice you want to create.');
+        return;
+    }
+
+    // Show loading state
+    document.getElementById('aiInputSection').classList.add('hidden');
+    document.getElementById('aiLoadingSection').classList.remove('hidden');
+    document.getElementById('aiPreviewSection').classList.add('hidden');
+    document.getElementById('aiErrorSection').classList.add('hidden');
+    document.getElementById('aiGenerateBtn').classList.add('hidden');
+
+    try {
+        const response = await fetch('/api/ai/parse-invoice', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                'Accept': 'application/json'
+            },
+            body: JSON.stringify({
+                description: description,
+                tenant_id: {{ $tenant->id }},
+                voucher_type_id: document.getElementById('voucher_type_id').value
+            })
+        });
+
+        const data = await response.json();
+
+        if (data.success && data.parsed_invoice) {
+            parsedAIInvoice = data.parsed_invoice;
+            displayAIPreview(parsedAIInvoice);
+        } else {
+            showAIError(data.message || 'Failed to parse invoice description.');
+        }
+    } catch (error) {
+        console.error('AI Invoice Error:', error);
+        showAIError('Network error. Please check your connection and try again.');
+    }
+}
+
+function displayAIPreview(invoice) {
+    // Hide loading, show preview
+    document.getElementById('aiLoadingSection').classList.add('hidden');
+    document.getElementById('aiPreviewSection').classList.remove('hidden');
+    document.getElementById('aiApplyBtn').classList.remove('hidden');
+
+    // Set interpretation
+    document.getElementById('aiInterpretation').innerHTML = `
+        <div class="flex items-start gap-2">
+            <svg class="w-5 h-5 text-purple-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"></path>
+            </svg>
+            <span>${invoice.interpretation || 'Invoice details extracted successfully.'}</span>
+        </div>
+    `;
+
+    // Set invoice type
+    const invoiceType = invoice.voucher_type_name || (invoice.invoice_type === 'purchase' ? 'Purchase Invoice' : 'Sales Invoice');
+    document.getElementById('previewInvoiceType').textContent = invoiceType;
+
+    // Set party
+    const partyName = invoice.party_name || invoice.party_name_suggested || 'Not specified';
+    const partyType = invoice.party_type === 'vendor' ? 'Vendor' : 'Customer';
+    document.getElementById('previewParty').innerHTML = invoice.party_id
+        ? `<span class="text-green-600">✓</span> ${partyName} <span class="text-xs text-gray-500">(${partyType})</span>`
+        : `<span class="text-yellow-600">⚠</span> ${partyName} <span class="text-xs text-yellow-600">(not found)</span>`;
+
+    // Set date
+    document.getElementById('previewDate').textContent = invoice.invoice_date || 'Today';
+
+    // Set VAT
+    document.getElementById('previewVat').textContent = invoice.vat_enabled ? 'Yes (7.5%)' : 'No';
+
+    // Set items
+    let itemsHtml = '';
+    let totalAmount = 0;
+    let warnings = [];
+
+    if (invoice.items && invoice.items.length > 0) {
+        itemsHtml = '<table class="w-full text-sm"><thead class="bg-gray-100"><tr><th class="text-left px-3 py-2">Product</th><th class="text-right px-3 py-2">Qty</th><th class="text-right px-3 py-2">Rate</th><th class="text-right px-3 py-2">Amount</th></tr></thead><tbody>';
+
+        invoice.items.forEach((item, index) => {
+            const amount = (item.quantity || 0) * (item.rate || 0);
+            totalAmount += amount;
+
+            const productDisplay = item.product_id
+                ? `<span class="text-green-600">✓</span> ${item.product_name}`
+                : `<span class="text-yellow-600">⚠</span> ${item.product_name_suggested || 'Unknown'} <span class="text-xs text-yellow-600">(not found)</span>`;
+
+            if (item.not_found) {
+                warnings.push(`Product "${item.product_name_suggested}" was not found. You'll need to select it manually.`);
+            }
+
+            itemsHtml += `
+                <tr class="border-b border-gray-200">
+                    <td class="px-3 py-2">${productDisplay}</td>
+                    <td class="px-3 py-2 text-right">${item.quantity || 1}</td>
+                    <td class="px-3 py-2 text-right">₦${formatNumber(item.rate || 0)}</td>
+                    <td class="px-3 py-2 text-right font-medium">₦${formatNumber(amount)}</td>
+                </tr>
+            `;
+        });
+
+        itemsHtml += '</tbody></table>';
+    } else {
+        itemsHtml = '<p class="text-gray-500 text-center py-4">No items extracted</p>';
+        warnings.push('No items were extracted. Please add items manually.');
+    }
+
+    document.getElementById('previewItems').innerHTML = itemsHtml;
+
+    // Calculate and display total
+    let grandTotal = totalAmount;
+    if (invoice.vat_enabled) {
+        grandTotal = totalAmount * 1.075;
+    }
+    document.getElementById('previewTotal').textContent = '₦' + formatNumber(grandTotal);
+
+    // Show warnings if any
+    if (!invoice.party_id) {
+        warnings.push(`${partyType} "${partyName}" was not found. You'll need to select them manually.`);
+    }
+
+    if (warnings.length > 0) {
+        document.getElementById('previewWarnings').classList.remove('hidden');
+        document.getElementById('previewWarningsText').innerHTML = warnings.map(w => `<p>• ${w}</p>`).join('');
+    } else {
+        document.getElementById('previewWarnings').classList.add('hidden');
+    }
+
+    // Show Submit button if all items have valid product IDs and party is matched
+    const allItemsValid = invoice.items && invoice.items.length > 0 && invoice.items.every(item => item.product_id);
+    const partyValid = invoice.party_id;
+    const voucherTypeValid = invoice.voucher_type_id;
+
+    if (allItemsValid && partyValid && voucherTypeValid) {
+        document.getElementById('aiSubmitBtn').classList.remove('hidden');
+    } else {
+        document.getElementById('aiSubmitBtn').classList.add('hidden');
+    }
+}
+
+function showAIError(message) {
+    document.getElementById('aiLoadingSection').classList.add('hidden');
+    document.getElementById('aiErrorSection').classList.remove('hidden');
+    document.getElementById('aiErrorMessage').textContent = message;
+}
+
+function formatNumber(num) {
+    if (!num || isNaN(num)) return '0.00';
+    return parseFloat(num).toLocaleString('en-US', {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+    });
+}
+
+function applyAIInvoice() {
+    if (!parsedAIInvoice) {
+        showNotification('error', 'No invoice data to apply.');
+        return;
+    }
+
+    const invoice = parsedAIInvoice;
+
+    // 1. Set voucher type if matched
+    if (invoice.voucher_type_id) {
+        const voucherTypeSelect = document.getElementById('voucher_type_id');
+        voucherTypeSelect.value = invoice.voucher_type_id;
+        voucherTypeSelect.dispatchEvent(new Event('change'));
+    }
+
+    // 2. Set invoice date if specified
+    if (invoice.invoice_date) {
+        const dateInput = document.getElementById('voucher_date');
+        dateInput.value = invoice.invoice_date;
+        dateInput.dispatchEvent(new Event('change'));
+    }
+
+    // 3. Set reference number if specified
+    if (invoice.reference_number) {
+        document.getElementById('reference_number').value = invoice.reference_number;
+    }
+
+    // 4. Set narration if specified
+    if (invoice.narration) {
+        document.getElementById('narration').value = invoice.narration;
+    }
+
+    // 5. Set customer/vendor if matched
+    if (invoice.party_id) {
+        // Simulate customer/vendor selection
+        setTimeout(() => {
+            if (invoice.party_type === 'vendor') {
+                // Trigger vendor search and selection
+                const vendorSection = document.getElementById('vendorSection');
+                if (vendorSection) {
+                    const vendorInput = vendorSection.querySelector('input[type="text"]');
+                    if (vendorInput && vendorInput.__x) {
+                        vendorInput.__x.$data.selectedVendorId = invoice.party_id;
+                        vendorInput.__x.$data.selectedVendorName = invoice.party_name;
+                        vendorInput.__x.$data.searchTerm = invoice.party_name;
+
+                        // Update hidden input
+                        document.getElementById('selectedPartyId').value = invoice.party_id;
+                    }
+                }
+            } else {
+                // Trigger customer selection
+                const customerSection = document.getElementById('customerSection');
+                if (customerSection) {
+                    const customerWrapper = customerSection.querySelector('[x-data*="customerSearch"]');
+                    if (customerWrapper && customerWrapper.__x) {
+                        customerWrapper.__x.$data.selectedCustomerId = invoice.party_id;
+                        customerWrapper.__x.$data.selectedCustomerName = invoice.party_name;
+                        customerWrapper.__x.$data.selectedLedgerName = 'Ledger Account';
+                        customerWrapper.__x.$data.searchTerm = invoice.party_name;
+
+                        // Update hidden input
+                        document.getElementById('selectedPartyId').value = invoice.party_id;
+                    }
+                }
+            }
+        }, 100);
+    }
+
+    // 6. Set items
+    if (invoice.items && invoice.items.length > 0) {
+        setTimeout(() => {
+            // Get the invoice items Alpine component
+            const invoiceItemsEl = document.querySelector('[x-data*="invoiceItems"]');
+            if (invoiceItemsEl && invoiceItemsEl.__x) {
+                const itemsData = invoiceItemsEl.__x.$data;
+
+                // Clear existing items except if only one empty item
+                if (itemsData.items.length === 1 && !itemsData.items[0].product_id) {
+                    itemsData.items = [];
+                }
+
+                // Add each item from AI
+                invoice.items.forEach((aiItem, index) => {
+                    if (aiItem.product_id) {
+                        itemsData.items.push({
+                            product_id: aiItem.product_id,
+                            product_name: aiItem.product_name,
+                            description: aiItem.description || aiItem.product_name,
+                            quantity: aiItem.quantity || 1,
+                            rate: aiItem.rate || 0,
+                            amount: aiItem.amount || ((aiItem.quantity || 1) * (aiItem.rate || 0)),
+                            purchase_rate: aiItem.purchase_rate || 0,
+                            current_stock: aiItem.current_stock || 0,
+                            unit: aiItem.unit || 'Pcs'
+                        });
+                    } else {
+                        // Add an empty item for products not found
+                        itemsData.items.push({
+                            product_id: '',
+                            product_name: '',
+                            description: aiItem.description || aiItem.product_name_suggested || '',
+                            quantity: aiItem.quantity || 1,
+                            rate: aiItem.rate || 0,
+                            amount: 0,
+                            purchase_rate: 0,
+                            current_stock: null,
+                            unit: 'Pcs'
+                        });
+                    }
+                });
+
+                // Trigger totals update
+                itemsData.debouncedUpdateTotals();
+
+                // Set VAT if enabled
+                if (invoice.vat_enabled) {
+                    itemsData.vatEnabled = true;
+                }
+            }
+        }, 200);
+    }
+
+    // 7. Close modal and show success message
+    closeAIInvoiceModal();
+    showNotification('success', 'Invoice details applied! Please review and make any necessary adjustments.');
+
+    // Scroll to top of form
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+async function submitAIInvoice() {
+    if (!parsedAIInvoice) {
+        showNotification('error', 'No invoice data to submit.');
+        return;
+    }
+
+    const invoice = parsedAIInvoice;
+
+    // Validate all required data is present
+    if (!invoice.party_id) {
+        showNotification('error', 'Customer/Vendor not matched. Please use "Apply to Form" and select manually.');
+        return;
+    }
+
+    if (!invoice.voucher_type_id) {
+        showNotification('error', 'Invoice type not matched. Please use "Apply to Form" and select manually.');
+        return;
+    }
+
+    if (!invoice.items || invoice.items.length === 0) {
+        showNotification('error', 'No items in invoice. Please add items manually.');
+        return;
+    }
+
+    // Check all items have product IDs
+    const invalidItems = invoice.items.filter(item => !item.product_id);
+    if (invalidItems.length > 0) {
+        showNotification('error', 'Some products not matched. Please use "Apply to Form" and select manually.');
+        return;
+    }
+
+    // Show loading state on submit button
+    const submitBtn = document.getElementById('aiSubmitBtn');
+    const submitBtnText = document.getElementById('aiSubmitBtnText');
+    submitBtn.disabled = true;
+    submitBtnText.textContent = 'Submitting...';
+
+    // Calculate subtotal from items
+    const itemsSubtotal = invoice.items.reduce((sum, item) => sum + ((item.quantity || 1) * (item.rate || 0)), 0);
+
+    // Calculate VAT
+    let vatAmount = 0;
+    if (invoice.vat_enabled) {
+        vatAmount = itemsSubtotal * 0.075;
+    }
+
+    // Create a hidden form and submit it (works with the existing controller that returns redirects)
+    const form = document.createElement('form');
+    form.method = 'POST';
+    form.action = '{{ route("tenant.accounting.invoices.store", ["tenant" => $tenant->slug]) }}';
+    form.style.display = 'none';
+
+    // Helper to add hidden input
+    const addHiddenInput = (name, value) => {
+        const input = document.createElement('input');
+        input.type = 'hidden';
+        input.name = name;
+        input.value = value ?? '';
+        form.appendChild(input);
+    };
+
+    // Add CSRF token
+    addHiddenInput('_token', document.querySelector('meta[name="csrf-token"]').getAttribute('content'));
+
+    // Add basic fields
+    addHiddenInput('customer_id', invoice.party_id);
+    addHiddenInput('voucher_type_id', invoice.voucher_type_id);
+    addHiddenInput('voucher_date', invoice.invoice_date || '{{ date("Y-m-d") }}');
+    addHiddenInput('reference_number', invoice.reference_number || '');
+    addHiddenInput('narration', invoice.narration || '');
+
+    // Add inventory items
+    invoice.items.forEach((item, index) => {
+        addHiddenInput(`inventory_items[${index}][product_id]`, item.product_id);
+        addHiddenInput(`inventory_items[${index}][description]`, item.description || item.product_name);
+        addHiddenInput(`inventory_items[${index}][quantity]`, item.quantity || 1);
+        addHiddenInput(`inventory_items[${index}][rate]`, item.rate || 0);
+        addHiddenInput(`inventory_items[${index}][amount]`, ((item.quantity || 1) * (item.rate || 0)).toFixed(2));
+        addHiddenInput(`inventory_items[${index}][purchase_rate]`, item.purchase_rate || 0);
+    });
+
+    // Add VAT fields
+    if (invoice.vat_enabled) {
+        addHiddenInput('vat_enabled', '1');
+        addHiddenInput('vat_amount', vatAmount.toFixed(2));
+        addHiddenInput('vat_applies_to', 'items_only');
+        addHiddenInput('vatAppliesTo', 'items_only');
+    }
+
+    // Add action
+    addHiddenInput('action', 'save_and_post_new_sales');
+
+    // Append form to body and submit
+    document.body.appendChild(form);
+
+    console.log('Submitting AI Invoice via form:', {
+        customer_id: invoice.party_id,
+        voucher_type_id: invoice.voucher_type_id,
+        items: invoice.items.length,
+        vat_enabled: invoice.vat_enabled,
+        vat_amount: vatAmount
+    });
+
+    form.submit();
+}
+
+// ========== END AI INVOICE CREATION FUNCTIONS ==========
 
 // Quick Add Modal Functions
 function openQuickAddModal(type = 'customer') {
