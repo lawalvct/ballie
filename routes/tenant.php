@@ -768,6 +768,9 @@ Route::prefix('ledger-accounts')->name('ledger-accounts.')->group(function () {
                 Route::delete('/{period}/reset', [PayrollController::class, 'resetPayrollGeneration'])->name('reset');
                 Route::get('/{period}/export-tax-file', [PayrollController::class, 'exportTaxFile'])->name('export-tax-file');
                 Route::get('/{period}/export-bank-file', [PayrollController::class, 'exportBankFile'])->name('export-bank-file');
+                Route::get('/{period}/export-report', [PayrollController::class, 'exportPayrollReport'])->name('export-report');
+                Route::get('/{period}/employee-details', [PayrollController::class, 'employeePayrollDetails'])->name('employee-details');
+                Route::get('/{period}/employee-details/export', [PayrollController::class, 'exportEmployeePayrollDetails'])->name('employee-details.export');
             });
 
             // Loans Management

@@ -46,6 +46,7 @@
                             id="deductions-tab">
                         <i class="fas fa-minus-circle mr-2 text-red-500"></i>
                         Deductions
+                        <span class="ml-2 bg-red-100 text-red-800 text-sm px-3 py-1 rounded-full">{{ $components->where('type', 'deduction')->count() }}</span>
                     </button>
                 </nav>
             </div>

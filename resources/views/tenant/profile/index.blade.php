@@ -188,7 +188,7 @@
                                     </label>
                                     <input type="text"
                                            id="role"
-                                           value="{{ ucfirst($user->role ?? 'User') }}"
+                                           value="{{ $user->roles->first()->name ?? 'User' }}"
                                            disabled
                                            class="w-full px-4 py-3 border border-gray-300 rounded-lg bg-gray-50 text-gray-500">
                                 </div>

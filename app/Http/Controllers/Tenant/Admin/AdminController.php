@@ -29,16 +29,16 @@ class AdminController extends Controller
     {
         $this->adminService = $adminService;
         $this->middleware('auth');
-        
+
         // Apply permission middleware
         $this->middleware('permission:admin.users.manage')->only([
             'users', 'createUser', 'storeUser', 'showUser', 'editUser', 'updateUser', 'destroyUser', 'toggleUserStatus'
         ]);
-        
+
         $this->middleware('permission:admin.roles.manage')->only([
             'roles', 'createRole', 'storeRole', 'showRole', 'editRole', 'updateRole', 'destroyRole', 'cloneRole', 'permissionMatrix'
         ]);
-        
+
         $this->middleware('permission:admin.permissions.manage')->only([
             'permissions', 'createPermission', 'storePermission', 'showPermission', 'editPermission', 'updatePermission', 'destroyPermission'
         ]);
@@ -150,12 +150,26 @@ class AdminController extends Controller
             // Get the tenant ID properly
             $tenantId = tenant() ? tenant()->id : null;
 
+            $selectedRole = Role::find($validated['role_id']);
+            $roleKey = $selectedRole ? Str::of($selectedRole->slug ?? $selectedRole->name)->lower()->replace(['-', ' '], '_')->value() : null;
+            $roleMap = [
+                'super_admin' => User::ROLE_OWNER,
+                'owner' => User::ROLE_OWNER,
+                'admin' => User::ROLE_ADMIN,
+                'manager' => User::ROLE_MANAGER,
+                'accountant' => User::ROLE_ACCOUNTANT,
+                'sales' => User::ROLE_SALES,
+                'employee' => User::ROLE_EMPLOYEE,
+            ];
+            $userRole = $roleMap[$roleKey] ?? User::ROLE_EMPLOYEE;
+
             // Create the user
             $user = User::create([
                 'name' => $validated['first_name'] . ' ' . $validated['last_name'],
                 'email' => $validated['email'],
                 'password' => Hash::make($validated['password']),
                 'tenant_id' => $tenantId,
+                'role' => $userRole,
                 'is_active' => $validated['status'] === 'active',
                 'email_verified_at' => now(), // Auto-verify for admin-created users
             ]);
@@ -265,6 +279,18 @@ class AdminController extends Controller
             // Update roles
             if ($request->filled('roles')) {
                 $user->roles()->sync($request->roles);
+                $selectedRole = Role::find(is_array($request->roles) ? reset($request->roles) : $request->roles);
+                $roleKey = $selectedRole ? Str::of($selectedRole->slug ?? $selectedRole->name)->lower()->replace(['-', ' '], '_')->value() : null;
+                $roleMap = [
+                    'super_admin' => User::ROLE_OWNER,
+                    'owner' => User::ROLE_OWNER,
+                    'admin' => User::ROLE_ADMIN,
+                    'manager' => User::ROLE_MANAGER,
+                    'accountant' => User::ROLE_ACCOUNTANT,
+                    'sales' => User::ROLE_SALES,
+                    'employee' => User::ROLE_EMPLOYEE,
+                ];
+                $user->update(['role' => $roleMap[$roleKey] ?? User::ROLE_EMPLOYEE]);
             } else {
                 $user->roles()->detach();
             }
@@ -770,7 +796,7 @@ class AdminController extends Controller
     public function getRolePermissions($tenant, $roleId)
     {
         $role = Role::with('permissions')->findOrFail($roleId);
-        
+
         return response()->json([
             'permissions' => $role->permissions->map(function($permission) {
                 return [

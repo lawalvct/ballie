@@ -272,6 +272,11 @@
                             <i class="fas fa-file-export mr-2"></i>Export Report
                         </button>
 
+                        <a href="{{ route('tenant.payroll.processing.employee-details', [$tenant, $period]) }}"
+                           class="block w-full bg-cyan-600 hover:bg-cyan-700 text-white px-4 py-3 rounded-lg font-medium transition-colors duration-300 text-center">
+                            <i class="fas fa-table mr-2"></i>Employee Payroll Details
+                        </a>
+
                         <button onclick="printPayrollSummary()"
                                 class="block w-full bg-gray-600 hover:bg-gray-700 text-white px-4 py-3 rounded-lg font-medium transition-colors duration-300 text-center">
                             <i class="fas fa-print mr-2"></i>Print Summary
@@ -585,7 +590,7 @@ function emailPayslip(runId) {
 }
 
 function exportPayrollReport() {
-    window.open(`/tenant/{{ $tenant->id }}/payroll/processing/{{ $period->id }}/export-report`, '_blank');
+    window.open('{{ route('tenant.payroll.processing.export-report', [$tenant, $period]) }}', '_blank');
 }
 
 function printPayrollSummary() {

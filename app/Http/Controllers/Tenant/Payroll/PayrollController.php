@@ -1026,6 +1026,158 @@ class PayrollController extends Controller
     }
 
     /**
+     * Export payroll report for a specific period
+     */
+    public function exportPayrollReport(Tenant $tenant, PayrollPeriod $period)
+    {
+        if ($period->tenant_id !== $tenant->id) {
+            abort(404);
+        }
+
+        $payrollRuns = $period->payrollRuns()->with('employee.department')->get();
+
+        $safeName = Str::slug($period->name ?: 'payroll-period', '_');
+        $filename = "payroll_report_{$safeName}_" . now()->format('Y_m_d') . '.csv';
+
+        $headers = [
+            'Content-Type' => 'text/csv',
+            'Content-Disposition' => "attachment; filename=\"{$filename}\"",
+        ];
+
+        $callback = function () use ($payrollRuns, $period) {
+            $file = fopen('php://output', 'w');
+
+            fputcsv($file, [
+                'Period',
+                'Employee Name',
+                'Employee Number',
+                'Department',
+                'Basic Salary',
+                'Allowances',
+                'Deductions',
+                'Tax',
+                'Net Salary',
+            ]);
+
+            foreach ($payrollRuns as $run) {
+                fputcsv($file, [
+                    $period->name,
+                    trim(($run->employee->first_name ?? '') . ' ' . ($run->employee->last_name ?? '')),
+                    $run->employee->employee_number ?? 'N/A',
+                    $run->employee->department->name ?? 'N/A',
+                    $run->basic_salary,
+                    $run->total_allowances,
+                    $run->total_deductions,
+                    $run->monthly_tax,
+                    $run->net_salary,
+                ]);
+            }
+
+            fclose($file);
+        };
+
+        return response()->stream($callback, 200, $headers);
+    }
+
+    /**
+     * Show employee payroll details with component columns
+     */
+    public function employeePayrollDetails(Tenant $tenant, PayrollPeriod $period)
+    {
+        if ($period->tenant_id !== $tenant->id) {
+            abort(404);
+        }
+
+        $payrollRuns = $period->payrollRuns()
+            ->with(['employee.department', 'details'])
+            ->get();
+
+        $componentColumns = $payrollRuns
+            ->flatMap(fn ($run) => $run->details)
+            ->unique('component_name')
+            ->sortBy('component_name')
+            ->values();
+
+        return view('tenant.payroll.processing.employee-details', compact(
+            'tenant',
+            'period',
+            'payrollRuns',
+            'componentColumns'
+        ));
+    }
+
+    /**
+     * Export employee payroll details with component columns
+     */
+    public function exportEmployeePayrollDetails(Tenant $tenant, PayrollPeriod $period)
+    {
+        if ($period->tenant_id !== $tenant->id) {
+            abort(404);
+        }
+
+        $payrollRuns = $period->payrollRuns()
+            ->with(['employee.department', 'details'])
+            ->get();
+
+        $componentColumns = $payrollRuns
+            ->flatMap(fn ($run) => $run->details)
+            ->unique('component_name')
+            ->sortBy('component_name')
+            ->values();
+
+        $safeName = Str::slug($period->name ?: 'payroll-period', '_');
+        $filename = "employee_payroll_details_{$safeName}_" . now()->format('Y_m_d') . '.csv';
+
+        $headers = [
+            'Content-Type' => 'text/csv',
+            'Content-Disposition' => "attachment; filename=\"{$filename}\"",
+        ];
+
+        $callback = function () use ($payrollRuns, $period, $componentColumns) {
+            $file = fopen('php://output', 'w');
+
+            $headerRow = array_merge(
+                [
+                    'Period',
+                    'Employee Name',
+                    'Employee Number',
+                    'Department',
+                    'Basic Salary',
+                ],
+                $componentColumns->pluck('component_name')->all(),
+                ['Net Salary']
+            );
+
+            fputcsv($file, $headerRow);
+
+            foreach ($payrollRuns as $run) {
+                $detailsMap = $run->details->keyBy('component_name');
+
+                $row = [
+                    $period->name,
+                    trim(($run->employee->first_name ?? '') . ' ' . ($run->employee->last_name ?? '')),
+                    $run->employee->employee_number ?? 'N/A',
+                    $run->employee->department->name ?? 'N/A',
+                    number_format($run->basic_salary ?? 0, 2, '.', ''),
+                ];
+
+                foreach ($componentColumns as $component) {
+                    $detail = $detailsMap->get($component->component_name);
+                    $row[] = number_format($detail->amount ?? 0, 2, '.', '');
+                }
+
+                $row[] = number_format($run->net_salary ?? 0, 2, '.', '');
+
+                fputcsv($file, $row);
+            }
+
+            fclose($file);
+        };
+
+        return response()->stream($callback, 200, $headers);
+    }
+
+    /**
      * Payroll summary report - overview of all payroll periods
      */
     public function payrollSummary(Request $request, Tenant $tenant)
