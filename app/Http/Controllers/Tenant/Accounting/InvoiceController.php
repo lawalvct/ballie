@@ -19,6 +19,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Cache;
 use Barryvdh\DomPDF\Facade\Pdf;
 use App\Exports\InvoicesExport;
 use Maatwebsite\Excel\Facades\Excel;
@@ -1642,6 +1643,14 @@ class InvoiceController extends Controller
                 // Create stock movement record using the StockMovement model method
                 try {
                     StockMovement::createFromVoucher($voucher, $item, $movementType);
+
+                    $asOfDate = $voucher->voucher_date ?? now()->toDateString();
+                    $today = now()->toDateString();
+
+                    Cache::forget("product_stock_{$product->id}_{$asOfDate}");
+                    Cache::forget("product_stock_{$product->id}_{$today}");
+                    Cache::forget("product_stock_value_{$product->id}_{$asOfDate}_weighted_average");
+                    Cache::forget("product_stock_value_{$product->id}_{$today}_weighted_average");
                 } catch (\Exception $e) {
                     Log::error('Error creating stock movement: ' . $e->getMessage(), [
                         'voucher_id' => $voucher->id,
