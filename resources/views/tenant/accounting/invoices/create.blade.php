@@ -905,13 +905,13 @@
                     <textarea id="aiInvoiceDescription"
                               rows="4"
                               class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 resize-none"
-                              placeholder="Example: Create a sales invoice for John Doe for 5 bags of rice at ₦50,000 each with VAT"></textarea>
+                              placeholder="Example: Create a sales invoice for Phocu Limited for 5 bags of rice at ₦50,000 each with VAT"></textarea>
 
                     <!-- Example Suggestions -->
                     <div class="mt-4">
                         <p class="text-xs font-medium text-gray-500 uppercase tracking-wide mb-2">Quick Examples (click to use)</p>
                         <div class="flex flex-wrap gap-2">
-                            <button type="button" onclick="useAIExample('Sales invoice for 10 units of laptop at ₦350,000 each for Acme Corp with VAT')" class="text-xs px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-full transition-colors">
+                            <button type="button" onclick="useAIExample('Sales invoice for 10 units of laptop at ₦350,000 each for Olajide Company with VAT')" class="text-xs px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-full transition-colors">
                                 Sales with VAT
                             </button>
                             <button type="button" onclick="useAIExample('Purchase 50 bags of cement from BuildMart at ₦5,000 per bag')" class="text-xs px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-full transition-colors">

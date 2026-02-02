@@ -25,7 +25,7 @@
     <div class="container mx-auto px-4 relative z-10">
         <div class="max-w-2xl text-white">
             <span class="inline-block px-4 py-2 bg-white/20 backdrop-blur-sm rounded-full text-sm font-medium mb-4 md:mb-6">
-                🎉 Welcome to {{ $storeSettings->store_name ?? $tenant->name }}
+                 Welcome to {{ $storeSettings->store_name ?? $tenant->name }}
             </span>
             <h1 class="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold mb-4 md:mb-6 leading-tight">
                 {{ $storeSettings->store_description ?? 'Discover Amazing Products at Great Prices' }}
