@@ -31,9 +31,9 @@ class CheckoutController extends Controller
     {
         $tenant = $request->current_tenant;
         $storeSettings = $tenant->ecommerceSettings;
-
-        if (!$storeSettings || !$storeSettings->is_store_enabled) {
-            abort(404, 'Store not available');
+        $accessResponse = $this->ensureCheckoutAccess($request, $tenant, $storeSettings);
+        if ($accessResponse) {
+            return $accessResponse;
         }
 
         // Get cart
@@ -66,6 +66,12 @@ class CheckoutController extends Controller
     public function applyCoupon(Request $request)
     {
         $tenant = $request->current_tenant;
+        $storeSettings = $tenant->ecommerceSettings;
+
+        $accessResponse = $this->ensureCheckoutAccess($request, $tenant, $storeSettings, true);
+        if ($accessResponse) {
+            return $accessResponse;
+        }
 
         $validated = $request->validate([
             'coupon_code' => 'required|string',
@@ -113,6 +119,11 @@ class CheckoutController extends Controller
     {
         $tenant = $request->current_tenant;
         $storeSettings = $tenant->ecommerceSettings;
+
+        $accessResponse = $this->ensureCheckoutAccess($request, $tenant, $storeSettings);
+        if ($accessResponse) {
+            return $accessResponse;
+        }
 
         // Conditionally build validation rules based on whether existing address is used
         $rules = [
@@ -281,6 +292,26 @@ class CheckoutController extends Controller
             Log::error('Checkout failed: ' . $e->getMessage());
             return back()->with('error', 'Failed to process checkout. Please try again.');
         }
+    }
+
+    private function ensureCheckoutAccess(Request $request, Tenant $tenant, $storeSettings, bool $expectsJson = false)
+    {
+        if (!$storeSettings || !$storeSettings->is_store_enabled) {
+            abort(404, 'Store not available');
+        }
+
+        if (!$storeSettings->allow_guest_checkout && !Auth::guard('customer')->check()) {
+            if ($expectsJson || $request->expectsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Please login to continue checkout.'
+                ], 401);
+            }
+
+            return redirect()->route('storefront.login', ['tenant' => $tenant->slug]);
+        }
+
+        return null;
     }
 
     /**

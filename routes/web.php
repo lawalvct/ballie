@@ -161,12 +161,13 @@ Route::prefix('{tenant}/store')->middleware(['tenant'])->group(function () {
     // Payment callback (public - Nomba redirects here after payment)
     Route::get('/payment/callback/{order}', [CheckoutController::class, 'paymentCallback'])->name('storefront.payment.callback');
 
-    // Checkout (requires authentication)
-    Route::middleware('auth:customer')->group(function () {
-        Route::get('/checkout', [CheckoutController::class, 'index'])->name('storefront.checkout');
-        Route::post('/checkout/apply-coupon', [CheckoutController::class, 'applyCoupon'])->name('storefront.checkout.apply-coupon');
-        Route::post('/checkout/process', [CheckoutController::class, 'process'])->name('storefront.checkout.process');
+    // Checkout (guest allowed based on settings)
+    Route::get('/checkout', [CheckoutController::class, 'index'])->name('storefront.checkout');
+    Route::post('/checkout/apply-coupon', [CheckoutController::class, 'applyCoupon'])->name('storefront.checkout.apply-coupon');
+    Route::post('/checkout/process', [CheckoutController::class, 'process'])->name('storefront.checkout.process');
 
+    // Customer-only routes
+    Route::middleware('auth:customer')->group(function () {
         // Payment retry for failed orders
         Route::post('/orders/{order}/retry-payment', [CheckoutController::class, 'retryPayment'])->name('storefront.order.retry-payment');
 
