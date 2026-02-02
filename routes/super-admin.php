@@ -187,5 +187,18 @@ Route::prefix('super-admin')->name('super-admin.')->group(function () {
             Route::post('/mark-all-read', [\App\Http\Controllers\SuperAdmin\NotificationController::class, 'markAllAsRead'])->name('mark-all-read');
             Route::delete('/{id}', [\App\Http\Controllers\SuperAdmin\NotificationController::class, 'destroy'])->name('destroy');
         });
+
+        // Tenant Payouts Management
+        Route::prefix('payouts')->name('payouts.')->group(function () {
+            Route::get('/', [\App\Http\Controllers\SuperAdmin\PayoutController::class, 'index'])->name('index');
+            Route::get('/settings', [\App\Http\Controllers\SuperAdmin\PayoutController::class, 'settings'])->name('settings');
+            Route::put('/settings', [\App\Http\Controllers\SuperAdmin\PayoutController::class, 'updateSettings'])->name('settings.update');
+            Route::get('/export', [\App\Http\Controllers\SuperAdmin\PayoutController::class, 'export'])->name('export');
+            Route::get('/{payout}', [\App\Http\Controllers\SuperAdmin\PayoutController::class, 'show'])->name('show');
+            Route::patch('/{payout}/approve', [\App\Http\Controllers\SuperAdmin\PayoutController::class, 'approve'])->name('approve');
+            Route::patch('/{payout}/processing', [\App\Http\Controllers\SuperAdmin\PayoutController::class, 'processing'])->name('processing');
+            Route::patch('/{payout}/complete', [\App\Http\Controllers\SuperAdmin\PayoutController::class, 'complete'])->name('complete');
+            Route::patch('/{payout}/reject', [\App\Http\Controllers\SuperAdmin\PayoutController::class, 'reject'])->name('reject');
+        });
     });
 });

@@ -11,6 +11,15 @@
                         <span class="menu-title whitespace-nowrap">Dashboard</span>
                     </a>
 
+                    <a href="{{ route('super-admin.payouts.index') }}"
+                       class="flex items-center px-4 py-3 text-sm font-medium rounded-lg transition-all duration-300 {{ request()->routeIs('super-admin.payouts.*') ? 'nav-item-active text-white shadow-lg' : 'text-gray-300 nav-item-hover hover:text-white' }}"
+                       title="Ecommerce">
+                        <svg class="w-5 h-5 mr-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13l-1.5 7H19M7 13L5.4 5M9 21a1 1 0 100-2 1 1 0 000 2zm8 0a1 1 0 100-2 1 1 0 000 2z" />
+                        </svg>
+                        <span class="menu-title whitespace-nowrap">Ecommerce</span>
+                    </a>
+
                     <a href="{{ route('super-admin.tenants.index') }}"
                        class="flex items-center px-4 py-3 text-sm font-medium rounded-lg transition-all duration-300 {{ request()->routeIs('super-admin.tenants.*') ? 'nav-item-active text-white shadow-lg' : 'text-gray-300 nav-item-hover hover:text-white' }}"
                        title="Companies">
@@ -77,6 +86,14 @@
                     <p class="px-4 text-xs font-semibold text-gray-400 uppercase tracking-wider mb-4 sidebar-section-title">System Management</p>
 
                     <div class="space-y-1">
+                        <a href="{{ route('super-admin.payouts.settings') }}"
+                           class="flex items-center px-4 py-3 text-sm font-medium rounded-lg transition-all duration-300 {{ request()->routeIs('super-admin.payouts.settings') ? 'nav-item-active text-white shadow-lg' : 'text-gray-300 nav-item-hover hover:text-white' }}"
+                           title="Ecommerce Settings">
+                            <svg class="w-5 h-5 mr-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13l-1.5 7H19M7 13L5.4 5M9 21a1 1 0 100-2 1 1 0 000 2zm8 0a1 1 0 100-2 1 1 0 000 2z" />
+                            </svg>
+                            <span class="menu-title whitespace-nowrap">Ecommerce Settings</span>
+                        </a>
                         <a href="#" class="flex items-center px-4 py-3 text-sm font-medium text-gray-300 rounded-lg nav-item-hover hover:text-white transition-all duration-300"
                            title="System Settings">
                             <svg class="w-5 h-5 mr-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">

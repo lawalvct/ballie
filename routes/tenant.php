@@ -549,6 +549,16 @@ Route::prefix('ledger-accounts')->name('ledger-accounts.')->group(function () {
             // Coupons
             Route::resource('coupons', \App\Http\Controllers\Tenant\Ecommerce\CouponController::class)->except(['show']);
             Route::post('/coupons/{coupon}/toggle', [\App\Http\Controllers\Tenant\Ecommerce\CouponController::class, 'toggle'])->name('coupons.toggle');
+
+            // Payouts / Withdrawals
+            Route::prefix('payouts')->name('payouts.')->group(function () {
+                Route::get('/', [\App\Http\Controllers\Tenant\Ecommerce\PayoutController::class, 'index'])->name('index');
+                Route::get('/create', [\App\Http\Controllers\Tenant\Ecommerce\PayoutController::class, 'create'])->name('create');
+                Route::post('/', [\App\Http\Controllers\Tenant\Ecommerce\PayoutController::class, 'store'])->name('store');
+                Route::get('/calculate-deduction', [\App\Http\Controllers\Tenant\Ecommerce\PayoutController::class, 'calculateDeduction'])->name('calculate-deduction');
+                Route::get('/{payout}', [\App\Http\Controllers\Tenant\Ecommerce\PayoutController::class, 'show'])->name('show');
+                Route::patch('/{payout}/cancel', [\App\Http\Controllers\Tenant\Ecommerce\PayoutController::class, 'cancel'])->name('cancel');
+            });
         });
 
         // CRM - Customer & Vendor Management
