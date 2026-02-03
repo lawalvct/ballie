@@ -253,7 +253,7 @@
                             @endif
                         @endif
 
-                        @if(method_exists($period, 'canBeApproved') ? $period->canBeApproved() : ($period->status === 'completed'))
+                        @if((method_exists($period, 'canBeApproved') ? $period->canBeApproved() : ($period->status === 'completed')) && auth()->user() && auth()->user()->role === 'owner')
                             <button onclick="approvePayroll()"
                                     class="block w-full bg-green-600 hover:bg-green-700 text-white px-4 py-3 rounded-lg font-medium transition-colors duration-300 text-center">
                                 <i class="fas fa-check mr-2"></i>Approve Payroll

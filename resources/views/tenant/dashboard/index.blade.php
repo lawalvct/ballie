@@ -29,7 +29,7 @@
                         </svg>
                     </div>
                     <div class="text-white">
-                        <h3 class="text-2xl md:text-3xl font-bold mb-2">Welcome to Ballie! 🎉</h3>
+                        <h3 class="text-2xl md:text-3xl font-bold mb-2">Welcome to @brand!</h3>
                         <p class="text-blue-100 text-base md:text-lg mb-1">Need help getting started?</p>
                         <p class="text-blue-200 text-sm">Check out our comprehensive documentation and guides.</p>
                     </div>

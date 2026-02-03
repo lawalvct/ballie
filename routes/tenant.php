@@ -935,14 +935,18 @@ Route::prefix('ledger-accounts')->name('ledger-accounts.')->group(function () {
                 Route::get('/create', [AdminController::class, 'createRole'])->name('create');
                 Route::post('/', [AdminController::class, 'storeRole'])->name('store');
                 Route::get('/matrix', [AdminController::class, 'permissionMatrix'])->name('matrix');
+
+                // Specific routes with additional segments MUST come before generic {role} routes
+                Route::get('/{role}/edit', [AdminController::class, 'editRole'])->name('edit');
                 Route::get('/{role}/permissions', [AdminController::class, 'getRolePermissions']);
                 Route::post('/{role}/clone', [AdminController::class, 'cloneRole'])->name('clone');
-                Route::get('/{role}', [AdminController::class, 'showRole'])->name('show');
-                Route::get('/{role}/edit', [AdminController::class, 'editRole'])->name('edit');
-                Route::put('/{role}', [AdminController::class, 'updateRole'])->name('update');
-                Route::delete('/{role}', [AdminController::class, 'destroyRole'])->name('destroy');
                 Route::post('/{role}/assign-permission', [AdminController::class, 'assignPermission'])->name('assign-permission');
                 Route::delete('/{role}/revoke-permission', [AdminController::class, 'revokePermission'])->name('revoke-permission');
+
+                // Generic CRUD routes come last
+                Route::get('/{role}', [AdminController::class, 'showRole'])->name('show');
+                Route::put('/{role}', [AdminController::class, 'updateRole'])->name('update');
+                Route::delete('/{role}', [AdminController::class, 'destroyRole'])->name('destroy');
             });
 
             // Permissions Management

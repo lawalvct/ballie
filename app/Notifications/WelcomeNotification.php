@@ -52,7 +52,7 @@ class WelcomeNotification extends Notification implements ShouldQueue
     public function toArray(object $notifiable): array
     {
         return [
-            'title' => 'Welcome to Ballie! 🎉',
+            'title' => 'Welcome to Ballie! ',
             'message' => 'Your account has been created successfully. Start managing your business with ease.',
             'action_url' => route('tenant.dashboard', ['tenant' => $notifiable->tenant->slug ?? 'default']),
             'action_text' => 'Go to Dashboard',
