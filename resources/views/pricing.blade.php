@@ -111,6 +111,88 @@
         -webkit-text-fill-color: transparent;
         background-clip: text;
     }
+
+    .custom-price-text {
+        background: linear-gradient(135deg, var(--color-gold), #f59e0b, var(--color-gold));
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        background-size: 200% 100%;
+        animation: shimmer 3s ease-in-out infinite;
+    }
+
+    @keyframes shimmer {
+        0%, 100% { background-position: 0% 50%; }
+        50% { background-position: 100% 50%; }
+    }
+
+    .custom-badge {
+        background: linear-gradient(135deg, var(--color-gold), #f59e0b);
+        color: var(--color-dark-purple);
+    }
+
+    /* Inquiry Modal */
+    .inquiry-modal-overlay {
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.6);
+        backdrop-filter: blur(4px);
+        z-index: 9998;
+        display: none;
+        opacity: 0;
+        transition: opacity 0.3s ease;
+    }
+
+    .inquiry-modal-overlay.active {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        opacity: 1;
+    }
+
+    .inquiry-modal {
+        background: white;
+        border-radius: 1.5rem;
+        max-width: 540px;
+        width: 90%;
+        max-height: 90vh;
+        overflow-y: auto;
+        z-index: 9999;
+        transform: scale(0.9) translateY(20px);
+        transition: transform 0.3s ease;
+        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+    }
+
+    .inquiry-modal-overlay.active .inquiry-modal {
+        transform: scale(1) translateY(0);
+    }
+
+    .inquiry-modal input,
+    .inquiry-modal textarea,
+    .inquiry-modal select {
+        width: 100%;
+        border: 2px solid #e5e7eb;
+        border-radius: 0.75rem;
+        padding: 0.75rem 1rem;
+        font-size: 0.95rem;
+        transition: border-color 0.2s ease, box-shadow 0.2s ease;
+        outline: none;
+    }
+
+    .inquiry-modal input:focus,
+    .inquiry-modal textarea:focus,
+    .inquiry-modal select:focus {
+        border-color: var(--color-gold);
+        box-shadow: 0 0 0 3px rgba(209, 176, 94, 0.15);
+    }
+
+    .inquiry-success {
+        display: none;
+    }
+
+    .inquiry-success.show {
+        display: flex;
+    }
 </style>
 
 <!-- Hero Section -->
@@ -455,6 +537,110 @@
                     </div>
                 </div>
             </div>
+
+        </div>
+    </div>
+</section>
+
+<!-- Custom Plan Section -->
+<section class="custom-plan-section py-16 relative overflow-hidden">
+    <div class="absolute inset-0" style="background: linear-gradient(135deg, var(--color-dark-purple) 0%, var(--color-deep-purple) 50%, var(--color-violet) 100%);"></div>
+    <!-- Decorative Elements -->
+    <div class="absolute top-0 left-0 w-full h-1" style="background: linear-gradient(90deg, transparent, var(--color-gold), transparent);"></div>
+    <div class="absolute bottom-0 left-0 w-full h-1" style="background: linear-gradient(90deg, transparent, var(--color-gold), transparent);"></div>
+    <div class="absolute top-10 right-10 w-32 h-32 bg-brand-gold opacity-5 rounded-full"></div>
+    <div class="absolute bottom-10 left-10 w-24 h-24 bg-brand-gold opacity-5 rounded-full"></div>
+
+    <div class="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+            <!-- Left Side: Content -->
+            <div>
+                <div class="inline-flex items-center mb-4">
+                    <span class="custom-badge text-sm font-bold px-4 py-1.5 rounded-full">⭐ Lifetime Available</span>
+                </div>
+                <h2 class="text-3xl md:text-4xl font-bold text-white mb-4">
+                    Need Something <span class="custom-price-text">Bigger?</span>
+                </h2>
+                <p class="text-lg text-gray-300 mb-8">
+                    Get your own custom branded app, lifetime license, and dedicated server. Manage all your companies yourself — no monthly fees, no limits.
+                </p>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8">
+                    <div class="flex items-center">
+                        <svg class="w-5 h-5 text-brand-gold mr-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
+                        </svg>
+                        <span class="text-white">Everything in Enterprise</span>
+                    </div>
+                    <div class="flex items-center">
+                        <svg class="w-5 h-5 text-brand-gold mr-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
+                        </svg>
+                        <span class="text-white">Lifetime license option</span>
+                    </div>
+                    <div class="flex items-center">
+                        <svg class="w-5 h-5 text-brand-gold mr-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
+                        </svg>
+                        <span class="text-white">Custom branded app</span>
+                    </div>
+                    <div class="flex items-center">
+                        <svg class="w-5 h-5 text-brand-gold mr-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
+                        </svg>
+                        <span class="text-white">Manage companies yourself</span>
+                    </div>
+                    <div class="flex items-center">
+                        <svg class="w-5 h-5 text-brand-gold mr-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
+                        </svg>
+                        <span class="text-white">Dedicated server & hosting</span>
+                    </div>
+                    <div class="flex items-center">
+                        <svg class="w-5 h-5 text-brand-gold mr-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
+                        </svg>
+                        <span class="text-white">White-label solution</span>
+                    </div>
+                    <div class="flex items-center">
+                        <svg class="w-5 h-5 text-brand-gold mr-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
+                        </svg>
+                        <span class="text-white">Custom integrations & API</span>
+                    </div>
+                    <div class="flex items-center">
+                        <svg class="w-5 h-5 text-brand-gold mr-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
+                        </svg>
+                        <span class="text-white">Priority onboarding & training</span>
+                    </div>
+                    <div class="flex items-center">
+                        <svg class="w-5 h-5 text-brand-gold mr-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
+                        </svg>
+                        <span class="text-white">Unlimited companies & users</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Side: CTA Card -->
+            <div class="text-center">
+                <div class="bg-white bg-opacity-10 backdrop-blur-sm rounded-2xl p-8 lg:p-10 border border-white border-opacity-20">
+                    <div class="w-20 h-20 bg-brand-gold rounded-full flex items-center justify-center mx-auto mb-6">
+                        <svg class="w-10 h-10 text-gray-900" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"></path>
+                        </svg>
+                    </div>
+                    <h3 class="text-3xl font-bold text-white mb-2">Custom Plan</h3>
+                    <p class="text-5xl font-bold custom-price-text mb-2">Let's Talk</p>
+                    <p class="text-gray-300 text-sm mb-8">Custom pricing based on your requirements</p>
+
+                    <button onclick="openCustomInquiry()" class="w-full bg-brand-gold text-gray-900 py-4 px-8 rounded-xl hover:opacity-90 font-bold transition-all text-lg shadow-lg">
+                        Get Custom Quote →
+                    </button>
+                    <p class="text-gray-400 text-xs mt-4">We'll get back to you within 24 hours</p>
+                </div>
+            </div>
         </div>
     </div>
 </section>
@@ -724,11 +910,115 @@
                 <h3 class="text-xl font-semibold text-gray-900 mb-4">Do you offer discounts for NGOs or educational institutions?</h3>
                 <p class="text-gray-600">Yes, we offer special pricing for registered NGOs and educational institutions. Contact our sales team for more information about available discounts.</p>
             </div>
+
+            <div class="bg-white rounded-xl p-8 shadow-sm border border-gray-200 border-l-4" style="border-left-color: var(--color-gold);">
+                <h3 class="text-xl font-semibold text-gray-900 mb-4">What is the Custom plan?</h3>
+                <p class="text-gray-600">The Custom plan is designed for businesses that need a tailored solution. It includes a <strong>lifetime license option</strong> — pay once and use forever. You also get your own <strong>custom branded app</strong> with your company's name and logo, allowing you to manage all your companies independently on your own dedicated server. Fill out the inquiry form and our team will create a package that fits your exact needs.</p>
+            </div>
+
+            <div class="bg-white rounded-xl p-8 shadow-sm border border-gray-200">
+                <h3 class="text-xl font-semibold text-gray-900 mb-4">Can I switch from a subscription to the lifetime license?</h3>
+                <p class="text-gray-600">Yes! If you're currently on any subscription plan, you can upgrade to a Custom lifetime license at any time. Contact us through the Custom plan inquiry form and we'll work out the best transition path for your business.</p>
+            </div>
         </div>
     </div>
 </section>
 
 @include('cta')
+
+<!-- Custom Plan Inquiry Modal -->
+<div id="custom-inquiry-overlay" class="inquiry-modal-overlay" onclick="closeCustomInquiry(event)">
+    <div class="inquiry-modal" onclick="event.stopPropagation()">
+        <!-- Modal Header -->
+        <div class="gradient-bg p-6 rounded-t-3xl relative">
+            <button onclick="closeCustomInquiry()" class="absolute top-4 right-4 text-white hover:text-brand-gold transition-colors">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                </svg>
+            </button>
+            <div class="flex items-center">
+                <div class="w-12 h-12 bg-brand-gold rounded-full flex items-center justify-center mr-4">
+                    <svg class="w-6 h-6 text-gray-900" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"></path>
+                    </svg>
+                </div>
+                <div>
+                    <h3 class="text-xl font-bold text-white">Custom Plan Inquiry</h3>
+                    <p class="text-gray-300 text-sm">Get a tailored solution for your business</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Form -->
+        <form id="custom-inquiry-form" class="p-6 space-y-5">
+            @csrf
+            <div>
+                <label class="block text-sm font-semibold text-gray-700 mb-1.5">Business Name <span class="text-red-500">*</span></label>
+                <input type="text" name="business_name" required placeholder="e.g. Adeyemi Enterprises Ltd" class="bg-gray-50">
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-1.5">Contact Person <span class="text-red-500">*</span></label>
+                    <input type="text" name="contact_name" required placeholder="Full name">
+                </div>
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-1.5">Phone Number <span class="text-red-500">*</span></label>
+                    <input type="tel" name="phone" required placeholder="e.g. 08012345678">
+                </div>
+            </div>
+
+            <div>
+                <label class="block text-sm font-semibold text-gray-700 mb-1.5">Email Address <span class="text-red-500">*</span></label>
+                <input type="email" name="email" required placeholder="you@company.com">
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-1.5">Number of Companies</label>
+                    <input type="number" name="num_companies" min="1" placeholder="How many companies?">
+                </div>
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-1.5">Interested In</label>
+                    <select name="interest" class="bg-gray-50">
+                        <option value="">Select an option</option>
+                        <option value="lifetime">Lifetime License</option>
+                        <option value="custom_app">Custom Branded App</option>
+                        <option value="both">Lifetime + Custom App</option>
+                        <option value="other">Other / Not Sure</option>
+                    </select>
+                </div>
+            </div>
+
+            <div>
+                <label class="block text-sm font-semibold text-gray-700 mb-1.5">Tell us about your requirements</label>
+                <textarea name="requirements" rows="3" placeholder="Describe your business needs, number of users, specific features you need..." class="bg-gray-50 resize-none"></textarea>
+            </div>
+
+            <div id="inquiry-error" class="hidden bg-red-50 text-red-600 p-3 rounded-lg text-sm"></div>
+
+            <button type="submit" id="inquiry-submit-btn" class="w-full bg-brand-gold text-gray-900 py-3 px-6 rounded-xl font-bold hover:opacity-90 transition-all text-lg">
+                Submit Inquiry
+            </button>
+
+            <p class="text-center text-gray-400 text-xs">We'll get back to you within 24 hours</p>
+        </form>
+
+        <!-- Success State -->
+        <div id="inquiry-success" class="inquiry-success flex-col items-center justify-center p-10 text-center" style="min-height: 300px;">
+            <div class="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
+                <svg class="w-10 h-10 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                </svg>
+            </div>
+            <h3 class="text-2xl font-bold text-gray-900 mb-3">Inquiry Submitted!</h3>
+            <p class="text-gray-600 mb-6">Thank you for your interest in our Custom plan. Our team will review your requirements and get back to you within 24 hours.</p>
+            <button onclick="closeCustomInquiry()" class="bg-brand-gold text-gray-900 py-2 px-6 rounded-lg font-semibold hover:opacity-90 transition-all">
+                Close
+            </button>
+        </div>
+    </div>
+</div>
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
@@ -969,10 +1259,111 @@ document.querySelectorAll('.pricing-card a[href*="register"]').forEach((button, 
         trackPlanSelection(planName, billingCycle);
     });
 });
+
+// =============================================
+// Custom Plan Inquiry Modal
+// =============================================
+function openCustomInquiry() {
+    const overlay = document.getElementById('custom-inquiry-overlay');
+    overlay.style.display = 'flex';
+    // Trigger reflow then animate
+    requestAnimationFrame(() => {
+        overlay.classList.add('active');
+    });
+    document.body.style.overflow = 'hidden';
+
+    // Track in analytics
+    if (typeof gtag !== 'undefined') {
+        gtag('event', 'custom_plan_inquiry_opened');
+    }
+}
+
+function closeCustomInquiry(event) {
+    if (event && event.target !== event.currentTarget) return;
+    const overlay = document.getElementById('custom-inquiry-overlay');
+    overlay.classList.remove('active');
+    setTimeout(() => {
+        overlay.style.display = 'none';
+    }, 300);
+    document.body.style.overflow = '';
+}
+
+// Close on Escape key
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+        const overlay = document.getElementById('custom-inquiry-overlay');
+        if (overlay.classList.contains('active')) {
+            closeCustomInquiry();
+        }
+    }
+});
+
+// Handle form submission
+document.getElementById('custom-inquiry-form').addEventListener('submit', function(e) {
+    e.preventDefault();
+
+    const submitBtn = document.getElementById('inquiry-submit-btn');
+    const errorDiv = document.getElementById('inquiry-error');
+    const form = this;
+
+    // Disable button & show loading
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Submitting...';
+    submitBtn.style.opacity = '0.6';
+    errorDiv.classList.add('hidden');
+
+    // Collect form data
+    const formData = new FormData(form);
+
+    fetch('{{ route("custom-plan.inquiry") }}', {
+        method: 'POST',
+        headers: {
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || formData.get('_token'),
+            'Accept': 'application/json',
+        },
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Show success state
+            form.style.display = 'none';
+            document.querySelector('.inquiry-modal .gradient-bg').style.display = 'none';
+            document.getElementById('inquiry-success').classList.add('show');
+
+            // Track success
+            if (typeof gtag !== 'undefined') {
+                gtag('event', 'custom_plan_inquiry_submitted', {
+                    'business_name': formData.get('business_name'),
+                    'interest': formData.get('interest')
+                });
+            }
+        } else {
+            throw new Error(data.message || 'Something went wrong');
+        }
+    })
+    .catch(error => {
+        errorDiv.textContent = error.message || 'Failed to submit. Please try again or contact us directly.';
+        errorDiv.classList.remove('hidden');
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Submit Inquiry';
+        submitBtn.style.opacity = '1';
+    });
+});
 </script>
 
 <style>
 /* Additional responsive styles */
+@media (max-width: 1024px) {
+    .pricing-card.popular {
+        transform: none;
+    }
+
+    .pricing-card.popular:hover {
+        transform: translateY(-8px);
+    }
+}
+
 @media (max-width: 768px) {
     .pricing-card.popular {
         transform: none;
@@ -997,6 +1388,11 @@ document.querySelectorAll('.pricing-card a[href*="register"]').forEach((button, 
 
     .billing-toggle {
         transform: scale(0.9);
+    }
+
+    .inquiry-modal {
+        width: 95%;
+        max-height: 95vh;
     }
 }
 

@@ -80,6 +80,28 @@
         padding-top: 5rem;
         padding-bottom: 5rem;
     }
+
+    /* Extra mobile responsive improvements */
+    @media (max-width: 640px) {
+        .section-spacing {
+            padding-top: 2.5rem;
+            padding-bottom: 2.5rem;
+        }
+        .hero-section {
+            padding-top: 3rem;
+            padding-bottom: 3rem;
+        }
+        .carousel-slide h2 {
+            font-size: 1.75rem !important;
+            line-height: 1.2;
+        }
+        .carousel-slide p {
+            font-size: 1rem !important;
+        }
+    }
+
+    .text-brand-purple { color: var(--color-purple); }
+    .text-brand-green { color: var(--color-green); }
 </style>
 
 <!-- Hero Section with Carousel -->
@@ -227,47 +249,43 @@
             <!-- Slide 5 - Features Overview -->
             <div class="carousel-slide text-center">
                 <h2 class="text-4xl md:text-5xl font-bold mb-6">
-                    <span class="text-brand-gold">All-in-One</span> Business Solution
+                    <span class="text-brand-gold">13+ Modules</span> — One Platform
                 </h2>
-                <p class="text-xl md:text-2xl text-gray-200 mb-12 max-w-3xl mx-auto">
-                    Everything you need to manage your business efficiently and profitably.
+                <p class="text-xl md:text-2xl text-gray-200 mb-10 max-w-3xl mx-auto">
+                    Stop paying for 10 different tools. Everything your business needs, in one affordable subscription.
                 </p>
-                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                    <div class="bg-white bg-opacity-10 p-6 rounded-lg backdrop-blur-sm">
-                        <div class="w-12 h-12 bg-brand-gold rounded-lg flex items-center justify-center mb-4 mx-auto">
-                            <svg class="w-6 h-6 text-gray-900" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-                            </svg>
-                        </div>
-                        <h3 class="text-lg font-semibold text-brand-gold mb-2">AI-Smart Invoicing</h3>
-                        <p class="text-gray-300 text-sm">AI-powered invoice creation</p>
+                <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                    <div class="bg-white bg-opacity-10 p-4 rounded-lg backdrop-blur-sm">
+                        <h3 class="text-sm font-semibold text-brand-gold mb-1">🤖 BallieAI</h3>
+                        <p class="text-gray-300 text-xs">AI business assistant</p>
                     </div>
-                    <div class="bg-white bg-opacity-10 p-6 rounded-lg backdrop-blur-sm">
-                        <div class="w-12 h-12 bg-brand-teal rounded-lg flex items-center justify-center mb-4 mx-auto">
-                            <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path>
-                            </svg>
-                        </div>
-                        <h3 class="text-lg font-semibold text-brand-gold mb-2">Inventory Control</h3>
-                        <p class="text-gray-300 text-sm">Track stock levels & suppliers</p>
+                    <div class="bg-white bg-opacity-10 p-4 rounded-lg backdrop-blur-sm">
+                        <h3 class="text-sm font-semibold text-brand-gold mb-1">📊 Accounting</h3>
+                        <p class="text-gray-300 text-xs">Double-entry & reports</p>
                     </div>
-                    <div class="bg-white bg-opacity-10 p-6 rounded-lg backdrop-blur-sm">
-                        <div class="w-12 h-12 bg-brand-purple rounded-lg flex items-center justify-center mb-4 mx-auto">
-                            <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
-                            </svg>
-                        </div>
-                        <h3 class="text-lg font-semibold text-brand-gold mb-2">Customer Management</h3>
-                        <p class="text-gray-300 text-sm">Build stronger relationships</p>
+                    <div class="bg-white bg-opacity-10 p-4 rounded-lg backdrop-blur-sm">
+                        <h3 class="text-sm font-semibold text-brand-gold mb-1">📦 Inventory</h3>
+                        <p class="text-gray-300 text-xs">Stock & warehouse</p>
                     </div>
-                    <div class="bg-white bg-opacity-10 p-6 rounded-lg backdrop-blur-sm">
-                        <div class="w-12 h-12 bg-brand-green rounded-lg flex items-center justify-center mb-4 mx-auto">
-                            <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
-                            </svg>
-                        </div>
-                        <h3 class="text-lg font-semibold text-brand-gold mb-2">Financial Reports</h3>
-                        <p class="text-gray-300 text-sm">Detailed business insights</p>
+                    <div class="bg-white bg-opacity-10 p-4 rounded-lg backdrop-blur-sm">
+                        <h3 class="text-sm font-semibold text-brand-gold mb-1">👥 CRM</h3>
+                        <p class="text-gray-300 text-xs">Sales pipeline</p>
+                    </div>
+                    <div class="bg-white bg-opacity-10 p-4 rounded-lg backdrop-blur-sm">
+                        <h3 class="text-sm font-semibold text-brand-gold mb-1">🛒 POS</h3>
+                        <p class="text-gray-300 text-xs">Point of sale</p>
+                    </div>
+                    <div class="bg-white bg-opacity-10 p-4 rounded-lg backdrop-blur-sm">
+                        <h3 class="text-sm font-semibold text-brand-gold mb-1">🌐 E-Commerce</h3>
+                        <p class="text-gray-300 text-xs">Online store</p>
+                    </div>
+                    <div class="bg-white bg-opacity-10 p-4 rounded-lg backdrop-blur-sm">
+                        <h3 class="text-sm font-semibold text-brand-gold mb-1">💰 Payroll</h3>
+                        <p class="text-gray-300 text-xs">Salary & HR</p>
+                    </div>
+                    <div class="bg-white bg-opacity-10 p-4 rounded-lg backdrop-blur-sm">
+                        <h3 class="text-sm font-semibold text-brand-gold mb-1">🏛️ Tax & More</h3>
+                        <p class="text-gray-300 text-xs">VAT, PAYE, audit</p>
                     </div>
                 </div>
             </div>
@@ -351,34 +369,38 @@
                 <div class="text-center">
                     <div class="text-4xl font-bold text-brand-blue mb-2">₦5,000</div>
                     <div class="text-lg text-gray-600 mb-6">per month</div>
-                    <div class="space-y-3 text-left">
+                    <div class="space-y-2.5 text-left">
                         <div class="flex items-center">
                             <span class="text-brand-green mr-3">✓</span>
-                            <span class="text-gray-700">Unlimited invoices & quotes</span>
+                            <span class="text-gray-700">All 13+ modules included</span>
                         </div>
                         <div class="flex items-center">
                             <span class="text-brand-green mr-3">✓</span>
-                            <span class="text-gray-700">Complete inventory management</span>
+                            <span class="text-gray-700">BallieAI assistant</span>
                         </div>
                         <div class="flex items-center">
                             <span class="text-brand-green mr-3">✓</span>
-                            <span class="text-gray-700">Customer relationship management</span>
+                            <span class="text-gray-700">Double-entry accounting & tax</span>
                         </div>
                         <div class="flex items-center">
                             <span class="text-brand-green mr-3">✓</span>
-                            <span class="text-gray-700">Financial reports & analytics</span>
+                            <span class="text-gray-700">POS, inventory & e-commerce</span>
                         </div>
                         <div class="flex items-center">
                             <span class="text-brand-green mr-3">✓</span>
-                            <span class="text-gray-700">AI-powered business assistant</span>
+                            <span class="text-gray-700">Payroll, CRM & HR</span>
                         </div>
                         <div class="flex items-center">
                             <span class="text-brand-green mr-3">✓</span>
-                            <span class="text-gray-700">24/7 customer support</span>
+                            <span class="text-gray-700">Reports, audit & compliance</span>
                         </div>
                         <div class="flex items-center">
                             <span class="text-brand-green mr-3">✓</span>
-                            <span class="text-gray-700">Mobile app access</span>
+                            <span class="text-gray-700">Mobile app + 24/7 support</span>
+                        </div>
+                        <div class="flex items-center">
+                            <span class="text-brand-green mr-3">✓</span>
+                            <span class="text-gray-700">No hidden fees — ever</span>
                         </div>
                     </div>
                     <div class="mt-6">
@@ -392,120 +414,151 @@
     </div>
 </section>
 
-<!-- Features Section -->
+<!-- Features Section - 13+ Modules -->
 <section class="section-spacing bg-gray-50">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div class="text-center mb-16">
+        <div class="text-center mb-12">
+            <div class="inline-flex items-center bg-blue-100 text-brand-blue rounded-full px-4 py-1.5 text-sm font-medium mb-4">
+                ⚡ 13+ Modules — One Platform
+            </div>
             <h2 class="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
                 Everything You Need to Run Your Business
             </h2>
-            <p class="text-xl text-gray-600 max-w-2xl mx-auto">
-                From invoicing to inventory management, we've got all the tools Nigerian businesses need to succeed.
+            <p class="text-lg md:text-xl text-gray-600 max-w-3xl mx-auto">
+                Stop paying for 10 different tools. Accounting, inventory, CRM, POS, payroll, e-commerce, AI assistant, and more — all in one affordable platform.
             </p>
         </div>
 
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            <div class="bg-white p-8 rounded-xl shadow-sm border border-gray-200 hover:shadow-md transition-shadow">
-                <div class="w-12 h-12 rounded-lg flex items-center justify-center mb-6" style="background-color: var(--color-gold);">
-                    <svg class="w-6 h-6 text-gray-900" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-                    </svg>
+        <!-- Feature Module Cards -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5 md:gap-6">
+            <!-- BallieAI -->
+            <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200 hover:shadow-lg hover:border-purple-200 transition-all group">
+                <div class="w-12 h-12 bg-gradient-to-r from-purple-600 to-indigo-600 rounded-lg flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                    <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/></svg>
                 </div>
-                <h3 class="text-xl font-semibold text-gray-900 mb-3">AI-Powered Smart Invoicing</h3>
-                <p class="text-gray-600 mb-4">Create professional invoices with AI assistance that suggests products, validates data, and automates routine tasks.</p>
-                <ul class="text-sm text-gray-500 space-y-1 mb-4">
-                    <li>• AI-powered product suggestions</li>
-                    <li>• Smart data validation</li>
-                    <li>• Automated invoice generation</li>
-                    <li>• Q&A assistant for help</li>
-                </ul>
-                <a href="{{ route('features') }}" class="text-brand-blue hover:text-brand-purple font-medium">Learn more →</a>
+                <h3 class="text-lg font-semibold text-gray-900 mb-2">🤖 BallieAI Assistant</h3>
+                <p class="text-gray-600 text-sm mb-3">Chat with your business data. Create invoices by prompt, interpret reports in plain language, and get smart suggestions.</p>
+                <a href="{{ route('features') }}#ballie-ai" class="text-purple-600 hover:text-purple-800 text-sm font-medium">Explore AI features →</a>
             </div>
 
-            <div class="bg-white p-8 rounded-xl shadow-sm border border-gray-200 hover:shadow-md transition-shadow">
-                <div class="w-12 h-12 rounded-lg flex items-center justify-center mb-6" style="background-color: var(--color-teal);">
-                    <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path>
-                    </svg>
+            <!-- Accounting -->
+            <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200 hover:shadow-lg hover:border-yellow-200 transition-all group">
+                <div class="w-12 h-12 bg-brand-gold rounded-lg flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                    <svg class="w-6 h-6 text-gray-900" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>
                 </div>
-                <h3 class="text-xl font-semibold text-gray-900 mb-3">Inventory Control</h3>
-                <p class="text-gray-600 mb-4">Track stock levels, manage suppliers, and get alerts when items are running low.</p>
-                <ul class="text-sm text-gray-500 space-y-1 mb-4">
-                    <li>• Real-time stock tracking</li>
-                    <li>• Low stock alerts</li>
-                    <li>• Supplier management</li>
-                    <li>• Product categorization</li>
-                </ul>
-                <a href="{{ route('features') }}" class="text-brand-blue hover:text-brand-purple font-medium">Learn more →</a>
+                <h3 class="text-lg font-semibold text-gray-900 mb-2">📊 Double-Entry Accounting</h3>
+                <p class="text-gray-600 text-sm mb-3">Chart of accounts, vouchers, journal entries, bank reconciliation, financial statements, and multi-currency support.</p>
+                <a href="{{ route('features') }}#accounting" class="text-brand-blue hover:text-brand-purple text-sm font-medium">Explore accounting →</a>
             </div>
 
-            <div class="bg-white p-8 rounded-xl shadow-sm border border-gray-200 hover:shadow-md transition-shadow">
-                <div class="w-12 h-12 rounded-lg flex items-center justify-center mb-6" style="background-color: var(--color-purple);">
-                    <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
-                    </svg>
+            <!-- Inventory -->
+            <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200 hover:shadow-lg hover:border-teal-200 transition-all group">
+                <div class="w-12 h-12 bg-brand-teal rounded-lg flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                    <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
                 </div>
-                <h3 class="text-xl font-semibold text-gray-900 mb-3">Customer Management</h3>
-                <p class="text-gray-600 mb-4">Keep detailed customer records, track purchase history, and build stronger relationships.</p>
-                <ul class="text-sm text-gray-500 space-y-1 mb-4">
-                    <li>• Customer profiles</li>
-                    <li>• Purchase history</li>
-                    <li>• Communication logs</li>
-                    <li>• Payment tracking</li>
-                </ul>
-                <a href="{{ route('features') }}" class="text-brand-blue hover:text-brand-purple font-medium">Learn more →</a>
+                <h3 class="text-lg font-semibold text-gray-900 mb-2">📦 Inventory Management</h3>
+                <p class="text-gray-600 text-sm mb-3">Real-time stock tracking, barcode scanning, COGS calculation, supplier management, and multi-warehouse support.</p>
+                <a href="{{ route('features') }}#inventory" class="text-brand-blue hover:text-brand-purple text-sm font-medium">Explore inventory →</a>
             </div>
 
-            <div class="bg-white p-8 rounded-xl shadow-sm border border-gray-200 hover:shadow-md transition-shadow">
-                <div class="w-12 h-12 rounded-lg flex items-center justify-center mb-6" style="background-color: var(--color-green);">
-                    <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
-                    </svg>
+            <!-- CRM -->
+            <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200 hover:shadow-lg hover:border-pink-200 transition-all group">
+                <div class="w-12 h-12 rounded-lg flex items-center justify-center mb-4 group-hover:scale-110 transition-transform" style="background-color: #e05577;">
+                    <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
                 </div>
-                <h3 class="text-xl font-semibold text-gray-900 mb-3">Financial Reports</h3>
-                <p class="text-gray-600 mb-4">Get detailed insights into your business performance with comprehensive financial reporting.</p>
-                <ul class="text-sm text-gray-500 space-y-1 mb-4">
-                    <li>• Profit & loss statements</li>
-                    <li>• Cash flow reports</li>
-                    <li>• Sales analytics</li>
-                    <li>• Tax compliance reports</li>
-                </ul>
-                <a href="{{ route('features') }}" class="text-brand-blue hover:text-brand-purple font-medium">Learn more →</a>
+                <h3 class="text-lg font-semibold text-gray-900 mb-2">👥 CRM & Sales Pipeline</h3>
+                <p class="text-gray-600 text-sm mb-3">Customer profiles, purchase history, lead tracking, sales pipeline, bulk import, and smart follow-up reminders.</p>
+                <a href="{{ route('features') }}#crm" class="text-brand-blue hover:text-brand-purple text-sm font-medium">Explore CRM →</a>
             </div>
 
-            <div class="bg-white p-8 rounded-xl shadow-sm border border-gray-200 hover:shadow-md transition-shadow">
-                <div class="w-12 h-12 rounded-lg flex items-center justify-center mb-6" style="background-color: var(--color-light-blue);">
-                    <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z"></path>
-                    </svg>
+            <!-- POS -->
+            <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200 hover:shadow-lg hover:border-cyan-200 transition-all group">
+                <div class="w-12 h-12 rounded-lg flex items-center justify-center mb-4 group-hover:scale-110 transition-transform" style="background-color: #22a3b3;">
+                    <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 100 4 2 2 0 000-4z"/></svg>
                 </div>
-                <h3 class="text-xl font-semibold text-gray-900 mb-3">Mobile Access</h3>
-                <p class="text-gray-600 mb-4">Manage your business on-the-go with our mobile-responsive platform and dedicated apps.</p>
-                <ul class="text-sm text-gray-500 space-y-1 mb-4">
-                    <li>• Mobile-responsive design</li>
-                    <li>• iOS & Android apps</li>
-                    <li>• Offline capabilities</li>
-                    <li>• Real-time notifications</li>
-                </ul>
-                <a href="{{ route('features') }}" class="text-brand-blue hover:text-brand-purple font-medium">Learn more →</a>
+                <h3 class="text-lg font-semibold text-gray-900 mb-2">🛒 Point of Sale</h3>
+                <p class="text-gray-600 text-sm mb-3">Fast checkout, cash register management, split payments, barcode scanning, and branded receipt printing.</p>
+                <a href="{{ route('features') }}#pos" class="text-brand-blue hover:text-brand-purple text-sm font-medium">Explore POS →</a>
             </div>
 
-            <div class="bg-white p-8 rounded-xl shadow-sm border border-gray-200 hover:shadow-md transition-shadow">
-                <div class="w-12 h-12 rounded-lg flex items-center justify-center mb-6" style="background-color: var(--color-deep-purple);">
-                    <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path>
-                    </svg>
+            <!-- E-commerce -->
+            <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200 hover:shadow-lg hover:border-orange-200 transition-all group">
+                <div class="w-12 h-12 rounded-lg flex items-center justify-center mb-4 group-hover:scale-110 transition-transform" style="background-color: #e8913a;">
+                    <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9"/></svg>
                 </div>
-                <h3 class="text-xl font-semibold text-gray-900 mb-3">Secure & Compliant</h3>
-                <p class="text-gray-600 mb-4">Bank-level security with Nigerian tax compliance and data protection standards.</p>
-                <ul class="text-sm text-gray-500 space-y-1 mb-4">
-                    <li>• SSL encryption</li>
-                    <li>• Regular backups</li>
-                    <li>• Nigerian tax compliance</li>
-                    <li>• GDPR compliant</li>
-                </ul>
-                <a href="{{ route('features') }}" class="text-brand-blue hover:text-brand-purple font-medium">Learn more →</a>
+                <h3 class="text-lg font-semibold text-gray-900 mb-2">🌐 E-Commerce Store</h3>
+                <p class="text-gray-600 text-sm mb-3">Built-in online store with auto-synced inventory, order management, and Paystack/Flutterwave payment integration.</p>
+                <a href="{{ route('features') }}#ecommerce" class="text-brand-blue hover:text-brand-purple text-sm font-medium">Explore e-commerce →</a>
             </div>
+
+            <!-- Payroll -->
+            <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200 hover:shadow-lg hover:border-emerald-200 transition-all group">
+                <div class="w-12 h-12 bg-brand-green rounded-lg flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                    <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"/></svg>
+                </div>
+                <h3 class="text-lg font-semibold text-gray-900 mb-2">💰 Payroll & HR</h3>
+                <p class="text-gray-600 text-sm mb-3">Automated PAYE, pension, NHF deductions, payslips, bulk payments, and an employee self-service portal.</p>
+                <a href="{{ route('features') }}#payroll" class="text-brand-blue hover:text-brand-purple text-sm font-medium">Explore payroll →</a>
+            </div>
+
+            <!-- Tax & Statutory -->
+            <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200 hover:shadow-lg hover:border-amber-200 transition-all group">
+                <div class="w-12 h-12 rounded-lg flex items-center justify-center mb-4 group-hover:scale-110 transition-transform" style="background-color: #d4953d;">
+                    <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
+                </div>
+                <h3 class="text-lg font-semibold text-gray-900 mb-2">🏛️ Tax & Compliance</h3>
+                <p class="text-gray-600 text-sm mb-3">Automated VAT, WHT, CIT calculations with FIRS-ready reports, filing reminders, and compliance dashboard.</p>
+                <a href="{{ route('features') }}#statutory" class="text-brand-blue hover:text-brand-purple text-sm font-medium">Explore tax features →</a>
+            </div>
+
+            <!-- Reports -->
+            <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200 hover:shadow-lg hover:border-violet-200 transition-all group">
+                <div class="w-12 h-12 rounded-lg flex items-center justify-center mb-4 group-hover:scale-110 transition-transform" style="background-color: #614c80;">
+                    <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
+                </div>
+                <h3 class="text-lg font-semibold text-gray-900 mb-2">📈 Reports & Analytics</h3>
+                <p class="text-gray-600 text-sm mb-3">Real-time dashboards, P&L, balance sheet, cash flow, aged reports, and PDF/Excel export — explained by AI.</p>
+                <a href="{{ route('features') }}#reports" class="text-brand-blue hover:text-brand-purple text-sm font-medium">Explore reports →</a>
+            </div>
+
+            <!-- Audit Log -->
+            <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200 hover:shadow-lg hover:border-indigo-200 transition-all group">
+                <div class="w-12 h-12 rounded-lg flex items-center justify-center mb-4 group-hover:scale-110 transition-transform" style="background-color: #5b5ea6;">
+                    <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+                </div>
+                <h3 class="text-lg font-semibold text-gray-900 mb-2">🔍 Audit Trail</h3>
+                <p class="text-gray-600 text-sm mb-3">Tamper-proof record of every action — who did what, when. Complete accountability for your business.</p>
+                <a href="{{ route('features') }}#more" class="text-brand-blue hover:text-brand-purple text-sm font-medium">Explore audit →</a>
+            </div>
+
+            <!-- Admin & Security -->
+            <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200 hover:shadow-lg hover:border-blue-200 transition-all group">
+                <div class="w-12 h-12 bg-brand-blue rounded-lg flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                    <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
+                </div>
+                <h3 class="text-lg font-semibold text-gray-900 mb-2">🔐 Admin & Security</h3>
+                <p class="text-gray-600 text-sm mb-3">Role-based access, custom permissions, team management, SSL encryption, and automated backups.</p>
+                <a href="{{ route('features') }}#more" class="text-brand-blue hover:text-brand-purple text-sm font-medium">Explore admin →</a>
+            </div>
+
+            <!-- Smart Search & More -->
+            <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200 hover:shadow-lg hover:border-green-200 transition-all group">
+                <div class="w-12 h-12 rounded-lg flex items-center justify-center mb-4 group-hover:scale-110 transition-transform" style="background-color: var(--color-deep-purple);">
+                    <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                </div>
+                <h3 class="text-lg font-semibold text-gray-900 mb-2">⚡ Smart Search & More</h3>
+                <p class="text-gray-600 text-sm mb-3">Global search, multi-business support, smart notifications, mobile API, and seamless integrations.</p>
+                <a href="{{ route('features') }}#more" class="text-brand-blue hover:text-brand-purple text-sm font-medium">Explore all features →</a>
+            </div>
+        </div>
+
+        <!-- See All Features CTA -->
+        <div class="text-center mt-10">
+            <a href="{{ route('features') }}" class="inline-flex items-center bg-brand-blue text-white px-8 py-4 rounded-lg hover:opacity-90 transition-opacity font-semibold text-lg shadow-lg">
+                See All 13+ Features in Detail
+                <svg class="w-5 h-5 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"/></svg>
+            </a>
+            <p class="text-gray-500 text-sm mt-3">All features included in every plan — no lock-outs</p>
         </div>
     </div>
 </section>
@@ -629,8 +682,188 @@
     </div>
 </section>
 
+<!-- Mobile App Download Section -->
+<section class="section-spacing bg-white overflow-hidden">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-16 items-center">
+            <!-- Left Content -->
+            <div>
+                <div class="inline-flex items-center bg-green-100 text-green-700 rounded-full px-4 py-1.5 text-sm font-medium mb-4">
+                    📱 Available on Mobile
+                </div>
+                <h2 class="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
+                    Your Business in Your <span class="text-brand-green">Pocket</span>
+                </h2>
+                <p class="text-lg text-gray-600 mb-6">
+                    Run your entire business from your phone. Create invoices, check stock, approve payroll, chat with BallieAI, and monitor sales — all from the palm of your hand.
+                </p>
+
+                <div class="space-y-4 mb-8">
+                    <div class="flex items-center">
+                        <div class="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center mr-4 flex-shrink-0">
+                            <svg class="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+                        </div>
+                        <div>
+                            <h4 class="font-semibold text-gray-900">Lightning Fast</h4>
+                            <p class="text-sm text-gray-600">Optimized for speed even on slow networks</p>
+                        </div>
+                    </div>
+
+                    <div class="flex items-center">
+                        <div class="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center mr-4 flex-shrink-0">
+                            <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/></svg>
+                        </div>
+                        <div>
+                            <h4 class="font-semibold text-gray-900">Push Notifications</h4>
+                            <p class="text-sm text-gray-600">Stay updated on sales, approvals & low stock alerts</p>
+                        </div>
+                    </div>
+
+                    <div class="flex items-center">
+                        <div class="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center mr-4 flex-shrink-0">
+                            <svg class="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
+                        </div>
+                        <div>
+                            <h4 class="font-semibold text-gray-900">Secure Access</h4>
+                            <p class="text-sm text-gray-600">Biometric login & encrypted data on all devices</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- App Store Buttons -->
+                <div class="flex flex-col sm:flex-row gap-4">
+                    <a href="#" class="inline-flex items-center bg-black text-white px-6 py-3.5 rounded-xl hover:bg-gray-800 transition-colors group">
+                        <svg class="w-8 h-8 mr-3" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M17.05 20.28c-.98.95-2.05.8-3.08.35-1.09-.46-2.09-.48-3.24 0-1.44.62-2.2.44-3.06-.35C2.79 15.25 3.51 7.59 9.05 7.31c1.35.07 2.29.74 3.08.8 1.18-.24 2.31-.93 3.57-.84 1.51.12 2.65.72 3.4 1.8-3.12 1.87-2.38 5.98.48 7.13-.57 1.5-1.31 2.99-2.54 4.09zM12.03 7.25c-.15-2.23 1.66-4.07 3.74-4.25.29 2.58-2.34 4.5-3.74 4.25z"/>
+                        </svg>
+                        <div class="text-left">
+                            <div class="text-xs opacity-80">Download on the</div>
+                            <div class="text-lg font-semibold -mt-1">App Store</div>
+                        </div>
+                    </a>
+
+                    <a href="#" class="inline-flex items-center bg-black text-white px-6 py-3.5 rounded-xl hover:bg-gray-800 transition-colors group">
+                        <svg class="w-8 h-8 mr-3" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M3.609 1.814L13.792 12 3.61 22.186a.996.996 0 01-.61-.92V2.734a1 1 0 01.609-.92zm10.89 10.893l2.302 2.302-10.937 6.333 8.635-8.635zm3.199-3.198l2.807 1.626a1 1 0 010 1.73l-2.808 1.626L15.206 12l2.492-2.491zM5.864 2.658L16.8 8.99l-2.302 2.302-8.634-8.634z"/>
+                        </svg>
+                        <div class="text-left">
+                            <div class="text-xs opacity-80">Get it on</div>
+                            <div class="text-lg font-semibold -mt-1">Google Play</div>
+                        </div>
+                    </a>
+                </div>
+                <p class="text-xs text-gray-400 mt-3">Coming soon — Join the waitlist to get early access</p>
+            </div>
+
+            <!-- Right Side - Phone Mockup -->
+            <div class="relative flex justify-center lg:justify-end">
+                <div class="relative w-64 sm:w-72">
+                    <!-- Phone Frame -->
+                    <div class="bg-gray-900 rounded-[2.5rem] p-3 shadow-2xl">
+                        <div class="bg-white rounded-[2rem] overflow-hidden">
+                            <!-- Status Bar -->
+                            <div class="bg-brand-blue px-4 py-2 flex items-center justify-between">
+                                <span class="text-white text-xs font-medium">9:41</span>
+                                <div class="flex items-center space-x-1">
+                                    <div class="w-3.5 h-2.5 border border-white rounded-sm"><div class="w-2 h-1.5 bg-white rounded-sm m-px"></div></div>
+                                </div>
+                            </div>
+                            <!-- App Content -->
+                            <div class="bg-gray-50 p-4">
+                                <div class="flex items-center justify-between mb-4">
+                                    <div>
+                                        <div class="text-xs text-gray-500">Welcome back</div>
+                                        <div class="text-sm font-bold text-gray-900">Adebayo's Store</div>
+                                    </div>
+                                    <div class="w-8 h-8 bg-brand-gold rounded-full flex items-center justify-center">
+                                        <span class="text-xs font-bold text-gray-900">AD</span>
+                                    </div>
+                                </div>
+
+                                <!-- Dashboard Cards -->
+                                <div class="grid grid-cols-2 gap-2 mb-3">
+                                    <div class="bg-white rounded-lg p-3 shadow-sm">
+                                        <div class="text-xs text-gray-500">Today's Sales</div>
+                                        <div class="text-sm font-bold text-brand-green">₦284,500</div>
+                                    </div>
+                                    <div class="bg-white rounded-lg p-3 shadow-sm">
+                                        <div class="text-xs text-gray-500">Orders</div>
+                                        <div class="text-sm font-bold text-brand-blue">23 new</div>
+                                    </div>
+                                </div>
+                                <div class="grid grid-cols-2 gap-2 mb-3">
+                                    <div class="bg-white rounded-lg p-3 shadow-sm">
+                                        <div class="text-xs text-gray-500">Low Stock</div>
+                                        <div class="text-sm font-bold text-orange-500">5 items</div>
+                                    </div>
+                                    <div class="bg-white rounded-lg p-3 shadow-sm">
+                                        <div class="text-xs text-gray-500">Receivables</div>
+                                        <div class="text-sm font-bold text-brand-purple">₦1.2M</div>
+                                    </div>
+                                </div>
+
+                                <!-- Quick Actions -->
+                                <div class="bg-white rounded-lg p-3 shadow-sm">
+                                    <div class="text-xs font-semibold text-gray-700 mb-2">Quick Actions</div>
+                                    <div class="grid grid-cols-4 gap-1">
+                                        <div class="text-center">
+                                            <div class="w-8 h-8 bg-brand-gold rounded-lg flex items-center justify-center mx-auto mb-1">
+                                                <span class="text-xs">📄</span>
+                                            </div>
+                                            <span class="text-[9px] text-gray-600">Invoice</span>
+                                        </div>
+                                        <div class="text-center">
+                                            <div class="w-8 h-8 bg-brand-teal rounded-lg flex items-center justify-center mx-auto mb-1">
+                                                <span class="text-xs">📦</span>
+                                            </div>
+                                            <span class="text-[9px] text-gray-600">Stock</span>
+                                        </div>
+                                        <div class="text-center">
+                                            <div class="w-8 h-8 bg-purple-500 rounded-lg flex items-center justify-center mx-auto mb-1">
+                                                <span class="text-xs">🤖</span>
+                                            </div>
+                                            <span class="text-[9px] text-gray-600">BallieAI</span>
+                                        </div>
+                                        <div class="text-center">
+                                            <div class="w-8 h-8 bg-brand-green rounded-lg flex items-center justify-center mx-auto mb-1">
+                                                <span class="text-xs">🛒</span>
+                                            </div>
+                                            <span class="text-[9px] text-gray-600">POS</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <!-- Bottom Nav -->
+                            <div class="bg-white border-t border-gray-200 px-4 py-2 flex justify-around">
+                                <div class="text-center">
+                                    <div class="w-5 h-5 mx-auto mb-0.5 flex items-center justify-center"><span class="text-xs">🏠</span></div>
+                                    <span class="text-[8px] text-brand-blue font-semibold">Home</span>
+                                </div>
+                                <div class="text-center">
+                                    <div class="w-5 h-5 mx-auto mb-0.5 flex items-center justify-center"><span class="text-xs">📊</span></div>
+                                    <span class="text-[8px] text-gray-400">Reports</span>
+                                </div>
+                                <div class="text-center">
+                                    <div class="w-5 h-5 mx-auto mb-0.5 flex items-center justify-center"><span class="text-xs">🛒</span></div>
+                                    <span class="text-[8px] text-gray-400">POS</span>
+                                </div>
+                                <div class="text-center">
+                                    <div class="w-5 h-5 mx-auto mb-0.5 flex items-center justify-center"><span class="text-xs">⚙️</span></div>
+                                    <span class="text-[8px] text-gray-400">More</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Phone Notch -->
+                    <div class="absolute top-3 left-1/2 -translate-x-1/2 w-24 h-5 bg-gray-900 rounded-b-xl"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
 <!-- Testimonials Section -->
-<section class="section-spacing bg-white">
+<section class="section-spacing bg-gray-50">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="text-center mb-12">
             <h2 class="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
@@ -750,7 +983,7 @@
                 Join thousands of Nigerian entrepreneurs who have transformed their business operations with Ballie.
             </p>
 
-            <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-8">
                 <div class="text-center">
                     <div class="text-4xl md:text-5xl font-bold text-brand-gold mb-2">5,000+</div>
                     <div class="text-lg text-gray-200">Active Businesses</div>
