@@ -373,11 +373,43 @@
                         <p class="text-gray-600">Start with a 30-day free trial, no credit card required</p>
                     </div>
 
+                    <!-- Billing Cycle Toggle -->
+                    <div class="flex justify-center mb-8">
+                        <div class="inline-flex rounded-xl border-2 border-gray-200 p-1 bg-gray-50" id="billing-cycle-toggle">
+                            <button type="button" data-cycle="monthly"
+                                    class="cycle-btn px-4 py-2 rounded-lg text-sm font-semibold transition-all duration-300 bg-white shadow text-gray-900">
+                                Monthly
+                            </button>
+                            <button type="button" data-cycle="quarterly"
+                                    class="cycle-btn px-4 py-2 rounded-lg text-sm font-semibold transition-all duration-300 text-gray-500 hover:text-gray-700">
+                                Quarterly
+                                <span class="hidden sm:inline text-xs ml-1 text-green-600">Save</span>
+                            </button>
+                            <button type="button" data-cycle="biannual"
+                                    class="cycle-btn px-4 py-2 rounded-lg text-sm font-semibold transition-all duration-300 text-gray-500 hover:text-gray-700">
+                                Bi-Annual
+                                <span class="hidden sm:inline text-xs ml-1 text-green-600">Save</span>
+                            </button>
+                            <button type="button" data-cycle="yearly"
+                                    class="cycle-btn px-4 py-2 rounded-lg text-sm font-semibold transition-all duration-300 text-gray-500 hover:text-gray-700">
+                                Yearly
+                                <span class="hidden sm:inline text-xs ml-1 text-green-600">Best</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <input type="hidden" name="billing_cycle" id="selected_billing_cycle" value="monthly">
+
                     @if($plans ?? false)
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
                         @foreach($plans as $plan)
                         <div class="plan-card border-2 border-gray-200 rounded-xl p-6 cursor-pointer transition-all duration-300 hover:border-yellow-400 {{ $plan->is_popular ? 'border-yellow-400 bg-yellow-50' : '' }}"
-                             data-plan-id="{{ $plan->id }}" data-plan-name="{{ $plan->name }}">
+                             data-plan-id="{{ $plan->id }}"
+                             data-plan-name="{{ $plan->name }}"
+                             data-price-monthly="{{ $plan->monthly_price }}"
+                             data-price-quarterly="{{ $plan->quarterly_price }}"
+                             data-price-biannual="{{ $plan->biannual_price }}"
+                             data-price-yearly="{{ $plan->yearly_price }}">
                             @if($plan->is_popular)
                                 <div class="text-center mb-4">
                                     <span class="inline-block px-3 py-1 text-xs font-semibold text-yellow-800 bg-yellow-200 rounded-full">
@@ -388,10 +420,46 @@
 
                             <div class="text-center">
                                 <h3 class="text-xl font-bold text-gray-900 mb-2">{{ $plan->name }}</h3>
-                                <div class="mb-4">
+
+                                {{-- Monthly (default visible) --}}
+                                <div class="plan-price-display cycle-monthly mb-4">
                                     <span class="text-3xl font-bold" style="color: var(--color-blue);">{{ $plan->formatted_monthly_price }}</span>
                                     <span class="text-gray-500">/month</span>
                                 </div>
+
+                                {{-- Quarterly --}}
+                                <div class="plan-price-display cycle-quarterly hidden mb-4">
+                                    <span class="text-3xl font-bold" style="color: var(--color-blue);">{{ $plan->formatted_quarterly_price }}</span>
+                                    <span class="text-gray-500">/quarter</span>
+                                    @if($plan->savingsForCycle('quarterly') > 0)
+                                        <div class="text-xs font-semibold mt-1" style="color: var(--color-green);">
+                                            Save {{ $plan->formattedSavingsForCycle('quarterly') }} (½ month free)
+                                        </div>
+                                    @endif
+                                </div>
+
+                                {{-- Bi-Annual --}}
+                                <div class="plan-price-display cycle-biannual hidden mb-4">
+                                    <span class="text-3xl font-bold" style="color: var(--color-blue);">{{ $plan->formatted_biannual_price }}</span>
+                                    <span class="text-gray-500">/6 months</span>
+                                    @if($plan->savingsForCycle('biannual') > 0)
+                                        <div class="text-xs font-semibold mt-1" style="color: var(--color-green);">
+                                            Save {{ $plan->formattedSavingsForCycle('biannual') }} (1 month free)
+                                        </div>
+                                    @endif
+                                </div>
+
+                                {{-- Yearly --}}
+                                <div class="plan-price-display cycle-yearly hidden mb-4">
+                                    <span class="text-3xl font-bold" style="color: var(--color-blue);">{{ $plan->formatted_yearly_price }}</span>
+                                    <span class="text-gray-500">/year</span>
+                                    @if($plan->savingsForCycle('yearly') > 0)
+                                        <div class="text-xs font-semibold mt-1" style="color: var(--color-green);">
+                                            Save {{ $plan->formattedSavingsForCycle('yearly') }} (2 months free)
+                                        </div>
+                                    @endif
+                                </div>
+
                                 <p class="text-gray-600 mb-6">{{ $plan->description }}</p>
 
                                 <div class="space-y-3 text-left">
@@ -565,6 +633,41 @@ document.addEventListener('DOMContentLoaded', function() {
             console.log('Auto-selected popular plan:', popularPlan.dataset.planId);
         }
     }
+
+    // Billing cycle toggle
+    const cycleButtons = document.querySelectorAll('#billing-cycle-toggle .cycle-btn');
+    const billingCycleInput = document.getElementById('selected_billing_cycle');
+
+    function switchBillingCycle(cycle) {
+        // Update button styles
+        cycleButtons.forEach(btn => {
+            btn.classList.remove('bg-white', 'shadow', 'text-gray-900');
+            btn.classList.add('text-gray-500');
+        });
+        const activeBtn = document.querySelector(`#billing-cycle-toggle .cycle-btn[data-cycle="${cycle}"]`);
+        if (activeBtn) {
+            activeBtn.classList.add('bg-white', 'shadow', 'text-gray-900');
+            activeBtn.classList.remove('text-gray-500');
+        }
+
+        // Show/hide price displays
+        const allPrices = document.querySelectorAll('.plan-price-display');
+        allPrices.forEach(el => el.classList.add('hidden'));
+        const activePrices = document.querySelectorAll(`.plan-price-display.cycle-${cycle}`);
+        activePrices.forEach(el => el.classList.remove('hidden'));
+
+        // Update hidden input
+        billingCycleInput.value = cycle;
+    }
+
+    cycleButtons.forEach(btn => {
+        btn.addEventListener('click', function() {
+            switchBillingCycle(this.dataset.cycle);
+        });
+    });
+
+    // Initialize with monthly
+    switchBillingCycle('monthly');
 
     // Step navigation
     function showStep(step) {
