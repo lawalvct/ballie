@@ -39,19 +39,29 @@
 
     <!-- Billing Toggle -->
     <div class="text-center" role="group" aria-label="Billing cycle toggle">
-        <div class="inline-flex items-center bg-gray-100 rounded-lg p-1 shadow-inner">
-            <button id="monthlyBtn" type="button" class="billing-toggle px-4 py-2 text-sm font-medium rounded-md transition-all duration-200"
+        <div class="inline-flex items-center bg-gray-100 rounded-lg p-1 shadow-inner flex-wrap justify-center gap-1">
+            <button id="monthlyBtn" type="button" class="billing-toggle px-3 py-2 text-sm font-medium rounded-md transition-all duration-200"
                     aria-pressed="true" data-cycle="monthly">
                 Monthly
             </button>
-            <button id="yearlyBtn" type="button" class="billing-toggle px-4 py-2 text-sm font-medium rounded-md transition-all duration-200 relative"
+            <button id="quarterlyBtn" type="button" class="billing-toggle px-3 py-2 text-sm font-medium rounded-md transition-all duration-200 relative"
+                    aria-pressed="false" data-cycle="quarterly">
+                Quarterly
+                <span class="text-orange-600 text-xs ml-0.5 font-semibold hidden sm:inline">Save</span>
+            </button>
+            <button id="biannualBtn" type="button" class="billing-toggle px-3 py-2 text-sm font-medium rounded-md transition-all duration-200 relative"
+                    aria-pressed="false" data-cycle="biannual">
+                Bi-Annual
+                <span class="text-blue-600 text-xs ml-0.5 font-semibold hidden sm:inline">Save More</span>
+            </button>
+            <button id="yearlyBtn" type="button" class="billing-toggle px-3 py-2 text-sm font-medium rounded-md transition-all duration-200 relative"
                     aria-pressed="false" data-cycle="yearly">
                 Yearly
-                <span class="text-green-700 text-xs ml-1 font-semibold">Save 20%</span>
-                <span class="absolute -top-2 right-2 bg-green-100 text-green-700 text-[10px] px-2 py-0.5 rounded-full tracking-wide hidden md:inline">Best Value</span>
+                <span class="text-green-700 text-xs ml-0.5 font-semibold hidden sm:inline">Best Value</span>
+                <span class="absolute -top-2 right-0 bg-green-100 text-green-700 text-[10px] px-1.5 py-0.5 rounded-full tracking-wide hidden lg:inline">Save Most</span>
             </button>
         </div>
-        <p class="mt-2 text-xs text-gray-500" id="billingHint">Toggle to see {{ strtolower($plans->first()->name ?? 'each') }} plan monthly vs yearly pricing.</p>
+        <p class="mt-2 text-xs text-gray-500" id="billingHint">Choose your billing cycle to see pricing.</p>
     </div>
 
     <!-- Plans Grid -->
@@ -81,22 +91,41 @@
                 <div class="text-center mb-6">
                     <h3 class="text-xl font-bold text-gray-900 mb-2">{{ $plan->name }}</h3>
                     <div class="pricing-container" aria-live="polite">
-                        <div class="monthly-pricing" data-price-monthly="{{ $plan->monthly_price }}">
+                        {{-- Monthly --}}
+                        <div class="cycle-pricing cycle-monthly">
                             <span class="text-3xl font-bold text-gray-900">{{ $plan->formatted_monthly_price }}</span>
                             <span class="text-gray-600">/month</span>
                         </div>
-                        <div class="yearly-pricing hidden" data-price-yearly="{{ $plan->yearly_price }}">
+                        {{-- Quarterly --}}
+                        <div class="cycle-pricing cycle-quarterly hidden">
+                            <span class="text-3xl font-bold text-gray-900">{{ $plan->formatted_quarterly_price }}</span>
+                            <span class="text-gray-600">/quarter</span>
+                            @php $qSavings = $plan->savingsForCycle('quarterly'); @endphp
+                            @if($qSavings > 0)
+                                <div class="mt-1 inline-flex items-center gap-1 bg-orange-50 text-orange-700 text-xs font-medium px-2 py-0.5 rounded-full border border-orange-200">
+                                    <span>Save {{ $plan->formattedSavingsForCycle('quarterly') }}</span>
+                                </div>
+                            @endif
+                        </div>
+                        {{-- Bi-Annual --}}
+                        <div class="cycle-pricing cycle-biannual hidden">
+                            <span class="text-3xl font-bold text-gray-900">{{ $plan->formatted_biannual_price }}</span>
+                            <span class="text-gray-600">/6 months</span>
+                            @php $bSavings = $plan->savingsForCycle('biannual'); @endphp
+                            @if($bSavings > 0)
+                                <div class="mt-1 inline-flex items-center gap-1 bg-blue-50 text-blue-700 text-xs font-medium px-2 py-0.5 rounded-full border border-blue-200">
+                                    <span>Save {{ $plan->formattedSavingsForCycle('biannual') }}</span>
+                                </div>
+                            @endif
+                        </div>
+                        {{-- Yearly --}}
+                        <div class="cycle-pricing cycle-yearly hidden">
                             <span class="text-3xl font-bold text-gray-900">{{ $plan->formatted_yearly_price }}</span>
                             <span class="text-gray-600">/year</span>
-                            @php
-                                $monthlyCost = $plan->monthly_price * 12;
-                                $yearlyCost = $plan->yearly_price;
-                                $savings = $monthlyCost - $yearlyCost;
-                            @endphp
-                            @if($savings > 0)
-                                <div class="mt-2 inline-flex items-center gap-1 bg-green-50 text-green-700 text-xs font-medium px-2 py-1 rounded-full border border-green-200" title="You save when paying yearly">
-                                    <svg class="w-3 h-3" viewBox="0 0 20 20" fill="currentColor"><path d="M10 2a8 8 0 100 16 8 8 0 000-16zm3.707 6.293l-4 4a1 1 0 01-1.414 0l-2-2 1.414-1.414L9 10.586l3.293-3.293 1.414 1.414z"/></svg>
-                                    <span>Save ₦{{ number_format($savings / 100, 2) }}</span>
+                            @php $ySavings = $plan->savingsForCycle('yearly'); @endphp
+                            @if($ySavings > 0)
+                                <div class="mt-1 inline-flex items-center gap-1 bg-green-50 text-green-700 text-xs font-medium px-2 py-0.5 rounded-full border border-green-200">
+                                    <span>Save {{ $plan->formattedSavingsForCycle('yearly') }}</span>
                                 </div>
                             @endif
                         </div>
@@ -269,19 +298,34 @@
                         @endforeach
                     </tr>
                     <tr>
+                        <td class="px-6 py-4 text-sm font-medium text-gray-900 sticky left-0 bg-white z-10">Quarterly Price</td>
+                        @foreach($plans as $plan)
+                        <td class="px-6 py-4 text-center text-sm">
+                            <span class="font-semibold text-gray-900">{{ $plan->formatted_quarterly_price }}</span>
+                            @if($plan->savingsForCycle('quarterly') > 0)
+                                <div class="text-orange-600 text-xs mt-1 font-medium">Save {{ $plan->formattedSavingsForCycle('quarterly') }}</div>
+                            @endif
+                        </td>
+                        @endforeach
+                    </tr>
+                    <tr>
+                        <td class="px-6 py-4 text-sm font-medium text-gray-900 sticky left-0 bg-white z-10">Bi-Annual Price</td>
+                        @foreach($plans as $plan)
+                        <td class="px-6 py-4 text-center text-sm">
+                            <span class="font-semibold text-gray-900">{{ $plan->formatted_biannual_price }}</span>
+                            @if($plan->savingsForCycle('biannual') > 0)
+                                <div class="text-blue-600 text-xs mt-1 font-medium">Save {{ $plan->formattedSavingsForCycle('biannual') }}</div>
+                            @endif
+                        </td>
+                        @endforeach
+                    </tr>
+                    <tr>
                         <td class="px-6 py-4 text-sm font-medium text-gray-900 sticky left-0 bg-white z-10">Yearly Price</td>
                         @foreach($plans as $plan)
                         <td class="px-6 py-4 text-center text-sm">
                             <span class="font-semibold text-gray-900">{{ $plan->formatted_yearly_price }}</span>
-                            @php
-                                $monthlyCost = $plan->monthly_price * 12;
-                                $yearlyCost = $plan->yearly_price;
-                                $savings = $monthlyCost - $yearlyCost;
-                            @endphp
-                            @if($savings > 0)
-                                <div class="text-green-600 text-xs mt-1 font-medium">
-                                    Save ₦{{ number_format($savings / 100, 2) }}
-                                </div>
+                            @if($plan->savingsForCycle('yearly') > 0)
+                                <div class="text-green-600 text-xs mt-1 font-medium">Save {{ $plan->formattedSavingsForCycle('yearly') }}</div>
                             @endif
                         </td>
                         @endforeach
@@ -320,6 +364,43 @@
                     </tr>
                     @endforeach
                     @endif
+
+                    <!-- Key Features Section -->
+                    <tr class="bg-green-50">
+                        <td colspan="{{ count($plans) + 1 }}" class="px-6 py-3 text-sm font-semibold text-green-900 sticky left-0 bg-green-50 z-10">
+                            ⚡ Key Features
+                        </td>
+                    </tr>
+                    @php
+                        $featureFlags = [
+                            ['key' => 'has_pos', 'label' => 'POS System'],
+                            ['key' => 'has_payroll', 'label' => 'Payroll Management'],
+                            ['key' => 'has_ecommerce', 'label' => 'E-Commerce Store'],
+                            ['key' => 'has_multi_location', 'label' => 'Multi-Location Support'],
+                            ['key' => 'has_multi_currency', 'label' => 'Multi-Currency'],
+                            ['key' => 'has_audit_log', 'label' => 'Audit Log'],
+                            ['key' => 'has_api_access', 'label' => 'API Access'],
+                            ['key' => 'has_advanced_reports', 'label' => 'Advanced Reports'],
+                        ];
+                    @endphp
+                    @foreach($featureFlags as $flag)
+                    <tr class="hover:bg-gray-50">
+                        <td class="px-6 py-4 text-sm font-medium text-gray-900 sticky left-0 bg-white z-10">{{ $flag['label'] }}</td>
+                        @foreach($plans as $plan)
+                        <td class="px-6 py-4 text-center text-sm">
+                            @if($plan->{$flag['key']})
+                                <svg class="w-5 h-5 text-green-500 mx-auto" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
+                                </svg>
+                            @else
+                                <svg class="w-5 h-5 text-gray-300 mx-auto" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"/>
+                                </svg>
+                            @endif
+                        </td>
+                        @endforeach
+                    </tr>
+                    @endforeach
 
                     <!-- Support Section -->
                     <tr class="bg-orange-50">
@@ -464,11 +545,14 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    const monthlyBtn = document.getElementById('monthlyBtn');
-    const yearlyBtn = document.getElementById('yearlyBtn');
-    const monthlyPricings = document.querySelectorAll('.monthly-pricing');
-    const yearlyPricings = document.querySelectorAll('.yearly-pricing');
+    const cycleButtons = {
+        monthly: document.getElementById('monthlyBtn'),
+        quarterly: document.getElementById('quarterlyBtn'),
+        biannual: document.getElementById('biannualBtn'),
+        yearly: document.getElementById('yearlyBtn'),
+    };
     const cycleBadges = document.querySelectorAll('[id^="cycleBadge-"]');
+    const cycleLabels = { monthly: 'Monthly', quarterly: 'Quarterly', biannual: 'Bi-Annual', yearly: 'Yearly' };
 
     function setActive(button, active) {
         button.classList.toggle('active', active);
@@ -479,36 +563,31 @@ document.addEventListener('DOMContentLoaded', function() {
         cycleBadges.forEach(b => b.textContent = label);
     }
 
-    function showMonthly() {
-        window.__billingCycle = 'monthly';
-        localStorage.setItem('billingCycle', 'monthly');
-        setActive(monthlyBtn, true);
-        setActive(yearlyBtn, false);
-        monthlyPricings.forEach(el => el.classList.remove('hidden'));
-        yearlyPricings.forEach(el => el.classList.add('hidden'));
-        updateCycleBadges('Monthly');
+    function showCycle(cycle) {
+        window.__billingCycle = cycle;
+        localStorage.setItem('billingCycle', cycle);
+
+        // Update buttons
+        Object.entries(cycleButtons).forEach(([key, btn]) => {
+            setActive(btn, key === cycle);
+        });
+
+        // Show/hide pricing blocks
+        document.querySelectorAll('.cycle-pricing').forEach(el => el.classList.add('hidden'));
+        document.querySelectorAll('.cycle-' + cycle).forEach(el => el.classList.remove('hidden'));
+
+        updateCycleBadges(cycleLabels[cycle] || 'Monthly');
     }
 
-    function showYearly() {
-        window.__billingCycle = 'yearly';
-        localStorage.setItem('billingCycle', 'yearly');
-        setActive(yearlyBtn, true);
-        setActive(monthlyBtn, false);
-        monthlyPricings.forEach(el => el.classList.add('hidden'));
-        yearlyPricings.forEach(el => el.classList.remove('hidden'));
-        updateCycleBadges('Yearly');
-    }
-
-    monthlyBtn.addEventListener('click', showMonthly);
-    yearlyBtn.addEventListener('click', showYearly);
+    // Bind click handlers
+    Object.entries(cycleButtons).forEach(([cycle, btn]) => {
+        btn.addEventListener('click', () => showCycle(cycle));
+    });
 
     // Initialize with persisted or default cycle
     const saved = localStorage.getItem('billingCycle');
-    if(saved === 'yearly') {
-        showYearly();
-    } else {
-        showMonthly();
-    }
+    const validCycles = ['monthly', 'quarterly', 'biannual', 'yearly'];
+    showCycle(validCycles.includes(saved) ? saved : 'monthly');
 
     // Add plan card hover effects
     document.querySelectorAll('[data-plan-id]').forEach(card => {

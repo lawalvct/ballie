@@ -48,8 +48,8 @@
 
             <div class="text-center mt-4">
                 <h3 class="text-lg font-semibold text-gray-900 mb-2">{{ $currentPlan->name }}</h3>
-                <div class="text-3xl font-bold text-blue-600 mb-2">{{ $currentPlan->formatted_monthly_price }}</div>
-                <span class="text-gray-600">/month</span>
+                <div class="text-3xl font-bold text-blue-600 mb-2">{{ $currentPlan->formattedPriceForCycle($tenant->billing_cycle ?? 'monthly') }}</div>
+                <span class="text-gray-600">/{{ \App\Models\Plan::cycleLabel($tenant->billing_cycle ?? 'monthly') }}</span>
                 <p class="text-gray-600 mt-2">{{ $currentPlan->description }}</p>
             </div>
 
@@ -73,13 +73,30 @@
             <div class="text-center">
                 <h3 class="text-lg font-semibold text-gray-900 mb-2">{{ $plan->name }}</h3>
                 <div class="pricing-container" id="newPlanPricing">
-                    <div class="monthly-pricing">
+                    <div class="cycle-monthly">
                         <div class="text-3xl font-bold text-gray-900">{{ $plan->formatted_monthly_price }}</div>
                         <span class="text-gray-600">/month</span>
                     </div>
-                    <div class="yearly-pricing hidden">
+                    <div class="cycle-quarterly hidden">
+                        <div class="text-3xl font-bold text-gray-900">{{ $plan->formatted_quarterly_price }}</div>
+                        <span class="text-gray-600">/quarter</span>
+                        @if($plan->savingsForCycle('quarterly') > 0)
+                            <div class="text-sm text-green-600 mt-1">Save {{ $plan->formattedSavingsForCycle('quarterly') }}</div>
+                        @endif
+                    </div>
+                    <div class="cycle-biannual hidden">
+                        <div class="text-3xl font-bold text-gray-900">{{ $plan->formatted_biannual_price }}</div>
+                        <span class="text-gray-600">/6 months</span>
+                        @if($plan->savingsForCycle('biannual') > 0)
+                            <div class="text-sm text-green-600 mt-1">Save {{ $plan->formattedSavingsForCycle('biannual') }}</div>
+                        @endif
+                    </div>
+                    <div class="cycle-yearly hidden">
                         <div class="text-3xl font-bold text-gray-900">{{ $plan->formatted_yearly_price }}</div>
                         <span class="text-gray-600">/year</span>
+                        @if($plan->savingsForCycle('yearly') > 0)
+                            <div class="text-sm text-green-600 mt-1">Save {{ $plan->formattedSavingsForCycle('yearly') }}</div>
+                        @endif
                     </div>
                 </div>
                 <p class="text-gray-600 mt-2">{{ $plan->description }}</p>
@@ -111,11 +128,19 @@
             <!-- Billing Cycle Selection -->
             <div class="mb-6">
                 <label class="block text-sm font-medium text-gray-700 mb-3">Choose Billing Cycle</label>
-                <div class="flex justify-center">
+                <div class="flex flex-wrap justify-center gap-2">
                     <div class="inline-flex items-center bg-gray-100 rounded-lg p-1">
                         <button type="button" id="monthlyBtn" class="billing-toggle px-4 py-2 text-sm font-medium rounded-md transition-all duration-200"
                                 aria-pressed="true" data-cycle="monthly">
                             Monthly
+                        </button>
+                        <button type="button" id="quarterlyBtn" class="billing-toggle px-4 py-2 text-sm font-medium rounded-md transition-all duration-200"
+                                aria-pressed="false" data-cycle="quarterly">
+                            Quarterly
+                        </button>
+                        <button type="button" id="biannualBtn" class="billing-toggle px-4 py-2 text-sm font-medium rounded-md transition-all duration-200"
+                                aria-pressed="false" data-cycle="biannual">
+                            Bi-Annual
                         </button>
                         <button type="button" id="yearlyBtn" class="billing-toggle px-4 py-2 text-sm font-medium rounded-md transition-all duration-200"
                                 aria-pressed="false" data-cycle="yearly">
@@ -175,52 +200,44 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    const monthlyBtn = document.getElementById('monthlyBtn');
-    const yearlyBtn = document.getElementById('yearlyBtn');
+    const cycleButtons = {
+        monthly: document.getElementById('monthlyBtn'),
+        quarterly: document.getElementById('quarterlyBtn'),
+        biannual: document.getElementById('biannualBtn'),
+        yearly: document.getElementById('yearlyBtn')
+    };
     const billingCycleInput = document.getElementById('billingCycleInput');
     const newPlanPricing = document.getElementById('newPlanPricing');
+    const cycles = ['monthly', 'quarterly', 'biannual', 'yearly'];
 
-    function showMonthly() {
-        monthlyBtn.classList.add('bg-white', 'text-gray-900', 'shadow-sm');
-        monthlyBtn.classList.remove('text-gray-600');
-        yearlyBtn.classList.remove('bg-white', 'text-gray-900', 'shadow-sm');
-        yearlyBtn.classList.add('text-gray-600');
+    function showCycle(cycle) {
+        cycles.forEach(c => {
+            const btn = cycleButtons[c];
+            if (c === cycle) {
+                btn.classList.add('bg-white', 'text-gray-900', 'shadow-sm');
+                btn.classList.remove('text-gray-600');
+                btn.setAttribute('aria-pressed', 'true');
+            } else {
+                btn.classList.remove('bg-white', 'text-gray-900', 'shadow-sm');
+                btn.classList.add('text-gray-600');
+                btn.setAttribute('aria-pressed', 'false');
+            }
 
-        monthlyBtn.setAttribute('aria-pressed', 'true');
-        yearlyBtn.setAttribute('aria-pressed', 'false');
+            // Toggle pricing display
+            newPlanPricing.querySelectorAll('.cycle-' + c).forEach(el => {
+                el.classList.toggle('hidden', c !== cycle);
+            });
+        });
 
-        billingCycleInput.value = 'monthly';
-
-        // Update pricing display
-        const monthlyPricing = newPlanPricing.querySelector('.monthly-pricing');
-        const yearlyPricing = newPlanPricing.querySelector('.yearly-pricing');
-        monthlyPricing.classList.remove('hidden');
-        yearlyPricing.classList.add('hidden');
+        billingCycleInput.value = cycle;
     }
 
-    function showYearly() {
-        yearlyBtn.classList.add('bg-white', 'text-gray-900', 'shadow-sm');
-        yearlyBtn.classList.remove('text-gray-600');
-        monthlyBtn.classList.remove('bg-white', 'text-gray-900', 'shadow-sm');
-        monthlyBtn.classList.add('text-gray-600');
-
-        yearlyBtn.setAttribute('aria-pressed', 'true');
-        monthlyBtn.setAttribute('aria-pressed', 'false');
-
-        billingCycleInput.value = 'yearly';
-
-        // Update pricing display
-        const monthlyPricing = newPlanPricing.querySelector('.monthly-pricing');
-        const yearlyPricing = newPlanPricing.querySelector('.yearly-pricing');
-        monthlyPricing.classList.add('hidden');
-        yearlyPricing.classList.remove('hidden');
-    }
-
-    monthlyBtn.addEventListener('click', showMonthly);
-    yearlyBtn.addEventListener('click', showYearly);
+    Object.entries(cycleButtons).forEach(([cycle, btn]) => {
+        btn.addEventListener('click', () => showCycle(cycle));
+    });
 
     // Initialize with monthly
-    showMonthly();
+    showCycle('monthly');
 
     // Handle form submission
     document.getElementById('downgradeForm').addEventListener('submit', function() {

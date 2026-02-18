@@ -52,8 +52,8 @@
                 <h4 class="text-xl font-bold text-gray-900">{{ $currentPlan->name }}</h4>
                 <p class="text-gray-600">{{ $currentPlan->description }}</p>
                 <div class="mt-2">
-                    <span class="text-2xl font-bold text-gray-900">{{ $currentPlan->formatted_monthly_price }}</span>
-                    <span class="text-gray-600">/month</span>
+                    <span class="text-2xl font-bold text-gray-900">{{ $currentPlan->formattedPriceForCycle($tenant->billing_cycle ?? 'monthly') }}</span>
+                    <span class="text-gray-600">/{{ \App\Models\Plan::cycleLabel($tenant->billing_cycle ?? 'monthly') }}</span>
                 </div>
             </div>
 

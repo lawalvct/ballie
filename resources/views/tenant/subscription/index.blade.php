@@ -56,14 +56,14 @@
                     @if($tenant->isOnTrial())
                         <span class="text-yellow-300">Trial</span>
                     @else
-                        {{ $tenant->billing_cycle === 'yearly' ? $currentPlan->formatted_yearly_price : $currentPlan->formatted_monthly_price }}
+                        {{ $currentPlan->formattedPriceForCycle($tenant->billing_cycle ?? 'monthly') }}
                     @endif
                 </div>
                 <div class="text-blue-100">
                     @if($tenant->isOnTrial())
                         Trial Period
                     @else
-                        {{ ucfirst($tenant->billing_cycle ?? 'monthly') }}
+                        {{ \App\Models\Plan::cycleLabel($tenant->billing_cycle ?? 'monthly') }}
                     @endif
                 </div>
             </div>

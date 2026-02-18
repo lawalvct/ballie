@@ -74,27 +74,12 @@
         transform: scale(1.05) translateY(-8px);
     }
 
-    .billing-toggle {
-        background: var(--color-blue);
+    .cycle-btn {
         transition: all 0.3s ease;
     }
 
-    .billing-toggle.yearly {
-        background: var(--color-gold);
-    }
-
-    .toggle-dot {
-        transition: all 0.3s ease;
-    }
-
-    .savings-badge {
-        background: linear-gradient(45deg, var(--color-gold), #f59e0b);
-        animation: pulse 2s infinite;
-    }
-
-    @keyframes pulse {
-        0%, 100% { transform: scale(1); }
-        50% { transform: scale(1.05); }
+    .cycle-btn:hover {
+        transform: translateY(-1px);
     }
 
     .feature-check {
@@ -214,13 +199,19 @@
         </p>
 
         <!-- Billing Toggle -->
-        <div class="flex items-center justify-center mb-12 slide-in-left">
-            <span class="text-gray-200 mr-4 font-medium">Monthly</span>
-            <button id="billing-toggle" class="billing-toggle relative inline-flex h-8 w-14 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-brand-gold focus:ring-offset-2">
-                <span id="toggle-dot" class="toggle-dot inline-block h-6 w-6 transform rounded-full bg-white transition-transform translate-x-1"></span>
+        <div class="flex flex-wrap items-center justify-center gap-3 mb-12 slide-in-left">
+            <button onclick="showCycle('monthly')" id="cycle-btn-monthly" class="cycle-btn px-5 py-2.5 rounded-full font-semibold text-sm transition-all bg-white text-gray-900 shadow-lg">
+                Monthly
             </button>
-            <span class="text-gray-200 ml-4 font-medium">Yearly</span>
-            <span class="savings-badge ml-3 text-sm text-gray-900 px-3 py-1 rounded-full font-bold pulse-animation">Save 15%</span>
+            <button onclick="showCycle('quarterly')" id="cycle-btn-quarterly" class="cycle-btn px-5 py-2.5 rounded-full font-semibold text-sm transition-all bg-white bg-opacity-20 text-white hover:bg-opacity-30">
+                Quarterly <span class="text-xs opacity-75">Save ½ month</span>
+            </button>
+            <button onclick="showCycle('biannual')" id="cycle-btn-biannual" class="cycle-btn px-5 py-2.5 rounded-full font-semibold text-sm transition-all bg-white bg-opacity-20 text-white hover:bg-opacity-30">
+                Bi-Annual <span class="text-xs opacity-75">Save 1 month</span>
+            </button>
+            <button onclick="showCycle('yearly')" id="cycle-btn-yearly" class="cycle-btn px-5 py-2.5 rounded-full font-semibold text-sm transition-all bg-white bg-opacity-20 text-white hover:bg-opacity-30">
+                Yearly <span class="text-xs opacity-75">Save 2 months</span>
+            </button>
         </div>
     </div>
 </section>
@@ -243,21 +234,24 @@
                     <p class="text-gray-600 mb-6">Perfect for small businesses and startups</p>
 
                     <div class="mb-8">
-                        <div class="pricing-display">
-                            <span class="monthly-price">
-                                <span class="text-4xl font-bold price-highlight">₦7,500</span>
-                                <span class="text-gray-600">/month</span>
-                            </span>
-                            <span class="yearly-price hidden">
-                                <span class="text-4xl font-bold price-highlight">₦5,000</span>
-                                <span class="text-gray-600">/month</span>
-                                <div class="text-sm text-brand-green mt-1 font-semibold">Billed yearly (₦76,500) - Save ₦13,500!</div>
-                            </span>
-                        </div>
-                        <div class="6-month-price hidden">
+                        <div class="cycle-monthly">
                             <span class="text-4xl font-bold price-highlight">₦7,500</span>
                             <span class="text-gray-600">/month</span>
-                            <div class="text-sm text-gray-600 mt-1">Billed 6-monthly (₦45,000)</div>
+                        </div>
+                        <div class="cycle-quarterly hidden">
+                            <span class="text-4xl font-bold price-highlight">₦18,750</span>
+                            <span class="text-gray-600">/quarter</span>
+                            <div class="text-sm text-brand-green mt-1 font-semibold">Save ₦3,750 (½ month free)</div>
+                        </div>
+                        <div class="cycle-biannual hidden">
+                            <span class="text-4xl font-bold price-highlight">₦37,500</span>
+                            <span class="text-gray-600">/6 months</span>
+                            <div class="text-sm text-brand-green mt-1 font-semibold">Save ₦7,500 (1 month free)</div>
+                        </div>
+                        <div class="cycle-yearly hidden">
+                            <span class="text-4xl font-bold price-highlight">₦75,000</span>
+                            <span class="text-gray-600">/year</span>
+                            <div class="text-sm text-brand-green mt-1 font-semibold">Save ₦15,000 (2 months free)</div>
                         </div>
                     </div>
 
@@ -334,21 +328,24 @@
                     <p class="text-gray-600 mb-6">Ideal for growing businesses</p>
 
                     <div class="mb-8">
-                        <div class="pricing-display">
-                            <span class="monthly-price">
-                                <span class="text-4xl font-bold price-highlight">₦10,000</span>
-                                <span class="text-gray-600">/month</span>
-                            </span>
-                            <span class="yearly-price hidden">
-                                <span class="text-4xl font-bold price-highlight">₦8,500</span>
-                                <span class="text-gray-600">/month</span>
-                                <div class="text-sm text-brand-green mt-1 font-semibold">Billed yearly (₦102,000) - Save ₦18,000!</div>
-                            </span>
-                        </div>
-                        <div class="6-month-price hidden">
+                        <div class="cycle-monthly">
                             <span class="text-4xl font-bold price-highlight">₦10,000</span>
                             <span class="text-gray-600">/month</span>
-                            <div class="text-sm text-gray-600 mt-1">Billed 6-monthly (₦60,000)</div>
+                        </div>
+                        <div class="cycle-quarterly hidden">
+                            <span class="text-4xl font-bold price-highlight">₦25,000</span>
+                            <span class="text-gray-600">/quarter</span>
+                            <div class="text-sm text-brand-green mt-1 font-semibold">Save ₦5,000 (½ month free)</div>
+                        </div>
+                        <div class="cycle-biannual hidden">
+                            <span class="text-4xl font-bold price-highlight">₦50,000</span>
+                            <span class="text-gray-600">/6 months</span>
+                            <div class="text-sm text-brand-green mt-1 font-semibold">Save ₦10,000 (1 month free)</div>
+                        </div>
+                        <div class="cycle-yearly hidden">
+                            <span class="text-4xl font-bold price-highlight">₦100,000</span>
+                            <span class="text-gray-600">/year</span>
+                            <div class="text-sm text-brand-green mt-1 font-semibold">Save ₦20,000 (2 months free)</div>
                         </div>
                     </div>
 
@@ -398,6 +395,24 @@
                         <svg class="w-5 h-5 feature-check mr-3" fill="currentColor" viewBox="0 0 20 20">
                             <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
                         </svg>
+                        <span class="text-gray-700">Bank reconciliation & multi-currency</span>
+                    </div>
+                    <div class="flex items-center">
+                        <svg class="w-5 h-5 feature-check mr-3" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
+                        </svg>
+                        <span class="text-gray-700">VAT, WHT & tax compliance</span>
+                    </div>
+                    <div class="flex items-center">
+                        <svg class="w-5 h-5 feature-check mr-3" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
+                        </svg>
+                        <span class="text-gray-700">Audit log & change history</span>
+                    </div>
+                    <div class="flex items-center">
+                        <svg class="w-5 h-5 feature-check mr-3" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
+                        </svg>
                         <span class="text-gray-700">Advanced reports & analytics</span>
                     </div>
                     <div class="flex items-center">
@@ -439,21 +454,24 @@
                     <p class="text-gray-600 mb-6">For large businesses and corporations</p>
 
                     <div class="mb-8">
-                        <div class="pricing-display">
-                            <span class="monthly-price">
-                                <span class="text-4xl font-bold price-highlight">₦15,000</span>
-                                <span class="text-gray-600">/month</span>
-                            </span>
-                            <span class="yearly-price hidden">
-                                <span class="text-4xl font-bold price-highlight">₦12,750</span>
-                                <span class="text-gray-600">/month</span>
-                                <div class="text-sm text-brand-green mt-1 font-semibold">Billed yearly (₦153,000) - Save ₦27,000!</div>
-                            </span>
-                        </div>
-                        <div class="6-month-price hidden">
+                        <div class="cycle-monthly">
                             <span class="text-4xl font-bold price-highlight">₦15,000</span>
                             <span class="text-gray-600">/month</span>
-                            <div class="text-sm text-gray-600 mt-1">Billed 6-monthly (₦90,000)</div>
+                        </div>
+                        <div class="cycle-quarterly hidden">
+                            <span class="text-4xl font-bold price-highlight">₦37,500</span>
+                            <span class="text-gray-600">/quarter</span>
+                            <div class="text-sm text-brand-green mt-1 font-semibold">Save ₦7,500 (½ month free)</div>
+                        </div>
+                        <div class="cycle-biannual hidden">
+                            <span class="text-4xl font-bold price-highlight">₦75,000</span>
+                            <span class="text-gray-600">/6 months</span>
+                            <div class="text-sm text-brand-green mt-1 font-semibold">Save ₦15,000 (1 month free)</div>
+                        </div>
+                        <div class="cycle-yearly hidden">
+                            <span class="text-4xl font-bold price-highlight">₦150,000</span>
+                            <span class="text-gray-600">/year</span>
+                            <div class="text-sm text-brand-green mt-1 font-semibold">Save ₦30,000 (2 months free)</div>
                         </div>
                     </div>
 
@@ -492,6 +510,18 @@
                             <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
                         </svg>
                         <span class="text-gray-700">Multi-location POS</span>
+                    </div>
+                    <div class="flex items-center">
+                        <svg class="w-5 h-5 feature-check mr-3" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
+                        </svg>
+                        <span class="text-gray-700 font-semibold">E-Commerce Store (Online storefront & payments)</span>
+                    </div>
+                    <div class="flex items-center">
+                        <svg class="w-5 h-5 feature-check mr-3" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
+                        </svg>
+                        <span class="text-gray-700">Order management & fulfillment</span>
                     </div>
                     <div class="flex items-center">
                         <svg class="w-5 h-5 feature-check mr-3" fill="currentColor" viewBox="0 0 20 20">
@@ -679,7 +709,7 @@
                     </div>
                     <div>
                         <h3 class="text-2xl font-bold text-white mb-3">Maximum Affordability</h3>
-                        <p class="text-gray-200 text-lg">Transparent pricing with no hidden fees. Save up to 15% with yearly billing and get enterprise features at small business prices.</p>
+                        <p class="text-gray-200 text-lg">Transparent pricing with no hidden fees. Save up to 2 months with yearly billing and get enterprise features at small business prices.</p>
                     </div>
                 </div>
             </div>
@@ -838,6 +868,96 @@
                     </tr>
                     <tr>
                         <td class="p-6 font-medium text-gray-900">API Access</td>
+                        <td class="p-6 text-center">
+                            <svg class="w-5 h-5 feature-cross mx-auto" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"></path>
+                            </svg>
+                        </td>
+                        <td class="p-6 text-center bg-brand-gold bg-opacity-5">
+                            <svg class="w-5 h-5 feature-check mx-auto" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
+                            </svg>
+                        </td>
+                        <td class="p-6 text-center">
+                            <svg class="w-5 h-5 feature-check mx-auto" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
+                            </svg>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td class="p-6 font-medium text-gray-900">E-Commerce Store</td>
+                        <td class="p-6 text-center">
+                            <svg class="w-5 h-5 feature-cross mx-auto" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"></path>
+                            </svg>
+                        </td>
+                        <td class="p-6 text-center bg-brand-gold bg-opacity-5">
+                            <svg class="w-5 h-5 feature-cross mx-auto" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"></path>
+                            </svg>
+                        </td>
+                        <td class="p-6 text-center">
+                            <svg class="w-5 h-5 feature-check mx-auto" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
+                            </svg>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td class="p-6 font-medium text-gray-900">Multi-Location Support</td>
+                        <td class="p-6 text-center">
+                            <svg class="w-5 h-5 feature-cross mx-auto" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"></path>
+                            </svg>
+                        </td>
+                        <td class="p-6 text-center bg-brand-gold bg-opacity-5">
+                            <svg class="w-5 h-5 feature-cross mx-auto" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"></path>
+                            </svg>
+                        </td>
+                        <td class="p-6 text-center">
+                            <svg class="w-5 h-5 feature-check mx-auto" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
+                            </svg>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td class="p-6 font-medium text-gray-900">Multi-Currency</td>
+                        <td class="p-6 text-center">
+                            <svg class="w-5 h-5 feature-cross mx-auto" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"></path>
+                            </svg>
+                        </td>
+                        <td class="p-6 text-center bg-brand-gold bg-opacity-5">
+                            <svg class="w-5 h-5 feature-check mx-auto" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
+                            </svg>
+                        </td>
+                        <td class="p-6 text-center">
+                            <svg class="w-5 h-5 feature-check mx-auto" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
+                            </svg>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td class="p-6 font-medium text-gray-900">Audit Log</td>
+                        <td class="p-6 text-center">
+                            <svg class="w-5 h-5 feature-cross mx-auto" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"></path>
+                            </svg>
+                        </td>
+                        <td class="p-6 text-center bg-brand-gold bg-opacity-5">
+                            <svg class="w-5 h-5 feature-check mx-auto" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
+                            </svg>
+                        </td>
+                        <td class="p-6 text-center">
+                            <svg class="w-5 h-5 feature-check mx-auto" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
+                            </svg>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td class="p-6 font-medium text-gray-900">Tax & Statutory Compliance</td>
                         <td class="p-6 text-center">
                             <svg class="w-5 h-5 feature-cross mx-auto" fill="currentColor" viewBox="0 0 20 20">
                                 <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"></path>
@@ -1022,31 +1142,9 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    const billingToggle = document.getElementById('billing-toggle');
-    const toggleDot = document.getElementById('toggle-dot');
-    const monthlyPrices = document.querySelectorAll('.monthly-price');
-    const yearlyPrices = document.querySelectorAll('.yearly-price');
-    let isYearly = false;
-
-    billingToggle.addEventListener('click', function() {
-        isYearly = !isYearly;
-
-        if (isYearly) {
-            // Switch to yearly
-            billingToggle.classList.add('yearly');
-            toggleDot.style.transform = 'translateX(1.5rem)';
-
-            monthlyPrices.forEach(price => price.classList.add('hidden'));
-            yearlyPrices.forEach(price => price.classList.remove('hidden'));
-        } else {
-            // Switch to monthly
-            billingToggle.classList.remove('yearly');
-            toggleDot.style.transform = 'translateX(0.25rem)';
-
-            monthlyPrices.forEach(price => price.classList.remove('hidden'));
-            yearlyPrices.forEach(price => price.classList.add('hidden'));
-        }
-    });
+    // Billing cycle toggle
+    const savedCycle = localStorage.getItem('billing_cycle') || 'monthly';
+    showCycle(savedCycle);
 
     // Add hover effects to pricing cards
     const pricingCards = document.querySelectorAll('.pricing-card');
@@ -1109,15 +1207,36 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 });
 
-// Price calculation functions
-function calculateYearlyPrice(monthlyPrice) {
-    return Math.round(monthlyPrice * 12 * 0.85); // 15% discount
+// Billing cycle switcher
+function showCycle(cycle) {
+    const cycles = ['monthly', 'quarterly', 'biannual', 'yearly'];
+
+    cycles.forEach(c => {
+        document.querySelectorAll('.cycle-' + c).forEach(el => {
+            el.classList.toggle('hidden', c !== cycle);
+        });
+
+        const btn = document.getElementById('cycle-btn-' + c);
+        if (btn) {
+            if (c === cycle) {
+                btn.className = 'cycle-btn px-5 py-2.5 rounded-full font-semibold text-sm transition-all bg-white text-gray-900 shadow-lg';
+            } else {
+                btn.className = 'cycle-btn px-5 py-2.5 rounded-full font-semibold text-sm transition-all bg-white bg-opacity-20 text-white hover:bg-opacity-30';
+            }
+        }
+    });
+
+    localStorage.setItem('billing_cycle', cycle);
 }
 
-function calculateMonthlySavings(monthlyPrice) {
-    const yearlyTotal = monthlyPrice * 12;
-    const discountedYearly = calculateYearlyPrice(monthlyPrice);
-    return yearlyTotal - discountedYearly;
+// Price calculation functions
+function calculateCyclePrice(monthlyPrice, cycle) {
+    switch(cycle) {
+        case 'quarterly': return monthlyPrice * 3 - (monthlyPrice / 2);
+        case 'biannual': return monthlyPrice * 6 - monthlyPrice;
+        case 'yearly': return monthlyPrice * 12 - (monthlyPrice * 2);
+        default: return monthlyPrice;
+    }
 }
 
 // Format currency for Nigerian Naira
@@ -1241,12 +1360,12 @@ function trackPlanSelection(planName, billingCycle) {
 
 function getPlanPrice(planName, billingCycle) {
     const prices = {
-        'starter': { monthly: 7500, yearly: 76500 },
-        'professional': { monthly: 10000, yearly: 102000 },
-        'enterprise': { monthly: 15000, yearly: 153000 }
+        'starter': { monthly: 7500, quarterly: 18750, biannual: 37500, yearly: 75000 },
+        'professional': { monthly: 10000, quarterly: 25000, biannual: 50000, yearly: 100000 },
+        'enterprise': { monthly: 15000, quarterly: 37500, biannual: 75000, yearly: 150000 }
     };
 
-    return prices[planName] ? prices[planName][billingCycle] : 0;
+    return prices[planName] ? (prices[planName][billingCycle] || 0) : 0;
 }
 
 // Add plan selection tracking to CTA buttons
@@ -1255,7 +1374,7 @@ document.querySelectorAll('.pricing-card a[href*="register"]').forEach((button, 
     const planName = planNames[index];
 
     button.addEventListener('click', function() {
-        const billingCycle = document.querySelector('.yearly-price.hidden') ? 'monthly' : 'yearly';
+        const billingCycle = localStorage.getItem('billing_cycle') || 'monthly';
         trackPlanSelection(planName, billingCycle);
     });
 });

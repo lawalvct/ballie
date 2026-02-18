@@ -1180,6 +1180,7 @@ Route::prefix('ledger-accounts')->name('ledger-accounts.')->group(function () {
             Route::get('/cancel', [SubscriptionController::class, 'cancel'])->name('cancel');
             Route::post('/cancel', [SubscriptionController::class, 'processCancel'])->name('cancel.process');
             Route::get('/history', [SubscriptionController::class, 'history'])->name('history');
+            Route::get('/invoices', [SubscriptionController::class, 'history'])->name('invoices');
             Route::get('/invoice/{payment}', [SubscriptionController::class, 'invoice'])->name('invoice');
             Route::get('/invoice/{payment}/download', [SubscriptionController::class, 'downloadInvoice'])->name('invoice.download');
 

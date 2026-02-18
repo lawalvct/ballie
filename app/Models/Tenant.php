@@ -71,7 +71,16 @@ class Tenant extends Model
 
     // Billing cycles
     const BILLING_MONTHLY = 'monthly';
+    const BILLING_QUARTERLY = 'quarterly';
+    const BILLING_BIANNUAL = 'biannual';
     const BILLING_YEARLY = 'yearly';
+
+    const BILLING_CYCLES = [
+        self::BILLING_MONTHLY,
+        self::BILLING_QUARTERLY,
+        self::BILLING_BIANNUAL,
+        self::BILLING_YEARLY,
+    ];
 
     // Tenant status
     const TENANT_STATUS_ACTIVE = 'active';
@@ -137,9 +146,7 @@ class Tenant extends Model
             return 0;
         }
 
-        return $this->billing_cycle === self::BILLING_YEARLY
-            ? $this->plan->yearly_price
-            : $this->plan->monthly_price;
+        return $this->plan->getPriceForCycle($this->billing_cycle ?? 'monthly');
     }
 
     public function isOnTrial(): bool
@@ -260,10 +267,10 @@ class Tenant extends Model
         $subscription = $this->subscriptions()->create([
             'plan_id' => $plan->id,
             'billing_cycle' => $billingCycle,
-            'amount' => $billingCycle === 'yearly' ? $plan->yearly_price : $plan->monthly_price,
+            'amount' => $plan->getPriceForCycle($billingCycle),
             'status' => 'active',
             'starts_at' => now(),
-            'ends_at' => $billingCycle === 'yearly' ? now()->addYear() : now()->addMonth(),
+            'ends_at' => Plan::cycleEndDate($billingCycle),
         ]);
 
         // Update tenant current subscription status

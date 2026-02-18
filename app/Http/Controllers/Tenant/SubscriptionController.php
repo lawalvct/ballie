@@ -83,7 +83,7 @@ class SubscriptionController extends Controller
     public function processUpgrade(Request $request, $tenant, Plan $plan)
     {
         $request->validate([
-            'billing_cycle' => 'required|in:monthly,yearly',
+            'billing_cycle' => 'required|in:monthly,quarterly,biannual,yearly',
             'payment_method' => 'required|in:nomba,paystack',
         ]);
 
@@ -91,7 +91,7 @@ class SubscriptionController extends Controller
         $currentPlan = $tenant->plan;
 
         // Calculate amount based on billing cycle
-        $amount = $request->billing_cycle === 'yearly' ? $plan->yearly_price : $plan->monthly_price;
+        $amount = $plan->getPriceForCycle($request->billing_cycle);
 
         // Debug logging
         Log::info('ProcessUpgrade started', [
@@ -113,7 +113,7 @@ class SubscriptionController extends Controller
                 'currency' => 'NGN',
                 'status' => 'pending',
                 'starts_at' => now(),
-                'ends_at' => $request->billing_cycle === 'yearly' ? now()->addYear() : now()->addMonth(),
+                'ends_at' => Plan::cycleEndDate($request->billing_cycle),
                 'metadata' => [
                     'upgrade_from' => $currentPlan?->id,
                     'initiated_at' => now(),
@@ -376,7 +376,7 @@ class SubscriptionController extends Controller
     public function processDowngrade(Request $request, $tenant, Plan $plan)
     {
         $request->validate([
-            'billing_cycle' => 'required|in:monthly,yearly',
+            'billing_cycle' => 'required|in:monthly,quarterly,biannual,yearly',
             'reason' => 'nullable|string|max:500',
         ]);
 
@@ -391,11 +391,11 @@ class SubscriptionController extends Controller
                 'plan_id' => $plan->id,
                 'plan' => $plan->slug, // Add this for backward compatibility
                 'billing_cycle' => $request->billing_cycle,
-                'amount' => $request->billing_cycle === 'yearly' ? $plan->yearly_price : $plan->monthly_price,
+                'amount' => $plan->getPriceForCycle($request->billing_cycle),
                 'currency' => 'NGN',
                 'status' => 'scheduled',
                 'starts_at' => now(),
-                'ends_at' => $request->billing_cycle === 'yearly' ? now()->addYear() : now()->addMonth(),
+                'ends_at' => Plan::cycleEndDate($request->billing_cycle),
                 'metadata' => [
                     'downgrade_from' => $currentPlan?->id,
                     'reason' => $request->reason,
@@ -500,13 +500,24 @@ class SubscriptionController extends Controller
     public function history()
     {
         $tenant = tenant();
+        $currentPlan = $tenant->plan;
         $subscriptions = $tenant->subscriptions()->latest()->paginate(10);
         $payments = $tenant->subscriptionPayments()->latest()->paginate(15);
+        $invoices = $payments; // Invoices are derived from payments
+
+        // Calculate next billing date
+        $nextBillingDate = null;
+        if ($currentPlan && $tenant->subscription_ends_at) {
+            $nextBillingDate = $tenant->subscription_ends_at;
+        }
 
         return view('tenant.subscription.history', compact(
             'tenant',
+            'currentPlan',
             'subscriptions',
-            'payments'
+            'payments',
+            'invoices',
+            'nextBillingDate'
         ));
     }
 
@@ -788,7 +799,7 @@ class SubscriptionController extends Controller
     public function processRenewal(Request $request)
     {
         $request->validate([
-            'billing_cycle' => 'required|in:monthly,yearly',
+            'billing_cycle' => 'required|in:monthly,quarterly,biannual,yearly',
             'payment_method' => 'required|in:nomba,paystack',
         ]);
 
@@ -801,7 +812,7 @@ class SubscriptionController extends Controller
         }
 
         // Calculate amount based on billing cycle
-        $amount = $request->billing_cycle === 'yearly' ? $currentPlan->yearly_price : $currentPlan->monthly_price;
+        $amount = $currentPlan->getPriceForCycle($request->billing_cycle);
 
         // Debug logging
         Log::info('ProcessRenewal started', [
@@ -823,7 +834,7 @@ class SubscriptionController extends Controller
                 'currency' => 'NGN',
                 'status' => 'pending',
                 'starts_at' => now(),
-                'ends_at' => $request->billing_cycle === 'yearly' ? now()->addYear() : now()->addMonth(),
+                'ends_at' => Plan::cycleEndDate($request->billing_cycle),
                 'metadata' => [
                     'renewal' => true,
                     'initiated_at' => now(),

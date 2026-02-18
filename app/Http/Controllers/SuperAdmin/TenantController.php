@@ -64,7 +64,7 @@ class TenantController extends Controller
             'phone' => 'nullable|string|max:20',
             'business_type' => 'required|string',
             'plan_id' => 'required|integer|exists:plans,id',
-            'billing_cycle' => 'required|in:monthly,yearly',
+            'billing_cycle' => 'required|in:monthly,quarterly,biannual,yearly',
 
             // Owner details
             'owner_name' => 'required|string|max:255',
@@ -157,7 +157,7 @@ class TenantController extends Controller
             'phone' => 'nullable|string|max:20',
             'business_type' => 'required|string',
             'plan_id' => 'nullable|integer|exists:plans,id',
-            'billing_cycle' => 'required|in:monthly,yearly',
+            'billing_cycle' => 'required|in:monthly,quarterly,biannual,yearly',
             'is_active' => 'boolean',
         ]);
 
@@ -242,7 +242,7 @@ class TenantController extends Controller
             'phone' => 'nullable|string|max:20',
             'business_type' => 'required|string',
             'plan_id' => 'required|integer|exists:plans,id',
-            'billing_cycle' => 'required|in:monthly,yearly',
+            'billing_cycle' => 'required|in:monthly,quarterly,biannual,yearly',
             'message' => 'nullable|string|max:1000',
         ]);
 

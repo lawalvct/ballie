@@ -96,6 +96,72 @@
                     </label>
                 </div>
 
+                <!-- Quarterly Option -->
+                <div class="relative">
+                    <input type="radio"
+                           id="quarterly"
+                           name="billing_cycle"
+                           value="quarterly"
+                           class="peer sr-only"
+                           {{ old('billing_cycle') === 'quarterly' ? 'checked' : '' }}>
+                    <label for="quarterly"
+                           class="flex items-center justify-between w-full p-4 border border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50 peer-checked:border-blue-500 peer-checked:bg-blue-50">
+                        <div class="flex items-center">
+                            <div class="flex-shrink-0">
+                                <div class="w-4 h-4 border-2 border-gray-300 rounded-full peer-checked:border-blue-500 peer-checked:bg-blue-500 relative">
+                                    <div class="w-2 h-2 bg-white rounded-full absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 opacity-0 peer-checked:opacity-100"></div>
+                                </div>
+                            </div>
+                            <div class="ml-3">
+                                <div class="font-medium text-gray-900">Quarterly Billing</div>
+                                <div class="text-sm text-gray-500">Billed every 3 months</div>
+                                @if($currentPlan->savingsForCycle('quarterly') > 0)
+                                <div class="text-sm text-green-600 font-medium">
+                                    Save ½ month ({{ $currentPlan->formattedSavingsForCycle('quarterly') }})
+                                </div>
+                                @endif
+                            </div>
+                        </div>
+                        <div class="text-right">
+                            <div class="text-2xl font-bold text-gray-900">{{ $currentPlan->formatted_quarterly_price }}</div>
+                            <div class="text-sm text-gray-500">per quarter</div>
+                        </div>
+                    </label>
+                </div>
+
+                <!-- Bi-Annual Option -->
+                <div class="relative">
+                    <input type="radio"
+                           id="biannual"
+                           name="billing_cycle"
+                           value="biannual"
+                           class="peer sr-only"
+                           {{ old('billing_cycle') === 'biannual' ? 'checked' : '' }}>
+                    <label for="biannual"
+                           class="flex items-center justify-between w-full p-4 border border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50 peer-checked:border-green-500 peer-checked:bg-green-50">
+                        <div class="flex items-center">
+                            <div class="flex-shrink-0">
+                                <div class="w-4 h-4 border-2 border-gray-300 rounded-full peer-checked:border-green-500 peer-checked:bg-green-500 relative">
+                                    <div class="w-2 h-2 bg-white rounded-full absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 opacity-0 peer-checked:opacity-100"></div>
+                                </div>
+                            </div>
+                            <div class="ml-3">
+                                <div class="font-medium text-gray-900">Bi-Annual Billing</div>
+                                <div class="text-sm text-gray-500">Billed every 6 months</div>
+                                @if($currentPlan->savingsForCycle('biannual') > 0)
+                                <div class="text-sm text-green-600 font-medium">
+                                    Save 1 month ({{ $currentPlan->formattedSavingsForCycle('biannual') }})
+                                </div>
+                                @endif
+                            </div>
+                        </div>
+                        <div class="text-right">
+                            <div class="text-2xl font-bold text-gray-900">{{ $currentPlan->formatted_biannual_price }}</div>
+                            <div class="text-sm text-gray-500">per 6 months</div>
+                        </div>
+                    </label>
+                </div>
+
                 <!-- Yearly Option -->
                 <div class="relative">
                     <input type="radio"
@@ -115,9 +181,9 @@
                             <div class="ml-3">
                                 <div class="font-medium text-gray-900">Yearly Billing</div>
                                 <div class="text-sm text-gray-500">Billed annually</div>
-                                @if($currentPlan->yearly_savings_percentage > 0)
+                                @if($currentPlan->savingsForCycle('yearly') > 0)
                                 <div class="text-sm text-green-600 font-medium">
-                                    Save {{ $currentPlan->yearly_savings_percentage }}%
+                                    Save 2 months ({{ $currentPlan->formattedSavingsForCycle('yearly') }})
                                 </div>
                                 @endif
                             </div>
@@ -125,11 +191,6 @@
                         <div class="text-right">
                             <div class="text-2xl font-bold text-gray-900">{{ $currentPlan->formatted_yearly_price }}</div>
                             <div class="text-sm text-gray-500">per year</div>
-                            @if($currentPlan->yearly_savings_percentage > 0)
-                            <div class="text-xs text-green-600">
-                                Save {{ $currentPlan->formatted_yearly_savings }}
-                            </div>
-                            @endif
                         </div>
                     </label>
                 </div>

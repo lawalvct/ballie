@@ -197,7 +197,7 @@
                 </p>
                 <div class="bg-white bg-opacity-10 p-8 rounded-xl backdrop-blur-sm max-w-2xl mx-auto">
                     <div class="text-center">
-                        <div class="text-5xl font-bold text-brand-gold mb-2">₦5,000</div>
+                        <div class="text-5xl font-bold text-brand-gold mb-2">₦7,500</div>
                         <div class="text-lg text-gray-300 mb-4">per month</div>
                         <ul class="text-left space-y-2 text-gray-300">
                             <li class="flex items-center"><span class="text-brand-gold mr-2">✓</span> Unlimited invoices</li>
@@ -367,7 +367,7 @@
 
             <div class="bg-gradient-to-br from-gray-50 to-gray-100 p-8 rounded-2xl">
                 <div class="text-center">
-                    <div class="text-4xl font-bold text-brand-blue mb-2">₦5,000</div>
+                    <div class="text-4xl font-bold text-brand-blue mb-2">₦7,500</div>
                     <div class="text-lg text-gray-600 mb-6">per month</div>
                     <div class="space-y-2.5 text-left">
                         <div class="flex items-center">
@@ -1058,7 +1058,7 @@
             slideIndex++;
             if (slideIndex > 5) slideIndex = 1;
             showSlides(slideIndex);
-        }, 5000); // Change slide every 5 seconds
+        }, 7500); // Change slide every 5 seconds
     }
 
     function resetAutoSlide() {

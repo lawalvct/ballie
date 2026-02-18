@@ -67,8 +67,8 @@
                             <p class="text-gray-600 text-sm">{{ $plan->description }}</p>
                         </div>
                         <div class="text-right">
-                            <span class="text-lg font-bold text-gray-900">{{ $plan->formatted_monthly_price }}</span>
-                            <span class="text-gray-600 text-sm">/month</span>
+                            <span class="text-lg font-bold text-gray-900">{{ $plan->formattedPriceForCycle($billingCycle ?? 'monthly') }}</span>
+                            <span class="text-gray-600 text-sm">/{{ \App\Models\Plan::cycleLabel($billingCycle ?? 'monthly') }}</span>
                         </div>
                     </div>
                 </div>
