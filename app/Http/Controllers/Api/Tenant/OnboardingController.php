@@ -566,44 +566,267 @@ class OnboardingController extends BaseApiController
 
                 // Now create default roles with their permissions
                 $defaultRoles = [
+                    // ── OWNER (Priority 100) ─────────────────────────
+                    // Full unrestricted access to every feature
                     [
                         'name' => 'Owner',
-                        'description' => 'Full system access with all permissions',
+                        'description' => 'Full system access with all permissions — the business owner',
                         'color' => '#dc2626',
                         'priority' => 100,
                         'permissions' => 'all',
                     ],
+
+                    // ── ADMIN (Priority 90) ──────────────────────────
+                    // Almost everything except payroll approval and some sensitive financial operations
                     [
                         'name' => 'Admin',
-                        'description' => 'Administrative access to most system features',
+                        'description' => 'Administrative access to all modules, users, roles, and settings',
                         'color' => '#7c3aed',
                         'priority' => 90,
-                        'permissions' => ['dashboard.view', 'admin.users.manage', 'admin.roles.manage', 'admin.teams.manage', 'settings.view', 'settings.company.manage', 'reports.view', 'reports.export', 'audit.view'],
+                        'permissions' => [
+                            // Dashboard
+                            'dashboard.view',
+                            // Admin & Security
+                            'admin.users.manage', 'admin.roles.manage', 'admin.permissions.manage',
+                            'admin.teams.manage', 'admin.security.view', 'admin.users.invite',
+                            // Accounting
+                            'accounting.view', 'accounting.invoices.manage', 'accounting.invoices.post',
+                            'accounting.quotations.manage', 'accounting.vouchers.manage', 'accounting.vouchers.post',
+                            'accounting.ledgers.manage', 'accounting.groups.manage', 'accounting.reports.view',
+                            'accounting.expenses.manage', 'accounting.payments.manage', 'accounting.chart.view',
+                            // Inventory
+                            'inventory.view', 'inventory.products.manage', 'inventory.categories.manage',
+                            'inventory.journals.manage', 'inventory.journals.post',
+                            'inventory.physical.manage', 'inventory.physical.approve', 'inventory.reports.view',
+                            // CRM
+                            'crm.view', 'crm.customers.manage', 'crm.customers.statements', 'crm.customers.import',
+                            'crm.vendors.manage', 'crm.activities.manage', 'crm.reminders.send', 'crm.reports.view',
+                            // POS
+                            'pos.access', 'pos.sales.process', 'pos.register.manage',
+                            'pos.transactions.void', 'pos.refunds.process', 'pos.discounts.apply', 'pos.reports.view',
+                            // E-commerce
+                            'ecommerce.view', 'ecommerce.settings.manage', 'ecommerce.orders.manage',
+                            'ecommerce.shipping.manage', 'ecommerce.coupons.manage',
+                            'ecommerce.payouts.manage', 'ecommerce.reports.view',
+                            // Payroll
+                            'payroll.view', 'payroll.employees.manage', 'payroll.departments.manage',
+                            'payroll.positions.manage', 'payroll.process',
+                            'payroll.loans.manage', 'payroll.attendance.manage',
+                            'payroll.leaves.manage', 'payroll.leaves.approve',
+                            'payroll.overtime.manage', 'payroll.shifts.manage', 'payroll.reports.view',
+                            // Procurement
+                            'procurement.view', 'procurement.po.manage', 'procurement.po.approve',
+                            // Banking
+                            'banking.view', 'banking.accounts.manage', 'banking.reconcile.manage', 'banking.statements.view',
+                            // Reports
+                            'reports.view', 'reports.export', 'reports.financial.view',
+                            'reports.sales.view', 'reports.inventory.view',
+                            // Statutory
+                            'statutory.view', 'statutory.tax.manage', 'statutory.returns.file', 'statutory.reports.view',
+                            // Audit
+                            'audit.view', 'audit.export',
+                            // Settings
+                            'settings.view', 'settings.company.manage', 'settings.financial.manage',
+                            'settings.email.manage', 'settings.registers.manage', 'settings.integrations.manage',
+                        ],
                     ],
+
+                    // ── MANAGER (Priority 80) ────────────────────────
+                    // Day-to-day operations across all business modules, no admin/settings
                     [
                         'name' => 'Manager',
-                        'description' => 'Management access to business operations',
+                        'description' => 'Operational management of accounting, inventory, CRM, POS, and e-commerce',
                         'color' => '#059669',
                         'priority' => 80,
-                        'permissions' => ['dashboard.view', 'accounting.view', 'accounting.invoices.manage', 'inventory.view', 'inventory.products.manage', 'crm.view', 'crm.customers.manage', 'crm.vendors.manage', 'reports.view'],
+                        'permissions' => [
+                            'dashboard.view',
+                            // Accounting
+                            'accounting.view', 'accounting.invoices.manage', 'accounting.invoices.post',
+                            'accounting.quotations.manage', 'accounting.vouchers.manage',
+                            'accounting.reports.view', 'accounting.expenses.manage', 'accounting.payments.manage',
+                            'accounting.chart.view',
+                            // Inventory
+                            'inventory.view', 'inventory.products.manage', 'inventory.categories.manage',
+                            'inventory.journals.manage', 'inventory.journals.post',
+                            'inventory.physical.manage', 'inventory.physical.approve', 'inventory.reports.view',
+                            // CRM
+                            'crm.view', 'crm.customers.manage', 'crm.customers.statements', 'crm.customers.import',
+                            'crm.vendors.manage', 'crm.activities.manage', 'crm.reminders.send', 'crm.reports.view',
+                            // POS
+                            'pos.access', 'pos.sales.process', 'pos.register.manage',
+                            'pos.transactions.void', 'pos.refunds.process', 'pos.discounts.apply', 'pos.reports.view',
+                            // E-commerce
+                            'ecommerce.view', 'ecommerce.orders.manage', 'ecommerce.shipping.manage',
+                            'ecommerce.coupons.manage', 'ecommerce.reports.view',
+                            // Payroll (view & manage attendance/leaves for their team)
+                            'payroll.view', 'payroll.attendance.manage',
+                            'payroll.leaves.manage', 'payroll.leaves.approve',
+                            'payroll.overtime.manage', 'payroll.reports.view',
+                            // Procurement
+                            'procurement.view', 'procurement.po.manage', 'procurement.po.approve',
+                            // Banking
+                            'banking.view', 'banking.statements.view',
+                            // Reports
+                            'reports.view', 'reports.export', 'reports.financial.view',
+                            'reports.sales.view', 'reports.inventory.view',
+                            // Statutory
+                            'statutory.view', 'statutory.reports.view',
+                        ],
                     ],
+
+                    // ── ACCOUNTANT (Priority 70) ─────────────────────
+                    // Full accounting, banking, statutory, payroll processing
                     [
                         'name' => 'Accountant',
-                        'description' => 'Access to financial and accounting features',
+                        'description' => 'Full access to accounting, banking, payroll, and financial reporting',
                         'color' => '#2563eb',
                         'priority' => 70,
-                        'permissions' => ['dashboard.view', 'accounting.view', 'accounting.invoices.manage', 'accounting.vouchers.manage', 'accounting.reports.view', 'payroll.view', 'payroll.process', 'banking.view', 'reports.view'],
+                        'permissions' => [
+                            'dashboard.view',
+                            // Accounting (full)
+                            'accounting.view', 'accounting.invoices.manage', 'accounting.invoices.post',
+                            'accounting.quotations.manage', 'accounting.vouchers.manage', 'accounting.vouchers.post',
+                            'accounting.ledgers.manage', 'accounting.groups.manage', 'accounting.reports.view',
+                            'accounting.expenses.manage', 'accounting.payments.manage', 'accounting.chart.view',
+                            // Banking (full)
+                            'banking.view', 'banking.accounts.manage', 'banking.reconcile.manage', 'banking.statements.view',
+                            // Payroll (process & reports)
+                            'payroll.view', 'payroll.process', 'payroll.approve', 'payroll.reports.view',
+                            'payroll.loans.manage',
+                            // CRM (view customers/vendors for invoicing)
+                            'crm.view', 'crm.customers.manage', 'crm.customers.statements',
+                            'crm.vendors.manage',
+                            // Procurement
+                            'procurement.view', 'procurement.po.manage',
+                            // Statutory & Tax
+                            'statutory.view', 'statutory.tax.manage', 'statutory.returns.file', 'statutory.reports.view',
+                            // Reports
+                            'reports.view', 'reports.export', 'reports.financial.view', 'reports.sales.view',
+                            // Audit (view only)
+                            'audit.view',
+                        ],
                     ],
+
+                    // ── SALES REPRESENTATIVE (Priority 60) ───────────
+                    // CRM, POS, invoicing, e-commerce orders — customer-facing operations
                     [
                         'name' => 'Sales Representative',
-                        'description' => 'Access to sales and customer management features',
+                        'description' => 'Customer-facing operations: CRM, POS, invoicing, and e-commerce',
                         'color' => '#ea580c',
                         'priority' => 60,
-                        'permissions' => ['dashboard.view', 'crm.view', 'crm.customers.manage', 'accounting.invoices.manage', 'pos.access', 'pos.sales.process', 'inventory.view'],
+                        'permissions' => [
+                            'dashboard.view',
+                            // CRM
+                            'crm.view', 'crm.customers.manage', 'crm.customers.statements',
+                            'crm.activities.manage', 'crm.reminders.send', 'crm.reports.view',
+                            // Accounting (invoices & quotations only)
+                            'accounting.view', 'accounting.invoices.manage', 'accounting.quotations.manage',
+                            'accounting.payments.manage',
+                            // POS
+                            'pos.access', 'pos.sales.process', 'pos.discounts.apply',
+                            // E-commerce (view orders & reports)
+                            'ecommerce.view', 'ecommerce.orders.manage', 'ecommerce.reports.view',
+                            // Inventory (view only)
+                            'inventory.view', 'inventory.reports.view',
+                            // Reports
+                            'reports.view', 'reports.sales.view',
+                        ],
                     ],
+
+                    // ── STORE MANAGER (Priority 55) ──────────────────
+                    // E-commerce focused: orders, shipping, coupons, payouts
+                    [
+                        'name' => 'Store Manager',
+                        'description' => 'E-commerce store management: orders, shipping, coupons, and payouts',
+                        'color' => '#f97316',
+                        'priority' => 55,
+                        'permissions' => [
+                            'dashboard.view',
+                            // E-commerce (full)
+                            'ecommerce.view', 'ecommerce.settings.manage', 'ecommerce.orders.manage',
+                            'ecommerce.shipping.manage', 'ecommerce.coupons.manage',
+                            'ecommerce.payouts.manage', 'ecommerce.reports.view',
+                            // Inventory (view & manage products)
+                            'inventory.view', 'inventory.products.manage', 'inventory.categories.manage',
+                            'inventory.reports.view',
+                            // CRM (customer management)
+                            'crm.view', 'crm.customers.manage', 'crm.customers.statements',
+                            // POS
+                            'pos.access', 'pos.sales.process', 'pos.register.manage', 'pos.reports.view',
+                            // Reports
+                            'reports.view', 'reports.sales.view', 'reports.inventory.view',
+                        ],
+                    ],
+
+                    // ── INVENTORY MANAGER (Priority 50) ──────────────
+                    // Stock, products, procurement, warehouse operations
+                    [
+                        'name' => 'Inventory Manager',
+                        'description' => 'Inventory, stock management, procurement, and warehouse operations',
+                        'color' => '#0891b2',
+                        'priority' => 50,
+                        'permissions' => [
+                            'dashboard.view',
+                            // Inventory (full)
+                            'inventory.view', 'inventory.products.manage', 'inventory.categories.manage',
+                            'inventory.journals.manage', 'inventory.journals.post',
+                            'inventory.physical.manage', 'inventory.physical.approve', 'inventory.reports.view',
+                            // Procurement (full)
+                            'procurement.view', 'procurement.po.manage', 'procurement.po.approve',
+                            // CRM (vendors for procurement)
+                            'crm.view', 'crm.vendors.manage',
+                            // E-commerce (view orders for fulfillment)
+                            'ecommerce.view', 'ecommerce.orders.manage',
+                            // Reports
+                            'reports.view', 'reports.inventory.view',
+                        ],
+                    ],
+
+                    // ── HR MANAGER (Priority 50) ─────────────────────
+                    // Payroll, employees, attendance, leaves, shifts
+                    [
+                        'name' => 'HR Manager',
+                        'description' => 'Human resources: employees, payroll, attendance, leaves, and shifts',
+                        'color' => '#7c3aed',
+                        'priority' => 50,
+                        'permissions' => [
+                            'dashboard.view',
+                            // Payroll (full)
+                            'payroll.view', 'payroll.employees.manage', 'payroll.departments.manage',
+                            'payroll.positions.manage', 'payroll.process', 'payroll.approve',
+                            'payroll.loans.manage', 'payroll.attendance.manage',
+                            'payroll.leaves.manage', 'payroll.leaves.approve',
+                            'payroll.overtime.manage', 'payroll.shifts.manage', 'payroll.reports.view',
+                            // Admin (manage users & teams)
+                            'admin.users.manage', 'admin.teams.manage', 'admin.users.invite',
+                            // Reports
+                            'reports.view',
+                        ],
+                    ],
+
+                    // ── CASHIER (Priority 40) ────────────────────────
+                    // POS-focused: process sales, manage register
+                    [
+                        'name' => 'Cashier',
+                        'description' => 'Point of sale operations: process sales and manage cash register',
+                        'color' => '#10b981',
+                        'priority' => 40,
+                        'permissions' => [
+                            'dashboard.view',
+                            // POS
+                            'pos.access', 'pos.sales.process', 'pos.register.manage', 'pos.discounts.apply',
+                            // Inventory (view only for stock checks)
+                            'inventory.view',
+                            // CRM (view customers for POS lookup)
+                            'crm.view', 'crm.customers.manage',
+                        ],
+                    ],
+
+                    // ── EMPLOYEE (Priority 30) ───────────────────────
+                    // Minimal access: dashboard only
                     [
                         'name' => 'Employee',
-                        'description' => 'Basic access for regular employees',
+                        'description' => 'Basic access for regular employees — dashboard and self-service',
                         'color' => '#64748b',
                         'priority' => 30,
                         'permissions' => ['dashboard.view'],

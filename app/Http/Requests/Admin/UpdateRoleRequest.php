@@ -12,7 +12,19 @@ class UpdateRoleRequest extends FormRequest
      */
     public function authorize(): bool
     {
-        return auth()->check() && (auth()->user()->can('edit_roles') || auth()->user()->can('manage_roles'));
+        if (!auth()->check()) {
+            return false;
+        }
+
+        $user = auth()->user();
+
+        // Owner role has all permissions
+        if ($user->roles()->where('name', 'Owner')->exists()) {
+            return true;
+        }
+
+        // Check for explicit permission using the current RBAC slug
+        return $user->hasPermission('admin.roles.manage');
     }
 
     /**
@@ -22,15 +34,21 @@ class UpdateRoleRequest extends FormRequest
      */
     public function rules(): array
     {
-        // Get role ID from route parameter
-        $roleId = request()->route('role') ? request()->route('role')->id : null;
+        // Get role ID from route parameter (may be an ID or a model instance)
+        $role = request()->route('role');
+        $roleId = is_object($role) ? $role->id : $role;
+        $tenantId = tenant('id');
 
         return [
             'name' => [
                 'required',
                 'string',
                 'max:255',
-                Rule::unique('roles', 'name')->ignore($roleId)
+                Rule::unique('roles', 'name')
+                    ->where(function ($query) use ($tenantId) {
+                        return $query->where('tenant_id', $tenantId);
+                    })
+                    ->ignore($roleId),
             ],
             'description' => ['nullable', 'string', 'max:1000'],
             'permissions' => ['nullable', 'array'],

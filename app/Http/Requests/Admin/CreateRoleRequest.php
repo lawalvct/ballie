@@ -3,6 +3,7 @@
 namespace App\Http\Requests\Admin;
 
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class CreateRoleRequest extends FormRequest
 {
@@ -14,14 +15,14 @@ class CreateRoleRequest extends FormRequest
         if (!auth()->check()) {
             return false;
         }
-        
+
         $user = auth()->user();
-        
+
         // Owner role has all permissions
         if ($user->roles()->where('name', 'Owner')->exists()) {
             return true;
         }
-        
+
         // Check for explicit permission
         return $user->can('admin.roles.manage');
     }
@@ -33,8 +34,17 @@ class CreateRoleRequest extends FormRequest
      */
     public function rules(): array
     {
+        $tenantId = tenant('id');
+
         return [
-            'name' => ['required', 'string', 'max:255', 'unique:roles,name'],
+            'name' => [
+                'required',
+                'string',
+                'max:255',
+                Rule::unique('roles', 'name')->where(function ($query) use ($tenantId) {
+                    return $query->where('tenant_id', $tenantId);
+                }),
+            ],
             'description' => ['nullable', 'string', 'max:1000'],
             'permissions' => ['nullable', 'array'],
             'permissions.*' => ['exists:permissions,id'],
