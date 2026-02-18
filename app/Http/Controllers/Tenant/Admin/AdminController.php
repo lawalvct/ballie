@@ -524,6 +524,7 @@ class AdminController extends Controller
      */
     public function showRole($tenant, $roleId)
     {
+        $roleId = $roleId instanceof Role ? $roleId->id : $roleId;
         $role = Role::where('tenant_id', tenant()->id)
             ->with(['permissions', 'users'])
             ->findOrFail($roleId);
@@ -535,6 +536,7 @@ class AdminController extends Controller
      */
     public function editRole($tenant, $roleId)
     {
+        $roleId = $roleId instanceof Role ? $roleId->id : $roleId;
         $role = Role::where('tenant_id', tenant()->id)
             ->findOrFail($roleId);
         $permissions = Permission::all()->groupBy('module');
@@ -548,6 +550,7 @@ class AdminController extends Controller
      */
     public function updateRole(UpdateRoleRequest $request, $tenant, $roleId)
     {
+        $roleId = $roleId instanceof Role ? $roleId->id : $roleId;
         $role = Role::where('tenant_id', tenant()->id)
             ->findOrFail($roleId);
 
@@ -584,6 +587,7 @@ class AdminController extends Controller
      */
     public function destroyRole($tenant, $roleId)
     {
+        $roleId = $roleId instanceof Role ? $roleId->id : $roleId;
         $role = Role::where('tenant_id', tenant()->id)
             ->findOrFail($roleId);
 
@@ -607,6 +611,7 @@ class AdminController extends Controller
      */
     public function cloneRole($tenant, $roleId)
     {
+        $roleId = $roleId instanceof Role ? $roleId->id : $roleId;
         $role = Role::where('tenant_id', tenant()->id)
             ->with('permissions')
             ->findOrFail($roleId);
@@ -795,7 +800,10 @@ class AdminController extends Controller
      */
     public function getRolePermissions($tenant, $roleId)
     {
-        $role = Role::with('permissions')->findOrFail($roleId);
+        $roleId = $roleId instanceof Role ? $roleId->id : $roleId;
+        $role = Role::where('tenant_id', tenant()->id)
+            ->with('permissions')
+            ->findOrFail($roleId);
 
         return response()->json([
             'permissions' => $role->permissions->map(function($permission) {

@@ -84,8 +84,13 @@ Route::bind('payment', function ($value) {
 });
 
 // Route model bindings for admin management
-Route::bind('role', function ($value) {
-    return \App\Models\Tenant\Role::where('tenant_id', tenant('id'))->findOrFail($value);
+Route::bind('role', function ($value, $route) {
+    $tenantParam = $route?->parameter('tenant');
+    $tenantId = $tenantParam instanceof Tenant
+        ? $tenantParam->id
+        : (tenant()?->id);
+
+    return \App\Models\Tenant\Role::where('tenant_id', $tenantId)->findOrFail($value);
 });
 
 Route::bind('permission', function ($value) {

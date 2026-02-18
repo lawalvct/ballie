@@ -102,9 +102,23 @@
                             <label for="password" class="block text-sm font-semibold text-gray-800 mb-2">
                                 Password <span class="text-red-500">*</span>
                             </label>
-                            <input type="password" name="password" id="password" required
-                                   class="w-full px-4 py-3 rounded-lg border-2 transition {{ $errors->has('password') ? 'border-red-300 focus:border-red-500 focus:ring-red-500' : 'border-gray-200 focus:border-purple-500 focus:ring-purple-500' }} focus:outline-none focus:ring-2"
-                                   placeholder="••••••••">
+                            <div class="relative">
+                                <input type="password" name="password" id="password" required
+                                       class="w-full px-4 py-3 pr-12 rounded-lg border-2 transition {{ $errors->has('password') ? 'border-red-300 focus:border-red-500 focus:ring-red-500' : 'border-gray-200 focus:border-purple-500 focus:ring-purple-500' }} focus:outline-none focus:ring-2"
+                                       placeholder="••••••••">
+                                <button type="button"
+                                        class="password-toggle absolute inset-y-0 right-0 px-4 text-gray-500 hover:text-gray-700"
+                                        data-target="password"
+                                        aria-label="Show password">
+                                    <svg class="w-5 h-5 eye-open" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.477 0 8.268 2.943 9.542 7-1.274 4.057-5.065 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                    </svg>
+                                    <svg class="w-5 h-5 eye-closed hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.956 9.956 0 012.147-3.568m2.271-1.964A9.956 9.956 0 0112 5c4.477 0 8.268 2.943 9.543 7a10.06 10.06 0 01-4.132 5.411M15 12a3 3 0 00-3-3m0 0a2.99 2.99 0 00-2.12.879M12 9l0 0m9 12L3 3" />
+                                    </svg>
+                                </button>
+                            </div>
                             @error('password')
                                 <p class="mt-2 text-sm text-red-600 flex items-center"><svg class="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M18.101 12.93a1 1 0 00-1.414-1.414L10 14.586l-6.687-6.687a1 1 0 00-1.414 1.414l8.1 8.1a1 1 0 001.414 0l8.1-8.1z" clip-rule="evenodd" /></svg>{{ $message }}</p>
                             @enderror
@@ -116,9 +130,23 @@
                             <label for="password_confirmation" class="block text-sm font-semibold text-gray-800 mb-2">
                                 Confirm Password <span class="text-red-500">*</span>
                             </label>
-                            <input type="password" name="password_confirmation" id="password_confirmation" required
-                                   class="w-full px-4 py-3 rounded-lg border-2 border-gray-200 focus:border-purple-500 focus:ring-purple-500 focus:outline-none focus:ring-2 transition"
-                                   placeholder="••••••••">
+                            <div class="relative">
+                                <input type="password" name="password_confirmation" id="password_confirmation" required
+                                       class="w-full px-4 py-3 pr-12 rounded-lg border-2 border-gray-200 focus:border-purple-500 focus:ring-purple-500 focus:outline-none focus:ring-2 transition"
+                                       placeholder="••••••••">
+                                <button type="button"
+                                        class="password-toggle absolute inset-y-0 right-0 px-4 text-gray-500 hover:text-gray-700"
+                                        data-target="password_confirmation"
+                                        aria-label="Show password confirmation">
+                                    <svg class="w-5 h-5 eye-open" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.477 0 8.268 2.943 9.542 7-1.274 4.057-5.065 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                    </svg>
+                                    <svg class="w-5 h-5 eye-closed hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.956 9.956 0 012.147-3.568m2.271-1.964A9.956 9.956 0 0112 5c4.477 0 8.268 2.943 9.543 7a10.06 10.06 0 01-4.132 5.411M15 12a3 3 0 00-3-3m0 0a2.99 2.99 0 00-2.12.879M12 9l0 0m9 12L3 3" />
+                                    </svg>
+                                </button>
+                            </div>
                         </div>
 
                         {{-- Role Selection --}}
@@ -162,7 +190,7 @@
                                 <p class="mt-2 text-sm text-red-600 flex items-center"><svg class="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M18.101 12.93a1 1 0 00-1.414-1.414L10 14.586l-6.687-6.687a1 1 0 00-1.414 1.414l8.1 8.1a1 1 0 001.414 0l8.1-8.1z" clip-rule="evenodd" /></svg>{{ $message }}</p>
                             @enderror
                             <p id="role-description" class="mt-2 text-sm text-gray-500">Choose the role that determines user permissions.</p>
-                            
+
                             {{-- Role Permissions Preview --}}
                             <div id="role-permissions-preview" class="mt-4 hidden">
                                 <div class="bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-lg p-4">
@@ -249,6 +277,26 @@
         const roleDescription = document.getElementById('role-description');
         const permissionsPreview = document.getElementById('role-permissions-preview');
         const permissionsList = document.getElementById('permissions-list');
+        const passwordToggles = document.querySelectorAll('.password-toggle');
+
+        // Password visibility toggle
+        passwordToggles.forEach(toggle => {
+            toggle.addEventListener('click', function() {
+                const targetId = this.getAttribute('data-target');
+                const input = document.getElementById(targetId);
+                const openIcon = this.querySelector('.eye-open');
+                const closedIcon = this.querySelector('.eye-closed');
+
+                if (!input) return;
+
+                const isPassword = input.type === 'password';
+                input.type = isPassword ? 'text' : 'password';
+
+                openIcon.classList.toggle('hidden', isPassword);
+                closedIcon.classList.toggle('hidden', !isPassword);
+                this.setAttribute('aria-label', isPassword ? 'Hide password' : 'Show password');
+            });
+        });
 
         // Password confirmation validation
         confirmPasswordField.addEventListener('blur', function() {
@@ -312,17 +360,17 @@
                     try {
                         const response = await fetch(`/{{ tenant('slug') }}/admin/roles/${roleId}/permissions`);
                         const data = await response.json();
-                        
+
                         if (data.permissions && data.permissions.length > 0) {
                             permissionsList.innerHTML = data.permissions
                                 .slice(0, 10)
                                 .map(p => `<div class="flex items-center"><svg class="w-3 h-3 mr-2 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" /></svg>${p.display_name}</div>`)
                                 .join('');
-                            
+
                             if (data.permissions.length > 10) {
                                 permissionsList.innerHTML += `<div class="text-green-600 font-medium mt-2">+ ${data.permissions.length - 10} more permissions</div>`;
                             }
-                            
+
                             permissionsPreview.classList.remove('hidden');
                         } else {
                             permissionsPreview.classList.add('hidden');
