@@ -29,9 +29,9 @@
                         </a>
 
                         <button type="submit"
-                                x-bind:disabled="!isBalanced || entries.length < 2"
+                                x-bind:disabled="isSubmitting || !isBalanced || entries.length < 2"
                                 x-bind:class="{
-                                    'opacity-50 cursor-not-allowed': !isBalanced || entries.length < 2,
+                                    'opacity-50 cursor-not-allowed': isSubmitting || !isBalanced || entries.length < 2,
                                     'hover:bg-primary-700': isBalanced && entries.length >= 2
                                 }"
                                 class="inline-flex items-center px-6 py-2 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-primary-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition-all duration-200">

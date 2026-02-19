@@ -1844,7 +1844,23 @@ class InvoiceController extends Controller
                 ->latest('id')
                 ->first();
 
-            $nextNumber = $lastReceipt ? $lastReceipt->voucher_number + 1 : 1;
+            $nextNumber = 1;
+            if ($lastReceipt) {
+                $rawNumber = $lastReceipt->voucher_number;
+
+                if (is_numeric($rawNumber)) {
+                    $nextNumber = (int) $rawNumber + 1;
+                } elseif (preg_match('/(\d+)(?!.*\d)/', (string) $rawNumber, $matches)) {
+                    $nextNumber = (int) $matches[1] + 1;
+                } else {
+                    Log::warning('Unable to parse numeric portion of receipt voucher number', [
+                        'last_receipt_id' => $lastReceipt->id,
+                        'last_receipt_number' => $rawNumber,
+                    ]);
+
+                    $nextNumber = $lastReceipt->id + 1;
+                }
+            }
 
             // Create receipt voucher
             $voucherData = [

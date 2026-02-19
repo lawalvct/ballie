@@ -210,14 +210,14 @@
                 <button type="submit"
                         name="action"
                         value="save"
-                        :disabled="!isBalanced || customerAmount <= 0"
+                    :disabled="isSubmitting || !isBalanced || customerAmount <= 0"
                         class="inline-flex items-center px-6 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-orange-600 hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500 disabled:opacity-50 disabled:cursor-not-allowed">
                     Save as Draft
                 </button>
                 <button type="submit"
                         name="action"
                         value="save_and_post"
-                        :disabled="!isBalanced || customerAmount <= 0"
+                    :disabled="isSubmitting || !isBalanced || customerAmount <= 0"
                         class="inline-flex items-center px-6 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50 disabled:cursor-not-allowed">
                     <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
@@ -252,9 +252,23 @@ function creditNoteEntries() {
         // Calculated totals
         totalCreditAmount: 0,
         isBalanced: false,
+        isSubmitting: false,
 
         init() {
             this.calculateTotals();
+
+            const form = this.$el.closest('form');
+            if (form) {
+                form.addEventListener('submit', (event) => {
+                    if (this.isSubmitting) {
+                        event.preventDefault();
+                        return;
+                    }
+
+                    this.isSubmitting = true;
+                });
+            }
+
             console.log('✅ Credit Note entries initialized');
         },
 

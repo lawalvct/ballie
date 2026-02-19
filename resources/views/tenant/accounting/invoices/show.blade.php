@@ -402,6 +402,7 @@ function invoiceShow() {
     return {
         showEmailModal: false,
         showReceiptModal: false,
+        isRecordingPayment: false,
         invoiceAmount: {{ $invoice->total_amount }},
         balanceDue: {{ $balanceDue }},
 
@@ -454,6 +455,12 @@ Best regards,
         },
 
         async recordPayment() {
+            if (this.isRecordingPayment) {
+                return;
+            }
+
+            this.isRecordingPayment = true;
+
             try {
                 const response = await fetch('{{ route("tenant.accounting.invoices.record-payment", ["tenant" => $tenant->slug, "invoice" => $invoice->id]) }}', {
                     method: 'POST',
@@ -473,6 +480,8 @@ Best regards,
                 }
             } catch (error) {
                 alert('Error recording payment: ' + error.message);
+            } finally {
+                this.isRecordingPayment = false;
             }
         },
         downloadPDF() {
