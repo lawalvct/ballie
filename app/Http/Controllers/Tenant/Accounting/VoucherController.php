@@ -9,6 +9,7 @@ use App\Models\VoucherType;
 use App\Models\VoucherEntry;
 use App\Models\LedgerAccount;
 use App\Models\Product;
+use App\Models\Customer;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
@@ -300,16 +301,37 @@ class VoucherController extends Controller
         return DB::transaction(function () use ($request, $tenant) {
             $voucherType = VoucherType::findOrFail($request->voucher_type_id);
 
+            // Build narration - append linked invoice references if present
+            $narration = $request->narration;
+            $metaData = null;
+
+            if ($request->has('linked_invoices') && is_array($request->linked_invoices)) {
+                $linkedInvoices = collect($request->linked_invoices)->filter(function ($inv) {
+                    return !empty($inv['invoice_id']) && !empty($inv['amount']);
+                })->values()->toArray();
+
+                if (!empty($linkedInvoices)) {
+                    $metaData = ['linked_invoices' => $linkedInvoices];
+
+                    // Append invoice references to narration for backward compatibility
+                    $invoiceRefs = collect($linkedInvoices)->pluck('invoice_reference')->filter()->implode(', ');
+                    if ($invoiceRefs) {
+                        $narration = trim(($narration ? $narration . ' | ' : '') . 'Payment for ' . $invoiceRefs);
+                    }
+                }
+            }
+
             $voucher = Voucher::create([
                 'tenant_id' => $tenant->id,
                 'voucher_type_id' => $request->voucher_type_id,
                 'voucher_number' => $voucherType->getNextVoucherNumber(),
                 'voucher_date' => $request->voucher_date,
                 'reference_number' => $request->reference_number,
-                'narration' => $request->narration,
+                'narration' => $narration,
                 'total_amount' => collect($request->entries)->sum('debit_amount'),
                 'status' => 'draft',
                 'created_by' => Auth::id(),
+                'meta_data' => $metaData,
             ]);
 
             foreach ($request->entries as $index => $entryData) {
@@ -1052,6 +1074,87 @@ class VoucherController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'An error occurred while processing the file: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Get outstanding (unpaid/partially paid) invoices for a given ledger account.
+     * Used by the receipt voucher form to optionally link payments to invoices.
+     */
+    public function customerInvoices(Request $request, Tenant $tenant, $ledgerAccountId)
+    {
+        try {
+            $ledgerAccount = LedgerAccount::where('tenant_id', $tenant->id)
+                ->where('id', $ledgerAccountId)
+                ->firstOrFail();
+
+            // Find all posted invoices (sales/purchase vouchers) where this ledger account
+            // appears as a debit entry (customer owes money)
+            $invoices = Voucher::where('tenant_id', $tenant->id)
+                ->where('status', 'posted')
+                ->whereHas('voucherType', function ($q) {
+                    $q->where('affects_inventory', true);
+                })
+                ->whereHas('entries', function ($q) use ($ledgerAccountId) {
+                    $q->where('ledger_account_id', $ledgerAccountId)
+                      ->where('debit_amount', '>', 0);
+                })
+                ->with(['voucherType'])
+                ->orderBy('voucher_date', 'desc')
+                ->get();
+
+            $result = [];
+
+            foreach ($invoices as $invoice) {
+                $invoiceReference = ($invoice->voucherType->prefix ?? '') . $invoice->voucher_number;
+
+                // Find receipt vouchers that reference this invoice (same logic as InvoiceController@show)
+                $payments = Voucher::where('tenant_id', $tenant->id)
+                    ->where('status', 'posted')
+                    ->whereHas('voucherType', function ($q) {
+                        $q->where('code', 'RV');
+                    })
+                    ->where(function ($q) use ($invoiceReference) {
+                        $q->where('narration', 'LIKE', '%' . $invoiceReference . '%')
+                          ->orWhereHas('entries', function ($eq) use ($invoiceReference) {
+                              $eq->where('particulars', 'LIKE', '%' . $invoiceReference . '%');
+                          });
+                    })
+                    ->get();
+
+                $totalPaid = $payments->sum('total_amount');
+                $balanceDue = $invoice->total_amount - $totalPaid;
+
+                // Only include unpaid or partially paid invoices
+                if ($balanceDue > 0.01) {
+                    $result[] = [
+                        'id' => $invoice->id,
+                        'voucher_number' => $invoice->voucher_number,
+                        'reference' => $invoiceReference,
+                        'voucher_date' => $invoice->voucher_date->format('Y-m-d'),
+                        'voucher_date_formatted' => $invoice->voucher_date->format('d M Y'),
+                        'total_amount' => round($invoice->total_amount, 2),
+                        'total_paid' => round($totalPaid, 2),
+                        'balance_due' => round($balanceDue, 2),
+                        'status' => $totalPaid > 0 ? 'Partially Paid' : 'Unpaid',
+                        'narration' => $invoice->narration,
+                    ];
+                }
+            }
+
+            return response()->json([
+                'success' => true,
+                'invoices' => $result,
+                'customer_name' => $ledgerAccount->name,
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('Error fetching customer invoices: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to fetch invoices.',
+                'invoices' => [],
             ], 500);
         }
     }

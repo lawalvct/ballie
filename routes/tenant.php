@@ -314,6 +314,9 @@ Route::prefix('vouchers')->name('vouchers.')->group(function () {
     Route::get('/export', [VoucherController::class, 'export'])->name('export');
     Route::post('/bulk-action', [VoucherController::class, 'bulkAction'])->name('bulk.action');
 
+    // Customer outstanding invoices API (for receipt voucher invoice linking)
+    Route::get('/customer-invoices/{ledgerAccount}', [VoucherController::class, 'customerInvoices'])->name('customer-invoices');
+
     // Standard CRUD routes
     Route::post('/', [VoucherController::class, 'store'])->name('store');
     Route::get('/{voucher}', [VoucherController::class, 'show'])->name('show');
