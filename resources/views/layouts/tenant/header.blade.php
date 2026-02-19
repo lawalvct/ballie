@@ -194,13 +194,25 @@
                 .then(data => notifications = data.notifications || [])
                 .catch(err => console.error('Error loading notifications:', err));
 
-                // Refresh count every 30 seconds
-                setInterval(() => {
+                // Refresh count every 5 minutes (only when tab is visible)
+                const refreshUnreadCount = () => {
+                    if (document.visibilityState !== 'visible') {
+                        return;
+                    }
+
                     fetch('{{ route('tenant.notifications.unread-count', tenant()->slug) }}')
                         .then(res => res.json())
                         .then(data => unreadCount = data.count)
                         .catch(err => console.error('Error fetching count:', err));
-                }, 30000);
+                };
+
+                setInterval(refreshUnreadCount, 300000);
+
+                document.addEventListener('visibilitychange', () => {
+                    if (document.visibilityState === 'visible') {
+                        refreshUnreadCount();
+                    }
+                });
              ">
             <button @click="open = !open" @click.away="open = false" class="relative p-2 rounded-xl hover:bg-gray-100 transition-colors duration-200">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
