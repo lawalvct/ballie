@@ -368,6 +368,8 @@ class GlobalAuthController extends BaseApiController
                 'description',
                 'features',
                 'monthly_price',
+                'quarterly_price',
+                'biannual_price',
                 'yearly_price',
                 'max_users',
                 'max_customers',
@@ -379,29 +381,86 @@ class GlobalAuthController extends BaseApiController
                 'is_popular',
             ])
             ->map(function ($plan) {
+                $monthly = $plan->monthly_price;
+
+                // Savings amounts (in kobo)
+                $quarterlySavings = (int) round($monthly * 0.5);           // Save ½ month
+                $biannualSavings  = $monthly;                               // Save 1 month
+                $yearlySavings    = $monthly * 2;                           // Save 2 months
+
                 return [
-                    'id' => $plan->id,
-                    'name' => $plan->name,
-                    'slug' => $plan->slug,
+                    'id'          => $plan->id,
+                    'name'        => $plan->name,
+                    'slug'        => $plan->slug,
                     'description' => $plan->description,
-                    'features' => $plan->features,
-                    'monthly_price' => $plan->monthly_price,
-                    'yearly_price' => $plan->yearly_price,
-                    'formatted_monthly_price' => '₦' . number_format($plan->monthly_price / 100, 0),
-                    'formatted_yearly_price' => '₦' . number_format($plan->yearly_price / 100, 0),
-                    'yearly_savings_percent' => round((1 - ($plan->yearly_price / 12) / $plan->monthly_price) * 100),
+                    'features'    => $plan->features,
+
+                    // Raw prices (in kobo)
+                    'monthly_price'   => $plan->monthly_price,
+                    'quarterly_price' => $plan->quarterly_price,
+                    'biannual_price'  => $plan->biannual_price,
+                    'yearly_price'    => $plan->yearly_price,
+
+                    // Billing cycles with all display data
+                    'billing_cycles' => [
+                        [
+                            'cycle'           => 'monthly',
+                            'label'           => 'Monthly',
+                            'price'           => $monthly,
+                            'formatted_price' => '₦' . number_format($monthly / 100, 0),
+                            'price_per_month' => $monthly,
+                            'formatted_price_per_month' => '₦' . number_format($monthly / 100, 0),
+                            'savings_kobo'    => 0,
+                            'savings_label'   => null,
+                            'savings_description' => null,
+                        ],
+                        [
+                            'cycle'           => 'quarterly',
+                            'label'           => 'Quarterly',
+                            'price'           => $plan->quarterly_price,
+                            'formatted_price' => '₦' . number_format($plan->quarterly_price / 100, 0),
+                            'price_per_month' => (int) round($plan->quarterly_price / 3),
+                            'formatted_price_per_month' => '₦' . number_format($plan->quarterly_price / 3 / 100, 0),
+                            'savings_kobo'    => $quarterlySavings,
+                            'savings_label'   => 'Save ½ month',
+                            'savings_description' => 'Save ' . '₦' . number_format($quarterlySavings / 100, 0) . ' vs monthly',
+                        ],
+                        [
+                            'cycle'           => 'biannual',
+                            'label'           => 'Bi-Annual',
+                            'price'           => $plan->biannual_price,
+                            'formatted_price' => '₦' . number_format($plan->biannual_price / 100, 0),
+                            'price_per_month' => (int) round($plan->biannual_price / 6),
+                            'formatted_price_per_month' => '₦' . number_format($plan->biannual_price / 6 / 100, 0),
+                            'savings_kobo'    => $biannualSavings,
+                            'savings_label'   => 'Save 1 month',
+                            'savings_description' => 'Save ' . '₦' . number_format($biannualSavings / 100, 0) . ' vs monthly',
+                        ],
+                        [
+                            'cycle'           => 'yearly',
+                            'label'           => 'Yearly',
+                            'price'           => $plan->yearly_price,
+                            'formatted_price' => '₦' . number_format($plan->yearly_price / 100, 0),
+                            'price_per_month' => (int) round($plan->yearly_price / 12),
+                            'formatted_price_per_month' => '₦' . number_format($plan->yearly_price / 12 / 100, 0),
+                            'savings_kobo'    => $yearlySavings,
+                            'savings_label'   => 'Save 2 months',
+                            'savings_description' => 'Save ' . '₦' . number_format($yearlySavings / 100, 0) . ' vs monthly',
+                        ],
+                    ],
+
                     'limits' => [
-                        'max_users' => $plan->max_users,
+                        'max_users'     => $plan->max_users,
                         'max_customers' => $plan->max_customers,
                     ],
                     'capabilities' => [
-                        'pos' => $plan->has_pos,
-                        'payroll' => $plan->has_payroll,
-                        'api_access' => $plan->has_api_access,
+                        'pos'              => $plan->has_pos,
+                        'payroll'          => $plan->has_payroll,
+                        'api_access'       => $plan->has_api_access,
                         'advanced_reports' => $plan->has_advanced_reports,
                     ],
                     'support_level' => $plan->support_level,
-                    'is_popular' => $plan->is_popular,
+                    'is_popular'    => $plan->is_popular,
                 ];
             });
 
