@@ -97,6 +97,7 @@ Route::middleware('auth:sanctum')->group(function () {
             Route::get('/search-customers', [\App\Http\Controllers\Api\Tenant\Accounting\InvoiceController::class, 'searchCustomers'])->name('search-customers');
             Route::get('/search-products', [\App\Http\Controllers\Api\Tenant\Accounting\InvoiceController::class, 'searchProducts'])->name('search-products');
             Route::get('/search-ledger-accounts', [\App\Http\Controllers\Api\Tenant\Accounting\InvoiceController::class, 'searchLedgerAccounts'])->name('search-ledger-accounts');
+            Route::post('/ai-parse', [\App\Http\Controllers\Api\AccountingAssistantController::class, 'parseInvoiceFromNaturalLanguage'])->name('ai-parse');
             Route::get('/create', [\App\Http\Controllers\Api\Tenant\Accounting\InvoiceController::class, 'create'])->name('create');
             Route::post('/', [\App\Http\Controllers\Api\Tenant\Accounting\InvoiceController::class, 'store'])->name('store');
             Route::get('/', [\App\Http\Controllers\Api\Tenant\Accounting\InvoiceController::class, 'index'])->name('index');
