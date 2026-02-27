@@ -436,8 +436,8 @@ Show a text input area with example prompt chips:
   <Text style={styles.chipLabel}>Try these examples:</Text>
   <ScrollView horizontal showsHorizontalScrollIndicator={false}>
     {EXAMPLE_PROMPTS.map((prompt, i) => (
-      <TouchableOpacity 
-        key={i} 
+      <TouchableOpacity
+        key={i}
         style={styles.chip}
         onPress={() => setDescription(prompt)}
       >
@@ -581,7 +581,7 @@ Display the parsed invoice for review:
   {hasUnmatchedItems && (
     <View style={styles.warningBanner}>
       <Text style={styles.warningText}>
-        ⚠ Some items or the customer/vendor could not be matched. 
+        ⚠ Some items or the customer/vendor could not be matched.
         Use "Apply to Form" to review and select manually.
       </Text>
     </View>
@@ -880,7 +880,7 @@ const handleGenerate = async () => {
       setState('error');
     }
   } catch (error: any) {
-    const message = error.response?.data?.message 
+    const message = error.response?.data?.message
       || 'Something went wrong. Please try again.';
     setErrorMessage(message);
     setState('error');

@@ -51,7 +51,7 @@ try {
     $product->load(['category', 'primaryUnit', 'stockAssetAccount', 'salesAccount', 'purchaseAccount', 'images']);
 
     $asOfDate = now()->toDateString();
-    
+
     echo "Calling getStockAsOfDate...\n";
     $product->calculated_stock = $product->getStockAsOfDate($asOfDate);
     echo "calculated_stock = " . $product->calculated_stock . "\n";

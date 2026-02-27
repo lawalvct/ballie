@@ -5,7 +5,7 @@
 
 @section('content')
 <style>
-    :root { 
+    :root {
         --color-gold: #d1b05e;
         --color-blue: #1a4d7a;
         --color-dark-blue: #0f2d4a;
@@ -104,7 +104,7 @@
 
                 <h1 class="text-5xl md:text-6xl font-bold mb-6 leading-tight">
                     Budlite Group
-                    <span class="text-brand-gold block mt-2">Security & Technology Ltd</span>
+
                 </h1>
 
                 <p class="text-xl md:text-2xl text-gray-200 mb-8 leading-relaxed">
