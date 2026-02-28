@@ -83,6 +83,12 @@ Route::middleware('auth:sanctum')->group(function () {
             Route::get('/create', [\App\Http\Controllers\Api\Tenant\Accounting\LedgerAccountController::class, 'create'])->name('create');
             Route::post('/', [\App\Http\Controllers\Api\Tenant\Accounting\LedgerAccountController::class, 'store'])->name('store');
             Route::post('/bulk-action', [\App\Http\Controllers\Api\Tenant\Accounting\LedgerAccountController::class, 'bulkAction'])->name('bulk-action');
+
+            // Export routes (must come before parameterized routes)
+            Route::get('/export/pdf', [\App\Http\Controllers\Api\Tenant\Accounting\LedgerAccountController::class, 'exportPdf'])->name('export.pdf');
+            Route::get('/export/excel', [\App\Http\Controllers\Api\Tenant\Accounting\LedgerAccountController::class, 'exportExcel'])->name('export.excel');
+            Route::get('/export/chart', [\App\Http\Controllers\Api\Tenant\Accounting\LedgerAccountController::class, 'exportExcel'])->name('export.chart');
+
             Route::get('/', [\App\Http\Controllers\Api\Tenant\Accounting\LedgerAccountController::class, 'index'])->name('index');
             Route::get('/{ledgerAccount}', [\App\Http\Controllers\Api\Tenant\Accounting\LedgerAccountController::class, 'show'])->name('show');
             Route::put('/{ledgerAccount}', [\App\Http\Controllers\Api\Tenant\Accounting\LedgerAccountController::class, 'update'])->name('update');
@@ -90,6 +96,7 @@ Route::middleware('auth:sanctum')->group(function () {
             Route::post('/{ledgerAccount}/toggle', [\App\Http\Controllers\Api\Tenant\Accounting\LedgerAccountController::class, 'toggle'])->name('toggle');
             Route::get('/{ledgerAccount}/balance', [\App\Http\Controllers\Api\Tenant\Accounting\LedgerAccountController::class, 'balance'])->name('balance');
             Route::get('/{ledgerAccount}/children', [\App\Http\Controllers\Api\Tenant\Accounting\LedgerAccountController::class, 'children'])->name('children');
+            Route::get('/{ledgerAccount}/export-ledger', [\App\Http\Controllers\Api\Tenant\Accounting\LedgerAccountController::class, 'exportLedger'])->name('export-ledger');
         });
 
         // Invoices (Sales & Purchase)

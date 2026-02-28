@@ -1018,4 +1018,284 @@ class LedgerAccountController extends Controller
             'updated_at' => $account->updated_at->toIso8601String(),
         ];
     }
-}
+
+    /**
+     * Export chart of accounts as PDF.
+     *
+     * @param Request $request
+     * @param Tenant $tenant
+     * @return \Illuminate\Http\Response
+     */
+    public function exportPdf(Request $request, Tenant $tenant)
+    {
+        try {
+            $query = LedgerAccount::with(['accountGroup'])
+                ->where('tenant_id', $tenant->id);
+
+            // Apply filters
+            if ($request->filled('search')) {
+                $search = $request->get('search');
+                $query->where(function ($q) use ($search) {
+                    $q->where('name', 'like', "%{$search}%")
+                      ->orWhere('code', 'like', "%{$search}%");
+                });
+            }
+
+            if ($request->filled('account_type')) {
+                $query->where('account_type', $request->get('account_type'));
+            }
+
+            if ($request->filled('account_group_id')) {
+                $query->where('account_group_id', $request->get('account_group_id'));
+            }
+
+            if ($request->filled('is_active')) {
+                $isActive = $request->get('is_active') === 'true' || $request->get('is_active') === '1';
+                $query->where('is_active', $isActive);
+            }
+
+            $accounts = $query->orderBy('code')->get()->groupBy('account_type');
+
+            $html = '
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <meta charset="UTF-8">
+                <title>Chart of Accounts - ' . e($tenant->name) . '</title>
+                <style>
+                    body { font-family: Arial, sans-serif; font-size: 12px; }
+                    h1 { text-align: center; color: #333; }
+                    h2 { color: #555; margin-top: 20px; border-bottom: 2px solid #333; }
+                    table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
+                    th { background-color: #f0f0f0; padding: 8px; text-align: left; border: 1px solid #ddd; }
+                    td { padding: 6px; border: 1px solid #ddd; }
+                    .inactive { color: #999; }
+                    .footer { text-align: center; margin-top: 30px; font-size: 10px; color: #777; }
+                </style>
+            </head>
+            <body>
+                <h1>' . e($tenant->name) . '</h1>
+                <h1>Chart of Accounts</h1>
+                <p style="text-align: center">Generated on ' . now()->format('M d, Y h:i A') . '</p>';
+
+            foreach ($accounts as $type => $typeAccounts) {
+                $html .= '<h2>' . ucfirst($type) . ' Accounts</h2>';
+                $html .= '<table><thead><tr>
+                    <th>Code</th>
+                    <th>Account Name</th>
+                    <th>Account Group</th>
+                    <th>Balance</th>
+                    <th>Status</th>
+                </tr></thead><tbody>';
+
+                foreach ($typeAccounts as $account) {
+                    $statusClass = $account->is_active ? '' : ' class="inactive"';
+                    $html .= '<tr' . $statusClass . '>
+                        <td>' . e($account->code) . '</td>
+                        <td>' . e($account->name) . '</td>
+                        <td>' . e($account->accountGroup->name ?? 'N/A') . '</td>
+                        <td>₦' . number_format($account->current_balance, 2) . '</td>
+                        <td>' . ($account->is_active ? 'Active' : 'Inactive') . '</td>
+                    </tr>';
+                }
+
+                $html .= '</tbody></table>';
+            }
+
+            $html .= '<div class="footer">
+                <p>' . e($tenant->name) . ' | Chart of Accounts Report</p>
+            </div>
+            </body></html>';
+
+            $dompdf = new \Dompdf\Dompdf();
+            $dompdf->loadHtml($html);
+            $dompdf->setPaper('A4', 'portrait');
+            $dompdf->render();
+
+            return response($dompdf->output(), 200, [
+                'Content-Type' => 'application/pdf',
+                'Content-Disposition' => 'attachment; filename="chart-of-accounts-' . now()->format('Y-m-d') . '.pdf"'
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to generate PDF',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Export chart of accounts as Excel.
+     *
+     * @param Request $request
+     * @param Tenant $tenant
+     * @return \Illuminate\Http\Response
+     */
+    public function exportExcel(Request $request, Tenant $tenant)
+    {
+        try {
+            $query = LedgerAccount::with(['accountGroup', 'parent'])
+                ->where('tenant_id', $tenant->id);
+
+            // Apply filters
+            if ($request->filled('search')) {
+                $search = $request->get('search');
+                $query->where(function ($q) use ($search) {
+                    $q->where('name', 'like', "%{$search}%")
+                      ->orWhere('code', 'like', "%{$search}%");
+                });
+            }
+
+            if ($request->filled('account_group_id')) {
+                $query->where('account_group_id', $request->get('account_group_id'));
+            }
+
+            if ($request->filled('account_type')) {
+                $query->where('account_type', $request->get('account_type'));
+            }
+
+            if ($request->filled('is_active')) {
+                $isActive = $request->get('is_active') === 'true' || $request->get('is_active') === '1';
+                $query->where('is_active', $isActive);
+            }
+
+            $accounts = $query->orderBy('code')->get();
+
+            $accountGroups = AccountGroup::where('tenant_id', $tenant->id)
+                ->orderBy('name')
+                ->get();
+
+            $filename = 'chart-of-accounts-' . now()->format('Y-m-d') . '.xlsx';
+
+            return \Maatwebsite\Excel\Facades\Excel::download(
+                new \App\Exports\ChartOfAccountsExport($accounts, $accountGroups),
+                $filename
+            );
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to generate Excel file',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Export ledger for specific account as CSV.
+     *
+     * @param Tenant $tenant
+     * @param LedgerAccount $ledgerAccount
+     * @return \Illuminate\Http\Response
+     */
+    public function exportLedger(Tenant $tenant, LedgerAccount $ledgerAccount)
+    {
+        try {
+            // Ensure ledger account belongs to tenant
+            if ($ledgerAccount->tenant_id !== $tenant->id) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Ledger account not found'
+                ], 404);
+            }
+
+            $ledgerAccount->load(['accountGroup', 'parent']);
+
+            // Get all transactions for this account (only posted vouchers)
+            $transactions = $ledgerAccount->voucherEntries()
+                ->with(['voucher.voucherType'])
+                ->whereHas('voucher', function ($query) {
+                    $query->where('status', 'posted');
+                })
+                ->orderBy('created_at', 'asc')
+                ->get();
+
+            // Prepare CSV export
+            $filename = "ledger-{$ledgerAccount->code}-" . now()->format('Y-m-d-H-i-s') . ".csv";
+
+            $headers = [
+                'Content-Type' => 'text/csv',
+                'Content-Disposition' => "attachment; filename=\"$filename\"",
+            ];
+
+            $callback = function() use ($ledgerAccount, $transactions) {
+                $file = fopen('php://output', 'w');
+
+                // Add header information
+                fputcsv($file, ['Account Ledger Report']);
+                fputcsv($file, ['Account Code:', $ledgerAccount->code]);
+                fputcsv($file, ['Account Name:', $ledgerAccount->name]);
+                fputcsv($file, ['Account Type:', ucfirst($ledgerAccount->account_type)]);
+                fputcsv($file, ['Opening Balance:', number_format($ledgerAccount->opening_balance, 2)]);
+                fputcsv($file, ['Generated:', now()->format('M d, Y h:i A')]);
+                fputcsv($file, []); // Empty row
+
+                // Add column headers
+                fputcsv($file, [
+                    'Date',
+                    'Voucher Type',
+                    'Voucher Number',
+                    'Particulars',
+                    'Debit',
+                    'Credit',
+                    'Balance'
+                ]);
+
+                // Add transactions with running balance
+                $runningBalance = $ledgerAccount->opening_balance;
+
+                foreach ($transactions as $transaction) {
+                    if ($transaction->debit_amount > 0) {
+                        $runningBalance += $transaction->debit_amount;
+                    } else {
+                        $runningBalance -= $transaction->credit_amount;
+                    }
+
+                    fputcsv($file, [
+                        $transaction->voucher->voucher_date ?? '',
+                        $transaction->voucher->voucherType->name ?? 'N/A',
+                        $transaction->voucher->voucher_number ?? '',
+                        $transaction->particulars ?? '',
+                        $transaction->debit_amount > 0 ? number_format($transaction->debit_amount, 2) : '',
+                        $transaction->credit_amount > 0 ? number_format($transaction->credit_amount, 2) : '',
+                        number_format($runningBalance, 2)
+                    ]);
+                }
+
+                // Add totals
+                fputcsv($file, []); // Empty row
+                fputcsv($file, [
+                    '',
+                    '',
+                    '',
+                    'TOTALS:',
+                    number_format($transactions->sum('debit_amount'), 2),
+                    number_format($transactions->sum('credit_amount'), 2),
+                    ''
+                ]);
+
+                fputcsv($file, [
+                    '',
+                    '',
+                    '',
+                    'Current Balance:',
+                    '',
+                    '',
+                    number_format($ledgerAccount->current_balance, 2)
+                ]);
+
+                fclose($file);
+            };
+
+            return response()->stream($callback, 200, $headers);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to export ledger',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }}
