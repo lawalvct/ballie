@@ -1,7 +1,7 @@
 @extends('layouts.tenant')
 
-@section('title', 'Statutory & Tax Management - ' . $tenant->name)
-@section('page-title', "Statutory & Tax Management")
+@section('title')@term('statutory') Management - {{ $tenant->name }}@endsection
+@section('page-title')@term('statutory') Management @endsection
 @section('page-description')
     <span class="hidden md:inline">
         Manage VAT, taxes, and statutory compliance

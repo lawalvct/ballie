@@ -1,8 +1,8 @@
 @extends('layouts.tenant')
 
-@section('title', 'Quotations - ' . $tenant->name)
-@section('page-title', 'Quotations')
-@section('page-description', 'Manage your quotations and track sales opportunities')
+@section('title')@term('quotations') - {{ $tenant->name }}@endsection
+@section('page-title')@term('quotations')@endsection
+@section('page-description')Manage your @term('quotations') and track opportunities @endsection
 
 @section('content')
 <div class="space-y-6">

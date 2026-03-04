@@ -5,10 +5,12 @@ namespace App\Http\Controllers\Auth;
 use App\Http\Controllers\Controller;
 use App\Models\User;
 use App\Models\Tenant;
+use App\Models\BusinessType;
 use App\Helpers\TenantHelper;
 use App\Models\Plan;
 use App\Models\Affiliate;
 use App\Models\AffiliateReferral;
+use App\Services\ModuleRegistry;
 use App\Notifications\WelcomeNotification;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Http\Request;
@@ -90,7 +92,14 @@ class RegisteredUserController extends Controller
 
                 $tenant = Tenant::create($tenantData);
 
-                Log::info('Tenant created successfully', ['tenant_id' => $tenant->id, 'slug' => $tenant->slug]);
+                // Auto-populate enabled_modules based on business category
+                $businessType = BusinessType::find($request->business_type_id);
+                $category = $businessType ? $businessType->getBusinessCategoryValue() : 'hybrid';
+                $tenant->update([
+                    'enabled_modules' => ModuleRegistry::getDefaultModules($category),
+                ]);
+
+                Log::info('Tenant created successfully', ['tenant_id' => $tenant->id, 'slug' => $tenant->slug, 'business_category' => $category]);
 
                 // Check for affiliate referral code from cookie or request
                 $affiliateCode = session('affiliate_code') ?? $request->cookie('ballie_ref') ?? $request->input('ref');

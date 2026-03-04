@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Tenant;
 
 use App\Http\Controllers\Controller;
 use App\Models\Tenant;
+use App\Services\ModuleRegistry;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 
@@ -21,6 +22,8 @@ class CompanySettingsController extends Controller
 
         return view('tenant.settings.company', [
             'tenant' => $tenant,
+            'allModules' => ModuleRegistry::getAllModulesWithMeta($tenant),
+            'businessCategory' => $tenant->getBusinessCategory(),
         ]);
     }
 
@@ -155,5 +158,51 @@ class CompanySettingsController extends Controller
         return redirect()
             ->route('tenant.settings.company', ['tenant' => $tenant->slug])
             ->with('success', 'Preferences updated successfully!');
+    }
+
+    /**
+     * Update enabled modules
+     */
+    public function updateModules(Request $request, Tenant $tenant)
+    {
+        // Check if user is owner
+        if (!$request->user()->isOwner()) {
+            abort(403, 'Only tenant owners can manage modules.');
+        }
+
+        $validated = $request->validate([
+            'modules'   => ['required', 'array'],
+            'modules.*' => ['string', 'in:' . implode(',', ModuleRegistry::ALL_MODULES)],
+        ]);
+
+        // Always ensure core modules are included
+        $enabledModules = array_values(array_unique(array_merge(
+            ModuleRegistry::CORE_MODULES,
+            $validated['modules']
+        )));
+
+        $tenant->update(['enabled_modules' => $enabledModules]);
+
+        return redirect()
+            ->route('tenant.settings.company', ['tenant' => $tenant->slug])
+            ->with('success', 'Module settings updated successfully!');
+    }
+
+    /**
+     * Reset modules to category defaults
+     */
+    public function resetModules(Request $request, Tenant $tenant)
+    {
+        // Check if user is owner
+        if (!$request->user()->isOwner()) {
+            abort(403, 'Only tenant owners can manage modules.');
+        }
+
+        // Setting to null reverts to category defaults
+        $tenant->update(['enabled_modules' => null]);
+
+        return redirect()
+            ->route('tenant.settings.company', ['tenant' => $tenant->slug])
+            ->with('success', 'Modules reset to category defaults successfully!');
     }
 }

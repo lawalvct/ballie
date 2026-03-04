@@ -31,6 +31,11 @@
         <div class="w-12 lg:w-16 h-1 bg-gray-200 rounded"></div>
         <div class="flex items-center">
             <div class="w-10 h-10 bg-gray-200 text-gray-500 rounded-full flex items-center justify-center font-semibold">3</div>
+            <span class="ml-3 text-sm font-medium text-gray-500">Accounts</span>
+        </div>
+        <div class="w-12 lg:w-16 h-1 bg-gray-200 rounded"></div>
+        <div class="flex items-center">
+            <div class="w-10 h-10 bg-gray-200 text-gray-500 rounded-full flex items-center justify-center font-semibold">4</div>
             <span class="ml-3 text-sm font-medium text-gray-500">Complete</span>
         </div>
     </div>
@@ -62,6 +67,17 @@
         <div class="flex items-start">
             <div class="flex flex-col items-center mr-4">
                 <div class="w-10 h-10 bg-gray-200 text-gray-500 rounded-full flex items-center justify-center font-semibold flex-shrink-0">3</div>
+                <div class="w-1 h-12 bg-gray-200 rounded mt-2"></div>
+            </div>
+            <div class="flex-1 pt-2">
+                <span class="text-sm font-medium text-gray-500 block">Accounts</span>
+                <span class="text-xs text-gray-400">Select your chart of accounts</span>
+            </div>
+        </div>
+
+        <div class="flex items-start">
+            <div class="flex flex-col items-center mr-4">
+                <div class="w-10 h-10 bg-gray-200 text-gray-500 rounded-full flex items-center justify-center font-semibold flex-shrink-0">4</div>
             </div>
             <div class="flex-1 pt-2">
                 <span class="text-sm font-medium text-gray-500 block">Complete</span>
@@ -94,6 +110,12 @@
                     <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
                 </svg>
                 Configure currency & preferences
+            </li>
+            <li class="flex items-center">
+                <svg class="w-4 h-4 text-brand-green mr-2" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
+                </svg>
+                Choose your chart of accounts
             </li>
 
         </ul>

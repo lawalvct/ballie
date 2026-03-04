@@ -214,6 +214,11 @@
                                     </svg>
                                 </button>
                             </div>
+                            <!-- Business Category Badge -->
+                            <div id="business_category_badge" class="mt-3 flex items-center justify-between">
+                                <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium" id="category_badge_label"></span>
+                                <span class="text-xs text-gray-500">Auto-detected from business type</span>
+                            </div>
                         </div>
 
                         <!-- Dropdown Results -->
@@ -230,7 +235,8 @@
                                                  data-name="{{ $type->name }}"
                                                  data-category="{{ $type->category }}"
                                                  data-icon="{{ $type->icon }}"
-                                                 data-slug="{{ $type->slug }}">
+                                                 data-slug="{{ $type->slug }}"
+                                                 data-business-category="{{ $type->business_category ?? 'hybrid' }}">
                                                 <div class="flex items-start">
                                                     <span class="text-xl mr-3 flex-shrink-0">{{ $type->icon }}</span>
                                                     <div class="flex-1 min-w-0">
@@ -575,6 +581,8 @@ document.addEventListener('DOMContentLoaded', function() {
             const icon = this.dataset.icon;
             const slug = this.dataset.slug;
 
+            const businessCategory = this.dataset.businessCategory || 'hybrid';
+
             // Set hidden inputs
             businessTypeIdInput.value = id;
             businessStructureInput.value = slug;
@@ -583,6 +591,23 @@ document.addEventListener('DOMContentLoaded', function() {
             document.getElementById('selected_icon').textContent = icon;
             document.getElementById('selected_name').textContent = name;
             document.getElementById('selected_category').textContent = category;
+
+            // Show business category badge
+            const badgeLabel = document.getElementById('category_badge_label');
+            const categoryColors = {
+                trading: 'bg-blue-100 text-blue-800',
+                manufacturing: 'bg-purple-100 text-purple-800',
+                service: 'bg-green-100 text-green-800',
+                hybrid: 'bg-amber-100 text-amber-800'
+            };
+            const categoryLabels = {
+                trading: '🏪 Trading Business',
+                manufacturing: '🏭 Manufacturing Business',
+                service: '💼 Service Business',
+                hybrid: '🔄 Hybrid Business'
+            };
+            badgeLabel.className = 'inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ' + (categoryColors[businessCategory] || categoryColors.hybrid);
+            badgeLabel.textContent = categoryLabels[businessCategory] || categoryLabels.hybrid;
 
             // Show selected display
             selectedDisplay.classList.remove('hidden');

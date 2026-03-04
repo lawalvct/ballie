@@ -16,7 +16,7 @@
             </div>
 
             <!-- Connector -->
-            <div class="w-8 md:w-16 h-1 bg-brand-blue rounded hidden sm:block"></div>
+            <div class="w-8 md:w-16 h-1 bg-gray-200 rounded hidden sm:block"></div>
 
             <!-- Step 2 -->
             <div class="flex items-center flex-shrink-0">
@@ -33,6 +33,17 @@
             <div class="flex items-center flex-shrink-0">
                 <div class="w-10 h-10 bg-gray-200 text-gray-500 rounded-full flex items-center justify-center font-semibold">
                     3
+                </div>
+                <span class="ml-3 text-sm font-medium text-gray-500 whitespace-nowrap">Accounts</span>
+            </div>
+
+            <!-- Connector -->
+            <div class="w-8 md:w-16 h-1 bg-gray-200 rounded hidden sm:block"></div>
+
+            <!-- Step 4 -->
+            <div class="flex items-center flex-shrink-0">
+                <div class="w-10 h-10 bg-gray-200 text-gray-500 rounded-full flex items-center justify-center font-semibold">
+                    4
                 </div>
                 <span class="ml-3 text-sm font-medium text-gray-500 whitespace-nowrap">Complete</span>
             </div>
@@ -57,7 +68,7 @@
 
     <!-- Form Content -->
     <div class="p-6 md:p-8">
-        <form method="POST" action="{{ route('tenant.onboarding.save-step', ['tenant' => $currentTenant->slug, 'step' => 'company']) }}" enctype="multipart/form-data" class="space-y-6">
+        <form method="POST" action="{{ route('tenant.onboarding.save-step', ['tenant' => $currentTenant->slug, 'step' => 'company']) }}" enctype="multipart/form-data" class="space-y-6" x-data="{ loading: false }" @submit="loading = true">
             @csrf
 
             <!-- Company Logo Section -->
@@ -291,7 +302,7 @@
             <!-- Form Actions -->
             <div class="flex flex-col sm:flex-row items-center justify-between pt-6 border-t border-gray-200 space-y-4 sm:space-y-0">
                 <div class="text-sm text-gray-500">
-                    Step 1 of 3 - Company Information
+                    Step 1 of 4 - Company Information
                 </div>
 
                 <div class="flex space-x-4">
@@ -300,9 +311,15 @@
                         Back
                     </button>
                     <button type="submit"
-                            class="px-8 py-3 bg-brand-blue text-white rounded-lg hover:bg-brand-dark-purple transition-colors font-medium flex items-center">
-                        Continue
-                        <svg class="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            :disabled="loading"
+                            :class="loading ? 'opacity-75 cursor-not-allowed' : 'hover:bg-brand-dark-purple'"
+                            class="px-8 py-3 bg-brand-blue text-white rounded-lg transition-colors font-medium flex items-center">
+                        <svg x-show="loading" class="animate-spin w-4 h-4 mr-2" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+                        </svg>
+                        <span x-text="loading ? 'Saving...' : 'Continue'"></span>
+                        <svg x-show="!loading" class="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
                         </svg>
                     </button>

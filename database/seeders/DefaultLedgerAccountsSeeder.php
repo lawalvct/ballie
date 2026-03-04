@@ -8,7 +8,7 @@ use App\Models\AccountGroup;
 
 class DefaultLedgerAccountsSeeder extends Seeder
 {
-    public static function seedForTenant($tenantId)
+    public static function seedForTenant($tenantId, ?array $allowedCodes = null)
     {
         // Check if ledger accounts already exist for this tenant
         $existingAccounts = LedgerAccount::where('tenant_id', $tenantId)->count();
@@ -1268,6 +1268,18 @@ class DefaultLedgerAccountsSeeder extends Seeder
         $validAccounts = array_filter($defaultAccounts, function($accountData) {
             return !empty($accountData['account_group_id']);
         });
+
+        // If a specific set of codes was requested (from onboarding selection), filter to those only
+        if ($allowedCodes !== null && count($allowedCodes) > 0) {
+            $validAccounts = array_filter($validAccounts, function($accountData) use ($allowedCodes) {
+                return in_array($accountData['code'], $allowedCodes, true);
+            });
+            \Log::info("Filtering ledger accounts to user selection", [
+                'tenant_id' => $tenantId,
+                'requested_codes' => count($allowedCodes),
+                'matched' => count($validAccounts),
+            ]);
+        }
 
         \Log::info("Starting ledger account seeding", [
             'tenant_id' => $tenantId,

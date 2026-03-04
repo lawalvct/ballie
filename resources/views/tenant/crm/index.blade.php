@@ -1,8 +1,8 @@
 @extends('layouts.tenant')
 
-@section('title', 'CRM Dashboard')
+@section('title')@term('crm') Dashboard @endsection
 
-@section('page-title', 'CRM Dashboard')
+@section('page-title')@term('crm') Dashboard @endsection
 @section('page-description')
     <span class="hidden md:inline">
         Manage your customer relationships, sales pipeline, leads, vendors, and communications efficiently in one place.

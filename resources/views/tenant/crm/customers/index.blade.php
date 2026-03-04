@@ -1,7 +1,7 @@
 @extends('layouts.tenant')
 
-@section('title', 'Customers')
-@section('page-title', 'Customer Management')
+@section('title')@term('customers')@endsection
+@section('page-title')@term('customer') Management @endsection
 @section('page-description')
     <span class="hidden md:inline">
       Manage your customer database and relationships.

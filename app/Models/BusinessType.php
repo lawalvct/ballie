@@ -14,6 +14,7 @@ class BusinessType extends Model
         'name',
         'slug',
         'category',
+        'business_category',
         'icon',
         'description',
         'sort_order',
@@ -58,6 +59,14 @@ class BusinessType extends Model
     }
 
     /**
+     * Scope by business category (trading, manufacturing, service, hybrid).
+     */
+    public function scopeByBusinessCategory($query, string $businessCategory)
+    {
+        return $query->where('business_category', $businessCategory);
+    }
+
+    /**
      * Get grouped business types by category
      */
     public static function getGroupedByCategory()
@@ -66,5 +75,28 @@ class BusinessType extends Model
             ->ordered()
             ->get()
             ->groupBy('category');
+    }
+
+    /**
+     * Valid business categories.
+     */
+    const CATEGORY_TRADING       = 'trading';
+    const CATEGORY_MANUFACTURING = 'manufacturing';
+    const CATEGORY_SERVICE       = 'service';
+    const CATEGORY_HYBRID        = 'hybrid';
+
+    const BUSINESS_CATEGORIES = [
+        self::CATEGORY_TRADING,
+        self::CATEGORY_MANUFACTURING,
+        self::CATEGORY_SERVICE,
+        self::CATEGORY_HYBRID,
+    ];
+
+    /**
+     * Get the business category value, defaults to hybrid.
+     */
+    public function getBusinessCategoryValue(): string
+    {
+        return $this->business_category ?? self::CATEGORY_HYBRID;
     }
 }

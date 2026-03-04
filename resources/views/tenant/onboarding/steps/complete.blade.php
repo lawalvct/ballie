@@ -3,6 +3,62 @@
 @section('title', 'Setup Complete - Ballie Setup')
 
 @section('content')
+<!-- Progress Steps -->
+<div class="mb-8">
+    <div class="flex items-center justify-center">
+        <div class="flex items-center space-x-4 md:space-x-8 overflow-x-auto pb-2">
+            <!-- Step 1 - Completed -->
+            <div class="flex items-center flex-shrink-0">
+                <div class="w-10 h-10 bg-green-500 text-white rounded-full flex items-center justify-center shadow-lg">
+                    <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
+                    </svg>
+                </div>
+                <span class="ml-3 text-sm font-medium text-green-600 whitespace-nowrap">Company Info</span>
+            </div>
+
+            <!-- Connector -->
+            <div class="w-8 md:w-16 h-1 bg-green-400 rounded hidden sm:block"></div>
+
+            <!-- Step 2 - Completed -->
+            <div class="flex items-center flex-shrink-0">
+                <div class="w-10 h-10 bg-green-500 text-white rounded-full flex items-center justify-center shadow-lg">
+                    <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
+                    </svg>
+                </div>
+                <span class="ml-3 text-sm font-medium text-green-600 whitespace-nowrap">Preferences</span>
+            </div>
+
+            <!-- Connector -->
+            <div class="w-8 md:w-16 h-1 bg-green-400 rounded hidden sm:block"></div>
+
+            <!-- Step 3 - Completed -->
+            <div class="flex items-center flex-shrink-0">
+                <div class="w-10 h-10 bg-green-500 text-white rounded-full flex items-center justify-center shadow-lg">
+                    <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
+                    </svg>
+                </div>
+                <span class="ml-3 text-sm font-medium text-green-600 whitespace-nowrap">Accounts</span>
+            </div>
+
+            <!-- Connector -->
+            <div class="w-8 md:w-16 h-1 bg-brand-blue rounded hidden sm:block"></div>
+
+            <!-- Step 4 - Active -->
+            <div class="flex items-center flex-shrink-0">
+                <div class="w-10 h-10 bg-brand-blue text-white rounded-full flex items-center justify-center font-semibold shadow-lg">
+                    <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
+                    </svg>
+                </div>
+                <span class="ml-3 text-sm font-medium text-brand-blue whitespace-nowrap">Complete</span>
+            </div>
+        </div>
+    </div>
+</div>
+
 <div class="text-center ">
     <div class="inline-block p-4 bg-green-100 rounded-full mb-6">
         <svg class="w-16 h-16 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -163,13 +219,20 @@
 
 <!-- Go to Dashboard Button -->
 <div class="text-center mt-12">
-    <form method="POST" action="{{ route('tenant.onboarding.complete', ['tenant' => $currentTenant->slug]) }}">
+    <form method="POST" action="{{ route('tenant.onboarding.complete', ['tenant' => $currentTenant->slug]) }}" x-data="{ loading: false }" @submit="loading = true">
         @csrf
-        <button type="submit" class="inline-flex items-center px-8 py-4 bg-brand-blue text-white rounded-lg hover:bg-brand-dark-purple transition-colors font-semibold text-lg">
-            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <button type="submit"
+                :disabled="loading"
+                :class="loading ? 'opacity-75 cursor-not-allowed' : 'hover:bg-brand-dark-purple'"
+                class="inline-flex items-center px-8 py-4 bg-brand-blue text-white rounded-lg transition-colors font-semibold text-lg">
+            <svg x-show="loading" class="animate-spin w-5 h-5 mr-2" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+            </svg>
+            <svg x-show="!loading" class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
             </svg>
-            Go to Dashboard
+            <span x-text="loading ? 'Loading dashboard...' : 'Go to Dashboard'"></span>
         </button>
     </form>
 </div>

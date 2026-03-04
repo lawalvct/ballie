@@ -78,6 +78,17 @@ class PermissionsSeeder extends Seeder
             ['name' => 'View E-commerce Reports', 'slug' => 'ecommerce.reports.view', 'module' => 'E-commerce', 'description' => 'View order, revenue, and product reports'],
 
             // =============================================
+            // PROJECTS MODULE
+            // =============================================
+            ['name' => 'View Projects', 'slug' => 'projects.view', 'module' => 'Projects', 'description' => 'View projects module'],
+            ['name' => 'Create Projects', 'slug' => 'projects.create', 'module' => 'Projects', 'description' => 'Create new projects'],
+            ['name' => 'Edit Projects', 'slug' => 'projects.edit', 'module' => 'Projects', 'description' => 'Edit existing projects'],
+            ['name' => 'Delete Projects', 'slug' => 'projects.delete', 'module' => 'Projects', 'description' => 'Delete projects'],
+            ['name' => 'Manage Tasks', 'slug' => 'projects.tasks.manage', 'module' => 'Projects', 'description' => 'Create, edit, delete project tasks'],
+            ['name' => 'Manage Milestones', 'slug' => 'projects.milestones.manage', 'module' => 'Projects', 'description' => 'Create, edit, delete project milestones'],
+            ['name' => 'View Project Reports', 'slug' => 'projects.reports.view', 'module' => 'Projects', 'description' => 'View project reports and analytics'],
+
+            // =============================================
             // PAYROLL MODULE
             // =============================================
             ['name' => 'View Payroll', 'slug' => 'payroll.view', 'module' => 'Payroll', 'description' => 'View payroll module'],

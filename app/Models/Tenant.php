@@ -39,6 +39,7 @@ class Tenant extends Model
         'created_by', // Super admin who created this tenant
         'is_active',
         'settings',
+        'enabled_modules',
         'onboarding_completed_at',
         'onboarding_progress',
         'status',
@@ -54,6 +55,7 @@ class Tenant extends Model
         'onboarding_completed_at' => 'datetime',
         'is_active' => 'boolean',
         'settings' => 'array',
+        'enabled_modules' => 'array',
         'onboarding_progress' => 'array',
     ];
 
@@ -339,6 +341,36 @@ class Tenant extends Model
                 $previousTenant->makeCurrent();
             }
         }
+    }
+
+    // ─── Module Visibility ────────────────────────────────────
+
+    /**
+     * Get the business category for this tenant.
+     * Falls back to 'hybrid' (all modules) for existing tenants
+     * that don't have a business_type_id set.
+     */
+    public function getBusinessCategory(): string
+    {
+        return $this->businessType?->business_category ?? 'hybrid';
+    }
+
+    /**
+     * Check if a module is enabled for this tenant.
+     *
+     * Usage: $tenant->hasModule('inventory')
+     */
+    public function hasModule(string $module): bool
+    {
+        return \App\Services\ModuleRegistry::isModuleEnabled($this, $module);
+    }
+
+    /**
+     * Get the list of enabled module keys.
+     */
+    public function getEnabledModulesList(): array
+    {
+        return \App\Services\ModuleRegistry::getEnabledModules($this);
     }
 
     /**

@@ -1,7 +1,7 @@
 @extends('layouts.tenant')
 
-@section('title', 'Sales Invoices - ' . $tenant->name)
-@section('page-title', 'Sales and Purchase Invoices')
+@section('title')@term('sales_invoices') - {{ $tenant->name }}@endsection
+@section('page-title')@term('sales_invoices')@endsection
 @section('page-description', '    Manage your invoices and track revenue')
 
 @section('content')

@@ -4,14 +4,24 @@
     <div class="px-6 py-4 border-b border-gray-200">
         <div class="flex items-center justify-between">
             <h3 class="text-lg font-medium text-gray-900">📦 Invoice Items</h3>
-            <button type="button"
-                    @click="addItem()"
-                    class="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-primary-700 bg-primary-100 hover:bg-primary-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500">
-                <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
-                </svg>
-                Add Item
-            </button>
+            <div class="flex items-center gap-2">
+                <button type="button"
+                        @click="addItem('service')"
+                        class="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-green-700 bg-green-100 hover:bg-green-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
+                    <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                    </svg>
+                    Add Service
+                </button>
+                <button type="button"
+                        @click="addItem('product')"
+                        class="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-primary-700 bg-primary-100 hover:bg-primary-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500">
+                    <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                    </svg>
+                    Add Product
+                </button>
+            </div>
         </div>
     </div>
 
@@ -22,8 +32,11 @@
                 <table class="min-w-full">
                     <thead>
                         <tr class="border-b border-gray-200">
+                            <th class="text-left py-2 md:py-3 px-2 text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap" style="width: 60px;">
+                                Type
+                            </th>
                             <th class="text-left py-2 md:py-3 px-2 text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">
-                                Product <span class="text-red-500">*</span>
+                                Product / Service <span class="text-red-500">*</span>
                             </th>
                             <th class="text-left py-2 md:py-3 px-2 text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap hidden md:table-cell">
                                 Description
@@ -45,14 +58,31 @@
                                     <tbody>
                         <template x-for="(item, index) in items" :key="index">
                             <tr class="border-b border-gray-100 hover:bg-gray-50">
+                                <!-- Item Type Badge -->
+                                <td class="py-2 md:py-3 px-2" style="width: 60px;">
+                                    <input type="hidden"
+                                           :name="`inventory_items[${index}][item_type]`"
+                                           x-model="item.item_type">
+                                    <span x-show="item.item_type === 'product'"
+                                          class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800">
+                                        Product
+                                    </span>
+                                    <span x-show="item.item_type === 'service'"
+                                          class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800">
+                                        Service
+                                    </span>
+                                </td>
+
+                                <!-- Product Search (for product items) OR Service Description (for service items) -->
                                 <td class="py-2 md:py-3 px-2 min-w-[180px] md:min-w-[200px]">
-                                    <div x-data="productSearch(index)" class="relative">
+                                    <!-- Product search — shown only for product items -->
+                                    <div x-show="item.item_type === 'product'" x-data="productSearch(index)" class="relative">
                                         <div class="flex gap-1">
                                             <input type="text"
                                                    x-model="searchTerm"
                                                    @input="searchProducts()"
                                                    @focus="searchProducts()"
-                                                   placeholder="Search..."
+                                                   placeholder="Search product..."
                                                    class="block w-full pl-2 md:pl-3 pr-2 py-1.5 md:py-2 text-xs md:text-sm border border-gray-300 focus:outline-none focus:ring-primary-500 focus:border-primary-500 rounded-md">
                                             <button type="button"
                                                     @click="openQuickAddProduct(index)"
@@ -66,7 +96,7 @@
                                         <input type="hidden"
                                                :name="`inventory_items[${index}][product_id]`"
                                                x-model="selectedProductId"
-                                               required>
+                                               :required="item.item_type === 'product'">
 
                                         <!-- Dropdown -->
                                         <div x-show="showDropdown && (products.length > 0 || loading)"
@@ -98,7 +128,22 @@
                                             </div>
                                         </div>
                                     </div>
-                                    <div class="mt-1 text-xs text-gray-500" x-show="item.current_stock !== null">
+
+                                    <!-- Service description — shown only for service items -->
+                                    <div x-show="item.item_type === 'service'">
+                                        <input type="text"
+                                               :name="`inventory_items[${index}][description]`"
+                                               x-model="item.description"
+                                               class="block w-full px-2 md:px-3 py-1.5 md:py-2 text-xs md:text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-green-500 focus:border-green-500"
+                                               placeholder="Service description (e.g. Consulting, Installation)"
+                                               required>
+                                        <input type="hidden"
+                                               :name="`inventory_items[${index}][product_id]`"
+                                               value="">
+                                    </div>
+
+                                    <!-- Stock info — only for product items -->
+                                    <div class="mt-1 text-xs text-gray-500" x-show="item.item_type === 'product' && item.current_stock !== null">
                                         Stock: <span x-text="item.current_stock"></span> <span x-text="item.unit"></span>
                                         <span x-show="parseFloat(item.quantity) > parseFloat(item.current_stock) && !isPurchaseInvoice()" class="text-red-600 font-medium">
                                             (Low!)
@@ -107,10 +152,11 @@
                                 </td>
                                 <td class="py-2 md:py-3 px-2 min-w-[150px] hidden md:table-cell">
                                     <input type="text"
-                                           :name="`inventory_items[${index}][description]`"
+                                           :name="item.item_type === 'product' ? `inventory_items[${index}][description]` : ''"
                                            x-model="item.description"
                                            class="block w-full px-2 md:px-3 py-1.5 md:py-2 text-xs md:text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-primary-500 focus:border-primary-500"
-                                           placeholder="Description">
+                                           :placeholder="item.item_type === 'service' ? 'Additional notes' : 'Description'"
+                                           :class="item.item_type === 'service' ? 'bg-green-50' : ''">
                                 </td>
                                 <td class="py-2 md:py-3 px-2 min-w-[80px]">
                                     <input type="number"
@@ -161,11 +207,11 @@
                     </tbody>
                     <tfoot>
                         <tr class="border-t border-gray-200 bg-gray-50">
-                            <td colspan="3" class="md:hidden py-2 px-2 text-xs font-medium text-gray-700 text-right">
+                            <td colspan="4" class="md:hidden py-2 px-2 text-xs font-medium text-gray-700 text-right">
                                 Subtotal:
                             </td>
-                            <td colspan="4" class="hidden md:table-cell py-2 md:py-3 px-2 text-xs md:text-sm font-medium text-gray-700 text-right">
-                                Subtotal (Products):
+                            <td colspan="5" class="hidden md:table-cell py-2 md:py-3 px-2 text-xs md:text-sm font-medium text-gray-700 text-right">
+                                Subtotal (Items):
                             </td>
                             <td class="py-2 md:py-3 px-2 text-right text-xs md:text-sm font-medium text-gray-900">
                                 ₦<span x-text="formatNumber(totalAmount)"></span>
@@ -278,7 +324,7 @@
             <div class="flex justify-end">
                 <div class="w-full sm:w-2/3 md:w-1/2">
                     <div class="flex justify-between items-center py-2">
-                        <span class="text-xs md:text-sm font-medium text-gray-700">Products Subtotal:</span>
+                        <span class="text-xs md:text-sm font-medium text-gray-700">Items Subtotal:</span>
                         <span class="text-xs md:text-sm font-medium text-gray-900">₦<span x-text="formatNumber(totalAmount)"></span></span>
                     </div>
                     <div x-show="ledgerAccountsTotal > 0" class="flex justify-between items-center py-2">
@@ -320,8 +366,8 @@
                                 </label>
                             </div>
                             <p class="text-xs text-gray-500 italic">
-                                <span x-show="vatAppliesTo === 'items_only'">VAT calculated on products subtotal (₦<span x-text="formatNumber(totalAmount)"></span>)</span>
-                                <span x-show="vatAppliesTo === 'items_and_charges'">VAT calculated on products + charges (₦<span x-text="formatNumber(totalAmount + ledgerAccountsTotal)"></span>)</span>
+                                <span x-show="vatAppliesTo === 'items_only'">VAT calculated on items subtotal (₦<span x-text="formatNumber(totalAmount)"></span>)</span>
+                                <span x-show="vatAppliesTo === 'items_and_charges'">VAT calculated on items + charges (₦<span x-text="formatNumber(totalAmount + ledgerAccountsTotal)"></span>)</span>
                             </p>
                         </div>
 

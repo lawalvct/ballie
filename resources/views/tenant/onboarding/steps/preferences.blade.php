@@ -36,6 +36,17 @@
                 <div class="w-10 h-10 bg-gray-200 text-gray-500 rounded-full flex items-center justify-center font-semibold">
                     3
                 </div>
+                <span class="ml-3 text-sm font-medium text-gray-500 whitespace-nowrap">Accounts</span>
+            </div>
+
+            <!-- Connector -->
+            <div class="w-8 md:w-16 h-1 bg-gray-200 rounded hidden sm:block"></div>
+
+            <!-- Step 4 -->
+            <div class="flex items-center flex-shrink-0">
+                <div class="w-10 h-10 bg-gray-200 text-gray-500 rounded-full flex items-center justify-center font-semibold">
+                    4
+                </div>
                 <span class="ml-3 text-sm font-medium text-gray-500 whitespace-nowrap">Complete</span>
             </div>
         </div>
@@ -60,7 +71,7 @@
 
     <!-- Form Content -->
     <div class="p-6 md:p-8">
-        <form method="POST" action="{{ route('tenant.onboarding.save-step', ['tenant' => $currentTenant->slug, 'step' => 'preferences']) }}" class="space-y-8">
+        <form method="POST" action="{{ route('tenant.onboarding.save-step', ['tenant' => $currentTenant->slug, 'step' => 'preferences']) }}" class="space-y-8" x-data="{ loading: false }" @submit="loading = true">
             @csrf
 
             <!-- Currency & Localization -->
@@ -180,10 +191,91 @@
                 </div>
             </div>
 
+            <!-- Module Selection -->
+            @if(isset($allModules) && count($allModules) > 0)
+            <div class="bg-indigo-50 rounded-lg p-6" x-data="{
+                modules: @js($allModules),
+                get enabledCount() {
+                    return this.modules.filter(m => m.enabled).length;
+                },
+                get optionalCount() {
+                    return this.modules.filter(m => m.enabled && !m.core).length;
+                },
+                get coreCount() {
+                    return this.modules.filter(m => m.core).length;
+                }
+            }">
+                <h3 class="text-lg font-semibold text-gray-900 mb-2 flex items-center">
+                    <svg class="w-5 h-5 mr-2 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zm10 0a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zm10 0a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"></path>
+                    </svg>
+                    Modules for Your Business
+                </h3>
+                <p class="text-sm text-gray-600 mb-4">
+                    Based on your business type
+                    @if(isset($businessCategory))
+                        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium
+                            @if($businessCategory === 'trading') bg-blue-100 text-blue-800
+                            @elseif($businessCategory === 'manufacturing') bg-purple-100 text-purple-800
+                            @elseif($businessCategory === 'service') bg-green-100 text-green-800
+                            @else bg-amber-100 text-amber-800
+                            @endif
+                        ">{{ ucfirst($businessCategory) }}</span>
+                    @endif
+                    , we've pre-selected the most relevant modules. You can customize these anytime in Settings.
+                </p>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <template x-for="(mod, index) in modules" :key="mod.key">
+                        <div class="relative flex items-start p-3 rounded-lg border transition-colors"
+                             :class="mod.enabled ? 'bg-white border-indigo-200' : 'bg-gray-50 border-gray-200'">
+                            <div class="flex items-center h-5 mt-0.5">
+                                <input type="checkbox"
+                                       :name="'enabled_modules[]'"
+                                       :value="mod.key"
+                                       :checked="mod.enabled"
+                                       :disabled="mod.core"
+                                       x-model="mod.enabled"
+                                       class="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+                                       :class="mod.core ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer'">
+                                <!-- Hidden input for core modules to ensure they're always submitted -->
+                                <template x-if="mod.core">
+                                    <input type="hidden" :name="'enabled_modules[]'" :value="mod.key">
+                                </template>
+                            </div>
+                            <div class="ml-3 flex-1">
+                                <div class="flex items-center">
+                                    <span class="text-sm font-medium text-gray-900" x-text="mod.name"></span>
+                                    <template x-if="mod.core">
+                                        <span class="ml-2 inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-600">
+                                            🔒 Core
+                                        </span>
+                                    </template>
+                                    <template x-if="!mod.core && mod.recommended">
+                                        <span class="ml-2 inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-green-100 text-green-700">
+                                            ★ Recommended
+                                        </span>
+                                    </template>
+                                </div>
+                                <p class="text-xs text-gray-500 mt-0.5" x-text="mod.description"></p>
+                            </div>
+                        </div>
+                    </template>
+                </div>
+
+                <div class="mt-3 text-center">
+                    <span class="text-xs text-gray-500">
+                        <span x-text="enabledCount"></span> modules enabled
+                        (<span x-text="coreCount"></span> core + <span x-text="optionalCount"></span> optional)
+                    </span>
+                </div>
+            </div>
+            @endif
+
             <!-- Form Actions -->
             <div class="flex flex-col sm:flex-row items-center justify-between pt-6 border-t border-gray-200 space-y-4 sm:space-y-0">
                 <div class="text-sm text-gray-500">
-                    Step 2 of 3 - Business Preferences
+                    Step 2 of 4 - Business Preferences
                 </div>
 
                 <div class="flex space-x-4">
@@ -192,10 +284,16 @@
                         Back
                     </a>
                     <button type="submit"
-                            class="px-8 py-3 bg-brand-blue text-white rounded-lg hover:bg-brand-dark-purple transition-colors font-medium flex items-center">
-                        Complete Setup
-                        <svg class="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                            :disabled="loading"
+                            :class="loading ? 'opacity-75 cursor-not-allowed' : 'hover:bg-brand-dark-purple'"
+                            class="px-8 py-3 bg-brand-blue text-white rounded-lg transition-colors font-medium flex items-center">
+                        <svg x-show="loading" class="animate-spin w-4 h-4 mr-2" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+                        </svg>
+                        <span x-text="loading ? 'Saving...' : 'Next: Chart of Accounts'"></span>
+                        <svg x-show="!loading" class="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
                         </svg>
                     </button>
                 </div>

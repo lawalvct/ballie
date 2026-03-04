@@ -9,6 +9,7 @@ class InvoiceItem extends Model
 {
     protected $fillable = [
         'voucher_id',
+        'item_type',
         'product_id',
         'product_name',
         'description',

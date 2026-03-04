@@ -17,6 +17,7 @@ class BusinessTypeSeeder extends Seeder
             // 🛍️ Retail, Commerce & Sales
             [
                 'category' => 'Retail, Commerce & Sales',
+                'business_category' => 'trading',
                 'icon' => '🛍️',
                 'types' => [
                     ['name' => 'Retail Store', 'description' => 'Physical retail shop selling various products'],
@@ -27,13 +28,14 @@ class BusinessTypeSeeder extends Seeder
                     ['name' => 'Electronics & Appliances Store', 'description' => 'Electronic devices and home appliances'],
                     ['name' => 'Furniture & Home Decor', 'description' => 'Furniture, fixtures and home decoration items'],
                     ['name' => 'Automobile Sales', 'description' => 'Vehicle sales and dealership'],
-                    ['name' => 'Marketplace Platform', 'description' => 'Online marketplace connecting buyers and sellers'],
+                    ['name' => 'Marketplace Platform', 'description' => 'Online marketplace connecting buyers and sellers', 'business_category' => 'hybrid'],
                 ]
             ],
 
             // 💼 Professional & Service-Based
             [
                 'category' => 'Professional & Service-Based',
+                'business_category' => 'service',
                 'icon' => '💼',
                 'types' => [
                     ['name' => 'Consulting & Advisory Services', 'description' => 'Professional consulting and business advisory'],
@@ -55,29 +57,31 @@ class BusinessTypeSeeder extends Seeder
             // 🍴 Food & Hospitality
             [
                 'category' => 'Food & Hospitality',
+                'business_category' => 'hybrid',
                 'icon' => '🍴',
                 'types' => [
                     ['name' => 'Restaurant / Eatery', 'description' => 'Food service and dining establishment'],
                     ['name' => 'Catering Services', 'description' => 'Event catering and food delivery'],
                     ['name' => 'Bakery / Confectionery', 'description' => 'Bread, pastries and sweet treats'],
                     ['name' => 'Bar / Lounge / Nightclub', 'description' => 'Beverages and entertainment venue'],
-                    ['name' => 'Food Processing & Packaging', 'description' => 'Food production and packaging'],
+                    ['name' => 'Food Processing & Packaging', 'description' => 'Food production and packaging', 'business_category' => 'manufacturing'],
                     ['name' => 'Hotel / Guesthouse / Airbnb', 'description' => 'Accommodation and lodging services'],
                     ['name' => 'Event Planning & Decoration', 'description' => 'Event planning, decoration and management'],
-                    ['name' => 'Travel & Tourism Agency', 'description' => 'Travel booking and tourism services'],
+                    ['name' => 'Travel & Tourism Agency', 'description' => 'Travel booking and tourism services', 'business_category' => 'service'],
                 ]
             ],
 
             // 🏭 Industrial, Manufacturing & Construction
             [
                 'category' => 'Industrial, Manufacturing & Construction',
+                'business_category' => 'manufacturing',
                 'icon' => '🏭',
                 'types' => [
                     ['name' => 'Manufacturing / Production', 'description' => 'General manufacturing and production'],
                     ['name' => 'Fabrication / Assembly', 'description' => 'Metal fabrication and product assembly'],
                     ['name' => 'Construction Company', 'description' => 'Building construction and development'],
                     ['name' => 'Civil Engineering / Building Contractor', 'description' => 'Civil engineering and contracting'],
-                    ['name' => 'Interior Design & Renovation', 'description' => 'Interior design and building renovation'],
+                    ['name' => 'Interior Design & Renovation', 'description' => 'Interior design and building renovation', 'business_category' => 'hybrid'],
                     ['name' => 'Mining & Quarrying', 'description' => 'Mining operations and quarrying'],
                     ['name' => 'Chemical & Paint Production', 'description' => 'Chemical and paint manufacturing'],
                     ['name' => 'Plastic, Paper, or Rubber Production', 'description' => 'Plastic, paper and rubber products'],
@@ -88,22 +92,24 @@ class BusinessTypeSeeder extends Seeder
             // 🌾 Agriculture, Agro & Natural Resources
             [
                 'category' => 'Agriculture, Agro & Natural Resources',
+                'business_category' => 'manufacturing',
                 'icon' => '🌾',
                 'types' => [
                     ['name' => 'Crop Farming', 'description' => 'Maize, rice, cassava and other crop farming'],
                     ['name' => 'Livestock Farming', 'description' => 'Poultry, cattle, fishery and livestock'],
                     ['name' => 'Agro-Processing & Packaging', 'description' => 'Agricultural product processing'],
-                    ['name' => 'Agricultural Equipment & Supplies', 'description' => 'Farm equipment and supplies'],
-                    ['name' => 'Forestry & Logging', 'description' => 'Forestry operations and timber'],
+                    ['name' => 'Agricultural Equipment & Supplies', 'description' => 'Farm equipment and supplies', 'business_category' => 'hybrid'],
+                    ['name' => 'Forestry & Logging', 'description' => 'Forestry operations and timber', 'business_category' => 'hybrid'],
                     ['name' => 'Oil & Gas', 'description' => 'Upstream and downstream oil and gas'],
-                    ['name' => 'Renewable Energy', 'description' => 'Solar, wind and biomass energy'],
-                    ['name' => 'Water & Irrigation Services', 'description' => 'Water supply and irrigation systems'],
+                    ['name' => 'Renewable Energy', 'description' => 'Solar, wind and biomass energy', 'business_category' => 'service'],
+                    ['name' => 'Water & Irrigation Services', 'description' => 'Water supply and irrigation systems', 'business_category' => 'service'],
                 ]
             ],
 
             // 🚗 Transport, Logistics & Mobility
             [
                 'category' => 'Transport, Logistics & Mobility',
+                'business_category' => 'service',
                 'icon' => '🚗',
                 'types' => [
                     ['name' => 'Logistics & Delivery Services', 'description' => 'Courier and delivery services'],
@@ -111,16 +117,17 @@ class BusinessTypeSeeder extends Seeder
                     ['name' => 'Ride-hailing / Taxi Service', 'description' => 'Passenger transport services'],
                     ['name' => 'Car Rentals & Leasing', 'description' => 'Vehicle rental and leasing'],
                     ['name' => 'Freight Forwarding & Clearing', 'description' => 'Import/export freight services'],
-                    ['name' => 'Auto Repair Workshop', 'description' => 'Vehicle maintenance and repair'],
-                    ['name' => 'Vehicle Parts Sales', 'description' => 'Automobile spare parts'],
-                    ['name' => 'Maritime / Shipping', 'description' => 'Sea freight and shipping'],
-                    ['name' => 'Aviation & Airline Services', 'description' => 'Air transport and aviation'],
+                    ['name' => 'Auto Repair Workshop', 'description' => 'Vehicle maintenance and repair', 'business_category' => 'hybrid'],
+                    ['name' => 'Vehicle Parts Sales', 'description' => 'Automobile spare parts', 'business_category' => 'trading'],
+                    ['name' => 'Maritime / Shipping', 'description' => 'Sea freight and shipping', 'business_category' => 'hybrid'],
+                    ['name' => 'Aviation & Airline Services', 'description' => 'Air transport and aviation', 'business_category' => 'hybrid'],
                 ]
             ],
 
             // 💰 Finance, Technology & Innovation
             [
                 'category' => 'Finance, Technology & Innovation',
+                'business_category' => 'service',
                 'icon' => '💰',
                 'types' => [
                     ['name' => 'Banking / Microfinance', 'description' => 'Banking and microfinance services'],
@@ -128,7 +135,7 @@ class BusinessTypeSeeder extends Seeder
                     ['name' => 'Investment / Asset Management', 'description' => 'Investment and wealth management'],
                     ['name' => 'Insurance Services', 'description' => 'Insurance and risk management'],
                     ['name' => 'Financial Technology (Fintech)', 'description' => 'Digital financial services'],
-                    ['name' => 'Cryptocurrency / Blockchain Business', 'description' => 'Crypto and blockchain services'],
+                    ['name' => 'Cryptocurrency / Blockchain Business', 'description' => 'Crypto and blockchain services', 'business_category' => 'hybrid'],
                     ['name' => 'Software Development', 'description' => 'Custom software development'],
                     ['name' => 'Web & App Development', 'description' => 'Website and mobile app development'],
                     ['name' => 'SaaS / Cloud Services', 'description' => 'Software as a Service platforms'],
@@ -141,6 +148,7 @@ class BusinessTypeSeeder extends Seeder
             // 🏘️ Nonprofit, Government & Social Services
             [
                 'category' => 'Nonprofit, Government & Social Services',
+                'business_category' => 'service',
                 'icon' => '🏘️',
                 'types' => [
                     ['name' => 'NGO / Nonprofit Organization', 'description' => 'Non-governmental organization'],
@@ -156,13 +164,14 @@ class BusinessTypeSeeder extends Seeder
             // 🎭 Entertainment, Media & Arts
             [
                 'category' => 'Entertainment, Media & Arts',
+                'business_category' => 'service',
                 'icon' => '🎭',
                 'types' => [
                     ['name' => 'Music Production / Record Label', 'description' => 'Music production and recording'],
                     ['name' => 'Film / Video Production', 'description' => 'Film and video content creation'],
                     ['name' => 'Event Promotion & Management', 'description' => 'Event promotion and management'],
-                    ['name' => 'Performing Arts / Theatre', 'description' => 'Theatre and performing arts'],
-                    ['name' => 'Gaming & eSports', 'description' => 'Gaming and esports business'],
+                    ['name' => 'Performing Arts / Theatre', 'description' => 'Theatre and performing arts', 'business_category' => 'hybrid'],
+                    ['name' => 'Gaming & eSports', 'description' => 'Gaming and esports business', 'business_category' => 'hybrid'],
                     ['name' => 'Content Creation / Influencer', 'description' => 'Digital content creation'],
                     ['name' => 'Media / Broadcasting', 'description' => 'TV, radio and podcast broadcasting'],
                     ['name' => 'Advertising / PR Agency', 'description' => 'Advertising and public relations'],
@@ -172,15 +181,16 @@ class BusinessTypeSeeder extends Seeder
             // 🧾 Personal & Miscellaneous Services
             [
                 'category' => 'Personal & Miscellaneous Services',
+                'business_category' => 'service',
                 'icon' => '🧾',
                 'types' => [
                     ['name' => 'Laundry & Cleaning Services', 'description' => 'Laundry and cleaning services'],
-                    ['name' => 'Beauty Salon / Barbershop', 'description' => 'Hair and beauty services'],
-                    ['name' => 'Tailoring & Fashion Design', 'description' => 'Tailoring and fashion design'],
-                    ['name' => 'Home Maintenance / Repair', 'description' => 'Home repair and maintenance'],
+                    ['name' => 'Beauty Salon / Barbershop', 'description' => 'Hair and beauty services', 'business_category' => 'hybrid'],
+                    ['name' => 'Tailoring & Fashion Design', 'description' => 'Tailoring and fashion design', 'business_category' => 'hybrid'],
+                    ['name' => 'Home Maintenance / Repair', 'description' => 'Home repair and maintenance', 'business_category' => 'hybrid'],
                     ['name' => 'Security Services', 'description' => 'Security and guard services'],
-                    ['name' => 'Printing & Stationery', 'description' => 'Printing and stationery supplies'],
-                    ['name' => 'Rental Services', 'description' => 'Equipment, halls and item rentals'],
+                    ['name' => 'Printing & Stationery', 'description' => 'Printing and stationery supplies', 'business_category' => 'hybrid'],
+                    ['name' => 'Rental Services', 'description' => 'Equipment, halls and item rentals', 'business_category' => 'hybrid'],
                     ['name' => 'Pet Care & Grooming', 'description' => 'Pet care and grooming services'],
                     ['name' => 'Funeral Services', 'description' => 'Funeral and burial services'],
                 ]
@@ -189,6 +199,7 @@ class BusinessTypeSeeder extends Seeder
             // ⚙️ Other / Mixed Business
             [
                 'category' => 'Other / Mixed Business',
+                'business_category' => 'hybrid',
                 'icon' => '⚙️',
                 'types' => [
                     ['name' => 'Mixed or Multi-sector Business', 'description' => 'Business spanning multiple sectors'],
@@ -203,15 +214,18 @@ class BusinessTypeSeeder extends Seeder
         $sortOrder = 1;
         foreach ($businessTypes as $categoryData) {
             foreach ($categoryData['types'] as $type) {
-                BusinessType::create([
-                    'name' => $type['name'],
-                    'slug' => Str::slug($type['name']),
-                    'category' => $categoryData['category'],
-                    'icon' => $categoryData['icon'],
-                    'description' => $type['description'],
-                    'sort_order' => $sortOrder++,
-                    'is_active' => true,
-                ]);
+                BusinessType::updateOrCreate(
+                    ['slug' => Str::slug($type['name'])],
+                    [
+                        'name' => $type['name'],
+                        'category' => $categoryData['category'],
+                        'business_category' => $type['business_category'] ?? $categoryData['business_category'],
+                        'icon' => $categoryData['icon'],
+                        'description' => $type['description'],
+                        'sort_order' => $sortOrder++,
+                        'is_active' => true,
+                    ]
+                );
             }
         }
 

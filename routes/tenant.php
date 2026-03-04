@@ -165,7 +165,7 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/dashboard', [DashboardController::class, 'index'])->name('tenant.dashboard');
 
         // Audit Trail Routes
-        Route::prefix('audit')->name('tenant.audit.')->group(function () {
+        Route::prefix('audit')->name('tenant.audit.')->middleware('module.access:audit')->group(function () {
             Route::get('/', [AuditController::class, 'index'])->name('index');
             Route::get('/{model}/{id}', [AuditController::class, 'show'])->name('show');
             Route::get('/export', [AuditController::class, 'export'])->name('export');
@@ -432,8 +432,39 @@ Route::prefix('ledger-accounts')->name('ledger-accounts.')->group(function () {
             Route::get('/cash-flow', [ReportsController::class, 'cashFlow'])->name('cash-flow');
         });
 
+        // Projects Module
+        Route::prefix('projects')->name('tenant.projects.')->middleware('module.access:projects')->group(function () {
+            Route::get('/', [\App\Http\Controllers\Tenant\Projects\ProjectController::class, 'index'])->name('index');
+            Route::get('/create', [\App\Http\Controllers\Tenant\Projects\ProjectController::class, 'create'])->name('create');
+            Route::post('/', [\App\Http\Controllers\Tenant\Projects\ProjectController::class, 'store'])->name('store');
+            Route::get('/reports', [\App\Http\Controllers\Tenant\Projects\ProjectController::class, 'reports'])->name('reports');
+            Route::get('/{project}', [\App\Http\Controllers\Tenant\Projects\ProjectController::class, 'show'])->name('show');
+            Route::get('/{project}/edit', [\App\Http\Controllers\Tenant\Projects\ProjectController::class, 'edit'])->name('edit');
+            Route::put('/{project}', [\App\Http\Controllers\Tenant\Projects\ProjectController::class, 'update'])->name('update');
+            Route::delete('/{project}', [\App\Http\Controllers\Tenant\Projects\ProjectController::class, 'destroy'])->name('destroy');
+
+            // Tasks (AJAX)
+            Route::post('/{project}/tasks', [\App\Http\Controllers\Tenant\Projects\ProjectController::class, 'storeTask'])->name('tasks.store');
+            Route::put('/{project}/tasks/{task}', [\App\Http\Controllers\Tenant\Projects\ProjectController::class, 'updateTask'])->name('tasks.update');
+            Route::delete('/{project}/tasks/{task}', [\App\Http\Controllers\Tenant\Projects\ProjectController::class, 'destroyTask'])->name('tasks.destroy');
+
+            // Milestones (AJAX)
+            Route::post('/{project}/milestones', [\App\Http\Controllers\Tenant\Projects\ProjectController::class, 'storeMilestone'])->name('milestones.store');
+            Route::put('/{project}/milestones/{milestone}', [\App\Http\Controllers\Tenant\Projects\ProjectController::class, 'updateMilestone'])->name('milestones.update');
+            Route::delete('/{project}/milestones/{milestone}', [\App\Http\Controllers\Tenant\Projects\ProjectController::class, 'destroyMilestone'])->name('milestones.destroy');
+
+            // Notes (AJAX)
+            Route::post('/{project}/notes', [\App\Http\Controllers\Tenant\Projects\ProjectController::class, 'storeNote'])->name('notes.store');
+            Route::delete('/{project}/notes/{note}', [\App\Http\Controllers\Tenant\Projects\ProjectController::class, 'destroyNote'])->name('notes.destroy');
+
+            // Attachments
+            Route::post('/{project}/attachments', [\App\Http\Controllers\Tenant\Projects\ProjectController::class, 'storeAttachment'])->name('attachments.store');
+            Route::delete('/{project}/attachments/{attachment}', [\App\Http\Controllers\Tenant\Projects\ProjectController::class, 'destroyAttachment'])->name('attachments.destroy');
+            Route::get('/{project}/attachments/{attachment}/download', [\App\Http\Controllers\Tenant\Projects\ProjectController::class, 'downloadAttachment'])->name('attachments.download');
+        });
+
         // Inventory Management
-        Route::prefix('inventory')->name('tenant.inventory.')->group(function () {
+        Route::prefix('inventory')->name('tenant.inventory.')->middleware('module.access:inventory')->group(function () {
             // Products
             Route::get('products/{product}/stock-movements', [ProductController::class, 'stockMovements'])->name('products.stock-movements');
             Route::get('products/export/template', [ProductController::class, 'downloadTemplate'])->name('products.export.template');
@@ -526,7 +557,7 @@ Route::prefix('ledger-accounts')->name('ledger-accounts.')->group(function () {
         });
 
         // E-commerce Store Management
-        Route::prefix('ecommerce')->name('tenant.ecommerce.')->group(function () {
+        Route::prefix('ecommerce')->name('tenant.ecommerce.')->middleware('module.access:ecommerce')->group(function () {
             // Store Settings
             Route::get('/settings', [\App\Http\Controllers\Tenant\Ecommerce\EcommerceSettingsController::class, 'index'])->name('settings.index');
             Route::put('/settings', [\App\Http\Controllers\Tenant\Ecommerce\EcommerceSettingsController::class, 'update'])->name('settings.update');
@@ -570,7 +601,7 @@ Route::prefix('ledger-accounts')->name('ledger-accounts.')->group(function () {
         });
 
         // CRM - Customer & Vendor Management
-        Route::prefix('crm')->name('tenant.crm.')->group(function () {
+        Route::prefix('crm')->name('tenant.crm.')->middleware('module.access:crm')->group(function () {
             // Customer Activities
             Route::get('activities', [\App\Http\Controllers\Tenant\CustomerActivityController::class, 'index'])->name('activities.index');
             Route::get('activities/create', [\App\Http\Controllers\Tenant\CustomerActivityController::class, 'create'])->name('activities.create');
@@ -614,7 +645,7 @@ Route::prefix('ledger-accounts')->name('ledger-accounts.')->group(function () {
         });
 
         // Procurement - Purchase Orders (LPO)
-        Route::prefix('procurement')->name('tenant.procurement.')->group(function () {
+        Route::prefix('procurement')->name('tenant.procurement.')->middleware('module.access:procurement')->group(function () {
             Route::prefix('purchase-orders')->name('purchase-orders.')->group(function () {
                 Route::get('/', [\App\Http\Controllers\Tenant\Procurement\PurchaseOrderController::class, 'index'])->name('index');
                 Route::get('/create', [\App\Http\Controllers\Tenant\Procurement\PurchaseOrderController::class, 'create'])->name('create');
@@ -628,7 +659,7 @@ Route::prefix('ledger-accounts')->name('ledger-accounts.')->group(function () {
         });
 
         // Banking - Bank Account Management
-        Route::prefix('banking')->name('tenant.banking.')->group(function () {
+        Route::prefix('banking')->name('tenant.banking.')->middleware('module.access:banking')->group(function () {
             // Bank Accounts
             Route::get('banks/{bank}/statement', [\App\Http\Controllers\Tenant\Banking\BankController::class, 'statement'])->name('banks.statement');
             Route::get('banks/{bank}/statement/print', [\App\Http\Controllers\Tenant\Banking\BankController::class, 'statementPrint'])->name('banks.statement.print');
@@ -648,7 +679,7 @@ Route::prefix('ledger-accounts')->name('ledger-accounts.')->group(function () {
         });
 
         // POS - Point of Sale System
-        Route::prefix('pos')->name('tenant.pos.')->group(function () {
+        Route::prefix('pos')->name('tenant.pos.')->middleware('module.access:pos')->group(function () {
             Route::get('/', [PosController::class, 'index'])->name('index');
             Route::post('/', [PosController::class, 'store'])->name('store');
 
@@ -686,7 +717,7 @@ Route::prefix('ledger-accounts')->name('ledger-accounts.')->group(function () {
         });
 
         // Payroll Management Routes
-        Route::prefix('payroll')->name('tenant.payroll.')->group(function () {
+        Route::prefix('payroll')->name('tenant.payroll.')->middleware('module.access:payroll')->group(function () {
             Route::get('/', [PayrollController::class, 'index'])->name('index');
 
             // Employees route (accessible directly)
@@ -1062,7 +1093,7 @@ Route::prefix('ledger-accounts')->name('ledger-accounts.')->group(function () {
         });
 
         // Statutory & Tax Management Module
-        Route::prefix('statutory')->name('tenant.statutory.')->group(function () {
+        Route::prefix('statutory')->name('tenant.statutory.')->middleware('module.access:statutory')->group(function () {
             Route::get('/', [\App\Http\Controllers\Tenant\StatutoryController::class, 'index'])->name('index');
 
             // VAT Management
@@ -1132,6 +1163,10 @@ Route::prefix('ledger-accounts')->name('ledger-accounts.')->group(function () {
             Route::put('/company/logo', [\App\Http\Controllers\Tenant\CompanySettingsController::class, 'updateLogo'])->name('company.update-logo');
             Route::delete('/company/logo', [\App\Http\Controllers\Tenant\CompanySettingsController::class, 'removeLogo'])->name('company.remove-logo');
             Route::put('/company/preferences', [\App\Http\Controllers\Tenant\CompanySettingsController::class, 'updatePreferences'])->name('company.update-preferences');
+
+            // Module Management (Owner Only)
+            Route::put('/company/modules', [\App\Http\Controllers\Tenant\CompanySettingsController::class, 'updateModules'])->name('company.update-modules');
+            Route::post('/company/modules/reset', [\App\Http\Controllers\Tenant\CompanySettingsController::class, 'resetModules'])->name('company.reset-modules');
 
             // Financial Settings
             Route::get('/financial', [SettingsController::class, 'financial'])->name('financial');

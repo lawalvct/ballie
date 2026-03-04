@@ -26,6 +26,7 @@ use Database\Seeders\DefaultPfasSeeder;
 use Database\Seeders\PermissionsSeeder;
 use App\Models\Tenant\Role;
 use App\Models\Tenant\Permission;
+use App\Services\ModuleRegistry;
 
 class OnboardingController extends Controller
 {
@@ -279,10 +280,15 @@ class OnboardingController extends Controller
                 'tenant_id' => $tenant->id
             ]);
 
-            $this->retryOperation(function() use ($tenant) {
+            // Determine which accounts to seed:
+            // - If user completed the accounts onboarding step, seed only their selection
+            // - If quick start / legacy path, seed all accounts (allowedCodes = null)
+            $selectedCodes = $tenant->settings['selected_account_codes'] ?? null;
+
+            $this->retryOperation(function() use ($tenant, $selectedCodes) {
                 // Extend timeout specifically for ledger accounts
                 set_time_limit(180); // Additional 3 minutes just for ledger accounts
-                DefaultLedgerAccountsSeeder::seedForTenant($tenant->id);
+                DefaultLedgerAccountsSeeder::seedForTenant($tenant->id, $selectedCodes ?: null);
             }, "Ledger accounts seeding for tenant: {$tenant->id}", 5); // 5 attempts for ledger accounts
 
             // Verify ledger accounts were seeded
@@ -574,13 +580,35 @@ class OnboardingController extends Controller
             return redirect()->route('tenant.dashboard', ['tenant' => $tenant->slug]);
         }
 
-        $validSteps = ['company', 'preferences', 'complete'];
+        $validSteps = ['company', 'preferences', 'accounts', 'complete'];
 
         if (!in_array($step, $validSteps)) {
             return redirect()->route('tenant.onboarding.index', ['tenant' => $tenant->slug]);
         }
 
-        return view("tenant.onboarding.steps.{$step}", compact('tenant'));
+        $data = compact('tenant');
+
+        // Pass module data for preferences step
+        if ($step === 'preferences') {
+            $data['allModules'] = ModuleRegistry::getAllModulesWithMeta($tenant);
+            $data['businessCategory'] = $tenant->getBusinessCategory();
+        }
+
+        // Pass account catalog data for accounts step
+        if ($step === 'accounts') {
+            $data['accountCatalog'] = \App\Services\LedgerAccountCatalog::getForCategory(
+                $tenant->getBusinessCategory()
+            );
+            $data['defaultSelection'] = \App\Services\LedgerAccountCatalog::getDefaultSelection(
+                $tenant->getBusinessCategory()
+            );
+            $data['coreAccounts'] = \App\Services\LedgerAccountCatalog::getCoreAccounts(
+                $tenant->getBusinessCategory()
+            );
+            $data['businessCategory'] = $tenant->getBusinessCategory();
+        }
+
+        return view("tenant.onboarding.steps.{$step}", $data);
     }
 
     public function saveStep(Request $request, Tenant $tenant, $step)
@@ -590,6 +618,8 @@ class OnboardingController extends Controller
                 return $this->saveCompanyStep($request, $tenant);
             case 'preferences':
                 return $this->savePreferencesStep($request, $tenant);
+            case 'accounts':
+                return $this->saveAccountsStep($request, $tenant);
             default:
                 return redirect()->route('tenant.onboarding.index', ['tenant' => $tenant->slug]);
         }
@@ -672,9 +702,11 @@ class OnboardingController extends Controller
             'enable_withholding_tax' => 'nullable|boolean',
             'features' => 'nullable|array',
             'features.*' => 'string|in:inventory,invoicing,customers,payroll,pos,reports',
+            'enabled_modules' => 'nullable|array',
+            'enabled_modules.*' => 'string',
         ]);
 
-        $data = $request->all();
+        $data = $request->except(['enabled_modules']);
         $data['enable_withholding_tax'] = $request->boolean('enable_withholding_tax');
         $data['features'] = $request->input('features', []);
 
@@ -690,6 +722,18 @@ class OnboardingController extends Controller
             // Update settings field safely (single field update)
             $this->refreshDatabaseConnection();
             $this->safeModelUpdate($tenant, ['settings' => $settings]);
+
+            // Save module selections if provided
+            if ($request->has('enabled_modules')) {
+                $selectedModules = $request->input('enabled_modules', []);
+                // Ensure core modules are always included
+                $enabledModules = array_values(array_unique(array_merge(
+                    ModuleRegistry::CORE_MODULES,
+                    $selectedModules
+                )));
+                $this->refreshDatabaseConnection();
+                $this->safeModelUpdate($tenant, ['enabled_modules' => $enabledModules]);
+            }
 
             // Update progress separately
             $this->refreshDatabaseConnection();
@@ -713,8 +757,56 @@ class OnboardingController extends Controller
 
         return redirect()->route('tenant.onboarding.step', [
             'tenant' => $tenant->slug,
-            'step' => 'complete'
+            'step' => 'accounts'
         ])->with('success', 'Preferences saved successfully!');
+    }
+
+    private function saveAccountsStep(Request $request, Tenant $tenant)
+    {
+        $request->validate([
+            'selected_accounts' => 'required|array|min:1',
+            'selected_accounts.*' => 'string|max:50',
+        ]);
+
+        $category = $tenant->getBusinessCategory();
+        $selectedCodes = $request->input('selected_accounts', []);
+
+        // Validate and ensure core accounts are always included
+        $validatedCodes = \App\Services\LedgerAccountCatalog::validateSelection($category, $selectedCodes);
+
+        // Store selected accounts in tenant settings for use during seeding
+        $settings = $tenant->settings ?? [];
+        $settings['selected_account_codes'] = $validatedCodes;
+
+        $progress = $tenant->onboarding_progress ?? [];
+        $progress['accounts'] = true;
+
+        try {
+            $this->refreshDatabaseConnection();
+            $this->safeModelUpdate($tenant, ['settings' => $settings]);
+
+            $this->refreshDatabaseConnection();
+            $this->safeModelUpdate($tenant, ['onboarding_progress' => $progress]);
+
+            Log::info("Accounts step completed successfully", [
+                'tenant_id' => $tenant->id,
+                'selected_count' => count($validatedCodes),
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error("Accounts step failed", [
+                'tenant_id' => $tenant->id,
+                'error' => $e->getMessage()
+            ]);
+
+            return redirect()->back()
+                ->with('error', 'There was an error saving your account selections. Please try again.');
+        }
+
+        return redirect()->route('tenant.onboarding.step', [
+            'tenant' => $tenant->slug,
+            'step' => 'complete'
+        ])->with('success', 'Chart of accounts configured successfully!');
     }
 
     public function saveTeamStep(Request $request, Tenant $tenant)
@@ -895,7 +987,7 @@ class OnboardingController extends Controller
 
                 if ($ownerRole) {
                     auth()->user()->roles()->syncWithoutDetaching([$ownerRole->id]);
-                    
+
                     Log::info("Owner role assigned to user", [
                         'tenant_id' => $tenant->id,
                         'user_id' => auth()->id(),
@@ -910,6 +1002,7 @@ class OnboardingController extends Controller
                 'onboarding_progress' => [
                     'company' => true,
                     'preferences' => true,
+                    'accounts' => true,
                     'team' => true,
                     'complete' => true
                 ]

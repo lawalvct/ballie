@@ -253,7 +253,8 @@ class InvoiceController extends Controller
             'narration' => 'nullable|string',
             'customer_id' => 'required|exists:ledger_accounts,id',
             'inventory_items' => 'required|array|min:1',
-            'inventory_items.*.product_id' => 'required|exists:products,id',
+            'inventory_items.*.item_type' => 'nullable|in:product,service',
+            'inventory_items.*.product_id' => 'required_if:inventory_items.*.item_type,product|nullable|exists:products,id',
             'inventory_items.*.quantity' => 'required|numeric|min:0.01',
             'inventory_items.*.rate' => 'required|numeric|min:0',
             'inventory_items.*.purchase_rate' => 'nullable|numeric|min:0',
@@ -306,31 +307,50 @@ class InvoiceController extends Controller
             ]);
 
             foreach ($request->inventory_items as $index => $item) {
+                $itemType = $item['item_type'] ?? 'product';
+
                 Log::info("Processing Item {$index}", [
-                    'product_id' => $item['product_id'],
+                    'item_type' => $itemType,
+                    'product_id' => $item['product_id'] ?? null,
                     'quantity' => $item['quantity'],
                     'rate' => $item['rate']
-                ]);
-
-                $product = Product::findOrFail($item['product_id']);
-                Log::info("Product Retrieved", [
-                    'product_id' => $product->id,
-                    'product_name' => $product->name,
-                    'current_stock' => $product->stock_quantity
                 ]);
 
                 $amount = $item['quantity'] * $item['rate'];
                 $totalAmount += $amount;
 
-                $inventoryItems[] = [
-                    'product_id' => $product->id,
-                    'product_name' => $product->name,
-                    'description' => $item['description'] ?? $product->name,
-                    'quantity' => $item['quantity'],
-                    'rate' => $item['rate'],
-                    'amount' => $amount,
-                    'purchase_rate' => $item['purchase_rate'] ?? $product->purchase_rate,
-                ];
+                if ($itemType === 'service') {
+                    // Service item — no product lookup, no stock, no COGS
+                    $inventoryItems[] = [
+                        'item_type' => 'service',
+                        'product_id' => null,
+                        'product_name' => $item['description'] ?? 'Service',
+                        'description' => $item['description'] ?? 'Service',
+                        'quantity' => $item['quantity'],
+                        'rate' => $item['rate'],
+                        'amount' => $amount,
+                        'purchase_rate' => 0,
+                    ];
+                } else {
+                    // Product item — standard product lookup
+                    $product = Product::findOrFail($item['product_id']);
+                    Log::info("Product Retrieved", [
+                        'product_id' => $product->id,
+                        'product_name' => $product->name,
+                        'current_stock' => $product->stock_quantity
+                    ]);
+
+                    $inventoryItems[] = [
+                        'item_type' => 'product',
+                        'product_id' => $product->id,
+                        'product_name' => $product->name,
+                        'description' => $item['description'] ?? $product->name,
+                        'quantity' => $item['quantity'],
+                        'rate' => $item['rate'],
+                        'amount' => $amount,
+                        'purchase_rate' => $item['purchase_rate'] ?? $product->purchase_rate,
+                    ];
+                }
 
                 Log::info("Item Processed", [
                     'amount' => $amount,
@@ -508,12 +528,14 @@ class InvoiceController extends Controller
 
           foreach ($inventoryItems as $item) {
     Log::info('Creating Voucher Item', [
+        'item_type' => $item['item_type'] ?? 'product',
         'product_id' => $item['product_id'],
         'quantity' => $item['quantity'],
         'amount' => $item['amount']
     ]);
 
     $voucher->items()->create([
+        'item_type' => $item['item_type'] ?? 'product',
         'product_id' => $item['product_id'],
         'product_name' => $item['product_name'],
         'description' => $item['description'],
@@ -823,7 +845,8 @@ class InvoiceController extends Controller
             'narration' => 'nullable|string',
             'customer_id' => 'required|exists:ledger_accounts,id',
             'inventory_items' => 'required|array|min:1',
-            'inventory_items.*.product_id' => 'required|exists:products,id',
+            'inventory_items.*.item_type' => 'nullable|in:product,service',
+            'inventory_items.*.product_id' => 'required_if:inventory_items.*.item_type,product|nullable|exists:products,id',
             'inventory_items.*.quantity' => 'required|numeric|min:0.01',
             'inventory_items.*.rate' => 'required|numeric|min:0',
             'inventory_items.*.purchase_rate' => 'nullable|numeric|min:0',
@@ -860,23 +883,42 @@ class InvoiceController extends Controller
             $inventoryItems = [];
 
             foreach ($request->inventory_items as $index => $item) {
-                $product = Product::findOrFail($item['product_id']);
+                $itemType = $item['item_type'] ?? 'product';
                 $amount = $item['quantity'] * $item['rate'];
                 $totalAmount += $amount;
 
-                $inventoryItems[] = [
-                    'product_id' => $product->id,
-                    'product_name' => $product->name,
-                    'description' => $item['description'] ?? $product->name,
-                    'quantity' => $item['quantity'],
-                    'rate' => $item['rate'],
-                    'purchase_rate' => $item['purchase_rate'] ?? 0,
-                    'amount' => $amount,
-                    'discount' => 0,
-                    'tax' => 0,
-                    'is_tax_inclusive' => false,
-                    'total' => $amount,
-                ];
+                if ($itemType === 'service') {
+                    $inventoryItems[] = [
+                        'item_type' => 'service',
+                        'product_id' => null,
+                        'product_name' => $item['description'] ?? 'Service',
+                        'description' => $item['description'] ?? 'Service',
+                        'quantity' => $item['quantity'],
+                        'rate' => $item['rate'],
+                        'purchase_rate' => 0,
+                        'amount' => $amount,
+                        'discount' => 0,
+                        'tax' => 0,
+                        'is_tax_inclusive' => false,
+                        'total' => $amount,
+                    ];
+                } else {
+                    $product = Product::findOrFail($item['product_id']);
+                    $inventoryItems[] = [
+                        'item_type' => 'product',
+                        'product_id' => $product->id,
+                        'product_name' => $product->name,
+                        'description' => $item['description'] ?? $product->name,
+                        'quantity' => $item['quantity'],
+                        'rate' => $item['rate'],
+                        'purchase_rate' => $item['purchase_rate'] ?? 0,
+                        'amount' => $amount,
+                        'discount' => 0,
+                        'tax' => 0,
+                        'is_tax_inclusive' => false,
+                        'total' => $amount,
+                    ];
+                }
             }
 
             // Process additional ledger accounts
@@ -928,6 +970,7 @@ class InvoiceController extends Controller
 
             foreach ($inventoryItems as $item) {
                 $invoice->items()->create([
+                    'item_type' => $item['item_type'] ?? 'product',
                     'product_id' => $item['product_id'],
                     'product_name' => $item['product_name'],
                     'description' => $item['description'],
@@ -1316,6 +1359,51 @@ class InvoiceController extends Controller
     $groupedItems = [];
 
     foreach ($inventoryItems as $item) {
+        $itemType = $item['item_type'] ?? 'product';
+
+        if ($itemType === 'service') {
+            // Service items use a default "Service Revenue" or "Sales Revenue" account
+            $accountId = null;
+            if ($isSales) {
+                $serviceAccount = LedgerAccount::where('tenant_id', $tenant->id)
+                    ->where(function ($q) {
+                        $q->where('name', 'Service Revenue')
+                          ->orWhere('name', 'Sales Revenue');
+                    })
+                    ->first();
+                $accountId = $serviceAccount ? $serviceAccount->id : null;
+            } elseif ($isPurchase) {
+                // Service purchases go to an expense account
+                $serviceAccount = LedgerAccount::where('tenant_id', $tenant->id)
+                    ->where(function ($q) {
+                        $q->where('name', 'Service Expenses')
+                          ->orWhere('name', 'Operating Expenses');
+                    })
+                    ->first();
+                $accountId = $serviceAccount ? $serviceAccount->id : null;
+            }
+
+            // Fallback to Sales Revenue / general account
+            if (!$accountId) {
+                $fallbackAccount = LedgerAccount::where('tenant_id', $tenant->id)
+                    ->where('name', 'Sales Revenue')
+                    ->first();
+                if ($fallbackAccount) {
+                    $accountId = $fallbackAccount->id;
+                }
+            }
+
+            if ($accountId) {
+                if (!isset($groupedItems[$accountId])) {
+                    $groupedItems[$accountId] = 0;
+                }
+                $groupedItems[$accountId] += $item['amount'];
+            }
+
+            continue;
+        }
+
+        // Product items — look up the product's specific accounts
         $product = Product::find($item['product_id']);
 
         if (!$product) {
@@ -1408,9 +1496,13 @@ class InvoiceController extends Controller
             ->first();
 
         if ($cogsAccount && $inventoryAccount) {
-            // Calculate total cost from inventory items
+            // Calculate total cost from inventory items (ONLY product items, skip service items)
             $totalCost = 0;
             foreach ($inventoryItems as $item) {
+                // Skip service items — they have no COGS
+                if (($item['item_type'] ?? 'product') === 'service') {
+                    continue;
+                }
                 $purchaseRate = $item['purchase_rate'] ?? 0;
                 if ($purchaseRate > 0) {
                     $totalCost += $purchaseRate * $item['quantity'];
@@ -1635,6 +1727,11 @@ class InvoiceController extends Controller
         }
 
         foreach ($inventoryItems as $item) {
+            // Skip service items — no stock to track
+            if (($item['item_type'] ?? 'product') === 'service' || empty($item['product_id'])) {
+                continue;
+            }
+
             $product = Product::find($item['product_id']);
             if ($product && $product->maintain_stock) {
                 // Determine movement type based on operation

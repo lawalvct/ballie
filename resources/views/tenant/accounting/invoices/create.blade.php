@@ -1831,6 +1831,7 @@ window.invoiceItems = function() {
     return {
         items: [
             {
+                item_type: '{{ $tenant->getBusinessCategory() === "service" ? "service" : "product" }}',
                 product_id: '',
                 product_name: '',
                 description: '',
@@ -1878,7 +1879,7 @@ window.invoiceItems = function() {
 
         get hasStockWarnings() {
             return this.items.some(item => {
-                return parseFloat(item.quantity) > parseFloat(item.current_stock) && !this.isPurchaseInvoice();
+                return item.item_type === 'product' && parseFloat(item.quantity) > parseFloat(item.current_stock) && !this.isPurchaseInvoice();
             });
         },
 
@@ -1896,8 +1897,10 @@ window.invoiceItems = function() {
             });
         },
 
-        addItem() {
+        addItem(type) {
+            const itemType = type || '{{ $tenant->getBusinessCategory() === "service" ? "service" : "product" }}';
             this.items.push({
+                item_type: itemType,
                 product_id: '',
                 product_name: '',
                 description: '',
