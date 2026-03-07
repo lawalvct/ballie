@@ -2,7 +2,7 @@
 
 @section('title')@term('sales_invoices') - {{ $tenant->name }}@endsection
 @section('page-title')@term('sales_invoices')@endsection
-@section('page-description', '    Manage your invoices and track revenue')
+@section('page-description', 'Manage your ' . strtolower($term->label('sales_invoices')) . ' and track ' . strtolower($term->label('revenue')))
 
 @section('content')
 <div class="space-y-6">
@@ -15,7 +15,7 @@
                 <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
                 </svg>
-                 Sales Invoice
+                 @term('sales_invoice')
             </a>
 
                       <a href="{{ route('tenant.accounting.invoices.create', ['tenant' => $tenant->slug]) }}?type=pur"
@@ -23,7 +23,7 @@
                 <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
                 </svg>
-                 Purchase Invoice
+                 @term('purchase_invoice')
             </a>
 
             <a href="{{ route('tenant.accounting.invoices.index', ['tenant' => $tenant->slug]) }}"
@@ -31,7 +31,7 @@
                 <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
                 </svg>
-                View Invoices
+                View @term('sales_invoices')
             </a>
 
             <a href="{{ route('tenant.accounting.vouchers.index', ['tenant' => $tenant->slug]) }}"
@@ -64,7 +64,7 @@
                                name="search"
                                id="search"
                                value="{{ request('search') }}"
-                               placeholder="Invoice number, customer name, reference..."
+                               placeholder="{{ $term->label('sales_invoice') }} number, {{ strtolower($term->label('customer')) }} name, reference..."
                                class="block w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-primary-500 focus:border-primary-500 text-sm">
                     </div>
 
@@ -74,8 +74,8 @@
                         <select name="type"
                                 id="type"
                                 class="block w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-primary-500 focus:border-primary-500 text-sm">
-                            <option value="sales" {{ (request('type', 'sales') === 'sales') ? 'selected' : '' }}>Sales</option>
-                            <option value="purchase" {{ request('type') === 'purchase' ? 'selected' : '' }}>Purchase</option>
+                            <option value="sales" {{ (request('type', 'sales') === 'sales') ? 'selected' : '' }}>@term('sales')</option>
+                            <option value="purchase" {{ request('type') === 'purchase' ? 'selected' : '' }}>@term('purchase')</option>
                         </select>
                     </div>
 
@@ -184,7 +184,7 @@
                     </div>
                 </div>
                 <div class="ml-4">
-                    <p class="text-sm font-medium text-gray-500">Total Invoices</p>
+                    <p class="text-sm font-medium text-gray-500">Total @term('sales_invoices')</p>
                     <p class="text-2xl font-semibold text-gray-900">{{ $invoices->total() }}</p>
                 </div>
             </div>
@@ -242,7 +242,7 @@
     <!-- Invoices Table -->
     <div class="bg-white shadow-sm rounded-lg border border-gray-200">
         <div class="px-6 py-4 border-b border-gray-200">
-            <h3 class="text-lg font-medium text-gray-900">Invoices</h3>
+            <h3 class="text-lg font-medium text-gray-900">@term('sales_invoices')</h3>
         </div>
 
         @if($invoices->count() > 0)
@@ -251,13 +251,13 @@
                     <thead class="bg-gray-50">
                         <tr>
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                Invoice #
+                                @term('sales_invoice') #
                             </th>
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                 Date
                             </th>
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                Customer
+                                @term('customer')
                             </th>
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                 Reference
@@ -319,7 +319,7 @@
                                         <!-- View -->
                                         <a href="{{ route('tenant.accounting.invoices.show', ['tenant' => $tenant->slug, 'invoice' => $invoice->id]) }}"
                                            class="text-blue-600 hover:text-blue-900 p-1 rounded hover:bg-blue-50"
-                                           title="View Invoice">
+                                           title="View @term('sales_invoice')">
                                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
@@ -330,7 +330,7 @@
                                         @if($invoice->status === 'draft')
                                             <a href="{{ route('tenant.accounting.invoices.edit', ['tenant' => $tenant->slug, 'invoice' => $invoice->id]) }}"
                                                class="text-indigo-600 hover:text-indigo-900 p-1 rounded hover:bg-indigo-50"
-                                               title="Edit Invoice">
+                                               title="Edit @term('sales_invoice')">
                                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
                                                 </svg>
@@ -341,7 +341,7 @@
                                         <a href="{{ route('tenant.accounting.invoices.print', ['tenant' => $tenant->slug, 'invoice' => $invoice->id]) }}"
                                            target="_blank"
                                            class="text-gray-600 hover:text-gray-900 p-1 rounded hover:bg-gray-50"
-                                           title="Print Invoice">
+                                           title="Print @term('sales_invoice')">
                                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/>
                                             </svg>
@@ -381,12 +381,12 @@
                                                         <form method="POST" action="{{ route('tenant.accounting.invoices.post', ['tenant' => $tenant->slug, 'invoice' => $invoice->id]) }}" class="block">
                                                             @csrf
                                                             <button type="submit"
-                                                                    onclick="return confirm('Are you sure you want to post this invoice?')"
+                                                                    onclick="return confirm('Are you sure you want to post this {{ strtolower($term->label('sales_invoice')) }}?')"
                                                                     class="w-full text-left px-4 py-2 text-sm text-green-700 hover:bg-green-50 flex items-center">
                                                                 <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                                                                 </svg>
-                                                                Post Invoice
+                                                                Post @term('sales_invoice')
                                                             </button>
                                                         </form>
 
@@ -395,12 +395,12 @@
                                                             @csrf
                                                             @method('DELETE')
                                                             <button type="submit"
-                                                                    onclick="return confirm('Are you sure you want to delete this invoice?')"
+                                                                    onclick="return confirm('Are you sure you want to delete this {{ strtolower($term->label('sales_invoice')) }}?')"
                                                                     class="w-full text-left px-4 py-2 text-sm text-red-700 hover:bg-red-50 flex items-center">
                                                                 <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
                                                                 </svg>
-                                                                Delete Invoice
+                                                                Delete @term('sales_invoice')
                                                             </button>
                                                         </form>
                                                     @elseif($invoice->status === 'posted')
@@ -408,12 +408,12 @@
                                                         <form method="POST" action="{{ route('tenant.accounting.invoices.unpost', ['tenant' => $tenant->slug, 'invoice' => $invoice->id]) }}" class="block">
                                                             @csrf
                                                             <button type="submit"
-                                                                    onclick="return confirm('Are you sure you want to unpost this invoice?')"
+                                                                    onclick="return confirm('Are you sure you want to unpost this {{ strtolower($term->label('sales_invoice')) }}?')"
                                                                     class="w-full text-left px-4 py-2 text-sm text-yellow-700 hover:bg-yellow-50 flex items-center">
                                                                 <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v3m0 0v3m0-3h3m-3 0H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                                                                 </svg>
-                                                                Unpost Invoice
+                                                                Unpost @term('sales_invoice')
                                                             </button>
                                                         </form>
                                                     @endif
@@ -448,12 +448,12 @@
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
                     </svg>
                 </div>
-                <h3 class="text-lg font-medium text-gray-900 mb-2">No invoices found</h3>
+                <h3 class="text-lg font-medium text-gray-900 mb-2">No @term('sales_invoices') found</h3>
                 <p class="text-gray-500 mb-6">
                     @if(request()->hasAny(['search', 'status', 'date_from', 'date_to']))
-                        No invoices match your current filters. Try adjusting your search criteria.
+                        No {{ strtolower($term->label('sales_invoices')) }} match your current filters. Try adjusting your search criteria.
                     @else
-                        You haven't created any sales invoices yet. Create your first invoice to get started.
+                        You haven't created any {{ strtolower($term->label('sales_invoices')) }} yet. Create your first {{ strtolower($term->label('sales_invoice')) }} to get started.
                     @endif
                 </p>
                 <a href="{{ route('tenant.accounting.invoices.create', ['tenant' => $tenant->slug]) }}"
@@ -461,7 +461,7 @@
                     <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
                     </svg>
-                    Create Your First Invoice
+                    Create Your First @term('sales_invoice')
                 </a>
             </div>
         @endif

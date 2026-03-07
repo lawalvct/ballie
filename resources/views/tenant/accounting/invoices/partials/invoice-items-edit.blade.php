@@ -2,7 +2,7 @@
 
     <div class="px-6 py-4 border-b border-gray-200">
         <div class="flex items-center justify-between">
-            <h3 class="text-lg font-medium text-gray-900">📦 Invoice Items</h3>
+            <h3 class="text-lg font-medium text-gray-900">📦 @term('sales_invoice') Items</h3>
             <div class="flex items-center gap-2">
                 <button type="button"
                         @click="addItem('service')"
@@ -10,7 +10,7 @@
                     <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
                     </svg>
-                    Add Service
+                    Add @term('line_item')
                 </button>
                 <button type="button"
                         @click="addItem('product')"
@@ -18,7 +18,7 @@
                     <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
                     </svg>
-                    Add Product
+                    Add @term('product')
                 </button>
             </div>
         </div>
@@ -35,7 +35,7 @@
                                 Type
                             </th>
                             <th class="text-left py-2 md:py-3 px-2 text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">
-                                Product / Service <span class="text-red-500">*</span>
+                                @term('product') / @term('line_item') <span class="text-red-500">*</span>
                             </th>
                             <th class="text-left py-2 md:py-3 px-2 text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap hidden md:table-cell">
                                 Description
@@ -64,11 +64,11 @@
                                            x-model="item.item_type">
                                     <span x-show="item.item_type === 'product'"
                                           class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800">
-                                        Product
+                                        @term('product')
                                     </span>
                                     <span x-show="item.item_type === 'service'"
                                           class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800">
-                                        Service
+                                        @term('line_item')
                                     </span>
                                 </td>
                                 <td class="py-2 md:py-3 px-2 min-w-[180px] md:min-w-[200px]">
@@ -79,7 +79,7 @@
                                                 @change="onProductChange(index)"
                                                 :required="item.item_type === 'product'"
                                                 class="block w-full px-2 py-1.5 text-xs md:text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-primary-500 focus:border-primary-500">
-                                            <option value="">Select Product</option>
+                                            <option value="">Select @term('product')</option>
                                             @foreach($products as $product)
                                                 <option value="{{ $product->id }}"
                                                         data-name="{{ $product->name }}"
@@ -269,7 +269,7 @@
                                    value="items_only"
                                    x-model="vatAppliesTo"
                                    class="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300">
-                            <span class="ml-2 text-sm text-gray-700">Products Only</span>
+                            <span class="ml-2 text-sm text-gray-700">@term('products') Only</span>
                         </label>
                         <label class="inline-flex items-center ml-6">
                             <input type="radio"
@@ -277,7 +277,7 @@
                                    value="items_and_charges"
                                    x-model="vatAppliesTo"
                                    class="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300">
-                            <span class="ml-2 text-sm text-gray-700">Products + Additional Charges</span>
+                            <span class="ml-2 text-sm text-gray-700">@term('products') + Additional Charges</span>
                         </label>
                     </div>
                 </div>

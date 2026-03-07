@@ -2,7 +2,7 @@
 <html>
 <head>
     <meta charset="utf-8">
-    <title>Invoices Export</title>
+    <title>{{ $term->label('sales_invoices') }} Export</title>
     <style>
         body { font-family: Arial, sans-serif; font-size: 11px; color: #111827; }
         h1 { text-align: center; font-size: 18px; margin: 0 0 4px; }
@@ -15,7 +15,7 @@
     </style>
 </head>
 <body>
-    <h1>Invoices</h1>
+    <h1>{{ $term->label('sales_invoices') }}</h1>
     <div class="meta">
         {{ $tenant->name }} &nbsp;|&nbsp; Exported {{ now()->format('M d, Y') }}
     </div>
@@ -23,10 +23,10 @@
     <table>
         <thead>
             <tr>
-                <th>Invoice #</th>
+                <th>{{ $term->label('sales_invoice') }} #</th>
                 <th>Type</th>
                 <th>Date</th>
-                <th>Customer/Vendor</th>
+                <th>{{ $term->label('customer') }}/Vendor</th>
                 <th>Reference</th>
                 <th>Description</th>
                 <th class="right">Amount</th>
@@ -37,7 +37,7 @@
             @foreach($invoices as $invoice)
                 @php
                     $displayNumber = ($invoice->voucherType?->prefix ?? $invoice->voucherType?->abbreviation ?? '') . $invoice->voucher_number;
-                    $type = ($invoice->voucherType?->inventory_effect ?? '') === 'increase' ? 'Purchase' : 'Sales';
+                    $type = ($invoice->voucherType?->inventory_effect ?? '') === 'increase' ? $term->label('purchase') : $term->label('sales');
                     $partyEntry = $invoice->entries->where('debit_amount', '>', 0)->first();
                     $partyName = $partyEntry?->ledgerAccount?->name ?? 'Cash Sale';
                 @endphp

@@ -1,14 +1,14 @@
 @extends('layouts.tenant')
 
-@section('title', 'Create Quotation - ' . $tenant->name)
+@section('title', 'Create ' . $term->label('quotation') . ' - ' . $tenant->name)
 
 @section('content')
 <div class="space-y-6">
     <!-- Header -->
     <div class="flex items-center justify-between">
         <div>
-            <h1 class="text-3xl font-bold text-gray-900">Create Quotation</h1>
-            <p class="mt-2 text-gray-600">Create a new quotation for your customer</p>
+            <h1 class="text-3xl font-bold text-gray-900">Create @term('quotation')</h1>
+            <p class="mt-2 text-gray-600">Create a new {{ strtolower($term->label('quotation')) }} for your {{ strtolower($term->label('customer')) }}</p>
         </div>
         <a href="{{ route('tenant.accounting.quotations.index', $tenant->slug) }}"
            class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-lg shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50">
@@ -21,15 +21,15 @@
 
     <form action="{{ route('tenant.accounting.quotations.store', $tenant->slug) }}" method="POST" id="quotationForm">
         @csrf
-        
+
         <div class="space-y-6">
                 <!-- Basic Information -->
                 <div class="bg-white shadow-sm rounded-lg border border-gray-200 p-6">
                     <h3 class="text-lg font-semibold text-gray-900 mb-4">Basic Information</h3>
-                    
+
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
-                            <label for="quotation_date" class="block text-sm font-medium text-gray-700 mb-2">Quotation Date *</label>
+                            <label for="quotation_date" class="block text-sm font-medium text-gray-700 mb-2">@term('quotation') Date *</label>
                             <input type="date" name="quotation_date" id="quotation_date" value="{{ old('quotation_date', now()->format('Y-m-d')) }}" required
                                    class="block w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-emerald-500 focus:border-emerald-500">
                             @error('quotation_date')
@@ -47,10 +47,10 @@
                         </div>
 
                         <div class="md:col-span-2">
-                            <label for="customer_ledger_id" class="block text-sm font-medium text-gray-700 mb-2">Customer *</label>
+                            <label for="customer_ledger_id" class="block text-sm font-medium text-gray-700 mb-2">@term('customer') *</label>
                             <select name="customer_ledger_id" id="customer_ledger_id" required
                                     class="block w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-emerald-500 focus:border-emerald-500">
-                                <option value="">Select Customer</option>
+                                <option value="">Select @term('customer')</option>
                                 @foreach($customers as $customer)
                                     <option value="{{ $customer->ledgerAccount->id ?? '' }}" {{ old('customer_ledger_id') == ($customer->ledgerAccount->id ?? '') ? 'selected' : '' }}>
                                         {{ $customer->company_name ?: trim($customer->first_name . ' ' . $customer->last_name) }}
@@ -88,7 +88,7 @@
             <!-- Terms & Notes -->
             <div class="bg-white shadow-sm rounded-lg border border-gray-200 p-6">
                 <h3 class="text-lg font-semibold text-gray-900 mb-4">Additional Information</h3>
-                
+
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                         <label for="terms_and_conditions" class="block text-sm font-medium text-gray-700 mb-2">Terms & Conditions</label>

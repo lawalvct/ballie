@@ -2,7 +2,7 @@
 <html>
 <head>
     <meta charset="utf-8">
-    <title>Quotation {{ $quotation->getQuotationNumber() }}</title>
+    <title>{{ $term->label('quotation') }} {{ $quotation->getQuotationNumber() }}</title>
     <style>
         body {
             font-family: 'Helvetica Neue', 'Helvetica', Helvetica, Arial, sans-serif;
@@ -132,7 +132,7 @@
                         <p>{{ $tenant->phone ?? '' }}</p>
                     </td>
                     <td class="quotation-details">
-                        <h2>QUOTATION</h2>
+                        <h2>{{ strtoupper($term->label('quotation')) }}</h2>
                         <p><strong>#{{ $quotation->getQuotationNumber() }}</strong></p>
                     </td>
                 </tr>
@@ -158,7 +158,7 @@
                         @endif
                     </td>
                     <td class="quotation-info">
-                        <p><strong>Quotation Date:</strong> {{ $quotation->quotation_date->format('M d, Y') }}</p>
+                        <p><strong>{{ $term->label('quotation') }} Date:</strong> {{ $quotation->quotation_date->format('M d, Y') }}</p>
                         <p><strong>Expiry Date:</strong> {{ $quotation->expiry_date ? $quotation->expiry_date->format('M d, Y') : 'N/A' }}</p>
                         @if($quotation->reference_number)
                             <p><strong>Reference #:</strong> {{ $quotation->reference_number }}</p>

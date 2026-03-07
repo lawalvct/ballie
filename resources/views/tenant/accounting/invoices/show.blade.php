@@ -1,13 +1,13 @@
 @extends('layouts.tenant')
 
-@section('title', 'Invoice ' . ($invoice->voucherType->prefix ?? '') . $invoice->voucher_number)
+@section('title', $term->label('sales_invoice') . ' ' . ($invoice->voucherType->prefix ?? '') . $invoice->voucher_number)
 
 @php
-    $partyType = ($invoice->voucherType->inventory_effect === 'increase') ? 'Vendor' : 'Customer';
+    $partyType = ($invoice->voucherType->inventory_effect === 'increase') ? 'Vendor' : $term->label('customer');
 @endphp
 
 @section('page-title')
-    Invoice {{ $invoice->voucherType->prefix ?? '' }}{{ $invoice->voucher_number }}
+    @term('sales_invoice') {{ $invoice->voucherType->prefix ?? '' }}{{ $invoice->voucher_number }}
 @endsection
 
 @section('page-description')
@@ -59,14 +59,14 @@
         @if($invoice->items && $invoice->items->count() > 0)
         <div class="bg-white rounded-lg shadow-sm border border-gray-200">
             <div class="px-6 py-4 border-b border-gray-200">
-                <h3 class="text-lg font-medium text-gray-900">Invoice Items</h3>
+                <h3 class="text-lg font-medium text-gray-900">@term('sales_invoice') Items</h3>
             </div>
             <div class="overflow-x-auto">
                 <table class="min-w-full">
                     <thead class="bg-gray-50">
                         <tr>
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">#</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Product</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">@term('product')</th>
                             <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Qty</th>
                             <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Rate</th>
                             <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Amount</th>
@@ -263,7 +263,7 @@
 
                 <button @click="openEmailModal()" class="w-full inline-flex items-center justify-center px-4 py-2 bg-blue-600 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
                     <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
-                    Email Invoice
+                    Email @term('sales_invoice')
                 </button>
 
                 @php
@@ -310,7 +310,7 @@
                                 </div>
                             @endif
                         </div>
-                        <p class="text-xs text-gray-500 mt-2 italic">Share these links with your customer for easy payment</p>
+                        <p class="text-xs text-gray-500 mt-2 italic">Share these links with your {{ strtolower($term->label('customer')) }} for easy payment</p>
                     </div>
                 @endif
 
@@ -329,13 +329,13 @@
                     @if ($invoice->status === 'draft')
                         <form action="{{ route('tenant.accounting.invoices.post', ['tenant' => $tenant->slug, 'invoice' => $invoice->id]) }}" method="POST" class="w-full">
                             @csrf
-                            <button type="submit" class="w-full inline-flex items-center justify-center px-4 py-2 bg-green-500 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white hover:bg-green-600">Post Invoice</button>
+                            <button type="submit" class="w-full inline-flex items-center justify-center px-4 py-2 bg-green-500 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white hover:bg-green-600">Post @term('sales_invoice')</button>
                         </form>
-                        <a href="{{ route('tenant.accounting.invoices.edit', ['tenant' => $tenant->slug, 'invoice' => $invoice->id]) }}" class="mt-2 w-full text-center inline-block text-sm text-gray-600 hover:text-gray-900">Edit Invoice</a>
+                        <a href="{{ route('tenant.accounting.invoices.edit', ['tenant' => $tenant->slug, 'invoice' => $invoice->id]) }}" class="mt-2 w-full text-center inline-block text-sm text-gray-600 hover:text-gray-900">Edit @term('sales_invoice')</a>
                     @elseif ($invoice->status === 'posted')
                         <form action="{{ route('tenant.accounting.invoices.unpost', ['tenant' => $tenant->slug, 'invoice' => $invoice->id]) }}" method="POST" class="w-full">
                             @csrf
-                            <button type="submit" class="w-full inline-flex items-center justify-center px-4 py-2 bg-yellow-500 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white hover:bg-yellow-600">Unpost Invoice</button>
+                            <button type="submit" class="w-full inline-flex items-center justify-center px-4 py-2 bg-yellow-500 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white hover:bg-yellow-600">Unpost @term('sales_invoice')</button>
                         </form>
                     @endif
                 </div>
@@ -350,7 +350,7 @@
             </div>
             <div class="p-6 space-y-4">
                 <div class="flex justify-between">
-                    <dt class="text-sm font-medium text-gray-500">Invoice Date</dt>
+                    <dt class="text-sm font-medium text-gray-500">@term('sales_invoice') Date</dt>
                     <dd class="text-sm text-gray-900">{{ $invoice->voucher_date->format('M d, Y') }}</dd>
                 </div>
                 @if($invoice->reference_number)
@@ -408,10 +408,10 @@ function invoiceShow() {
 
         emailForm: {
             to: '{{ $customer->email ?? "" }}',
-            subject: 'Invoice {{ ($invoice->voucherType->prefix ?? '') . $invoice->voucher_number }} from {{ $tenant->name }}',
-            message: `Dear {{ $customer->display_name ?? 'Customer' }},
+            subject: '@term('sales_invoice') {{ ($invoice->voucherType->prefix ?? '') . $invoice->voucher_number }} from {{ $tenant->name }}',
+            message: `Dear {{ $customer->display_name ?? '@term('customer')' }},
 
-Please find attached your invoice ({{ ($invoice->voucherType->prefix ?? '') . $invoice->voucher_number }}) for the amount of ₦{{ number_format($invoice->total_amount, 2) }}.
+Please find attached your @term('sales_invoice').toLowerCase() ({{ ($invoice->voucherType->prefix ?? '') . $invoice->voucher_number }}) for the amount of ₦{{ number_format($invoice->total_amount, 2) }}.
 
 Thank you for your business!
 
@@ -423,7 +423,7 @@ Best regards,
             amount: '{{ $balanceDue > 0 ? $balanceDue : "" }}',
             bank_account_id: '',
             reference: '',
-            notes: 'Payment for invoice {{ ($invoice->voucherType->prefix ?? '') . $invoice->voucher_number }}'
+            notes: 'Payment for @term('sales_invoice').toLowerCase() {{ ($invoice->voucherType->prefix ?? '') . $invoice->voucher_number }}'
         },
 
         openEmailModal() { this.showEmailModal = true; },
@@ -444,7 +444,7 @@ Best regards,
 
                 if (response.ok) {
                     this.closeEmailModal();
-                    alert('Invoice sent successfully!');
+                    alert('@term('sales_invoice') sent successfully!');
                 } else {
                     const error = await response.json();
                     alert('Error sending email: ' + (error.message || 'Unknown error'));

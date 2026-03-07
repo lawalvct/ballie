@@ -1,7 +1,7 @@
 <div class="bg-white shadow-sm rounded-lg border border-gray-200 mt-6" x-data="inventoryEntries()" x-show="showInventorySection">
     <div class="px-6 py-4 border-b border-gray-200">
         <div class="flex items-center justify-between">
-            <h3 class="text-lg font-medium text-gray-900">📦 Inventory/Product Items</h3>
+            <h3 class="text-lg font-medium text-gray-900">📦 Inventory/@term('product') Items</h3>
             <button type="button"
                     @click="addInventoryItem()"
                     class="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-primary-700 bg-primary-100 hover:bg-primary-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500">
@@ -20,7 +20,7 @@
                 <thead>
                     <tr class="border-b border-gray-200">
                         <th class="text-left py-3 px-2 text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            Product <span class="text-red-500">*</span>
+                            @term('product') <span class="text-red-500">*</span>
                         </th>
                         <th class="text-left py-3 px-2 text-xs font-medium text-gray-500 uppercase tracking-wider">
                             Description
@@ -49,7 +49,7 @@
                                         x-model="search"
                                         @focus="showDropdown = true"
                                         @click.away="showDropdown = false"
-                                        placeholder="Search product..."
+                                        placeholder="Search {{ strtolower($term->label('product')) }}..."
                                         class="block w-full pl-3 pr-10 py-2 text-sm border border-gray-300 focus:outline-none focus:ring-primary-500 focus:border-primary-500 rounded-md"
                                     >
                                     <input type="hidden" :name="`inventory_items[${index}][product_id]`" x-model="item.product_id" required>

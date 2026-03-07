@@ -1,10 +1,10 @@
 @extends('layouts.tenant')
 
-@section('title', 'Edit Invoice - ' . $tenant->name)
-@section('page-title', "Edit Invoice #{$invoice->voucher_number}")
+@section('title', 'Edit ' . $term->label('sales_invoice') . ' - ' . $tenant->name)
+@section('page-title', 'Edit ' . $term->label('sales_invoice') . ' #' . $invoice->voucher_number)
 @section('page-description')
   <span class="hidden md:inline">
-  Modify an existing invoice
+  Modify an existing {{ strtolower($term->label('sales_invoice')) }}
   </span>
 @endsection
 
@@ -19,7 +19,7 @@
                 <svg class="w-3 h-3 md:w-4 md:h-4 md:mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
                 </svg>
-               <span class="ml-1 md:ml-0">Sales</span>
+               <span class="ml-1 md:ml-0">@term('sales')</span>
             </a>
 
             <a href="{{ route('tenant.accounting.invoices.create', ['tenant' => $tenant->slug, 'type' => 'pur']) }}"
@@ -27,7 +27,7 @@
                 <svg class="w-3 h-3 md:w-4 md:h-4 md:mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"></path>
                 </svg>
-                <span class="ml-1 md:ml-0">Purchase</span>
+                <span class="ml-1 md:ml-0">@term('purchase')</span>
             </a>
 
             <a href="{{ route('tenant.accounting.invoices.create', ['tenant' => $tenant->slug, 'type' => 'sr']) }}"
@@ -65,14 +65,14 @@
         <!-- Invoice Header -->
         <div class="bg-white shadow-sm rounded-lg border border-gray-200">
             <div class="px-6 py-4 border-b border-gray-200">
-                <h3 class="text-lg font-medium text-gray-900">Invoice Information</h3>
+                <h3 class="text-lg font-medium text-gray-900">@term('sales_invoice') Information</h3>
             </div>
             <div class="p-6">
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                     <!-- Voucher Type -->
                     <div>
                         <label for="voucher_type_id" class="block text-sm font-medium text-gray-700 mb-2">
-                            Invoice Type <span class="text-red-500">*</span>
+                            @term('sales_invoice') Type <span class="text-red-500">*</span>
                         </label>
                         <select name="voucher_type_id"
                                 id="voucher_type_id"
@@ -80,7 +80,7 @@
                                 @change="updateVoucherType()"
                                 class="block w-full pl-3 pr-10 py-2 text-base border border-gray-300 focus:outline-none focus:ring-primary-500 focus:border-primary-500 rounded-lg @error('voucher_type_id') border-red-300 @enderror"
                                 required>
-                            <option value="">Select Invoice Type</option>
+                            <option value="">Select @term('sales_invoice') Type</option>
                                 @php
                                     $defaultVoucherTypeId = old('voucher_type_id', $invoice->voucher_type_id);
 
@@ -120,7 +120,7 @@
                     <!-- Invoice Date -->
                     <div>
                         <label for="voucher_date" class="block text-sm font-medium text-gray-700 mb-2">
-                            Invoice Date <span class="text-red-500">*</span> <span x-text="dayName" class="ml-2 text-sm text-gray-600 w-24"></span>
+                            @term('sales_invoice') Date <span class="text-red-500">*</span> <span x-text="dayName" class="ml-2 text-sm text-gray-600 w-24"></span>
                         </label>
                         <div class="flex items-center">
                             <input type="date"
@@ -157,7 +157,7 @@
                     <!-- Invoice Number Preview -->
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-2">
-                            Invoice Number
+                            @term('sales_invoice') Number
                         </label>
                         <div class="block w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-lg text-gray-500">
                             <span x-text="invoiceNumberPreview"></span>
@@ -171,7 +171,7 @@
                     <!-- Customer (for Sales transactions) -->
                     <div id="customerSection">
                         <label for="customer_search" class="block text-sm font-medium text-gray-700 mb-2">
-                            Customer <span class="text-red-500">*</span>
+                            @term('customer') <span class="text-red-500">*</span>
                         </label>
                         <div class="flex gap-2">
                             <div class="relative flex-1" x-data="customerSearch()" x-init="
@@ -186,7 +186,7 @@
                                        x-model="searchTerm"
                                        @input="searchCustomers()"
                                        @focus="showDropdown = true"
-                                       placeholder="Type to search customers..."
+                                       placeholder="Type to search {{ strtolower($term->label('customers')) }}..."
                                        class="w-full pl-3 pr-10 py-2 text-base border border-gray-300 focus:outline-none focus:ring-primary-500 focus:border-primary-500 rounded-lg"
                                        :class="selectedCustomerId ? 'bg-green-50 border-green-300' : ''">
                                 <input type="hidden" name="customer_id" x-model="selectedCustomerId" required>
@@ -232,7 +232,7 @@
                                         <svg class="w-8 h-8 mx-auto mb-2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
                                         </svg>
-                                        No customers found
+                                        No {{ strtolower($term->label('customers')) }} found
                                     </div>
                                 </div>
 
@@ -263,7 +263,7 @@
                             <button type="button"
                                     onclick="openQuickAddModal('customer')"
                                     class="px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors"
-                                    title="Quick Add Customer">
+                                    title="Quick Add {{ $term->label('customer') }}">
                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
                                 </svg>
@@ -317,7 +317,7 @@
                                   id="narration"
                                   rows="1"
                                   class="block w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-primary-500 focus:border-primary-500 @error('narration') border-red-300 @enderror"
-                                  placeholder="Invoice description or notes">{{ old('narration', $invoice->narration) }}</textarea>
+                                  placeholder="{{ $term->label('sales_invoice') }} description or notes">{{ old('narration', $invoice->narration) }}</textarea>
                         @error('narration')
                             <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                         @enderror
@@ -390,7 +390,7 @@
                                 <div class="flex space-x-4">
                                     <label class="flex items-center">
                                         <input type="radio" name="crm_type" value="customer" checked class="mr-2" onchange="updateCrmType()">
-                                        <span class="text-sm">Customer</span>
+                                        <span class="text-sm">@term('customer')</span>
                                     </label>
                                     <label class="flex items-center">
                                         <input type="radio" name="crm_type" value="vendor" class="mr-2" onchange="updateCrmType()">
@@ -515,7 +515,7 @@
 
                 <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
                     <button type="submit" id="submitBtn" class="w-full inline-flex justify-center rounded-lg border border-transparent shadow-sm px-4 py-2 bg-blue-600 text-base font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:ml-3 sm:w-auto sm:text-sm">
-                        Create & Select Customer
+                        Create & Select @term('customer')
                     </button>
                     <button type="button" onclick="closeQuickAddModal()" class="mt-3 w-full inline-flex justify-center rounded-lg border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm">
                         Cancel
@@ -544,13 +544,13 @@
                         </div>
                         <div class="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left w-full">
                             <h3 class="text-lg leading-6 font-medium text-gray-900 mb-4" id="modal-title">
-                                Quick Add Product
+                                Quick Add @term('product')
                             </h3>
 
                             <div class="space-y-4">
                                 <!-- Product Type -->
                                 <div>
-                                    <label class="block text-sm font-medium text-gray-700 mb-2">Product Type</label>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">@term('product') Type</label>
                                     <div class="flex space-x-4">
                                         <label class="flex items-center">
                                             <input type="radio" name="type" value="item" checked class="mr-2" onchange="toggleQuickProductType()">
@@ -566,11 +566,11 @@
                                 <!-- Product Name -->
                                 <div>
                                     <label for="quick_product_name" class="block text-sm font-medium text-gray-700 mb-1">
-                                        Product Name <span class="text-red-500">*</span>
+                                        @term('product') Name <span class="text-red-500">*</span>
                                     </label>
                                     <input type="text" name="name" id="quick_product_name" required
                                            class="block w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-green-500 focus:border-green-500 text-sm"
-                                           placeholder="Enter product name">
+                                           placeholder="Enter {{ strtolower($term->label('product')) }} name">
                                 </div>
 
                                 <!-- SKU -->
@@ -580,7 +580,7 @@
                                     </label>
                                     <input type="text" name="sku" id="quick_product_sku"
                                            class="block w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-green-500 focus:border-green-500 text-sm"
-                                           placeholder="Product code">
+                                           placeholder="{{ $term->label('product') }} code">
                                 </div>
 
                                 <!-- Sales Rate -->
@@ -596,7 +596,7 @@
                                 <!-- Purchase Rate -->
                                 <div>
                                     <label for="quick_purchase_rate" class="block text-sm font-medium text-gray-700 mb-1">
-                                        Purchase Rate <span class="text-red-500">*</span>
+                                        @term('purchase') Rate <span class="text-red-500">*</span>
                                     </label>
                                     <input type="number" name="purchase_rate" id="quick_purchase_rate" required step="0.01" min="0"
                                            class="block w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-green-500 focus:border-green-500 text-sm"
@@ -642,7 +642,7 @@
                 <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse gap-2">
                     <button type="submit"
                             class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-green-600 text-base font-medium text-white hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 sm:ml-3 sm:w-auto sm:text-sm">
-                        <span id="quick-product-submit-text">Create Product</span>
+                        <span id="quick-product-submit-text">Create @term('product')</span>
                         <svg id="quick-product-submit-loading" class="hidden animate-spin ml-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                             <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                             <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
@@ -661,6 +661,15 @@
 
 @push('scripts')
 <script>
+// Dynamic terminology for JS
+const TERMS = {
+    sales_invoice: @json($term->label('sales_invoice')),
+    purchase_invoice: @json($term->label('purchase_invoice')),
+    customer: @json($term->label('customer')),
+    product: @json($term->label('product')),
+    purchase: @json($term->label('purchase')),
+};
+
 let currentModalType = 'customer';
 let currentProductRowIndex = null;
 
@@ -1300,7 +1309,7 @@ function openQuickAddProduct(index) {
 function closeQuickAddProduct() {
     document.getElementById('quickAddProductModal').classList.add('hidden');
     document.getElementById('quickAddProductForm').reset();
-    document.getElementById('quick-product-submit-text').textContent = 'Create Product';
+    document.getElementById('quick-product-submit-text').textContent = 'Create ' + TERMS.product;
     document.getElementById('quick-product-submit-loading').classList.add('hidden');
     toggleQuickProductType();
     currentProductRowIndex = null;
@@ -1336,7 +1345,7 @@ function submitQuickAddProduct() {
     const purchaseRate = document.getElementById('quick_purchase_rate').value;
 
     if (!name) {
-        alert('Please enter product name');
+        alert('Please enter ' + TERMS.product.toLowerCase() + ' name');
         return;
     }
 
@@ -1371,7 +1380,7 @@ function submitQuickAddProduct() {
             closeQuickAddProduct();
 
             // Show success notification
-            showNotification('success', 'Product created successfully!');
+            showNotification('success', TERMS.product + ' created successfully!');
 
             // If we have a row index, auto-select the product
             if (currentProductRowIndex !== null && data.product) {
@@ -1387,16 +1396,16 @@ function submitQuickAddProduct() {
                 }, 300);
             }
         } else {
-            alert(data.message || 'Error creating product. Please try again.');
+            alert(data.message || 'Error creating ' + TERMS.product.toLowerCase() + '. Please try again.');
         }
     })
     .catch(error => {
         console.error('Error:', error);
-        alert('Error creating product. Please try again.');
+        alert('Error creating ' + TERMS.product.toLowerCase() + '. Please try again.');
     })
     .finally(() => {
         submitButton.disabled = false;
-        submitText.textContent = 'Create Product';
+        submitText.textContent = 'Create ' + TERMS.product;
         submitLoading.classList.add('hidden');
     });
 }

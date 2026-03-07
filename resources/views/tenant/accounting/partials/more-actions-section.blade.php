@@ -116,9 +116,9 @@
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
                 </svg>
             </div>
-            Financial Reports
+            Financial Statements
         </h4>
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
             <!-- Profit & Loss Card -->
             <a href="{{ route('tenant.reports.profit-loss', ['tenant' => $tenant->slug]) }}"
                class="action-card bg-gradient-to-br from-orange-600 to-orange-800 hover:from-orange-500 hover:to-orange-700 border border-orange-500 rounded-xl p-4 transition-all duration-300 hover:shadow-lg hover:scale-105 group">
@@ -129,11 +129,11 @@
                         </svg>
                     </div>
                     <div>
-                        <h5 class="font-semibold text-white group-hover:text-orange-200 transition-colors duration-300">Profit & Loss</h5>
-                        <p class="text-xs text-orange-200">Income statement</p>
+                        <h5 class="font-semibold text-white group-hover:text-orange-200 transition-colors duration-300">@term('pnl_title')</h5>
+                        <p class="text-xs text-orange-200">Comprehensive income</p>
                     </div>
                 </div>
-                <p class="text-xs text-orange-200">View comprehensive income statement and profit analysis.</p>
+                <p class="text-xs text-orange-200">View comprehensive income and profitability analysis.</p>
             </a>
 
             <!-- Balance Sheet Card -->
@@ -146,11 +146,11 @@
                         </svg>
                     </div>
                     <div>
-                        <h5 class="font-semibold text-white group-hover:text-teal-200 transition-colors duration-300">Balance Sheet</h5>
+                        <h5 class="font-semibold text-white group-hover:text-teal-200 transition-colors duration-300">@term('balance_sheet')</h5>
                         <p class="text-xs text-teal-200">Financial position</p>
                     </div>
                 </div>
-                <p class="text-xs text-teal-200">View assets, liabilities, and equity statements.</p>
+                <p class="text-xs text-teal-200">View assets, liabilities, and equity position.</p>
             </a>
 
             <!-- Trial Balance Card -->
@@ -163,7 +163,7 @@
                         </svg>
                     </div>
                     <div>
-                        <h5 class="font-semibold text-white group-hover:text-indigo-200 transition-colors duration-300">Trial Balance</h5>
+                        <h5 class="font-semibold text-white group-hover:text-indigo-200 transition-colors duration-300">@term('trial_balance')</h5>
                         <p class="text-xs text-indigo-200">Account balances</p>
                     </div>
                 </div>
@@ -180,11 +180,28 @@
                         </svg>
                     </div>
                     <div>
-                        <h5 class="font-semibold text-white group-hover:text-cyan-200 transition-colors duration-300">Cash Flow</h5>
-                        <p class="text-xs text-cyan-200">Money movement</p>
+                        <h5 class="font-semibold text-white group-hover:text-cyan-200 transition-colors duration-300">@term('cash_flow')</h5>
+                        <p class="text-xs text-cyan-200">Cash movements</p>
                     </div>
                 </div>
                 <p class="text-xs text-cyan-200">Track cash inflows and outflows over time.</p>
+            </a>
+
+            <!-- Equity Report Card -->
+            <a href="#"
+               class="action-card bg-gradient-to-br from-rose-600 to-rose-800 hover:from-rose-500 hover:to-rose-700 border border-rose-500 rounded-xl p-4 transition-all duration-300 hover:shadow-lg hover:scale-105 group">
+                <div class="flex items-center mb-3">
+                    <div class="w-10 h-10 bg-rose-500 bg-opacity-30 rounded-lg flex items-center justify-center mr-3 group-hover:scale-110 transition-transform duration-300">
+                        <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"></path>
+                        </svg>
+                    </div>
+                    <div>
+                        <h5 class="font-semibold text-white group-hover:text-rose-200 transition-colors duration-300">@term('equity_report')</h5>
+                        <p class="text-xs text-rose-200">Equity changes</p>
+                    </div>
+                </div>
+                <p class="text-xs text-rose-200">Track changes in owner's equity over the period.</p>
             </a>
         </div>
     </div>

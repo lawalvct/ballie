@@ -137,10 +137,10 @@
                                 </svg>
                             </div>
                             <div>
-                                <h3 class="text-lg font-bold text-gray-900">Outstanding Invoices</h3>
+                                <h3 class="text-lg font-bold text-gray-900">Outstanding @term('sales_invoices')</h3>
                                 <p class="text-sm text-gray-500">
                                     <span x-text="invoiceCustomerName"></span> &mdash;
-                                    Select invoices to link this payment (optional)
+                                    Select {{ strtolower($term->label('sales_invoices')) }} to link this payment (optional)
                                 </p>
                             </div>
                         </div>
@@ -164,7 +164,7 @@
                             <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                             <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                         </svg>
-                        <span class="text-sm text-gray-500">Loading invoices...</span>
+                        <span class="text-sm text-gray-500">Loading {{ strtolower($term->label('sales_invoices')) }}...</span>
                     </div>
 
                     {{-- Invoice table --}}
@@ -178,7 +178,7 @@
                                                    :checked="selectedInvoices.length === outstandingInvoices.length && outstandingInvoices.length > 0"
                                                    class="rounded border-gray-300 text-amber-600 focus:ring-amber-500">
                                         </th>
-                                        <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Invoice #</th>
+                                        <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">@term('sales_invoice') #</th>
                                         <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Date</th>
                                         <th class="px-4 py-3 text-right text-xs font-semibold text-gray-600 uppercase">Total</th>
                                         <th class="px-4 py-3 text-right text-xs font-semibold text-gray-600 uppercase">Paid</th>
@@ -384,7 +384,7 @@
                     <div class="text-sm font-semibold text-gray-700 mb-3">Transaction Summary</div>
                     <div class="space-y-2">
                         <div class="flex justify-between items-center p-2 bg-red-50 rounded-lg">
-                            <span class="text-sm text-gray-700">Receipt From (Customer/Party)</span>
+                            <span class="text-sm text-gray-700">Receipt From (@term('customer')/Party)</span>
                             <div class="flex items-center">
                                 <span class="px-2 py-1 bg-red-600 text-white text-xs font-bold rounded mr-2">Cr</span>
                                 <span class="font-semibold text-gray-900">₦<span x-text="formatNumber(totalReceiptAmount)"></span></span>

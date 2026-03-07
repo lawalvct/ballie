@@ -4,7 +4,7 @@
 
 @section('page-title', 'Accounting')
 @section('page-description')
-    <span class="hidden md:inline">Manage all your business finances: invoices, vouchers, revenue and expenses in one place.</span>
+    <span class="hidden md:inline">Manage all your business finances: {{ strtolower($term->label('sales_invoices')) }}, vouchers, {{ strtolower($term->label('revenue')) }} and expenses in one place.</span>
 @endsection
 
 
@@ -27,8 +27,8 @@
                 <svg class="w-4 h-4 sm:mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
                 </svg>
-                <span class="hidden sm:inline ml-2">Sales Invoice</span>
-                <span class="sm:hidden">Sales</span>
+                <span class="hidden sm:inline ml-2">{{ $term->label('sales_invoice') }}</span>
+                <span class="sm:hidden">{{ $term->label('sales') }}</span>
             </a>
 
             <a href="{{ route('tenant.accounting.invoices.create', ['tenant' => $tenant->slug]) }}?type=pur"
@@ -36,8 +36,8 @@
                 <svg class="w-4 h-4 sm:mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
                 </svg>
-                <span class="hidden sm:inline ml-2">Purchase Invoice</span>
-                <span class="sm:hidden">Purchase</span>
+                <span class="hidden sm:inline ml-2">{{ $term->label('purchase_invoice') }}</span>
+                <span class="sm:hidden">{{ $term->label('purchase') }}</span>
             </a>
 
             <a href="{{ route('tenant.accounting.invoices.index', ['tenant' => $tenant->slug]) }}"
@@ -45,8 +45,8 @@
                 <svg class="w-4 h-4 sm:mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
                 </svg>
-                <span class="hidden sm:inline ml-2">View Invoices</span>
-                <span class="sm:hidden">Invoices</span>
+                <span class="hidden sm:inline ml-2">View {{ $term->label('sales_invoices') }}</span>
+                <span class="sm:hidden">{{ $term->label('sales_invoices') }}</span>
             </a>
 
             <a href="{{ route('tenant.accounting.vouchers.index', ['tenant' => $tenant->slug]) }}"
@@ -82,7 +82,7 @@
         <div class="bg-white rounded-2xl p-4 sm:p-6 shadow-lg border-l-4 border-blue-500">
             <div class="flex items-center justify-between">
                 <div class="flex-1">
-                    <p class="text-xs font-medium text-gray-600">Total Revenue</p>
+                    <p class="text-xs font-medium text-gray-600">Total {{ $term->label('revenue') }}</p>
                     <p class="text-base sm:text-xl font-bold text-gray-900">₦{{ number_format($totalRevenue ?? 0, 2) }}</p>
                     <p class="text-xs sm:text-sm {{ $revenueChange['direction'] === 'up' ? 'text-green-600' : ($revenueChange['direction'] === 'down' ? 'text-red-600' : 'text-gray-600') }} mt-1">
                         <span class="inline-flex items-center">
@@ -148,7 +148,7 @@
         <div class="bg-white rounded-2xl p-4 sm:p-6 shadow-lg border-l-4 border-purple-500">
             <div class="flex items-center justify-between">
                 <div class="flex-1">
-                    <p class="text-xs font-medium text-gray-600">Outstanding Invoices</p>
+                    <p class="text-xs font-medium text-gray-600">Outstanding {{ $term->label('sales_invoices') }}</p>
                     <p class="text-base sm:text-xl font-bold text-gray-900">₦{{ number_format($outstandingInvoices ?? 0, 2) }}</p>
                     <p class="text-xs sm:text-sm text-orange-600 mt-1">
                         <span class="inline-flex items-center">
@@ -538,7 +538,7 @@ function initializeChart(data) {
             labels: data.labels,
             datasets: [
                 {
-                    label: 'Revenue',
+                    label: '@term('revenue')',
                     data: data.revenue,
                     borderColor: 'rgb(59, 130, 246)',
                     backgroundColor: 'rgba(59, 130, 246, 0.1)',

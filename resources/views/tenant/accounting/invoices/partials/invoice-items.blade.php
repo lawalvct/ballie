@@ -3,7 +3,7 @@
 
     <div class="px-6 py-4 border-b border-gray-200">
         <div class="flex items-center justify-between">
-            <h3 class="text-lg font-medium text-gray-900">📦 Invoice Items</h3>
+            <h3 class="text-lg font-medium text-gray-900">📦 @term('sales_invoice') Items</h3>
             <div class="flex items-center gap-2">
                 <button type="button"
                         @click="addItem('service')"
@@ -11,7 +11,7 @@
                     <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
                     </svg>
-                    Add Service
+                    Add @term('line_item')
                 </button>
                 <button type="button"
                         @click="addItem('product')"
@@ -19,7 +19,7 @@
                     <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
                     </svg>
-                    Add Product
+                    Add @term('product')
                 </button>
             </div>
         </div>
@@ -36,7 +36,7 @@
                                 Type
                             </th>
                             <th class="text-left py-2 md:py-3 px-2 text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">
-                                Product / Service <span class="text-red-500">*</span>
+                                @term('product') / @term('line_item') <span class="text-red-500">*</span>
                             </th>
                             <th class="text-left py-2 md:py-3 px-2 text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap hidden md:table-cell">
                                 Description
@@ -65,11 +65,11 @@
                                            x-model="item.item_type">
                                     <span x-show="item.item_type === 'product'"
                                           class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800">
-                                        Product
+                                        @term('product')
                                     </span>
                                     <span x-show="item.item_type === 'service'"
                                           class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800">
-                                        Service
+                                        @term('line_item')
                                     </span>
                                 </td>
 
@@ -82,12 +82,12 @@
                                                    x-model="searchTerm"
                                                    @input="searchProducts()"
                                                    @focus="searchProducts()"
-                                                   placeholder="Search product..."
+                                                   placeholder="Search {{ strtolower($term->label('product')) }}..."
                                                    class="block w-full pl-2 md:pl-3 pr-2 py-1.5 md:py-2 text-xs md:text-sm border border-gray-300 focus:outline-none focus:ring-primary-500 focus:border-primary-500 rounded-md">
                                             <button type="button"
                                                     @click="openQuickAddProduct(index)"
                                                     class="px-2 py-1.5 bg-green-600 text-white rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 transition-colors flex-shrink-0"
-                                                    title="Quick Add Product">
+                                                    title="Quick Add {{ $term->label('product') }}">
                                                 <svg class="w-3 h-3 md:w-4 md:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
                                                 </svg>

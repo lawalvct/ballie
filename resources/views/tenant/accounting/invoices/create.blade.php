@@ -1,10 +1,10 @@
 @extends('layouts.tenant')
 
-@section('title', 'Create Invoice - ' . $tenant->name)
-@section('page-title', "Create Invoice")
+@section('title', 'Create ' . $term->label('sales_invoice') . ' - ' . $tenant->name)
+@section('page-title', 'Create ' . $term->label('sales_invoice'))
 @section('page-description')
   <span class="hidden md:inline">
-  Create a new invoice with inventory management
+  Create a new {{ strtolower($term->label('sales_invoice')) }} with inventory management
   </span>
 @endsection
 
@@ -140,7 +140,7 @@
                 <svg class="w-3 h-3 md:w-4 md:h-4 md:mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
                 </svg>
-               <span class="ml-1 md:ml-0"> Sales Invoice +</span>
+               <span class="ml-1 md:ml-0"> @term('sales_invoice') +</span>
             </a>
 
             <a href="{{ route('tenant.accounting.invoices.create', ['tenant' => $tenant->slug, 'type' => 'pur']) }}"
@@ -148,7 +148,7 @@
                 <svg class="w-3 h-3 md:w-4 md:h-4 md:mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"></path>
                 </svg>
-                <span class="ml-1 md:ml-0">Purchase Invoice +</span>
+                <span class="ml-1 md:ml-0">@term('purchase_invoice') +</span>
             </a>
 
             <a href="{{ route('tenant.accounting.invoices.create', ['tenant' => $tenant->slug, 'type' => 'sr']) }}"
@@ -156,7 +156,7 @@
                 <svg class="w-3 h-3 md:w-4 md:h-4 md:mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 8h6m-5 0a3 3 0 110 6H9l3 3m-3-6h6m6 1a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                 </svg>
-                <span class="ml-1 md:ml-0">Sales-Return Invoice +</span>
+                <span class="ml-1 md:ml-0">@term('sales_return_invoice') +</span>
             </a>
 
             <a href="{{ route('tenant.accounting.invoices.create', ['tenant' => $tenant->slug, 'type' => 'pr']) }}"
@@ -164,7 +164,7 @@
                 <svg class="w-3 h-3 md:w-4 md:h-4 md:mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"></path>
                 </svg>
-                <span class="ml-1 md:ml-0">Purchase-Return Invoice +</span>
+                <span class="ml-1 md:ml-0">@term('purchase_return_invoice') +</span>
             </a>
         </div>
         <div class="flex items-center space-x-2 md:space-x-3">
@@ -186,14 +186,14 @@
         <!-- Invoice Header -->
         <div class="bg-white shadow-sm rounded-lg border border-gray-200">
             <div class="px-6 py-4 border-b border-gray-200">
-                <h3 class="text-lg font-medium text-gray-900">Invoice Information</h3>
+                <h3 class="text-lg font-medium text-gray-900">@term('sales_invoice') Information</h3>
             </div>
             <div class="p-6">
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                     <!-- Voucher Type -->
                     <div>
                         <label for="voucher_type_id" class="block text-sm font-medium text-gray-700 mb-2">
-                            Invoice Type <span class="text-red-500">*</span>
+                            @term('sales_invoice') Type <span class="text-red-500">*</span>
                         </label>
                         <select name="voucher_type_id"
                                 id="voucher_type_id"
@@ -201,7 +201,7 @@
                                 @change="updateVoucherType()"
                                 class="block w-full pl-3 pr-10 py-2 text-base border border-gray-300 focus:outline-none focus:ring-primary-500 focus:border-primary-500 rounded-lg @error('voucher_type_id') border-red-300 @enderror"
                                 required>
-                            <option value="">Select Invoice Type</option>
+                            <option value="">Select @term('sales_invoice') Type</option>
                                 @php
                                     $defaultVoucherTypeId = old('voucher_type_id', $selectedType?->id ?? null);
 
@@ -250,7 +250,7 @@
                     <!-- Invoice Date -->
                     <div>
                         <label for="voucher_date" class="block text-sm font-medium text-gray-700 mb-2">
-                            Invoice Date <span class="text-red-500">*</span> <span x-text="dayName" class="ml-2 text-sm text-gray-600 w-24"></span>
+                            @term('sales_invoice') Date <span class="text-red-500">*</span> <span x-text="dayName" class="ml-2 text-sm text-gray-600 w-24"></span>
                         </label>
                         <div class="flex items-center">
                             <input type="date"
@@ -287,7 +287,7 @@
                     <!-- Invoice Number Preview -->
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-2">
-                            Invoice Number
+                            @term('sales_invoice') Number
                         </label>
                         <div class="block w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-lg text-gray-500">
                             <span x-text="invoiceNumberPreview"></span>
@@ -301,7 +301,7 @@
                     <!-- Customer (for Sales transactions) -->
                     <div id="customerSection">
                         <label for="customer_search" class="block text-sm font-medium text-gray-700 mb-2">
-                            Customer <span class="text-red-500">*</span>
+                            @term('customer') <span class="text-red-500">*</span>
                         </label>
                         <div class="flex gap-2">
                             <div class="relative flex-1" x-data="customerSearch()">
@@ -309,7 +309,7 @@
                                        x-model="searchTerm"
                                        @input="searchCustomers()"
                                        @focus="searchCustomers()"
-                                       placeholder="Type to search customers..."
+                                       placeholder="Type to search {{ strtolower($term->label('customers')) }}..."
                                        class="w-full pl-3 pr-10 py-2 text-base border border-gray-300 focus:outline-none focus:ring-primary-500 focus:border-primary-500 rounded-lg"
                                        :class="selectedCustomerId ? 'bg-green-50 border-green-300' : ''">
 
@@ -355,7 +355,7 @@
                                         <svg class="w-8 h-8 mx-auto mb-2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
                                         </svg>
-                                        No customers found
+                                        No {{ strtolower($term->label('customers')) }} found
                                     </div>
                                 </div>
 
@@ -386,13 +386,13 @@
 
                                 <!-- Debug: Show current customer_id value -->
                                 <div x-show="selectedCustomerId" class="mt-1 text-xs text-gray-500">
-                                    Customer ID: <span x-text="selectedCustomerId" class="font-mono bg-gray-100 px-1 rounded"></span>
+                                    @term('customer') ID: <span x-text="selectedCustomerId" class="font-mono bg-gray-100 px-1 rounded"></span>
                                 </div>
                             </div>
                             <button type="button"
                                     onclick="openQuickAddModal('customer')"
                                     class="px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors"
-                                    title="Quick Add Customer">
+                                    title="Quick Add @term('customer')">
                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
                                 </svg>
@@ -514,7 +514,7 @@
                                   id="narration"
                                   rows="1"
                                   class="block w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-primary-500 focus:border-primary-500 @error('narration') border-red-300 @enderror"
-                                  placeholder="Invoice description or notes">{{ old('narration') }}</textarea>
+                                  placeholder="{{ $term->label('sales_invoice') }} description or notes">{{ old('narration') }}</textarea>
                         @error('narration')
                             <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                         @enderror
@@ -563,13 +563,13 @@
                         <button type="submit"
                                 name="action"
                                 value="save_and_post_new_sales"
-                                title="Save, post this invoice and open a new Sales invoice"
+                                title="Save, post this {{ strtolower($term->label('sales_invoice')) }} and open a new {{ $term->label('sales') }} {{ strtolower($term->label('sales_invoice')) }}"
                             data-invoice-submit="true"
                                 class="inline-flex items-center justify-center px-3 md:px-4 py-2 bg-green-600 border border-transparent rounded-lg shadow-sm text-xs md:text-sm font-medium text-white hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
                             <svg class="w-3 h-3 md:w-4 md:h-4 md:mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
                             </svg>
-                            <span class="md:ml-0 ml-1">Save, Post & New Sales</span>
+                            <span class="md:ml-0 ml-1">Save, Post & New @term('sales')</span>
                         </button>
                     </div>
                 </div>
@@ -600,7 +600,7 @@
                                 <div class="flex space-x-4">
                                     <label class="flex items-center">
                                         <input type="radio" name="crm_type" value="customer" checked class="mr-2" onchange="updateCrmType()">
-                                        <span class="text-sm">Customer</span>
+                                        <span class="text-sm">@term('customer')</span>
                                     </label>
                                     <label class="flex items-center">
                                         <input type="radio" name="crm_type" value="vendor" class="mr-2" onchange="updateCrmType()">
@@ -725,7 +725,7 @@
 
                 <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
                     <button type="submit" id="submitBtn" class="w-full inline-flex justify-center rounded-lg border border-transparent shadow-sm px-4 py-2 bg-blue-600 text-base font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:ml-3 sm:w-auto sm:text-sm">
-                        Create & Select Customer
+                        Create & Select @term('customer')
                     </button>
                     <button type="button" onclick="closeQuickAddModal()" class="mt-3 w-full inline-flex justify-center rounded-lg border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm">
                         Cancel
@@ -754,13 +754,13 @@
                         </div>
                         <div class="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left w-full">
                             <h3 class="text-lg leading-6 font-medium text-gray-900 mb-4" id="modal-title">
-                                Quick Add Product
+                                Quick Add @term('product')
                             </h3>
 
                             <div class="space-y-4">
                                 <!-- Product Type -->
                                 <div>
-                                    <label class="block text-sm font-medium text-gray-700 mb-2">Product Type</label>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">@term('product') Type</label>
                                     <div class="flex space-x-4">
                                         <label class="flex items-center">
                                             <input type="radio" name="type" value="item" checked class="mr-2" onchange="toggleQuickProductType()">
@@ -776,11 +776,11 @@
                                 <!-- Product Name -->
                                 <div>
                                     <label for="quick_product_name" class="block text-sm font-medium text-gray-700 mb-1">
-                                        Product Name <span class="text-red-500">*</span>
+                                        @term('product') Name <span class="text-red-500">*</span>
                                     </label>
                                     <input type="text" name="name" id="quick_product_name" required
                                            class="block w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-green-500 focus:border-green-500 text-sm"
-                                           placeholder="Enter product name">
+                                           placeholder="Enter {{ strtolower($term->label('product')) }} name">
                                 </div>
 
                                 <!-- SKU -->
@@ -790,7 +790,7 @@
                                     </label>
                                     <input type="text" name="sku" id="quick_product_sku"
                                            class="block w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-green-500 focus:border-green-500 text-sm"
-                                           placeholder="Product code">
+                                           placeholder="{{ $term->label('product') }} code">
                                 </div>
 
                                 <!-- Sales Rate -->
@@ -806,7 +806,7 @@
                                 <!-- Purchase Rate -->
                                 <div>
                                     <label for="quick_purchase_rate" class="block text-sm font-medium text-gray-700 mb-1">
-                                        Purchase Rate <span class="text-red-500">*</span>
+                                        @term('purchase') Rate <span class="text-red-500">*</span>
                                     </label>
                                     <input type="number" name="purchase_rate" id="quick_purchase_rate" required step="0.01" min="0"
                                            class="block w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-green-500 focus:border-green-500 text-sm"
@@ -852,7 +852,7 @@
                 <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse gap-2">
                     <button type="submit"
                             class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-green-600 text-base font-medium text-white hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 sm:ml-3 sm:w-auto sm:text-sm">
-                        <span id="quick-product-submit-text">Create Product</span>
+                        <span id="quick-product-submit-text">Create @term('product')</span>
                         <svg id="quick-product-submit-loading" class="hidden animate-spin ml-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                             <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                             <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
@@ -886,8 +886,8 @@
                             </svg>
                         </div>
                         <div>
-                            <h3 id="ai-modal-title" class="text-lg font-semibold text-white">Create Invoice with AI</h3>
-                            <p class="text-purple-200 text-sm">Describe your invoice in plain English</p>
+                            <h3 id="ai-modal-title" class="text-lg font-semibold text-white">Create @term('sales_invoice') with AI</h3>
+                            <p class="text-purple-200 text-sm">Describe your {{ strtolower($term->label('sales_invoice')) }} in plain English</p>
                         </div>
                     </div>
                     <button type="button" onclick="closeAIInvoiceModal()" class="text-white/80 hover:text-white transition-colors">
@@ -903,12 +903,12 @@
                 <!-- Input Section -->
                 <div id="aiInputSection">
                     <label for="aiInvoiceDescription" class="block text-sm font-medium text-gray-700 mb-2">
-                        Describe your invoice
+                        Describe your {{ strtolower($term->label('sales_invoice')) }}
                     </label>
                     <textarea id="aiInvoiceDescription"
                               rows="4"
                               class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 resize-none"
-                              placeholder="Example: Create a sales invoice for Phocu Limited for 5 bags of rice at ₦50,000 each with VAT"></textarea>
+                              placeholder="Example: Create a {{ strtolower($term->label('sales_invoice')) }} for Phocu Limited for 5 bags of rice at ₦50,000 each with VAT"></textarea>
 
                     <!-- Example Suggestions -->
                     <div class="mt-4">
@@ -958,11 +958,11 @@
                         <!-- Invoice Type & Party -->
                         <div class="grid grid-cols-2 gap-4">
                             <div>
-                                <label class="block text-xs font-medium text-gray-500 uppercase">Invoice Type</label>
+                                <label class="block text-xs font-medium text-gray-500 uppercase">@term('sales_invoice') Type</label>
                                 <p id="previewInvoiceType" class="mt-1 font-medium text-gray-900">-</p>
                             </div>
                             <div>
-                                <label class="block text-xs font-medium text-gray-500 uppercase">Customer/Vendor</label>
+                                <label class="block text-xs font-medium text-gray-500 uppercase">@term('customer')/Vendor</label>
                                 <p id="previewParty" class="mt-1 font-medium text-gray-900">-</p>
                             </div>
                         </div>
@@ -1065,6 +1065,15 @@
 
 @push('scripts')
 <script>
+// Dynamic terminology for JS
+const TERMS = {
+    sales_invoice: @json($term->label('sales_invoice')),
+    purchase_invoice: @json($term->label('purchase_invoice')),
+    customer: @json($term->label('customer')),
+    product: @json($term->label('product')),
+    purchase: @json($term->label('purchase')),
+};
+
 let currentModalType = 'customer';
 let currentProductRowIndex = null;
 let parsedAIInvoice = null; // Store the parsed AI invoice data
@@ -1170,12 +1179,12 @@ function displayAIPreview(invoice) {
     `;
 
     // Set invoice type
-    const invoiceType = invoice.voucher_type_name || (invoice.invoice_type === 'purchase' ? 'Purchase Invoice' : 'Sales Invoice');
+    const invoiceType = invoice.voucher_type_name || (invoice.invoice_type === 'purchase' ? TERMS.purchase_invoice : TERMS.sales_invoice);
     document.getElementById('previewInvoiceType').textContent = invoiceType;
 
     // Set party
     const partyName = invoice.party_name || invoice.party_name_suggested || 'Not specified';
-    const partyType = invoice.party_type === 'vendor' ? 'Vendor' : 'Customer';
+    const partyType = invoice.party_type === 'vendor' ? 'Vendor' : TERMS.customer;
     document.getElementById('previewParty').innerHTML = invoice.party_id
         ? `<span class="text-green-600">✓</span> ${partyName} <span class="text-xs text-gray-500">(${partyType})</span>`
         : `<span class="text-yellow-600">⚠</span> ${partyName} <span class="text-xs text-yellow-600">(not found)</span>`;
@@ -1394,7 +1403,7 @@ function applyAIInvoice() {
 
     // 7. Close modal and show success message
     closeAIInvoiceModal();
-    showNotification('success', 'Invoice details applied! Please review and make any necessary adjustments.');
+    showNotification('success', TERMS.sales_invoice + ' details applied! Please review and make any necessary adjustments.');
 
     // Scroll to top of form
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -1415,7 +1424,7 @@ async function submitAIInvoice() {
     }
 
     if (!invoice.voucher_type_id) {
-        showNotification('error', 'Invoice type not matched. Please use "Apply to Form" and select manually.');
+        showNotification('error', TERMS.sales_invoice + ' type not matched. Please use "Apply to Form" and select manually.');
         return;
     }
 
@@ -2505,9 +2514,8 @@ function openQuickAddProduct(index) {
 function closeQuickAddProduct() {
     document.getElementById('quickAddProductModal').classList.add('hidden');
     document.getElementById('quickAddProductForm').reset();
-    document.getElementById('quick-product-submit-text').textContent = 'Create Product';
+    document.getElementById('quick-product-submit-text').textContent = 'Create ' + TERMS.product;
     document.getElementById('quick-product-submit-loading').classList.add('hidden');
-    toggleQuickProductType();
     currentProductRowIndex = null;
 }
 
@@ -2541,7 +2549,7 @@ function submitQuickAddProduct() {
     const purchaseRate = document.getElementById('quick_purchase_rate').value;
 
     if (!name) {
-        alert('Please enter product name');
+        alert('Please enter ' + TERMS.product.toLowerCase() + ' name');
         return;
     }
 
@@ -2576,7 +2584,7 @@ function submitQuickAddProduct() {
             closeQuickAddProduct();
 
             // Show success notification
-            showNotification('success', 'Product created successfully!');
+            showNotification('success', TERMS.product + ' created successfully!');
 
             // If we have a row index, auto-select the product
             if (currentProductRowIndex !== null && data.product) {
@@ -2592,16 +2600,16 @@ function submitQuickAddProduct() {
                 }, 300);
             }
         } else {
-            alert(data.message || 'Error creating product. Please try again.');
+            alert(data.message || 'Error creating ' + TERMS.product.toLowerCase() + '. Please try again.');
         }
     })
     .catch(error => {
         console.error('Error:', error);
-        alert('Error creating product. Please try again.');
+        alert('Error creating ' + TERMS.product.toLowerCase() + '. Please try again.');
     })
     .finally(() => {
         submitButton.disabled = false;
-        submitText.textContent = 'Create Product';
+        submitText.textContent = 'Create ' + TERMS.product;
         submitLoading.classList.add('hidden');
     });
 }

@@ -2,7 +2,7 @@
 <html>
 <head>
     <meta charset="utf-8">
-    <title>Quotation {{ $quotation->getQuotationNumber() }}</title>
+    <title>{{ $term->label('quotation') }} {{ $quotation->getQuotationNumber() }}</title>
     <style>
         body { font-family: Arial, sans-serif; font-size: 12px; margin: 20px; }
         .header { text-align: center; margin-bottom: 30px; }
@@ -28,14 +28,14 @@
     </div>
 
     <div class="header">
-        <h1>QUOTATION</h1>
+        <h1>{{ strtoupper($term->label('quotation')) }}</h1>
         <p><strong>{{ $quotation->getQuotationNumber() }}</strong></p>
     </div>
 
     <div class="info-section">
         <div class="info-row">
             <div>
-                <div class="info-label">Customer:</div>
+                <div class="info-label">{{ $term->label('customer') }}:</div>
                 <div>{{ $quotation->customer ? ($quotation->customer->company_name ?: trim($quotation->customer->first_name . ' ' . $quotation->customer->last_name)) : 'N/A' }}</div>
             </div>
             <div>

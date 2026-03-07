@@ -32,7 +32,7 @@ if (!function_exists('numberToWords')) {
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Invoice {{ $invoice->voucherType->prefix ?? '' }}{{ $invoice->voucher_number }} - {{ $tenant->name }}</title>
+    <title>{{ $term->label('sales_invoice') }} {{ $invoice->voucherType->prefix ?? '' }}{{ $invoice->voucher_number }} - {{ $tenant->name }}</title>
     <style>
         body {
             font-family: 'DejaVu Sans', Arial, sans-serif;
@@ -404,7 +404,7 @@ if (!function_exists('numberToWords')) {
                 </div>
             </div>
             <div class="header-right">
-                <div class="invoice-title">INVOICE</div>
+                <div class="invoice-title">{{ strtoupper($term->label('sales_invoice')) }}</div>
                 <div class="invoice-number"># {{ $invoice->voucherType->prefix ?? '' }}{{ str_pad($invoice->voucher_number, 4, '0', STR_PAD_LEFT) }}</div>
                 <div class="invoice-date">
                     <strong>Date:</strong> {{ $invoice->voucher_date->format('d M, Y') }}<br>
@@ -460,7 +460,7 @@ if (!function_exists('numberToWords')) {
             </div>
 
             <div class="invoice-info">
-                <div class="section-title">Invoice Details</div>
+                <div class="section-title">{{ $term->label('sales_invoice') }} Details</div>
                 <div class="detail-line"><strong>Payment Terms:</strong> {{ $customer->payment_terms ?? '30 Days' }}</div>
                 <div class="detail-line"><strong>Due Date:</strong> {{ $invoice->voucher_date->addDays(30)->format('d M, Y') }}</div>
                 <div class="detail-line"><strong>Currency:</strong> Nigerian Naira (₦)</div>
@@ -640,7 +640,7 @@ if (!function_exists('numberToWords')) {
         <!-- Signatures -->
         <div class="signatures">
             <div class="signature-box">
-                <div class="signature-line">Customer Signature</div>
+                <div class="signature-line">{{ $term->label('customer') }} Signature</div>
             </div>
             <div class="signature-box">
                 <div class="signature-line">For {{ $tenant->name }}</div>

@@ -89,7 +89,7 @@ if (!function_exists('convertChunkToWords')) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Invoice {{ $invoice->voucherType->abbreviation }}-{{ $invoice->voucher_number }} - {{ $tenant->name }}</title>
+    <title>{{ $term->label('sales_invoice') }} {{ $invoice->voucherType->abbreviation }}-{{ $invoice->voucher_number }} - {{ $tenant->name }}</title>
     <style>
         * {
             margin: 0;
@@ -495,7 +495,7 @@ if (!function_exists('convertChunkToWords')) {
     <!-- Print Buttons -->
     <div class="print-buttons no-print">
         <button onclick="window.print()" class="btn btn-primary">
-            🖨️ Print Invoice
+            🖨️ Print {{ $term->label('sales_invoice') }}
         </button>
         <button onclick="window.close()" class="btn btn-secondary">
             ✕ Close
@@ -530,7 +530,7 @@ if (!function_exists('convertChunkToWords')) {
             </div>
 
             <div class="invoice-meta">
-                <div class="invoice-title">Invoice</div>
+                <div class="invoice-title">{{ $term->label('sales_invoice') }}</div>
                 <div class="invoice-number"># {{ $invoice->voucherType->prefix }}{{ str_pad($invoice->voucher_number, 4, '0', STR_PAD_LEFT) }}</div>
                 <div class="invoice-date">
                     <strong>Date:</strong> {{ $invoice->voucher_date->format('M d, Y') }}<br>
@@ -581,13 +581,13 @@ if (!function_exists('convertChunkToWords')) {
                         @endif
                     </div>
                 @else
-                    <div class="customer-name">Walk-in Customer</div>
-                    <div class="customer-details">Cash Sale / Counter Sale</div>
+                    <div class="customer-name">Walk-in {{ $term->label('customer') }}</div>
+                    <div class="customer-details">Cash {{ $term->label('sales') }} / Counter {{ $term->label('sales') }}</div>
                 @endif
             </div>
 
             <div class="ship-to">
-                <div class="section-title">📦 Invoice Details</div>
+                <div class="section-title">📦 {{ $term->label('sales_invoice') }} Details</div>
                 <div class="customer-details">
                     <strong>Payment Terms:</strong> {{ $customer->payment_terms ?? 'Cash on Delivery' }}<br>
                     <strong>Currency:</strong> {{ $customer->currency ?? 'NGN' }}<br>
@@ -617,7 +617,7 @@ if (!function_exists('convertChunkToWords')) {
                 <thead>
                     <tr>
                         <th style="width: 5%;" class="text-center">S/N</th>
-                        <th style="width: 35%;">Product/Service</th>
+                        <th style="width: 35%;">{{ $term->label('line_item') }}</th>
                         <th style="width: 25%;">Description</th>
                         <th style="width: 8%;" class="text-center">Qty</th>
                         <th style="width: 12%;" class="text-right">Unit Price</th>
@@ -830,7 +830,7 @@ if (!function_exists('convertChunkToWords')) {
         <!-- Signature Section -->
         <div class="signature-section">
             <div class="signature-box">
-                <div class="signature-line">Customer Signature</div>
+                <div class="signature-line">{{ $term->label('customer') }} Signature</div>
             </div>
             <div class="signature-box">
                 <div class="signature-line">Authorized Signature</div>

@@ -1,7 +1,7 @@
 <div class="bg-white shadow-sm rounded-lg border border-gray-200" x-data="quotationItems()">
     <div class="px-6 py-4 border-b border-gray-200">
         <div class="flex items-center justify-between">
-            <h3 class="text-lg font-medium text-gray-900">📦 Quotation Items</h3>
+            <h3 class="text-lg font-medium text-gray-900">📦 @term('quotation') Items</h3>
             <button type="button" @click="addItem()"
                     class="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-primary-700 bg-primary-100 hover:bg-primary-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500">
                 <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -18,7 +18,7 @@
                 <table class="min-w-full">
                     <thead>
                         <tr class="border-b border-gray-200">
-                            <th class="text-left py-2 md:py-3 px-2 text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">Product <span class="text-red-500">*</span></th>
+                            <th class="text-left py-2 md:py-3 px-2 text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">@term('product') <span class="text-red-500">*</span></th>
                             <th class="text-left py-2 md:py-3 px-2 text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap hidden md:table-cell">Description</th>
                             <th class="text-right py-2 md:py-3 px-2 text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">Qty <span class="text-red-500">*</span></th>
                             <th class="text-right py-2 md:py-3 px-2 text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">Rate <span class="text-red-500">*</span></th>
@@ -34,7 +34,7 @@
                                 <td class="py-2 md:py-3 px-2 min-w-[180px] md:min-w-[200px]">
                                     <div x-data="productSearch(index)" class="relative" @click.away="showDropdown = false">
                                         <input type="text" x-model="searchTerm" @input="searchProducts()" @focus="searchProducts()"
-                                               placeholder="Search product..." class="block w-full pl-2 md:pl-3 pr-2 py-1.5 md:py-2 text-xs md:text-sm border border-gray-300 focus:outline-none focus:ring-primary-500 focus:border-primary-500 rounded-md">
+                                               placeholder="Search {{ strtolower($term->label('product')) }}..." class="block w-full pl-2 md:pl-3 pr-2 py-1.5 md:py-2 text-xs md:text-sm border border-gray-300 focus:outline-none focus:ring-primary-500 focus:border-primary-500 rounded-md">
                                         <input type="hidden" :name="`items[${index}][product_id]`" x-model="selectedProductId" required>
 
                                         <div x-show="showDropdown && (products.length > 0 || loading)" x-transition
@@ -49,7 +49,7 @@
                                                     </div>
                                                 </div>
                                             </template>
-                                            <div x-show="!loading && products.length === 0" class="px-3 py-2 text-gray-500 text-xs">No products found</div>
+                                            <div x-show="!loading && products.length === 0" class="px-3 py-2 text-gray-500 text-xs">No {{ strtolower($term->label('products')) }} found</div>
                                         </div>
                                     </div>
                                 </td>
@@ -236,7 +236,7 @@ function productSearch(itemIndex) {
         selectProduct(product) {
             // Find the parent Alpine component
             const quotationComponent = Alpine.$data(document.querySelector('[x-data="quotationItems()"]'));
-            
+
             if (quotationComponent && quotationComponent.items[itemIndex]) {
                 quotationComponent.items[itemIndex].product_id = product.id;
                 quotationComponent.items[itemIndex].product_name = product.name;

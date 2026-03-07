@@ -22,7 +22,7 @@
                             <svg class="h-6 w-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
                         </div>
                         <div class="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left w-full">
-                            <h3 class="text-lg leading-6 font-medium text-gray-900">Send Invoice via Email</h3>
+                            <h3 class="text-lg leading-6 font-medium text-gray-900">Send @term('sales_invoice') via Email</h3>
                             <div class="mt-4 space-y-4">
                                 <div>
                                     <label class="block text-sm font-medium text-gray-700">To Email</label>

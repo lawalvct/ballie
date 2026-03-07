@@ -1,13 +1,13 @@
 @extends('layouts.tenant')
 
-@section('title', 'Edit Quotation ' . $quotation->getQuotationNumber() . ' - ' . $tenant->name)
+@section('title', 'Edit ' . $term->label('quotation') . ' ' . $quotation->getQuotationNumber() . ' - ' . $tenant->name)
 
 @section('content')
 <div class="space-y-6">
     <div class="flex items-center justify-between">
         <div>
-            <h1 class="text-3xl font-bold text-gray-900">Edit Quotation {{ $quotation->getQuotationNumber() }}</h1>
-            <p class="mt-2 text-gray-600">Update quotation details</p>
+            <h1 class="text-3xl font-bold text-gray-900">Edit @term('quotation') {{ $quotation->getQuotationNumber() }}</h1>
+            <p class="mt-2 text-gray-600">Update {{ strtolower($term->label('quotation')) }} details</p>
         </div>
         <a href="{{ route('tenant.accounting.quotations.show', [$tenant->slug, $quotation->id]) }}"
            class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-lg text-sm text-gray-700 bg-white hover:bg-gray-50">
@@ -59,7 +59,7 @@
 
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
-                            <label for="quotation_date" class="block text-sm font-medium text-gray-700 mb-2">Quotation Date *</label>
+                            <label for="quotation_date" class="block text-sm font-medium text-gray-700 mb-2">@term('quotation') Date *</label>
                             <input type="date" name="quotation_date" id="quotation_date" value="{{ old('quotation_date', $quotation->quotation_date->format('Y-m-d')) }}" required
                                    class="block w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-emerald-500 focus:border-emerald-500">
                         </div>
@@ -71,10 +71,10 @@
                         </div>
 
                         <div class="md:col-span-2">
-                            <label for="customer_ledger_id" class="block text-sm font-medium text-gray-700 mb-2">Customer *</label>
+                            <label for="customer_ledger_id" class="block text-sm font-medium text-gray-700 mb-2">@term('customer') *</label>
                             <select name="customer_ledger_id" id="customer_ledger_id" required
                                     class="block w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-emerald-500 focus:border-emerald-500">
-                                <option value="">Select Customer</option>
+                                <option value="">Select @term('customer')</option>
                                 @foreach($customers as $customer)
                                     <option value="{{ $customer->ledgerAccount->id ?? '' }}" {{ old('customer_ledger_id', $quotation->customer_ledger_id) == ($customer->ledgerAccount->id ?? '') ? 'selected' : '' }}>
                                         {{ $customer->company_name ?: trim($customer->first_name . ' ' . $customer->last_name) }}
@@ -129,7 +129,7 @@
                         <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
                         </svg>
-                        Update Quotation
+                        Update @term('quotation')
                     </button>
                 </div>
             </div>

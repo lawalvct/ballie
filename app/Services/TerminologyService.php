@@ -106,6 +106,12 @@ class TerminologyService
             'stock'           => 'Stock',
             'units_sold'      => 'Units Sold',
             'sales_order'     => 'Sales Order',
+            'sales_return_invoice' => 'Sales Return',
+            'purchase_return_invoice' => 'Purchase Return',
+            'balance_sheet'   => 'Statement of Financial Position',
+            'trial_balance'   => 'Trial Balance',
+            'cash_flow'       => 'Statement of Cash Flows',
+            'equity_report'   => 'Statement of Changes in Equity',
         ],
         'manufacturing' => [
             'crm'             => 'Customers',
@@ -135,6 +141,12 @@ class TerminologyService
             'stock'           => 'Raw Materials / Stock',
             'units_sold'      => 'Units Produced & Sold',
             'sales_order'     => 'Sales Order',
+            'sales_return_invoice' => 'Sales Return',
+            'purchase_return_invoice' => 'Purchase Return',
+            'balance_sheet'   => 'Statement of Financial Position',
+            'trial_balance'   => 'Trial Balance',
+            'cash_flow'       => 'Statement of Cash Flows',
+            'equity_report'   => 'Statement of Changes in Equity',
         ],
         'service' => [
             'crm'             => 'Clients',
@@ -164,6 +176,12 @@ class TerminologyService
             'stock'           => null, // hidden for service
             'units_sold'      => 'Hours / Sessions',
             'sales_order'     => 'Engagement / Contract',
+            'sales_return_invoice' => 'Service Return',
+            'purchase_return_invoice' => 'Expense Return',
+            'balance_sheet'   => 'Statement of Financial Position',
+            'trial_balance'   => 'Trial Balance',
+            'cash_flow'       => 'Statement of Cash Flows',
+            'equity_report'   => 'Statement of Changes in Equity',
         ],
         'hybrid' => [
             'crm'             => 'Clients & Customers',
@@ -193,6 +211,12 @@ class TerminologyService
             'stock'           => 'Stock',
             'units_sold'      => 'Units / Hours',
             'sales_order'     => 'Sales Order',
+            'sales_return_invoice' => 'Sales Return',
+            'purchase_return_invoice' => 'Purchase Return',
+            'balance_sheet'   => 'Statement of Financial Position',
+            'trial_balance'   => 'Trial Balance',
+            'cash_flow'       => 'Statement of Cash Flows',
+            'equity_report'   => 'Statement of Changes in Equity',
         ],
     ];
 }

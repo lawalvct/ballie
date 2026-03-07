@@ -5,12 +5,12 @@
             <h3 class="text-lg font-medium text-gray-900">Credit Note Entries</h3>
             <div class="text-sm text-gray-500">
                 <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
-                    Cr. Note (Reduces Customer Balance)
+                    Cr. Note (Reduces @term('customer') Balance)
                 </span>
             </div>
         </div>
         <p class="mt-1 text-sm text-gray-600">
-            Credit notes reduce customer receivables. Used for returns, discounts, or billing corrections.
+            Credit notes reduce {{ strtolower($term->label('customer')) }} receivables. Used for returns, discounts, or billing corrections.
         </p>
     </div>
 
@@ -21,13 +21,13 @@
                 <svg class="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
                     <path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd"/>
                 </svg>
-                Customer Account (Debit - Reduces Receivable)
+                @term('customer') Account (Debit - Reduces Receivable)
             </h4>
 
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                     <label for="cn_customer_account" class="block text-sm font-medium text-gray-700 mb-1">
-                        Customer Account <span class="text-red-500">*</span>
+                        @term('customer') Account <span class="text-red-500">*</span>
                     </label>
                     <select id="cn_customer_account"
                             name="cn_customer_account_id"
@@ -35,7 +35,7 @@
                             @change="updateCustomerAccount()"
                             class="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                             required>
-                        <option value="">Select Customer Account</option>
+                        <option value="">Select @term('customer') Account</option>
                         @foreach($ledgerAccounts->filter(function($account) { return str_contains($account->code, 'CUST-'); }) as $account)
                             <option value="{{ $account->id }}" data-name="{{ $account->name }}" data-balance="{{ $account->closing_balance ?? 0 }}">
                                 {{ $account->name }} ({{ $account->code }})
@@ -83,7 +83,7 @@
                     <svg class="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
                         <path fill-rule="evenodd" d="M4 4a2 2 0 00-2 2v4a2 2 0 002 2V6h10a2 2 0 00-2-2H4zm2 6a2 2 0 012-2h8a2 2 0 012 2v4a2 2 0 01-2 2H8a2 2 0 01-2-2v-4zm6 4a2 2 0 100-4 2 2 0 000 4z" clip-rule="evenodd"/>
                     </svg>
-                    Sales/Revenue Accounts (Credit)
+                    @term('sales')/Revenue Accounts (Credit)
                 </h4>
                 <button type="button"
                         @click="addCreditEntry()"
@@ -178,13 +178,13 @@
                 <div class="bg-blue-100 p-3 rounded-md">
                     <div class="text-sm text-blue-700">Total Debit</div>
                     <div class="text-lg font-semibold text-blue-900" x-text="'₦ ' + formatNumber(customerAmount)"></div>
-                    <div class="text-xs text-blue-600">Customer Account</div>
+                    <div class="text-xs text-blue-600">@term('customer') Account</div>
                 </div>
 
                 <div class="bg-green-100 p-3 rounded-md">
                     <div class="text-sm text-green-700">Total Credit</div>
                     <div class="text-lg font-semibold text-green-900" x-text="'₦ ' + formatNumber(totalCreditAmount)"></div>
-                    <div class="text-xs text-green-600">Sales/Revenue</div>
+                    <div class="text-xs text-green-600">@term('sales')/Revenue</div>
                 </div>
 
                 <div class="p-3 rounded-md" :class="isBalanced ? 'bg-green-100' : 'bg-red-100'">

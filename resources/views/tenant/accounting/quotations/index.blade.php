@@ -15,7 +15,7 @@
                 <svg class="w-3 h-3 md:w-4 md:h-4 md:mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
                 </svg>
-                <span class="ml-1 md:ml-0">New Quotation</span>
+                <span class="ml-1 md:ml-0">New @term('quotation')</span>
             </a>
         </div>
 
@@ -42,7 +42,7 @@
                                name="search"
                                id="search"
                                value="{{ request('search') }}"
-                               placeholder="Quotation number, customer name, subject..."
+                               placeholder="{{ $term->label('quotation') }} number, {{ strtolower($term->label('customer')) }} name, subject..."
                                class="block w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-primary-500 focus:border-primary-500 text-sm">
                     </div>
 
@@ -64,11 +64,11 @@
 
                     <!-- Customer -->
                     <div>
-                        <label for="customer_id" class="block text-sm font-medium text-gray-700 mb-1">Customer</label>
+                        <label for="customer_id" class="block text-sm font-medium text-gray-700 mb-1">@term('customer')</label>
                         <select name="customer_id"
                                 id="customer_id"
                                 class="block w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-primary-500 focus:border-primary-500 text-sm">
-                            <option value="">All Customers</option>
+                            <option value="">All @term('customers')</option>
                             @foreach($customers as $customer)
                                 <option value="{{ $customer->id }}" {{ request('customer_id') == $customer->id ? 'selected' : '' }}>
                                     {{ $customer->company_name ?: ($customer->first_name . ' ' . $customer->last_name) }}
@@ -131,7 +131,7 @@
                     </div>
                 </div>
                 <div class="ml-4">
-                    <p class="text-sm font-medium text-gray-500">Total Quotations</p>
+                    <p class="text-sm font-medium text-gray-500">Total @term('quotations')</p>
                     <p class="text-2xl font-semibold text-gray-900">{{ $quotations->total() }}</p>
                 </div>
             </div>
@@ -189,7 +189,7 @@
     <!-- Quotations Table -->
     <div class="bg-white shadow-sm rounded-lg border border-gray-200">
         <div class="px-6 py-4 border-b border-gray-200">
-            <h3 class="text-lg font-medium text-gray-900">Quotations</h3>
+            <h3 class="text-lg font-medium text-gray-900">@term('quotations')</h3>
         </div>
 
         @if($quotations->count() > 0)
@@ -198,13 +198,13 @@
                     <thead class="bg-gray-50">
                         <tr>
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                Quotation #
+                                @term('quotation') #
                             </th>
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                 Date
                             </th>
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                Customer
+                                @term('customer')
                             </th>
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                 Subject
@@ -243,7 +243,7 @@
                                     @elseif($quotation->vendor)
                                         {{ $quotation->vendor->company_name ?: ($quotation->vendor->first_name . ' ' . $quotation->vendor->last_name) }}
                                     @else
-                                        <span class="text-gray-400">No Customer</span>
+                                        <span class="text-gray-400">No @term('customer')</span>
                                     @endif
                                 </td>
                                 <td class="px-6 py-4 text-sm text-gray-900">
@@ -272,7 +272,7 @@
                                         <!-- View -->
                                         <a href="{{ route('tenant.accounting.quotations.show', ['tenant' => $tenant->slug, 'quotation' => $quotation->id]) }}"
                                            class="text-blue-600 hover:text-blue-900 p-1 rounded hover:bg-blue-50"
-                                           title="View Quotation">
+                                           title="View @term('quotation')">
                                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
@@ -283,7 +283,7 @@
                                         @if($quotation->status === 'draft')
                                             <a href="{{ route('tenant.accounting.quotations.edit', ['tenant' => $tenant->slug, 'quotation' => $quotation->id]) }}"
                                                class="text-indigo-600 hover:text-indigo-900 p-1 rounded hover:bg-indigo-50"
-                                               title="Edit Quotation">
+                                               title="Edit @term('quotation')">
                                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
                                                 </svg>
@@ -294,7 +294,7 @@
                                         <a href="{{ route('tenant.accounting.quotations.print', ['tenant' => $tenant->slug, 'quotation' => $quotation->id]) }}"
                                            target="_blank"
                                            class="text-gray-600 hover:text-gray-900 p-1 rounded hover:bg-gray-50"
-                                           title="Print Quotation">
+                                           title="Print @term('quotation')">
                                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/>
                                             </svg>
@@ -334,12 +334,12 @@
                                                         <form method="POST" action="{{ route('tenant.accounting.quotations.send', ['tenant' => $tenant->slug, 'quotation' => $quotation->id]) }}" class="block">
                                                             @csrf
                                                             <button type="submit"
-                                                                    onclick="return confirm('Are you sure you want to send this quotation?')"
+                                                                    onclick="return confirm('Are you sure you want to send this {{ strtolower($term->label('quotation')) }}?')"
                                                                     class="w-full text-left px-4 py-2 text-sm text-blue-700 hover:bg-blue-50 flex items-center">
                                                                 <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path>
                                                                 </svg>
-                                                                Send Quotation
+                                                                Send @term('quotation')
                                                             </button>
                                                         </form>
 
@@ -348,12 +348,12 @@
                                                             @csrf
                                                             @method('DELETE')
                                                             <button type="submit"
-                                                                    onclick="return confirm('Are you sure you want to delete this quotation?')"
+                                                                    onclick="return confirm('Are you sure you want to delete this {{ strtolower($term->label('quotation')) }}?')"
                                                                     class="w-full text-left px-4 py-2 text-sm text-red-700 hover:bg-red-50 flex items-center">
                                                                 <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
                                                                 </svg>
-                                                                Delete Quotation
+                                                                Delete @term('quotation')
                                                             </button>
                                                         </form>
                                                     @elseif($quotation->status === 'sent')
@@ -361,7 +361,7 @@
                                                         <form method="POST" action="{{ route('tenant.accounting.quotations.accept', ['tenant' => $tenant->slug, 'quotation' => $quotation->id]) }}" class="block">
                                                             @csrf
                                                             <button type="submit"
-                                                                    onclick="return confirm('Mark this quotation as accepted?')"
+                                                                    onclick="return confirm('Mark this {{ strtolower($term->label('quotation')) }} as accepted?')"
                                                                     class="w-full text-left px-4 py-2 text-sm text-green-700 hover:bg-green-50 flex items-center">
                                                                 <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
@@ -374,7 +374,7 @@
                                                         <form method="POST" action="{{ route('tenant.accounting.quotations.reject', ['tenant' => $tenant->slug, 'quotation' => $quotation->id]) }}" class="block">
                                                             @csrf
                                                             <button type="submit"
-                                                                    onclick="return confirm('Mark this quotation as rejected?')"
+                                                                    onclick="return confirm('Mark this {{ strtolower($term->label('quotation')) }} as rejected?')"
                                                                     class="w-full text-left px-4 py-2 text-sm text-red-700 hover:bg-red-50 flex items-center">
                                                                 <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
@@ -387,12 +387,12 @@
                                                         <form method="POST" action="{{ route('tenant.accounting.quotations.convert', ['tenant' => $tenant->slug, 'quotation' => $quotation->id]) }}" class="block">
                                                             @csrf
                                                             <button type="submit"
-                                                                    onclick="return confirm('Convert this quotation to an invoice?')"
+                                                                    onclick="return confirm('Convert this {{ strtolower($term->label('quotation')) }} to an {{ strtolower($term->label('sales_invoice')) }}?')"
                                                                     class="w-full text-left px-4 py-2 text-sm text-purple-700 hover:bg-purple-50 flex items-center">
                                                                 <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
                                                                 </svg>
-                                                                Convert to Invoice
+                                                                Convert to @term('sales_invoice')
                                                             </button>
                                                         </form>
                                                     @endif
@@ -401,7 +401,7 @@
                                                     <form method="POST" action="{{ route('tenant.accounting.quotations.duplicate', ['tenant' => $tenant->slug, 'quotation' => $quotation->id]) }}" class="block">
                                                         @csrf
                                                         <button type="submit"
-                                                                onclick="return confirm('Create a copy of this quotation?')"
+                                                                onclick="return confirm('Create a copy of this {{ strtolower($term->label('quotation')) }}?')"
                                                                 class="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center">
                                                             <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path>
@@ -415,12 +415,12 @@
                                                         <form method="POST" action="{{ route('tenant.accounting.quotations.email', ['tenant' => $tenant->slug, 'quotation' => $quotation->id]) }}" class="block">
                                                             @csrf
                                                             <button type="submit"
-                                                                    onclick="return confirm('Send this quotation via email?')"
+                                                                    onclick="return confirm('Send this {{ strtolower($term->label('quotation')) }} via email?')"
                                                                     class="w-full text-left px-4 py-2 text-sm text-blue-700 hover:bg-blue-50 flex items-center">
                                                                 <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 4.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
                                                                 </svg>
-                                                                Email Quotation
+                                                                Email @term('quotation')
                                                             </button>
                                                         </form>
                                                     @endif
@@ -446,12 +446,12 @@
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
                     </svg>
                 </div>
-                <h3 class="text-lg font-medium text-gray-900 mb-2">No quotations found</h3>
+                <h3 class="text-lg font-medium text-gray-900 mb-2">No {{ strtolower($term->label('quotations')) }} found</h3>
                 <p class="text-gray-500 mb-6">
                     @if(request()->hasAny(['search', 'status', 'customer_id', 'date_from', 'date_to']))
-                        No quotations match your current filters. Try adjusting your search criteria.
+                        No {{ strtolower($term->label('quotations')) }} match your current filters. Try adjusting your search criteria.
                     @else
-                        You haven't created any quotations yet. Create your first quotation to get started.
+                        You haven't created any {{ strtolower($term->label('quotations')) }} yet. Create your first {{ strtolower($term->label('quotation')) }} to get started.
                     @endif
                 </p>
                 <a href="{{ route('tenant.accounting.quotations.create', ['tenant' => $tenant->slug]) }}"
@@ -459,7 +459,7 @@
                     <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
                     </svg>
-                    Create Your First Quotation
+                    Create Your First @term('quotation')
                 </a>
             </div>
         @endif

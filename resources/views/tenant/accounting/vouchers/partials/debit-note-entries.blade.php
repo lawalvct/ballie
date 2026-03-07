@@ -5,12 +5,12 @@
             <h3 class="text-lg font-medium text-gray-900">Debit Note Entries</h3>
             <div class="text-sm text-gray-500">
                 <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                    Dr. Note (Increases Customer Balance)
+                    Dr. Note (Increases @term('customer') Balance)
                 </span>
             </div>
         </div>
         <p class="mt-1 text-sm text-gray-600">
-            Debit notes increase customer receivables. Used for additional charges, interest, or billing corrections.
+            Debit notes increase {{ strtolower($term->label('customer')) }} receivables. Used for additional charges, interest, or billing corrections.
         </p>
     </div>
 
@@ -21,13 +21,13 @@
                 <svg class="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
                     <path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd"/>
                 </svg>
-                Customer Account (Debit - Increases Receivable)
+                @term('customer') Account (Debit - Increases Receivable)
             </h4>
 
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                     <label for="dn_customer_account" class="block text-sm font-medium text-gray-700 mb-1">
-                        Customer Account <span class="text-red-500">*</span>
+                        @term('customer') Account <span class="text-red-500">*</span>
                     </label>
                     <select id="dn_customer_account"
                             name="dn_customer_account_id"
@@ -35,7 +35,7 @@
                             @change="updateCustomerAccount()"
                             class="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                             required>
-                        <option value="">Select Customer Account</option>
+                        <option value="">Select @term('customer') Account</option>
                          @foreach($ledgerAccounts->filter(function($account) { return str_contains($account->code, 'CUST-'); }) as $account)
                             <option value="{{ $account->id }}" data-name="{{ $account->name }}" data-balance="{{ $account->closing_balance ?? 0 }}">
                                 {{ $account->name }} ({{ $account->code }})
@@ -180,7 +180,7 @@
                 <div class="bg-blue-100 p-3 rounded-md">
                     <div class="text-sm text-blue-700">Total Debit</div>
                     <div class="text-lg font-semibold text-blue-900" x-text="'₦ ' + formatNumber(customerAmount)"></div>
-                    <div class="text-xs text-blue-600">Customer Account</div>
+                    <div class="text-xs text-blue-600">@term('customer') Account</div>
                 </div>
 
                 <div class="bg-green-100 p-3 rounded-md">

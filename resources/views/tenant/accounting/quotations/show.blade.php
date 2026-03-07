@@ -1,13 +1,13 @@
 @extends('layouts.tenant')
 
-@section('title', 'Quotation ' . $quotation->getQuotationNumber() . ' - ' . $tenant->name)
+@section('title', $term->label('quotation') . ' ' . $quotation->getQuotationNumber() . ' - ' . $tenant->name)
 
 @section('content')
 <div class="space-y-6">
     <!-- Header -->
     <div class="flex items-center justify-between">
         <div>
-            <h1 class="text-3xl font-bold text-gray-900">Quotation {{ $quotation->getQuotationNumber() }}</h1>
+            <h1 class="text-3xl font-bold text-gray-900">@term('quotation') {{ $quotation->getQuotationNumber() }}</h1>
             <p class="mt-2 text-gray-600">{{ $quotation->subject }}</p>
         </div>
         <div class="flex items-center space-x-2">
@@ -53,13 +53,13 @@
             <div class="bg-white shadow-sm rounded-lg border border-gray-200 p-6">
                 <div class="grid grid-cols-2 gap-6 mb-6">
                     <div>
-                        <h3 class="text-sm font-medium text-gray-500 mb-2">Customer</h3>
+                        <h3 class="text-sm font-medium text-gray-500 mb-2">@term('customer')</h3>
                         <p class="text-base font-semibold text-gray-900">
                             {{ $quotation->customer ? ($quotation->customer->company_name ?: trim($quotation->customer->first_name . ' ' . $quotation->customer->last_name)) : 'N/A' }}
                         </p>
                     </div>
                     <div>
-                        <h3 class="text-sm font-medium text-gray-500 mb-2">Quotation Date</h3>
+                        <h3 class="text-sm font-medium text-gray-500 mb-2">@term('quotation') Date</h3>
                         <p class="text-base text-gray-900">{{ $quotation->quotation_date->format('M d, Y') }}</p>
                     </div>
                     <div>
@@ -79,7 +79,7 @@
                         <table class="min-w-full divide-y divide-gray-200">
                             <thead class="bg-gray-50">
                                 <tr>
-                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Product</th>
+                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">@term('product')</th>
                                     <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Qty</th>
                                     <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Rate</th>
                                     <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Discount</th>
@@ -150,7 +150,7 @@
         <div class="lg:col-span-1">
             <div class="bg-white shadow-sm rounded-lg border border-gray-200 p-6 space-y-3">
                 <h3 class="text-lg font-semibold text-gray-900 mb-4">Actions</h3>
-                
+
                 <button type="button" onclick="openEmailModal()" class="w-full inline-flex justify-center items-center px-4 py-2 bg-purple-600 text-white text-sm rounded-lg hover:bg-purple-700">
                     <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
@@ -171,7 +171,7 @@
                 <form action="{{ route('tenant.accounting.quotations.convert', [$tenant->slug, $quotation->id]) }}" method="POST">
                     @csrf
                     <button type="submit" class="w-full inline-flex justify-center items-center px-4 py-2 bg-emerald-600 text-white text-sm rounded-lg hover:bg-emerald-700">
-                        Convert to Invoice
+                        Convert to @term('sales_invoice')
                     </button>
                 </form>
                 @endif
@@ -194,7 +194,7 @@
                 </form>
 
                 @if($quotation->canBeDeleted())
-                <form action="{{ route('tenant.accounting.quotations.destroy', [$tenant->slug, $quotation->id]) }}" method="POST" onsubmit="return confirm('Are you sure you want to delete this quotation?')">
+                <form action="{{ route('tenant.accounting.quotations.destroy', [$tenant->slug, $quotation->id]) }}" method="POST" onsubmit="return confirm('Are you sure you want to delete this {{ strtolower($term->label('quotation')) }}?')">
                     @csrf
                     @method('DELETE')
                     <button type="submit" class="w-full inline-flex justify-center items-center px-4 py-2 bg-red-600 text-white text-sm rounded-lg hover:bg-red-700">
@@ -211,14 +211,14 @@
 <div id="emailModal" class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
     <div class="relative top-20 mx-auto p-5 border w-full max-w-md shadow-lg rounded-md bg-white">
         <div class="flex justify-between items-center mb-4">
-            <h3 class="text-lg font-semibold text-gray-900">Send Quotation via Email</h3>
+            <h3 class="text-lg font-semibold text-gray-900">Send @term('quotation') via Email</h3>
             <button onclick="closeEmailModal()" class="text-gray-400 hover:text-gray-600">
                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
                 </svg>
             </button>
         </div>
-        
+
         <form id="emailForm" onsubmit="sendEmail(event)">
             <div class="space-y-4">
                 <div>
@@ -226,24 +226,24 @@
                     <input type="email" id="email_to" name="to" required value="{{ $quotation->customer->email ?? '' }}"
                            class="block w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-emerald-500 focus:border-emerald-500">
                 </div>
-                
+
                 <div>
                     <label for="email_subject" class="block text-sm font-medium text-gray-700 mb-1">Subject *</label>
-                    <input type="text" id="email_subject" name="subject" required value="Quotation {{ $quotation->getQuotationNumber() }}"
+                    <input type="text" id="email_subject" name="subject" required value="{{ $term->label('quotation') }} {{ $quotation->getQuotationNumber() }}"
                            class="block w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-emerald-500 focus:border-emerald-500">
                 </div>
-                
+
                 <div>
                     <label for="email_message" class="block text-sm font-medium text-gray-700 mb-1">Message *</label>
                     <textarea id="email_message" name="message" rows="4" required
-                              class="block w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-emerald-500 focus:border-emerald-500">Dear {{ $quotation->customer ? ($quotation->customer->company_name ?: $quotation->customer->first_name) : 'Customer' }},
+                              class="block w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-emerald-500 focus:border-emerald-500">Dear {{ $quotation->customer ? ($quotation->customer->company_name ?: $quotation->customer->first_name) : $term->label('customer') }},
 
-Please find attached quotation {{ $quotation->getQuotationNumber() }} for your review.
+Please find attached {{ strtolower($term->label('quotation')) }} {{ $quotation->getQuotationNumber() }} for your review.
 
 Best regards</textarea>
                 </div>
             </div>
-            
+
             <div class="mt-6 flex justify-end space-x-3">
                 <button type="button" onclick="closeEmailModal()"
                         class="px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50">
@@ -270,18 +270,18 @@ function closeEmailModal() {
 
 async function sendEmail(event) {
     event.preventDefault();
-    
+
     const btn = document.getElementById('sendBtn');
     btn.disabled = true;
     btn.textContent = 'Sending...';
-    
+
     const formData = new FormData(event.target);
     const data = {
         to: formData.get('to'),
         subject: formData.get('subject'),
         message: formData.get('message')
     };
-    
+
     try {
         const response = await fetch('{{ route('tenant.accounting.quotations.email', [$tenant->slug, $quotation->id]) }}', {
             method: 'POST',
@@ -291,9 +291,9 @@ async function sendEmail(event) {
             },
             body: JSON.stringify(data)
         });
-        
+
         const result = await response.json();
-        
+
         if (response.ok) {
             alert('Email sent successfully!');
             closeEmailModal();
