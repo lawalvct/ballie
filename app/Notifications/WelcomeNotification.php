@@ -19,6 +19,7 @@ class WelcomeNotification extends Notification implements ShouldQueue
     public function __construct($verificationCode)
     {
         $this->verificationCode = $verificationCode;
+        $this->afterCommit();
     }
 
     /**

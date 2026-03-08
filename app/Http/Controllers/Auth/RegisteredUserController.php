@@ -10,16 +10,17 @@ use App\Helpers\TenantHelper;
 use App\Models\Plan;
 use App\Models\Affiliate;
 use App\Models\AffiliateReferral;
+use App\Models\SuperAdmin;
 use App\Services\ModuleRegistry;
+use App\Notifications\NewUserRegisteredNotification;
 use App\Notifications\WelcomeNotification;
-use Illuminate\Auth\Events\Registered;
+use Illuminate\Support\Facades\Notification;
 use Illuminate\Http\Request;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Cookie;
 use Illuminate\Validation\Rules;
 use Illuminate\View\View;
 
@@ -66,8 +67,9 @@ class RegisteredUserController extends Controller
         try {
             $tenant = null;
             $user = null;
+            $code = null;
 
-            DB::transaction(function () use ($request, &$tenant, &$user) {
+            DB::transaction(function () use ($request, &$tenant, &$user, &$code) {
                 Log::info('Starting database transaction');
 
                 // Get the selected plan
@@ -195,6 +197,10 @@ class RegisteredUserController extends Controller
                 Log::info('User logged in successfully');
             });
 
+            if (! $tenant || ! $user || ! $code) {
+                throw new \RuntimeException('Registration completed without the required notification context.');
+            }
+
             Log::info('Registration completed successfully');
 
             // Send welcome email AFTER transaction completes
@@ -212,6 +218,27 @@ class RegisteredUserController extends Controller
                     'trace' => $emailError->getTraceAsString()
                 ]);
                 // Continue without throwing - user is already registered
+            }
+
+            // Notify all super admins (database + email) and fixed addresses about the new registration
+            try {
+                $admins = SuperAdmin::all();
+                if ($admins->isNotEmpty()) {
+                    Notification::send($admins, new NewUserRegisteredNotification($user, $tenant));
+                }
+
+                // Send email to fixed admin addresses
+                Notification::route('mail', [
+                    'lawalthb@gmail.com' => 'Admin',
+                    'lawalvct@gmail.com' => 'Admin',
+                ])->notify(new NewUserRegisteredNotification($user, $tenant));
+
+                Log::info('Admin registration notifications sent', ['user_id' => $user->id]);
+            } catch (\Exception $adminNotifyError) {
+                Log::error('Admin registration notification failed', [
+                    'user_id' => $user->id,
+                    'error'   => $adminNotifyError->getMessage(),
+                ]);
             }
 
             // Redirect to onboarding
