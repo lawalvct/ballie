@@ -22,13 +22,20 @@ class SuperAdminImpersonation
             $superAdmin = SuperAdmin::find($superAdminId);
 
             if ($user && $superAdmin && $superAdmin->canImpersonate()) {
-                Auth::guard('web')->login($user);
+                // Ensure the user stays logged in on the web guard
+                // (covers session expiry edge cases)
+                if (!Auth::guard('web')->check() || Auth::guard('web')->id() !== $user->id) {
+                    Auth::guard('web')->login($user);
+                }
 
                 // Add impersonation indicator to views
                 view()->share('impersonating', [
                     'user' => $user,
                     'super_admin' => $superAdmin
                 ]);
+            } else {
+                // Invalid impersonation state — clean up
+                $request->session()->forget(['impersonating_user_id', 'super_admin_id']);
             }
         }
 

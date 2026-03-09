@@ -212,7 +212,7 @@
 
             <!-- User Profile Section -->
             <div class="px-6 py-6 border-t border-white border-opacity-20 bg-black bg-opacity-20">
-                
+
                 <form method="POST" action="{{ route('super-admin.logout') }}">
                     @csrf
                     <button type="submit" class="flex items-center justify-center w-full px-4 py-2 text-sm font-medium text-gray-300 rounded-lg nav-item-hover hover:text-white transition-all duration-300 border border-white border-opacity-20">
@@ -398,5 +398,6 @@
             });
         });
     </script>
+    @stack('scripts')
 </body>
 </html>

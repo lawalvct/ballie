@@ -279,16 +279,28 @@ class TenantController extends Controller
             abort(403, 'Unauthorized');
         }
 
+        // Verify the user belongs to this tenant
+        if ($user->tenant_id !== $tenant->id) {
+            abort(403, 'User does not belong to this tenant');
+        }
+
         session([
             'impersonating_user_id' => $user->id,
             'super_admin_id' => Auth::guard('super_admin')->id()
         ]);
+
+        // Log in as the user on the web guard so the session persists
+        // auth state before the redirect (avoids middleware priority issues)
+        Auth::guard('web')->login($user);
 
         return redirect()->route('tenant.dashboard', ['tenant' => $tenant->slug]);
     }
 
     public function stopImpersonation()
     {
+        // Log out the impersonated user from the web guard
+        Auth::guard('web')->logout();
+
         session()->forget(['impersonating_user_id', 'super_admin_id']);
 
         return redirect()->route('super-admin.dashboard');

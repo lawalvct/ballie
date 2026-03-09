@@ -49,6 +49,7 @@ class Kernel extends HttpKernel
         // Tenant middleware group
         'tenant' => [
             'web',
+            \App\Http\Middleware\SuperAdminImpersonation::class,
             \App\Http\Middleware\TenantContext::class,
         ],
 
