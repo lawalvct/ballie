@@ -276,6 +276,16 @@ class GlobalAuthController extends BaseApiController
                     'is_active' => true,
                 ]);
 
+                $tenant->users()->syncWithoutDetaching([
+                    $user->id => [
+                        'role' => User::ROLE_OWNER,
+                        'is_active' => true,
+                        'joined_at' => now(),
+                        'accepted_at' => now(),
+                        'permissions' => null,
+                    ],
+                ]);
+
                 // Generate and store email verification code
                 $verificationCode = sprintf('%04d', random_int(0, 9999));
                 \DB::table('email_verification_codes')->insert([

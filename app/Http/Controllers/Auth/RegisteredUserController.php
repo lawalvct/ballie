@@ -175,6 +175,16 @@ class RegisteredUserController extends Controller
 
                 $user = User::create($userData);
 
+                $tenant->users()->syncWithoutDetaching([
+                    $user->id => [
+                        'role' => User::ROLE_OWNER,
+                        'is_active' => true,
+                        'joined_at' => now(),
+                        'accepted_at' => now(),
+                        'permissions' => null,
+                    ],
+                ]);
+
                 Log::info('User created successfully', ['user_id' => $user->id]);
 
                 // Generate 4-digit verification code

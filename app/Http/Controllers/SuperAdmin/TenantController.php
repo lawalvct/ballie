@@ -97,7 +97,7 @@ class TenantController extends Controller
             $tenant->startTrial($selectedPlan);
 
             // Create owner user
-            User::create([
+            $owner = User::create([
                 'tenant_id' => $tenant->id,
                 'name' => $validated['owner_name'],
                 'email' => $validated['owner_email'],
@@ -105,6 +105,16 @@ class TenantController extends Controller
                 'role' => User::ROLE_OWNER,
                 'is_active' => true,
                 'email_verified_at' => now(),
+            ]);
+
+            $tenant->users()->syncWithoutDetaching([
+                $owner->id => [
+                    'role' => User::ROLE_OWNER,
+                    'is_active' => true,
+                    'joined_at' => now(),
+                    'accepted_at' => now(),
+                    'permissions' => null,
+                ],
             ]);
 
             DB::commit();
@@ -124,7 +134,51 @@ class TenantController extends Controller
 
     public function show(Tenant $tenant)
     {
-        $tenant->load(['users', 'subscriptions', 'superAdmin', 'plan', 'businessType']);
+        $tenant->load(['users.roles', 'subscriptions.payments', 'superAdmin', 'plan', 'businessType']);
+
+        $relationUsers = $tenant->users->map(function ($user) use ($tenant) {
+            $tenantRole = $user->roles->firstWhere('tenant_id', $tenant->id)
+                ?? $user->roles->first();
+
+            $legacyRole = $user->pivot->role ?? $user->role ?? 'user';
+            $roleKey = strtolower(str_replace([' ', '-'], '_', $tenantRole->slug ?? $legacyRole));
+
+            $user->membership_role = $roleKey;
+            $user->membership_role_label = $tenantRole->name ?? ucfirst(str_replace('_', ' ', $roleKey));
+            $user->membership_is_active = (bool) ($user->pivot->is_active ?? $user->is_active);
+
+            return $user;
+        });
+
+        $directUsers = User::with('roles')
+            ->where('tenant_id', $tenant->id)
+            ->get()
+            ->map(function ($user) use ($tenant) {
+                $tenantRole = $user->roles->firstWhere('tenant_id', $tenant->id)
+                    ?? $user->roles->first();
+
+                $legacyRole = $user->role ?? 'user';
+                $roleKey = strtolower(str_replace([' ', '-'], '_', $tenantRole->slug ?? $legacyRole));
+
+                $user->membership_role = $roleKey;
+                $user->membership_role_label = $tenantRole->name ?? ucfirst(str_replace('_', ' ', $roleKey));
+                $user->membership_is_active = (bool) $user->is_active;
+
+                return $user;
+            });
+
+        $tenantUsers = $relationUsers
+            ->concat($directUsers)
+            ->unique('id')
+            ->values();
+
+        $userIds = $tenantUsers->pluck('id')->all();
+        $totalUsersCount = $tenantUsers->count();
+        $activeUsersCount = $tenantUsers->where('membership_is_active', true)->count();
+        $availableUserRoles = $tenantUsers
+            ->mapWithKeys(fn($user) => [$user->membership_role => $user->membership_role_label])
+            ->sort()
+            ->all();
 
         // Get real stats for this tenant
         $stats = [
@@ -141,7 +195,29 @@ class TenantController extends Controller
                 ->sum('total_amount'),
         ];
 
-        return view('super-admin.tenants.show', compact('tenant', 'stats'));
+        // Active sessions from sessions table
+        $activeSessions = DB::table('sessions')
+            ->whereIn('user_id', $userIds)
+            ->where('last_activity', '>=', now()->subHours(24)->timestamp)
+            ->orderByDesc('last_activity')
+            ->get(['user_id', 'ip_address', 'user_agent', 'last_activity']);
+
+        // Recent login info
+        $recentLogins = $tenantUsers->filter(fn($u) => $u->last_login_at !== null)->sortByDesc('last_login_at');
+
+        // Users with email verified
+        $verifiedUsersCount = $tenantUsers->filter(fn($u) => $u->email_verified_at !== null)->count();
+
+        // Subscription payment history
+        $payments = \App\Models\SubscriptionPayment::where('tenant_id', $tenant->id)
+            ->orderByDesc('created_at')
+            ->limit(10)
+            ->get();
+
+        return view('super-admin.tenants.show', compact(
+            'tenant', 'tenantUsers', 'totalUsersCount', 'activeUsersCount',
+            'availableUserRoles', 'stats', 'activeSessions', 'recentLogins', 'verifiedUsersCount', 'payments'
+        ));
     }
 
     public function edit(Tenant $tenant)

@@ -94,6 +94,16 @@ class InvitationController extends Controller
                 'email_verified_at' => now(), // Auto-verify since they accepted invitation
             ]);
 
+            $tenant->users()->syncWithoutDetaching([
+                $owner->id => [
+                    'role' => User::ROLE_OWNER,
+                    'is_active' => true,
+                    'joined_at' => now(),
+                    'accepted_at' => now(),
+                    'permissions' => null,
+                ],
+            ]);
+
             // Update the invitation status
             DB::table('tenant_invitations')
                 ->where('id', $invitation->id)

@@ -52,6 +52,7 @@ class Tenant extends Model
         'subscription_starts_at' => 'datetime',
         'subscription_ends_at' => 'datetime',
         'trial_ends_at' => 'datetime',
+        'referral_registered_at' => 'datetime',
         'onboarding_completed_at' => 'datetime',
         'is_active' => 'boolean',
         'settings' => 'array',

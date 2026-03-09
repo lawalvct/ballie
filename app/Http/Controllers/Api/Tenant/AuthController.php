@@ -50,6 +50,16 @@ class AuthController extends BaseApiController
             'is_active' => true,
         ]);
 
+        $tenant->users()->syncWithoutDetaching([
+            $user->id => [
+                'role' => 'user',
+                'is_active' => true,
+                'joined_at' => now(),
+                'accepted_at' => now(),
+                'permissions' => null,
+            ],
+        ]);
+
         // Set tenant context
         $tenant->makeCurrent();
 

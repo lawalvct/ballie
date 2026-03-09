@@ -27,7 +27,7 @@
                 </div>
                 <div class="flex flex-wrap gap-3">
                     @php
-                        $owner = $tenant->users->first(fn($u) => $u->pivot->role === 'owner');
+                        $owner = $tenantUsers->first(fn($u) => $u->membership_role === 'owner' || strtolower($u->membership_role_label) === 'owner');
                     @endphp
                     @if($owner)
                     <button onclick="impersonateOwner()"
@@ -92,7 +92,7 @@
             <div class="flex items-center justify-between">
                 <div>
                     <p class="text-blue-100 text-sm font-medium">Total Users</p>
-                    <p class="text-3xl font-bold">{{ $tenant->users->count() }}</p>
+                    <p class="text-3xl font-bold">{{ $totalUsersCount }}</p>
                 </div>
                 <div class="bg-blue-400/30 p-3 rounded-lg">
                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -107,7 +107,7 @@
             <div class="flex items-center justify-between">
                 <div>
                     <p class="text-green-100 text-sm font-medium">Active Users</p>
-                    <p class="text-3xl font-bold">{{ $tenant->users->filter(fn($u) => $u->pivot->is_active)->count() }}</p>
+                    <p class="text-3xl font-bold">{{ $activeUsersCount }}</p>
                 </div>
                 <div class="bg-green-400/30 p-3 rounded-lg">
                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -220,32 +220,25 @@
             <!-- Company Information -->
             <div class="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
                 <div class="px-6 py-4 border-b border-gray-200 bg-gradient-to-r from-gray-50 to-gray-100">
-                    <h2 class="text-lg font-semibold text-gray-900">Company Information</h2>
+                    <div class="flex items-center justify-between">
+                        <h2 class="text-lg font-semibold text-gray-900">Company Information</h2>
+                        <span class="text-xs text-gray-500">ID: #{{ $tenant->id }}</span>
+                    </div>
                 </div>
                 <div class="p-6">
+                    <!-- Basic Info -->
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div>
                             <label class="block text-sm font-medium text-gray-500 mb-1">Company Name</label>
-                            <p class="text-sm text-gray-900">{{ $tenant->name }}</p>
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium text-gray-500 mb-1">Email</label>
-                            <p class="text-sm text-gray-900">{{ $tenant->email }}</p>
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium text-gray-500 mb-1">Phone</label>
-                            <p class="text-sm text-gray-900">{{ $tenant->phone ?: 'Not provided' }}</p>
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium text-gray-500 mb-1">Business Type</label>
-                            <p class="text-sm text-gray-900">{{ $tenant->businessType->name ?? 'Not specified' }}</p>
+                            <p class="text-sm text-gray-900 font-semibold">{{ $tenant->name }}</p>
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-gray-500 mb-1">Company Slug</label>
                             <div class="flex items-center space-x-2">
                                 <p class="text-sm text-gray-900 font-mono bg-gray-100 px-2 py-1 rounded">{{ $tenant->slug }}</p>
                                 <button onclick="copyToClipboard('{{ $tenant->slug }}')"
-                                        class="text-gray-400 hover:text-gray-600 transition-colors">
+                                        class="text-gray-400 hover:text-gray-600 transition-colors"
+                                        title="Copy slug">
                                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/>
                                     </svg>
@@ -253,50 +246,164 @@
                             </div>
                         </div>
                         <div>
-                            <label class="block text-sm font-medium text-gray-500 mb-1">Domain</label>
-                            <div class="flex items-center space-x-2">
-                                <a href="https://{{ $tenant->domain ?: $tenant->slug . '.app' }}" target="_blank"
-                                   class="text-sm text-blue-600 hover:text-blue-800 underline">
-                                    {{ $tenant->domain ?: $tenant->slug . '.app' }}
+                            <label class="block text-sm font-medium text-gray-500 mb-1">Email</label>
+                            <p class="text-sm text-gray-900">
+                                <a href="mailto:{{ $tenant->email }}" class="text-blue-600 hover:text-blue-800 hover:underline">{{ $tenant->email }}</a>
+                            </p>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-500 mb-1">Phone</label>
+                            <p class="text-sm text-gray-900">{{ $tenant->phone ?: '—' }}</p>
+                        </div>
+                        @if($tenant->website)
+                        <div>
+                            <label class="block text-sm font-medium text-gray-500 mb-1">Website</label>
+                            <p class="text-sm">
+                                <a href="{{ $tenant->website }}" target="_blank" rel="noopener noreferrer" class="text-blue-600 hover:text-blue-800 hover:underline inline-flex items-center">
+                                    {{ $tenant->website }}
+                                    <svg class="w-3 h-3 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/>
+                                    </svg>
                                 </a>
-                                <svg class="w-3 h-3 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/>
-                                </svg>
+                            </p>
+                        </div>
+                        @endif
+                    </div>
+
+                    <!-- Business Details -->
+                    <div class="mt-6 pt-6 border-t border-gray-200">
+                        <h3 class="text-sm font-semibold text-gray-700 mb-4 flex items-center">
+                            <svg class="w-4 h-4 mr-2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/>
+                            </svg>
+                            Business Details
+                        </h3>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-500 mb-1">Business Type</label>
+                                <p class="text-sm text-gray-900">{{ $tenant->businessType->name ?? '—' }}</p>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-500 mb-1">Business Structure</label>
+                                <p class="text-sm text-gray-900">{{ $tenant->business_structure ? ucfirst(str_replace('_', ' ', $tenant->business_structure)) : '—' }}</p>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-500 mb-1">Registration Number</label>
+                                <p class="text-sm text-gray-900">{{ $tenant->business_registration_number ?: '—' }}</p>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-500 mb-1">Tax Identification Number (TIN)</label>
+                                <p class="text-sm text-gray-900">{{ $tenant->tax_identification_number ?: '—' }}</p>
                             </div>
                         </div>
                     </div>
 
-                    @if($tenant->address || $tenant->city || $tenant->state || $tenant->country)
+                    <!-- Accounting & Operations -->
                     <div class="mt-6 pt-6 border-t border-gray-200">
-                        <h3 class="text-sm font-medium text-gray-500 mb-3">Address Information</h3>
+                        <h3 class="text-sm font-semibold text-gray-700 mb-4 flex items-center">
+                            <svg class="w-4 h-4 mr-2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"/>
+                            </svg>
+                            Accounting & Operations
+                        </h3>
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            @if($tenant->address)
-                            <div class="md:col-span-2">
-                                <label class="block text-sm font-medium text-gray-500 mb-1">Address</label>
-                                <p class="text-sm text-gray-900">{{ $tenant->address }}</p>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-500 mb-1">Fiscal Year Start</label>
+                                <p class="text-sm text-gray-900">{{ $tenant->fiscal_year_start ? \Carbon\Carbon::parse($tenant->fiscal_year_start)->format('F j') : '—' }}</p>
                             </div>
-                            @endif
-                            @if($tenant->city)
+                            <div>
+                                <label class="block text-sm font-medium text-gray-500 mb-1">Payment Terms</label>
+                                <p class="text-sm text-gray-900">{{ $tenant->payment_terms ? $tenant->payment_terms . ' days' : '—' }}</p>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-500 mb-1">Employee Number Format</label>
+                                <p class="text-sm text-gray-900 font-mono bg-gray-100 px-2 py-1 rounded inline-block">{{ $tenant->employee_number_format ?? 'EMP-{YYYY}-{####}' }}</p>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-500 mb-1">Enabled Modules</label>
+                                @if($tenant->enabled_modules && count($tenant->enabled_modules) > 0)
+                                    <div class="flex flex-wrap gap-1">
+                                        @foreach($tenant->enabled_modules as $module)
+                                            <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800">{{ ucfirst(str_replace('_', ' ', $module)) }}</span>
+                                        @endforeach
+                                    </div>
+                                @else
+                                    <p class="text-sm text-gray-500 italic">Using category defaults</p>
+                                @endif
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Address Information -->
+                    <div class="mt-6 pt-6 border-t border-gray-200">
+                        <h3 class="text-sm font-semibold text-gray-700 mb-4 flex items-center">
+                            <svg class="w-4 h-4 mr-2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
+                            </svg>
+                            Address
+                        </h3>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div class="md:col-span-2">
+                                <label class="block text-sm font-medium text-gray-500 mb-1">Street Address</label>
+                                <p class="text-sm text-gray-900">{{ $tenant->address ?: '—' }}</p>
+                            </div>
                             <div>
                                 <label class="block text-sm font-medium text-gray-500 mb-1">City</label>
-                                <p class="text-sm text-gray-900">{{ $tenant->city }}</p>
+                                <p class="text-sm text-gray-900">{{ $tenant->city ?: '—' }}</p>
                             </div>
-                            @endif
-                            @if($tenant->state)
                             <div>
                                 <label class="block text-sm font-medium text-gray-500 mb-1">State</label>
-                                <p class="text-sm text-gray-900">{{ $tenant->state }}</p>
+                                <p class="text-sm text-gray-900">{{ $tenant->state ?: '—' }}</p>
                             </div>
-                            @endif
-                            @if($tenant->country)
                             <div>
                                 <label class="block text-sm font-medium text-gray-500 mb-1">Country</label>
-                                <p class="text-sm text-gray-900">{{ $tenant->country }}</p>
+                                <p class="text-sm text-gray-900">{{ $tenant->country ?: '—' }}</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Referral Info (if applicable) -->
+                    @if($tenant->referral_code || $tenant->referred_by_affiliate_id)
+                    <div class="mt-6 pt-6 border-t border-gray-200">
+                        <h3 class="text-sm font-semibold text-gray-700 mb-4 flex items-center">
+                            <svg class="w-4 h-4 mr-2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"/>
+                            </svg>
+                            Referral Information
+                        </h3>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            @if($tenant->referral_code)
+                            <div>
+                                <label class="block text-sm font-medium text-gray-500 mb-1">Referral Code</label>
+                                <p class="text-sm text-gray-900 font-mono bg-gray-100 px-2 py-1 rounded inline-block">{{ $tenant->referral_code }}</p>
+                            </div>
+                            @endif
+                            @if($tenant->referral_registered_at)
+                            <div>
+                                <label class="block text-sm font-medium text-gray-500 mb-1">Referral Date</label>
+                                <p class="text-sm text-gray-900">{{ $tenant->referral_registered_at->format('M j, Y g:i A') }}</p>
                             </div>
                             @endif
                         </div>
                     </div>
                     @endif
+
+                    <!-- Timestamps -->
+                    <div class="mt-6 pt-6 border-t border-gray-200">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-500 mb-1">Created</label>
+                                <p class="text-sm text-gray-900">{{ $tenant->created_at->format('M j, Y g:i A') }}</p>
+                                <p class="text-xs text-gray-500">{{ $tenant->created_at->diffForHumans() }}</p>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-500 mb-1">Last Updated</label>
+                                <p class="text-sm text-gray-900">{{ $tenant->updated_at->format('M j, Y g:i A') }}</p>
+                                <p class="text-xs text-gray-500">{{ $tenant->updated_at->diffForHumans() }}</p>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
 
@@ -307,10 +414,10 @@
                         <div class="flex items-center space-x-3">
                             <h2 class="text-lg font-semibold text-gray-900">Users</h2>
                             <span class="bg-green-100 text-green-800 text-xs font-medium px-2.5 py-0.5 rounded-full">
-                                {{ $tenant->users->count() }} total
+                                {{ $totalUsersCount }} total
                             </span>
                             <span class="bg-blue-100 text-blue-800 text-xs font-medium px-2.5 py-0.5 rounded-full">
-                                {{ $tenant->users->filter(fn($u) => $u->pivot->is_active)->count() }} active
+                                {{ $activeUsersCount }} active
                             </span>
                         </div>
                         <span class="text-xs text-gray-500 italic">Users are managed by company owner</span>
@@ -341,22 +448,22 @@
                             </select>
                             <select id="roleFilter" onchange="filterUsers()" class="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
                                 <option value="">All Roles</option>
-                                <option value="owner">Owner</option>
-                                <option value="admin">Admin</option>
-                                <option value="user">User</option>
+                                @foreach($availableUserRoles as $roleKey => $roleLabel)
+                                    <option value="{{ $roleKey }}">{{ $roleLabel }}</option>
+                                @endforeach
                             </select>
                         </div>
                     </div>
 
-                    @if($tenant->users->count() > 0)
+                    @if($tenantUsers->isNotEmpty())
                         <div class="space-y-4">
-                            @foreach($tenant->users as $user)
+                            @foreach($tenantUsers as $user)
                             <div class="group flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:bg-gray-50 hover:border-gray-300 transition-all duration-200"
                                  data-user-card="true"
                                  data-user-name="{{ $user->name }}"
                                  data-user-email="{{ $user->email }}"
-                                 data-user-status="{{ $user->pivot->is_active ? 'active' : 'inactive' }}"
-                                 data-user-role="{{ $user->pivot->role }}">
+                                 data-user-status="{{ $user->membership_is_active ? 'active' : 'inactive' }}"
+                                 data-user-role="{{ $user->membership_role }}">
                                 <div class="flex items-center">
                                     <div class="flex-shrink-0 h-12 w-12">
                                         <div class="h-12 w-12 rounded-full bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center shadow-md">
@@ -366,7 +473,7 @@
                                     <div class="ml-4">
                                         <div class="flex items-center space-x-2">
                                             <h4 class="text-sm font-semibold text-gray-900">{{ $user->name }}</h4>
-                                            @if($user->pivot->role === 'owner')
+                                            @if($user->membership_role === 'owner' || strtolower($user->membership_role_label) === 'owner')
                                                 <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gradient-to-r from-purple-100 to-pink-100 text-purple-800 border border-purple-200">
                                                     <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3l14 9-14 9V3z"/>
@@ -375,7 +482,7 @@
                                                 </span>
                                             @else
                                                 <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-700 border border-gray-200">
-                                                    {{ ucfirst($user->pivot->role) }}
+                                                    {{ $user->membership_role_label }}
                                                 </span>
                                             @endif
                                         </div>
@@ -398,7 +505,7 @@
                                     </div>
                                 </div>
                                 <div class="flex items-center space-x-3">
-                                    @if($user->pivot->is_active)
+                                    @if($user->membership_is_active)
                                         <div class="flex items-center space-x-1">
                                             <span class="flex h-2 w-2">
                                                 <span class="animate-ping absolute inline-flex h-2 w-2 rounded-full bg-green-400 opacity-75"></span>
@@ -443,34 +550,89 @@
                 </div>
                 <div class="p-6">
                     <div class="space-y-4">
-                        <div class="flex items-start">
-                            <div class="flex-shrink-0">
-                                <div class="h-8 w-8 rounded-full bg-green-100 flex items-center justify-center">
-                                    <svg class="h-4 w-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
-                                    </svg>
-                                </div>
-                            </div>
-                            <div class="ml-3">
-                                <p class="text-sm text-gray-900">Company created</p>
-                                <p class="text-xs text-gray-500">{{ $tenant->created_at->format('M j, Y \a\t g:i A') }}</p>
-                            </div>
-                        </div>
+                        @php
+                            // Build a chronological activity feed
+                            $activities = collect();
 
-                        @if($tenant->trial_ends_at)
-                        <div class="flex items-start">
-                            <div class="flex-shrink-0">
-                                <div class="h-8 w-8 rounded-full bg-yellow-100 flex items-center justify-center">
-                                    <svg class="h-4 w-4 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                                    </svg>
+                            // Company creation
+                            $activities->push((object)[
+                                'type' => 'created',
+                                'title' => 'Company created',
+                                'detail' => $tenant->created_at->format('M j, Y \a\t g:i A'),
+                                'date' => $tenant->created_at,
+                            ]);
+
+                            // Trial started
+                            if ($tenant->trial_ends_at) {
+                                $activities->push((object)[
+                                    'type' => 'trial',
+                                    'title' => 'Trial period started',
+                                    'detail' => 'Expires ' . $tenant->trial_ends_at->format('M j, Y'),
+                                    'date' => $tenant->created_at,
+                                ]);
+                            }
+
+                            // User registrations
+                            foreach ($tenantUsers as $user) {
+                                $activities->push((object)[
+                                    'type' => 'user',
+                                    'title' => $user->name . ' joined',
+                                    'detail' => $user->created_at->format('M j, Y \a\t g:i A'),
+                                    'date' => $user->created_at,
+                                ]);
+                            }
+
+                            // Payments
+                            foreach ($payments as $payment) {
+                                $activities->push((object)[
+                                    'type' => 'payment',
+                                    'title' => 'Payment of ₦' . number_format($payment->amount / 100),
+                                    'detail' => ucfirst($payment->status) . ' — ' . ($payment->paid_at ? \Carbon\Carbon::parse($payment->paid_at)->format('M j, Y') : $payment->created_at->format('M j, Y')),
+                                    'date' => $payment->created_at,
+                                ]);
+                            }
+
+                            // Subscriptions
+                            foreach ($tenant->subscriptions as $sub) {
+                                $activities->push((object)[
+                                    'type' => 'subscription',
+                                    'title' => ucfirst($sub->status) . ' subscription',
+                                    'detail' => '₦' . number_format($sub->amount / 100) . '/' . ($sub->billing_cycle === 'yearly' ? 'year' : 'month'),
+                                    'date' => $sub->created_at,
+                                ]);
+                            }
+
+                            $activities = $activities->sortByDesc('date')->take(10);
+
+                            $iconMap = [
+                                'created' => ['bg' => 'bg-green-100', 'text' => 'text-green-600', 'icon' => 'M12 6v6m0 0v6m0-6h6m-6 0H6'],
+                                'trial' => ['bg' => 'bg-yellow-100', 'text' => 'text-yellow-600', 'icon' => 'M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z'],
+                                'user' => ['bg' => 'bg-blue-100', 'text' => 'text-blue-600', 'icon' => 'M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z'],
+                                'payment' => ['bg' => 'bg-emerald-100', 'text' => 'text-emerald-600', 'icon' => 'M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z'],
+                                'subscription' => ['bg' => 'bg-purple-100', 'text' => 'text-purple-600', 'icon' => 'M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z'],
+                            ];
+                        @endphp
+
+                        @foreach($activities as $activity)
+                            @php $icon = $iconMap[$activity->type] ?? $iconMap['created']; @endphp
+                            <div class="flex items-start">
+                                <div class="flex-shrink-0">
+                                    <div class="h-8 w-8 rounded-full {{ $icon['bg'] }} flex items-center justify-center">
+                                        <svg class="h-4 w-4 {{ $icon['text'] }}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="{{ $icon['icon'] }}"></path>
+                                        </svg>
+                                    </div>
                                 </div>
+                                <div class="ml-3 flex-1">
+                                    <p class="text-sm text-gray-900">{{ $activity->title }}</p>
+                                    <p class="text-xs text-gray-500">{{ $activity->detail }}</p>
+                                </div>
+                                <span class="text-xs text-gray-400 whitespace-nowrap ml-2">{{ $activity->date->diffForHumans() }}</span>
                             </div>
-                            <div class="ml-3">
-                                <p class="text-sm text-gray-900">Trial period started</p>
-                                <p class="text-xs text-gray-500">Expires {{ $tenant->trial_ends_at->format('M j, Y \a\t g:i A') }}</p>
-                            </div>
-                        </div>
+                        @endforeach
+
+                        @if($activities->isEmpty())
+                            <p class="text-sm text-gray-500 text-center py-4">No activity recorded</p>
                         @endif
                     </div>
                 </div>
@@ -479,13 +641,7 @@
             <!-- Subscription History Timeline -->
             <div class="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
                 <div class="px-6 py-4 border-b border-gray-200 bg-gradient-to-r from-emerald-50 to-teal-50">
-                    <div class="flex items-center justify-between">
-                        <h2 class="text-lg font-semibold text-gray-900">Subscription History</h2>
-                        <button onclick="toggleSubscriptionDetails()"
-                                class="text-sm text-blue-600 hover:text-blue-800 font-medium">
-                            View All
-                        </button>
-                    </div>
+                    <h2 class="text-lg font-semibold text-gray-900">Subscription & Payment History</h2>
                 </div>
                 <div class="p-6">
                     <div class="space-y-6">
@@ -524,6 +680,49 @@
                             </div>
                         </div>
 
+                        <!-- Payment Records -->
+                        @foreach($payments as $payment)
+                        <div class="relative flex items-start">
+                            <div class="absolute top-5 left-5 w-px bg-gray-200 h-full"></div>
+                            <div class="flex-shrink-0">
+                                @php
+                                    $paymentColors = [
+                                        'success' => ['bg' => 'bg-emerald-100', 'text' => 'text-emerald-600'],
+                                        'pending' => ['bg' => 'bg-yellow-100', 'text' => 'text-yellow-600'],
+                                        'failed' => ['bg' => 'bg-red-100', 'text' => 'text-red-600'],
+                                    ];
+                                    $pColor = $paymentColors[$payment->status] ?? $paymentColors['pending'];
+                                @endphp
+                                <div class="h-10 w-10 rounded-full {{ $pColor['bg'] }} flex items-center justify-center ring-4 ring-white">
+                                    <svg class="h-5 w-5 {{ $pColor['text'] }}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                    </svg>
+                                </div>
+                            </div>
+                            <div class="ml-4 min-w-0 flex-1">
+                                <div class="flex items-center justify-between">
+                                    <div>
+                                        <p class="text-sm font-medium text-gray-900">
+                                            Payment — {{ ucfirst($payment->status) }}
+                                        </p>
+                                        <p class="text-xs text-gray-500">
+                                            {{ ucfirst($payment->payment_method ?? 'N/A') }}
+                                            @if($payment->payment_reference)
+                                                · Ref: {{ $payment->payment_reference }}
+                                            @endif
+                                        </p>
+                                    </div>
+                                    <div class="text-right">
+                                        <p class="text-sm font-semibold {{ $payment->status === 'success' ? 'text-green-600' : ($payment->status === 'failed' ? 'text-red-600' : 'text-yellow-600') }}">
+                                            ₦{{ number_format($payment->amount / 100) }}
+                                        </p>
+                                        <p class="text-xs text-gray-500">{{ $payment->created_at->format('M j, Y') }}</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        @endforeach
+
                         <!-- Trial Started -->
                         @if($tenant->trial_ends_at)
                         <div class="relative flex items-start">
@@ -539,7 +738,7 @@
                                 <div class="flex items-center justify-between">
                                     <div>
                                         <p class="text-sm font-medium text-gray-900">Trial Period Started</p>
-                                        <p class="text-xs text-gray-500">{{ $tenant->trial_ends_at->diffInDays(now()) }} days trial period</p>
+                                        <p class="text-xs text-gray-500">{{ $tenant->trial_ends_at->diffInDays($tenant->created_at) }} days trial period</p>
                                     </div>
                                     <div class="text-right">
                                         <p class="text-sm text-gray-600">Free</p>
@@ -552,9 +751,6 @@
 
                         <!-- Account Created -->
                         <div class="relative flex items-start">
-                            @if($tenant->trial_ends_at)
-                                <div class="absolute top-5 left-5 w-px bg-gray-200 h-full"></div>
-                            @endif
                             <div class="flex-shrink-0">
                                 <div class="h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center ring-4 ring-white">
                                     <svg class="h-5 w-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -579,7 +775,7 @@
 
                     <!-- Billing Summary -->
                     <div class="mt-6 pt-6 border-t border-gray-200">
-                        <div class="grid grid-cols-2 gap-4">
+                        <div class="grid grid-cols-3 gap-4">
                             <div class="text-center p-3 bg-gray-50 rounded-lg">
                                 <p class="text-lg font-bold text-gray-900">
                                     @if($tenant->plan)
@@ -589,6 +785,12 @@
                                     @endif
                                 </p>
                                 <p class="text-xs text-gray-600">Annual Value</p>
+                            </div>
+                            <div class="text-center p-3 bg-gray-50 rounded-lg">
+                                <p class="text-lg font-bold text-gray-900">
+                                    ₦{{ number_format($payments->where('status', 'success')->sum('amount') / 100) }}
+                                </p>
+                                <p class="text-xs text-gray-600">Total Paid</p>
                             </div>
                             <div class="text-center p-3 bg-gray-50 rounded-lg">
                                 <p class="text-lg font-bold text-gray-900">{{ $tenant->created_at->diffInDays(now()) }}</p>
@@ -637,119 +839,92 @@
                 </div>
             </div>
 
-            <!-- Security & Monitoring -->
+            <!-- Account Health -->
             <div class="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
                 <div class="px-6 py-4 border-b border-gray-200 bg-gradient-to-r from-red-50 to-orange-50">
-                    <div class="flex items-center justify-between">
-                        <h2 class="text-lg font-semibold text-gray-900">Security & Monitoring</h2>
-                        <div class="flex items-center space-x-1">
-                            <span class="h-2 w-2 bg-green-500 rounded-full"></span>
-                            <span class="text-xs text-green-600 font-medium">Secure</span>
-                        </div>
-                    </div>
+                    <h2 class="text-lg font-semibold text-gray-900">Account Health</h2>
                 </div>
                 <div class="p-6 space-y-4">
-                    <!-- Login Security -->
+                    <!-- Email Verification -->
                     <div>
                         <div class="flex items-center justify-between mb-2">
-                            <label class="block text-sm font-medium text-gray-500">Login Attempts (24h)</label>
-                            <span class="text-sm font-bold text-gray-900">{{ rand(5, 25) }}</span>
+                            <label class="block text-sm font-medium text-gray-500">Email Verified</label>
+                            <span class="text-sm font-bold text-gray-900">{{ $verifiedUsersCount }}/{{ $totalUsersCount }}</span>
                         </div>
-                        <div class="space-y-2">
-                            <div class="flex justify-between text-xs">
-                                <span class="text-green-600">✓ Successful: {{ rand(5, 20) }}</span>
-                                <span class="text-red-600">✗ Failed: {{ rand(0, 3) }}</span>
-                            </div>
+                        @php $verifyPercent = $totalUsersCount > 0 ? round(($verifiedUsersCount / $totalUsersCount) * 100) : 0; @endphp
+                        <div class="w-full bg-gray-200 rounded-full h-1.5">
+                            <div class="h-1.5 rounded-full transition-all duration-500 {{ $verifyPercent === 100 ? 'bg-green-500' : ($verifyPercent >= 50 ? 'bg-yellow-500' : 'bg-red-500') }}"
+                                 style="width: {{ $verifyPercent }}%"></div>
                         </div>
+                        <p class="text-xs text-gray-500 mt-1">{{ $verifyPercent }}% of users have verified their email</p>
                     </div>
 
-                    <!-- Two-Factor Authentication -->
+                    <!-- Recent Logins -->
                     <div>
                         <div class="flex items-center justify-between mb-2">
-                            <label class="block text-sm font-medium text-gray-500">2FA Status</label>
-                            @php $twoFAEnabled = rand(0, 1); @endphp
-                            @if($twoFAEnabled)
+                            <label class="block text-sm font-medium text-gray-500">Recent Logins</label>
+                            <span class="text-sm font-bold text-gray-900">{{ $recentLogins->count() }}</span>
+                        </div>
+                        @if($recentLogins->isNotEmpty())
+                            <div class="space-y-1">
+                                @foreach($recentLogins->take(3) as $loginUser)
+                                    <div class="flex items-center justify-between text-xs">
+                                        <span class="text-gray-600 truncate max-w-[140px]">{{ $loginUser->name }}</span>
+                                        <span class="text-gray-500">{{ $loginUser->last_login_at->diffForHumans() }}</span>
+                                    </div>
+                                @endforeach
+                            </div>
+                        @else
+                            <p class="text-xs text-gray-500">No login records yet</p>
+                        @endif
+                    </div>
+
+                    <!-- Active Sessions -->
+                    <div class="pt-4 border-t border-gray-200">
+                        <div class="flex items-center justify-between mb-2">
+                            <label class="block text-sm font-medium text-gray-500">Active Sessions (24h)</label>
+                            <span class="text-sm font-bold text-gray-900">{{ $activeSessions->count() }}</span>
+                        </div>
+                        @if($activeSessions->isNotEmpty())
+                            <div class="space-y-1">
+                                @foreach($activeSessions->take(5) as $session)
+                                    @php
+                                        $ua = $session->user_agent ?? '';
+                                        $browser = str_contains($ua, 'Chrome') ? 'Chrome' : (str_contains($ua, 'Firefox') ? 'Firefox' : (str_contains($ua, 'Safari') ? 'Safari' : 'Other'));
+                                        $os = str_contains($ua, 'Windows') ? 'Windows' : (str_contains($ua, 'Mac') ? 'macOS' : (str_contains($ua, 'Linux') ? 'Linux' : (str_contains($ua, 'iPhone') || str_contains($ua, 'iPad') ? 'iOS' : (str_contains($ua, 'Android') ? 'Android' : 'Other'))));
+                                        $lastActive = \Carbon\Carbon::createFromTimestamp($session->last_activity);
+                                    @endphp
+                                    <div class="flex items-center justify-between text-xs">
+                                        <span class="text-gray-600">{{ $browser }} &middot; {{ $os }}</span>
+                                        <span class="text-gray-500">{{ $lastActive->diffForHumans() }}</span>
+                                    </div>
+                                @endforeach
+                            </div>
+                        @else
+                            <p class="text-xs text-gray-500">No active sessions</p>
+                        @endif
+                    </div>
+
+                    <!-- Onboarding -->
+                    <div class="pt-4 border-t border-gray-200">
+                        <div class="flex items-center justify-between mb-2">
+                            <label class="block text-sm font-medium text-gray-500">Onboarding</label>
+                            @if($tenant->hasCompletedOnboarding())
                                 <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                                    <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                                    </svg>
-                                    Enabled
+                                    Completed
                                 </span>
                             @else
-                                <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800">
-                                    <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
-                                    </svg>
-                                    Disabled
+                                <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+                                    {{ $tenant->getOnboardingProgress() }}%
                                 </span>
                             @endif
                         </div>
-                        <p class="text-xs text-gray-600">
-                            {{ $tenant->users->where('two_factor_secret', '!=', null)->count() }}/{{ $tenant->users->count() }} users have 2FA enabled
-                        </p>
-                    </div>
-
-                    <!-- Password Security -->
-                    <div>
-                        <div class="flex items-center justify-between mb-2">
-                            <label class="block text-sm font-medium text-gray-500">Password Strength</label>
-                            @php $passwordScore = rand(60, 95); @endphp
-                            <span class="text-sm font-bold {{ $passwordScore > 80 ? 'text-green-600' : ($passwordScore > 60 ? 'text-yellow-600' : 'text-red-600') }}">
-                                {{ $passwordScore }}%
-                            </span>
-                        </div>
-                        <div class="w-full bg-gray-200 rounded-full h-1.5">
-                            <div class="h-1.5 rounded-full transition-all duration-500 {{ $passwordScore > 80 ? 'bg-green-500' : ($passwordScore > 60 ? 'bg-yellow-500' : 'bg-red-500') }}"
-                                 style="width: {{ $passwordScore }}%"></div>
-                        </div>
-                    </div>
-
-                    <!-- Session Management -->
-                    <div>
-                        <div class="flex items-center justify-between mb-2">
-                            <label class="block text-sm font-medium text-gray-500">Active Sessions</label>
-                            <span class="text-sm font-bold text-gray-900">{{ rand(1, 8) }}</span>
-                        </div>
-                        <div class="space-y-1">
-                            @for($i = 0; $i < 3; $i++)
-                                <div class="flex items-center justify-between text-xs">
-                                    <span class="text-gray-600">{{ ['Chrome', 'Safari', 'Firefox'][rand(0, 2)] }} • {{ ['Windows', 'macOS', 'iOS'][rand(0, 2)] }}</span>
-                                    <span class="text-gray-500">{{ rand(1, 30) }}m ago</span>
-                                </div>
-                            @endfor
-                        </div>
-                    </div>
-
-                    <!-- Risk Assessment -->
-                    <div class="pt-4 border-t border-gray-200">
-                        <div class="flex items-center justify-between mb-3">
-                            <label class="block text-sm font-medium text-gray-500">Risk Level</label>
-                            @php $riskLevel = ['Low', 'Medium', 'High'][rand(0, 2)]; @endphp
-                            <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium
-                                {{ $riskLevel === 'Low' ? 'bg-green-100 text-green-800' : ($riskLevel === 'Medium' ? 'bg-yellow-100 text-yellow-800' : 'bg-red-100 text-red-800') }}">
-                                {{ $riskLevel }}
-                            </span>
-                        </div>
-                        <div class="space-y-2">
-                            <button onclick="viewSecurityLog()"
-                                    class="w-full text-left px-3 py-2 text-xs bg-gray-50 hover:bg-gray-100 rounded-lg transition-colors">
-                                <div class="flex items-center justify-between">
-                                    <span>View Security Log</span>
-                                    <svg class="w-3 h-3 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
-                                    </svg>
-                                </div>
-                            </button>
-                            <button onclick="generateSecurityReport()"
-                                    class="w-full text-left px-3 py-2 text-xs bg-gray-50 hover:bg-gray-100 rounded-lg transition-colors">
-                                <div class="flex items-center justify-between">
-                                    <span>Generate Security Report</span>
-                                    <svg class="w-3 h-3 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
-                                    </svg>
-                                </div>
-                            </button>
-                        </div>
+                        @if(!$tenant->hasCompletedOnboarding())
+                            <div class="w-full bg-gray-200 rounded-full h-1.5">
+                                <div class="h-1.5 rounded-full bg-blue-500 transition-all duration-500"
+                                     style="width: {{ $tenant->getOnboardingProgress() }}%"></div>
+                            </div>
+                        @endif
                     </div>
                 </div>
             </div>
@@ -793,13 +968,6 @@
                         </svg>
                         Edit Company
                     </a>
-
-                    <button class="w-full inline-flex items-center justify-center px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 transition-colors">
-                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
-                        </svg>
-                        View Analytics
-                    </button>
                 </div>
             </div>
 
@@ -901,14 +1069,9 @@ function filterUsers() {
         const matchesStatus = !statusFilter || userStatus === statusFilter;
         const matchesRole = !roleFilter || userRole === roleFilter;
 
-        if (matchesSearch && matchesStatus && matchesRole) {
-            card.style.display = 'block';
-        } else {
-            card.style.display = 'none';
-        }
+        card.style.display = (matchesSearch && matchesStatus && matchesRole) ? 'block' : 'none';
     });
 
-    // Update user count
     const visibleUsers = document.querySelectorAll('[data-user-card]:not([style*="display: none"])').length;
     const countBadge = document.querySelector('.user-count-badge');
     if (countBadge) {
@@ -918,138 +1081,26 @@ function filterUsers() {
 
 function impersonateOwner() {
     if (confirm('Are you sure you want to login as the company owner? This will redirect you to their dashboard.')) {
-        showToast('Impersonating owner...', 'info');
-        // Add actual impersonation logic here
-        // window.location.href = '/impersonate/owner';
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = '{{ $owner ? route("super-admin.impersonate", [$tenant, $owner]) : "#" }}';
+        const csrf = document.createElement('input');
+        csrf.type = 'hidden';
+        csrf.name = '_token';
+        csrf.value = '{{ csrf_token() }}';
+        form.appendChild(csrf);
+        document.body.appendChild(form);
+        form.submit();
     }
 }
 
-function addUser() {
-    showModal('addUserModal');
-}
-
-function editUser(userId) {
-    showToast(`Opening user editor for user ${userId}...`, 'info');
-    // Add user editing logic here
-}
-
-// Modal Functions
-function showModal(modalId) {
-    const modal = document.getElementById(modalId);
-    if (!modal) {
-        // Create modal dynamically if it doesn't exist
-        createUserModal();
-        return;
-    }
-    modal.classList.remove('hidden');
-    document.body.classList.add('overflow-hidden');
-}
-
-function hideModal(modalId) {
-    const modal = document.getElementById(modalId);
-    if (modal) {
-        modal.classList.add('hidden');
-        document.body.classList.remove('overflow-hidden');
-    }
-}
-
-function createUserModal() {
-    const modalHTML = `
-        <div id="addUserModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50 hidden">
-            <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
-                <div class="mt-3">
-                    <div class="flex items-center justify-between mb-4">
-                        <h3 class="text-lg font-medium text-gray-900">Add New User</h3>
-                        <button onclick="hideModal('addUserModal')" class="text-gray-400 hover:text-gray-600">
-                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-                            </svg>
-                        </button>
-                    </div>
-                    <form class="space-y-4">
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700">Name</label>
-                            <input type="text" class="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2">
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700">Email</label>
-                            <input type="email" class="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2">
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700">Role</label>
-                            <select class="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2">
-                                <option value="user">User</option>
-                                <option value="admin">Admin</option>
-                            </select>
-                        </div>
-                        <div class="flex justify-end space-x-3">
-                            <button type="button" onclick="hideModal('addUserModal')"
-                                    class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50">
-                                Cancel
-                            </button>
-                            <button type="submit"
-                                    class="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700">
-                                Add User
-                            </button>
-                        </div>
-                    </form>
-                </div>
-            </div>
-        </div>
-    `;
-    document.body.insertAdjacentHTML('beforeend', modalHTML);
-    showModal('addUserModal');
-}
-
-// Subscription Functions
-function toggleSubscriptionDetails() {
-    const details = document.getElementById('subscriptionDetails');
-    if (details) {
-        details.classList.toggle('hidden');
-    } else {
-        showToast('Loading subscription details...', 'info');
-    }
-}
-
-// Security Functions
-function viewSecurityLog() {
-    showToast('Opening security log...', 'info');
-    // Add security log viewing logic here
-}
-
-function generateSecurityReport() {
-    showToast('Generating security report...', 'info');
-    // Add security report generation logic here
-}
-
-// Mobile Responsiveness
-function toggleMobileMenu() {
-    const menu = document.getElementById('mobileMenu');
-    if (menu) {
-        menu.classList.toggle('hidden');
-    }
-}
-
-function toggleSection(sectionId) {
-    const section = document.getElementById(sectionId);
-    const icon = document.querySelector(`[data-section="${sectionId}"] svg`);
-
-    if (section) {
-        section.classList.toggle('hidden');
-        if (icon) {
-            icon.classList.toggle('rotate-180');
-        }
-    }
-}
-
-// Initialize tooltips and interactive elements
+// Initialize user card filtering
 document.addEventListener('DOMContentLoaded', function() {
-    // Add data attributes to user cards for filtering
     const userCards = document.querySelectorAll('.group');
-    userCards.forEach((card, index) => {
+    userCards.forEach(card => {
         if (card.querySelector('.text-sm.font-semibold')) {
             const userName = card.querySelector('.text-sm.font-semibold').textContent;
-            const userEmail = card.querySelector('.text-sm.text-gray-600').textContent;
+            const userEmail = card.querySelector('.text-sm.text-gray-600')?.textContent || '';
             const isActive = card.querySelector('.text-green-600') !== null;
             const isOwner = card.querySelector('.text-purple-800') !== null;
 
@@ -1061,218 +1112,50 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
-    // Add mobile responsive classes
-    if (window.innerWidth < 768) {
-        document.body.classList.add('mobile-view');
-        addMobileEnhancements();
-    }
-
-    // Add loading states to buttons
-    const actionButtons = document.querySelectorAll('button[onclick], a[href*="edit"], a[href*="create"]');
-    actionButtons.forEach(button => {
-        button.addEventListener('click', function() {
-            if (this.tagName === 'BUTTON' && !this.type === 'submit') {
-                const originalText = this.innerHTML;
-                this.innerHTML = '<svg class="animate-spin -ml-1 mr-3 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>Loading...';
-                setTimeout(() => {
-                    this.innerHTML = originalText;
-                }, 1000);
-            }
+    // Debounced search
+    const searchInput = document.getElementById('userSearch');
+    if (searchInput) {
+        let timeout;
+        searchInput.addEventListener('input', function() {
+            clearTimeout(timeout);
+            timeout = setTimeout(filterUsers, 300);
         });
-    });
+    }
 });
 
-function addMobileEnhancements() {
-    // Add touch-friendly interactions
-    const cards = document.querySelectorAll('.bg-white.rounded-2xl');
-    cards.forEach(card => {
-        card.addEventListener('touchstart', function() {
-            this.classList.add('scale-95');
-        });
-        card.addEventListener('touchend', function() {
-            this.classList.remove('scale-95');
-        });
-    });
-
-    // Add swipe gestures for navigation
-    let touchStartX = 0;
-    let touchEndX = 0;
-
-    document.addEventListener('touchstart', function(e) {
-        touchStartX = e.changedTouches[0].screenX;
-    });
-
-    document.addEventListener('touchend', function(e) {
-        touchEndX = e.changedTouches[0].screenX;
-        handleSwipeGesture();
-    });
-
-    function handleSwipeGesture() {
-        const swipeThreshold = 50;
-        const diff = touchStartX - touchEndX;
-
-        if (Math.abs(diff) > swipeThreshold) {
-            if (diff > 0) {
-                // Swipe left - next section
-                showToast('Swipe navigation coming soon!', 'info');
-            } else {
-                // Swipe right - previous section
-                showToast('Swipe navigation coming soon!', 'info');
-            }
-        }
-    }
-}
-
-// Performance optimization
-function debounce(func, wait) {
-    let timeout;
-    return function executedFunction(...args) {
-        const later = () => {
-            clearTimeout(timeout);
-            func(...args);
-        };
-        clearTimeout(timeout);
-        timeout = setTimeout(later, wait);
-    };
-}
-
-// Apply debouncing to search
-const debouncedFilter = debounce(filterUsers, 300);
-if (document.getElementById('userSearch')) {
-    document.getElementById('userSearch').addEventListener('input', debouncedFilter);
-}
-
-// Keyboard shortcuts
+// Keyboard shortcut: Escape to close modals
 document.addEventListener('keydown', function(e) {
-    // Ctrl/Cmd + K for search
-    if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
-        e.preventDefault();
-        const searchInput = document.getElementById('userSearch');
-        if (searchInput) {
-            searchInput.focus();
-            showToast('Search users...', 'info');
-        }
-    }
-
-    // Escape to close modals
     if (e.key === 'Escape') {
         const modals = document.querySelectorAll('[id$="Modal"]:not(.hidden)');
-        modals.forEach(modal => {
-            modal.classList.add('hidden');
-        });
+        modals.forEach(modal => modal.classList.add('hidden'));
         document.body.classList.remove('overflow-hidden');
     }
 });
-
-// Auto-refresh data every 30 seconds for real-time updates
-setInterval(function() {
-    // Update timestamps and real-time data
-    const timestamps = document.querySelectorAll('[data-timestamp]');
-    timestamps.forEach(element => {
-        // Update relative timestamps
-        const timestamp = element.dataset.timestamp;
-        if (timestamp) {
-            // Calculate new relative time
-            element.textContent = formatRelativeTime(new Date(timestamp));
-        }
-    });
-}, 30000);
-
-function formatRelativeTime(date) {
-    const now = new Date();
-    const diff = now - date;
-    const seconds = Math.floor(diff / 1000);
-    const minutes = Math.floor(seconds / 60);
-    const hours = Math.floor(minutes / 60);
-    const days = Math.floor(hours / 24);
-
-    if (days > 0) return `${days} day${days > 1 ? 's' : ''} ago`;
-    if (hours > 0) return `${hours} hour${hours > 1 ? 's' : ''} ago`;
-    if (minutes > 0) return `${minutes} minute${minutes > 1 ? 's' : ''} ago`;
-    return 'Just now';
-}
 </script>
 
 @push('styles')
 <style>
-/* Custom styles for enhanced mobile experience */
 @media (max-width: 768px) {
-    .mobile-view .lg\:col-span-2 {
+    .lg\:col-span-2 {
         grid-column: span 1 !important;
     }
-
-    .mobile-view .grid.grid-cols-1.lg\:grid-cols-3 {
-        grid-template-columns: 1fr !important;
-    }
-
-    .mobile-view .hidden.sm\:block {
-        display: none !important;
-    }
-
-    .mobile-view .flex.flex-wrap {
-        flex-direction: column;
-        gap: 0.5rem;
-    }
-
-    .mobile-view .xl\:grid-cols-2 {
+    .grid.grid-cols-1.lg\:grid-cols-3 {
         grid-template-columns: 1fr !important;
     }
 }
 
-/* Enhanced animations */
-.transition-all {
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.group:hover .opacity-0 {
-    opacity: 1;
-}
-
-/* Custom scrollbar */
 ::-webkit-scrollbar {
     width: 6px;
 }
-
 ::-webkit-scrollbar-track {
     background: #f1f5f9;
 }
-
 ::-webkit-scrollbar-thumb {
     background: #cbd5e1;
     border-radius: 3px;
 }
-
 ::-webkit-scrollbar-thumb:hover {
     background: #94a3b8;
-}
-
-/* Loading animation */
-@keyframes shimmer {
-    0% { background-position: -200px 0; }
-    100% { background-position: calc(200px + 100%) 0; }
-}
-
-.loading-shimmer {
-    background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
-    background-size: 200px 100%;
-    animation: shimmer 1.5s infinite;
-}
-
-/* Touch feedback */
-.touch-feedback {
-    transform: scale(1);
-    transition: transform 0.1s;
-}
-
-.touch-feedback:active {
-    transform: scale(0.95);
-}
-
-/* Improved focus states */
-.focus\:ring-2:focus {
-    outline: none;
-    ring: 2px solid #3b82f6;
-    ring-offset: 2px;
 }
 </style>
 @endpush

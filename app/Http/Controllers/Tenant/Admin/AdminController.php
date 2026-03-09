@@ -174,6 +174,16 @@ class AdminController extends Controller
                 'email_verified_at' => now(), // Auto-verify for admin-created users
             ]);
 
+            tenant()->users()->syncWithoutDetaching([
+                $user->id => [
+                    'role' => $userRole,
+                    'is_active' => $validated['status'] === 'active',
+                    'joined_at' => now(),
+                    'accepted_at' => now(),
+                    'permissions' => null,
+                ],
+            ]);
+
             // Assign the role
             if ($request->filled('role_id')) {
                 $user->roles()->attach($validated['role_id']);
