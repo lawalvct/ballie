@@ -9,17 +9,16 @@ use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
+use Spatie\Multitenancy\Jobs\NotTenantAware;
 
-class NewUserRegisteredNotification extends Notification implements ShouldQueue
+class NewUserRegisteredNotification extends Notification implements ShouldQueue, NotTenantAware
 {
     use Queueable;
 
     public function __construct(
         public User $user,
         public Tenant $tenant
-    ) {
-        $this->afterCommit();
-    }
+    ) {}
 
     /**
      * Get the notification's delivery channels.
