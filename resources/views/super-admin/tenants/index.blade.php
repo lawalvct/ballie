@@ -7,6 +7,20 @@
 <div class="max-w-full space-y-8">
 
 
+    <!-- Flash Messages -->
+    @if(session('success'))
+    <div class="bg-green-50 border border-green-200 rounded-xl p-4 flex items-center space-x-3" x-data="{ show: true }" x-show="show" x-init="setTimeout(() => show = false, 5000)" x-transition>
+        <svg class="w-5 h-5 text-green-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+        <span class="text-sm text-green-800">{{ session('success') }}</span>
+    </div>
+    @endif
+    @if(session('error'))
+    <div class="bg-red-50 border border-red-200 rounded-xl p-4 flex items-center space-x-3" x-data="{ show: true }" x-show="show" x-init="setTimeout(() => show = false, 5000)" x-transition>
+        <svg class="w-5 h-5 text-red-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+        <span class="text-sm text-red-800">{{ session('error') }}</span>
+    </div>
+    @endif
+
     <!-- Enhanced Stats Cards -->
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <div class="bg-white rounded-xl shadow-md hover:shadow-lg transition-all duration-300 overflow-hidden border border-gray-100">
@@ -242,7 +256,7 @@
                             Users
                         </th>
                         <th scope="col" class="hidden lg:table-cell px-2 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider w-20">
-                            Revenue
+                            Billing
                         </th>
                         <th scope="col" class="hidden lg:table-cell px-2 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider w-20">
                             Created
@@ -275,11 +289,9 @@
                                 <div class="ml-2 sm:ml-3 min-w-0 flex-1">
                                     <div class="text-xs sm:text-sm font-bold text-gray-900 truncate">{{ $tenant->name }}</div>
                                     <div class="text-xs text-gray-500 truncate">{{ $tenant->email }}</div>
-                                    @if($tenant->domain)
-                                        <div class="text-xs text-indigo-600 font-medium hidden sm:block truncate">{{ $tenant->domain }}</div>
-                                    @else
-                                        <div class="text-xs text-gray-400 hidden sm:block truncate">{{ $tenant->slug }}.app</div>
-                                    @endif
+                                    <div class="text-xs text-gray-400 hidden sm:block truncate">
+                                        {{ $tenant->city ? $tenant->city . ', ' : '' }}{{ $tenant->state ?? $tenant->country ?? $tenant->slug }}
+                                    </div>
                                     <!-- Mobile-only: Show plan info -->
                                     <div class="sm:hidden mt-0.5">
                                         <span class="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800">
@@ -343,11 +355,16 @@
                             @endif
                         </td>
                         <td class="hidden md:table-cell px-2 py-3">
+                            @php
+                                $pivotCount = $tenant->users->count();
+                                $directCount = \App\Models\User::where('tenant_id', $tenant->id)->count();
+                                $userCount = max($pivotCount, $directCount);
+                            @endphp
                             <div class="flex items-center min-w-0">
                                 <svg class="w-3 h-3 text-gray-400 mr-1 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0z"></path>
                                 </svg>
-                                <span class="text-xs font-medium text-gray-900">{{ $tenant->users->count() }}</span>
+                                <span class="text-xs font-medium text-gray-900">{{ $userCount }}</span>
                             </div>
                         </td>
                         <td class="hidden lg:table-cell px-2 py-3">
@@ -433,33 +450,39 @@
                                          x-transition:leave-start="transform opacity-100 scale-100"
                                          x-transition:leave-end="transform opacity-0 scale-95"
                                          class="absolute right-0 mt-1 w-44 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-50">
-                                        @if($tenant->users->where('role', 'owner')->first())
-                                            <a href="#" class="flex items-center px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors">
-                                                <svg class="w-4 h-4 mr-2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
-                                                </svg>
-                                                Impersonate User
-                                            </a>
+                                        @php
+                                            $ownerUser = $tenant->users->first(function($u) {
+                                                return $u->pivot->role === 'owner';
+                                            }) ?? \App\Models\User::where('tenant_id', $tenant->id)->where('role', 'owner')->first();
+                                        @endphp
+                                        @if($ownerUser)
+                                            <form action="{{ route('super-admin.impersonate', [$tenant, $ownerUser]) }}" method="POST" class="block">
+                                                @csrf
+                                                <button type="submit" class="flex items-center w-full px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors">
+                                                    <svg class="w-4 h-4 mr-2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+                                                    </svg>
+                                                    Login as Owner
+                                                </button>
+                                            </form>
                                         @endif
-                                        <a href="#" class="flex items-center px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors">
+                                        <a href="{{ route('super-admin.tenants.show', $tenant) }}" class="flex items-center px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors">
                                             <svg class="w-4 h-4 mr-2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
                                             </svg>
-                                            View Analytics
-                                        </a>
-                                        <a href="#" class="flex items-center px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors">
-                                            <svg class="w-4 h-4 mr-2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-                                            </svg>
-                                            Export Data
+                                            View Details
                                         </a>
                                         <div class="border-t border-gray-200 my-0.5"></div>
-                                        <a href="#" class="block px-3 py-1.5 text-xs text-red-600 hover:bg-red-50">
-                                            <svg class="w-3 h-3 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
-                                            </svg>
-                                            Delete Company
-                                        </a>
+                                        <form action="{{ route('super-admin.tenants.destroy', $tenant) }}" method="POST" class="block" onsubmit="return confirm('Are you sure you want to delete {{ $tenant->name }}? This action cannot be undone.')">
+                                            @csrf
+                                            @method('DELETE')
+                                            <button type="submit" class="flex items-center w-full px-3 py-1.5 text-xs text-red-600 hover:bg-red-50 transition-colors">
+                                                <svg class="w-3 h-3 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                                                </svg>
+                                                Delete Company
+                                            </button>
+                                        </form>
                                     </div>
                                 </div>
                             </div>
@@ -467,7 +490,7 @@
                     </tr>
                     @empty
                     <tr>
-                        <td colspan="8" class="px-8 py-16 text-center">
+                        <td colspan="9" class="px-8 py-16 text-center">
                             <div class="flex flex-col items-center">
                                 <div class="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mb-6">
                                     <svg class="w-10 h-10 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
