@@ -77,7 +77,16 @@
 
                 <!-- Client -->
                 <div>
-                    <label for="customer_id" class="block text-sm font-medium text-gray-700">Client</label>
+                    <div class="flex items-center justify-between">
+                        <label for="customer_id" class="block text-sm font-medium text-gray-700">Client</label>
+                        <button type="button" onclick="openQuickAddClient()"
+                                class="inline-flex items-center text-xs font-medium text-violet-600 hover:text-violet-800 transition-colors">
+                            <svg class="w-3.5 h-3.5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+                            </svg>
+                            Add New Client
+                        </button>
+                    </div>
                     <select name="customer_id" id="customer_id"
                             class="mt-1 block w-full border-gray-300 rounded-lg shadow-sm focus:ring-violet-500 focus:border-violet-500">
                         <option value="">— Select Client —</option>
@@ -189,6 +198,113 @@
         </div>
     </form>
 </div>
+
+<!-- Quick Add Client Modal -->
+<div id="quickAddClientModal" class="fixed inset-0 z-50 hidden" aria-modal="true" role="dialog">
+    <div class="fixed inset-0 bg-gray-900 bg-opacity-50 transition-opacity" onclick="closeQuickAddClient()"></div>
+    <div class="fixed inset-0 flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg transform transition-all">
+            <!-- Modal Header -->
+            <div class="flex items-center justify-between px-6 py-4 border-b border-gray-200">
+                <h3 class="text-lg font-semibold text-gray-900 flex items-center">
+                    <span class="flex items-center justify-center w-8 h-8 rounded-full bg-violet-100 text-violet-600 mr-3">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
+                        </svg>
+                    </span>
+                    Add New Client
+                </h3>
+                <button type="button" onclick="closeQuickAddClient()" class="text-gray-400 hover:text-gray-600 transition-colors">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                    </svg>
+                </button>
+            </div>
+
+            <!-- Modal Body -->
+            <div class="px-6 py-5 space-y-4">
+                <!-- Alert -->
+                <div id="quickAddAlert" class="hidden rounded-lg p-3 text-sm"></div>
+
+                <!-- Customer Type -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Client Type <span class="text-red-500">*</span></label>
+                    <div class="grid grid-cols-2 gap-3">
+                        <label class="relative flex cursor-pointer rounded-lg border p-3 transition-colors has-[:checked]:border-violet-500 has-[:checked]:bg-violet-50">
+                            <input type="radio" name="qc_customer_type" value="individual" class="sr-only" checked onchange="toggleQuickAddType(this.value)">
+                            <span class="flex items-center">
+                                <svg class="w-4 h-4 mr-2 text-violet-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
+                                </svg>
+                                <span class="text-sm font-medium text-gray-700">Individual</span>
+                            </span>
+                        </label>
+                        <label class="relative flex cursor-pointer rounded-lg border p-3 transition-colors has-[:checked]:border-violet-500 has-[:checked]:bg-violet-50">
+                            <input type="radio" name="qc_customer_type" value="business" class="sr-only" onchange="toggleQuickAddType(this.value)">
+                            <span class="flex items-center">
+                                <svg class="w-4 h-4 mr-2 text-violet-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/>
+                                </svg>
+                                <span class="text-sm font-medium text-gray-700">Business</span>
+                            </span>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Individual Name Fields -->
+                <div id="qc_individual_fields" class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label for="qc_first_name" class="block text-sm font-medium text-gray-700">First Name <span class="text-red-500">*</span></label>
+                        <input type="text" id="qc_first_name" placeholder="John"
+                               class="mt-1 block w-full border-gray-300 rounded-lg shadow-sm focus:ring-violet-500 focus:border-violet-500 text-sm">
+                    </div>
+                    <div>
+                        <label for="qc_last_name" class="block text-sm font-medium text-gray-700">Last Name <span class="text-red-500">*</span></label>
+                        <input type="text" id="qc_last_name" placeholder="Doe"
+                               class="mt-1 block w-full border-gray-300 rounded-lg shadow-sm focus:ring-violet-500 focus:border-violet-500 text-sm">
+                    </div>
+                </div>
+
+                <!-- Business Name Field -->
+                <div id="qc_business_fields" class="hidden">
+                    <label for="qc_company_name" class="block text-sm font-medium text-gray-700">Company Name <span class="text-red-500">*</span></label>
+                    <input type="text" id="qc_company_name" placeholder="Acme Corporation"
+                           class="mt-1 block w-full border-gray-300 rounded-lg shadow-sm focus:ring-violet-500 focus:border-violet-500 text-sm">
+                </div>
+
+                <!-- Email -->
+                <div>
+                    <label for="qc_email" class="block text-sm font-medium text-gray-700">Email <span class="text-red-500">*</span></label>
+                    <input type="email" id="qc_email" placeholder="client@example.com"
+                           class="mt-1 block w-full border-gray-300 rounded-lg shadow-sm focus:ring-violet-500 focus:border-violet-500 text-sm">
+                </div>
+
+                <!-- Phone -->
+                <div>
+                    <label for="qc_phone" class="block text-sm font-medium text-gray-700">Phone</label>
+                    <input type="text" id="qc_phone" placeholder="+234 800 000 0000"
+                           class="mt-1 block w-full border-gray-300 rounded-lg shadow-sm focus:ring-violet-500 focus:border-violet-500 text-sm">
+                </div>
+            </div>
+
+            <!-- Modal Footer -->
+            <div class="flex items-center justify-end space-x-3 px-6 py-4 border-t border-gray-200 bg-gray-50 rounded-b-2xl">
+                <button type="button" onclick="closeQuickAddClient()"
+                        class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
+                    Cancel
+                </button>
+                <button type="button" onclick="submitQuickAddClient()" id="quickAddSubmitBtn"
+                        class="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-violet-600 rounded-lg hover:bg-violet-700 transition-colors disabled:opacity-60 disabled:cursor-not-allowed">
+                    <svg id="quickAddSpinner" class="hidden w-4 h-4 mr-2 animate-spin" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
+                    </svg>
+                    Add Client
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
 @endsection
 
 @push('scripts')
@@ -211,6 +327,117 @@
                 editor.save();
             });
         }
+    });
+</script>
+<script>
+    function openQuickAddClient() {
+        document.getElementById('quickAddClientModal').classList.remove('hidden');
+        document.getElementById('qc_first_name').focus();
+        // Reset form state
+        ['qc_first_name','qc_last_name','qc_company_name','qc_email','qc_phone'].forEach(id => {
+            const el = document.getElementById(id);
+            if (el) { el.value = ''; el.classList.remove('border-red-500'); }
+        });
+        document.querySelectorAll('input[name="qc_customer_type"]').forEach(r => r.value === 'individual' ? r.checked = true : null);
+        toggleQuickAddType('individual');
+        showQuickAddAlert('', '');
+    }
+
+    function closeQuickAddClient() {
+        document.getElementById('quickAddClientModal').classList.add('hidden');
+    }
+
+    function toggleQuickAddType(type) {
+        const indFields = document.getElementById('qc_individual_fields');
+        const bizFields = document.getElementById('qc_business_fields');
+        if (type === 'business') {
+            indFields.classList.add('hidden');
+            bizFields.classList.remove('hidden');
+        } else {
+            indFields.classList.remove('hidden');
+            bizFields.classList.add('hidden');
+        }
+    }
+
+    function showQuickAddAlert(message, type) {
+        const alert = document.getElementById('quickAddAlert');
+        if (!message) { alert.classList.add('hidden'); return; }
+        alert.className = 'rounded-lg p-3 text-sm ' + (type === 'error'
+            ? 'bg-red-50 text-red-700 border border-red-200'
+            : 'bg-green-50 text-green-700 border border-green-200');
+        alert.textContent = message;
+        alert.classList.remove('hidden');
+    }
+
+    function submitQuickAddClient() {
+        const type = document.querySelector('input[name="qc_customer_type"]:checked').value;
+        const email = document.getElementById('qc_email').value.trim();
+        const firstName = document.getElementById('qc_first_name').value.trim();
+        const lastName = document.getElementById('qc_last_name').value.trim();
+        const companyName = document.getElementById('qc_company_name').value.trim();
+        const phone = document.getElementById('qc_phone').value.trim();
+
+        // Basic validation
+        if (!email) {
+            showQuickAddAlert('Email is required.', 'error');
+            document.getElementById('qc_email').classList.add('border-red-500');
+            return;
+        }
+        if (type === 'individual' && (!firstName || !lastName)) {
+            showQuickAddAlert('First and last name are required.', 'error');
+            return;
+        }
+        if (type === 'business' && !companyName) {
+            showQuickAddAlert('Company name is required.', 'error');
+            document.getElementById('qc_company_name').classList.add('border-red-500');
+            return;
+        }
+
+        const btn = document.getElementById('quickAddSubmitBtn');
+        const spinner = document.getElementById('quickAddSpinner');
+        btn.disabled = true;
+        spinner.classList.remove('hidden');
+
+        const formData = new FormData();
+        formData.append('customer_type', type);
+        formData.append('email', email);
+        formData.append('phone', phone);
+        if (type === 'individual') {
+            formData.append('first_name', firstName);
+            formData.append('last_name', lastName);
+        } else {
+            formData.append('company_name', companyName);
+        }
+        formData.append('opening_balance_type', 'none');
+        formData.append('_token', '{{ csrf_token() }}');
+
+        fetch('{{ route('tenant.crm.customers.store', ['tenant' => $tenant->slug]) }}', {
+            method: 'POST',
+            headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json' },
+            body: formData
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.success) {
+                // Add new option to dropdown and select it
+                const select = document.getElementById('customer_id');
+                const option = new Option(data.display_name, data.customer_id, true, true);
+                select.add(option);
+                closeQuickAddClient();
+            } else {
+                showQuickAddAlert(data.message || 'Failed to create client.', 'error');
+            }
+        })
+        .catch(() => showQuickAddAlert('An unexpected error occurred. Please try again.', 'error'))
+        .finally(() => {
+            btn.disabled = false;
+            spinner.classList.add('hidden');
+        });
+    }
+
+    // Close modal on Escape key
+    document.addEventListener('keydown', e => {
+        if (e.key === 'Escape') closeQuickAddClient();
     });
 </script>
 @endpush
