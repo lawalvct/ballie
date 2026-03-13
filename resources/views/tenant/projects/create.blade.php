@@ -69,7 +69,7 @@
                 <!-- Description -->
                 <div class="lg:col-span-2">
                     <label for="description" class="block text-sm font-medium text-gray-700">Description</label>
-                    <textarea name="description" id="description" rows="3"
+                    <textarea name="description" id="description" rows="8"
                               class="mt-1 block w-full border-gray-300 rounded-lg shadow-sm focus:ring-violet-500 focus:border-violet-500 @error('description') border-red-300 @enderror"
                               placeholder="Brief summary of the project scope and objectives...">{{ old('description') }}</textarea>
                     @error('description') <p class="mt-1 text-sm text-red-600">{{ $message }}</p> @enderror
@@ -190,3 +190,27 @@
     </form>
 </div>
 @endsection
+
+@push('scripts')
+<script src="https://cdn.tiny.cloud/1/{{ config('services.tinymce.key') }}/tinymce/6/tinymce.min.js" referrerpolicy="origin"></script>
+<script>
+    tinymce.init({
+        selector: '#description',
+        height: 300,
+        menubar: false,
+        plugins: 'lists link table paste wordcount autolink',
+        toolbar: 'undo redo | formatselect | bold italic underline strikethrough | bullist numlist | link table | alignleft aligncenter alignright | removeformat',
+        paste_as_text: false,
+        paste_word_valid_elements: 'b,strong,i,em,h1,h2,h3,h4,h5,h6,p,ul,ol,li,a[href],table,thead,tbody,tr,td,th,br,span,div,blockquote,pre,code,hr,sub,sup',
+        valid_elements: 'p[style],br,strong/b,em/i,u,s,strike,h1,h2,h3,h4,h5,h6,ul,ol,li,a[href|target],table[border|cellpadding|cellspacing],thead,tbody,tr,td[colspan|rowspan],th[colspan|rowspan],blockquote,pre,code,hr,sub,sup,span[style],div[style],img[src|alt|width|height]',
+        content_style: 'body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; font-size: 14px; line-height: 1.6; }',
+        branding: false,
+        promotion: false,
+        setup: function(editor) {
+            editor.on('change', function() {
+                editor.save();
+            });
+        }
+    });
+</script>
+@endpush

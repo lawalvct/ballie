@@ -262,7 +262,7 @@
                                     </svg>
                                     <span class="font-medium text-gray-900">Email</span>
                                 </div>
-                                <p class="text-gray-600">privacy@ballie.ng</p>
+                                <p class="text-gray-600">privacy@ballie.co</p>
                             </div>
                             <div class="bg-white rounded-lg p-4 border border-gray-200">
                                 <div class="flex items-center mb-2">
@@ -271,7 +271,7 @@
                                     </svg>
                                     <span class="font-medium text-gray-900">Phone</span>
                                 </div>
-                                <p class="text-gray-600">+234 800 000 0000</p>
+                                <p class="text-gray-600">+234 8132712715</p>
                             </div>
                             <div class="bg-white rounded-lg p-4 border border-gray-200">
                                 <div class="flex items-center mb-2">
@@ -290,7 +290,7 @@
                                     </svg>
                                     <span class="font-medium text-gray-900">Data Protection Officer</span>
                                 </div>
-                                <p class="text-gray-600">dpo@ballie.ng</p>
+                                <p class="text-gray-600">dpo@ballie.co</p>
                             </div>
                         </div>
                     </section>

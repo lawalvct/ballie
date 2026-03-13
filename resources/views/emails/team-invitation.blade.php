@@ -112,7 +112,7 @@
                 <p>Click the button above to accept your invitation and set up your account.</p>
             </div>
 
-            <p>If you have any questions, feel free to reach out to our support team at <a href="mailto:support@ballie.ng">support@ballie.ng</a> or call us at +234 800 000 0000.</p>
+            <p>If you have any questions, feel free to reach out to our support team at <a href="mailto:support@ballie.co">support@ballie.co</a> or call us at +234 800 000 0000.</p>
 
             <p>Welcome to the Ballie family!</p>
 
@@ -124,8 +124,8 @@
             <p>© {{ date('Y') }} Ballie. All rights reserved.</p>
             <p>If you didn't expect this invitation, you can safely ignore this email.</p>
             <p>
-                <a href="https://ballie.ng" style="color: #6b7280;">Visit our website</a> |
-                <a href="mailto:support@ballie.ng" style="color: #6b7280;">Contact Support</a>
+                <a href="https://ballie.co" style="color: #6b7280;">Visit our website</a> |
+                <a href="mailto:support@ballie.co" style="color: #6b7280;">Contact Support</a>
             </p>
         </div>
     </div>

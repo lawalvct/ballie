@@ -100,7 +100,7 @@ class ProjectController extends Controller
     {
         $validated = $request->validate([
             'name' => 'required|string|max:255',
-            'description' => 'nullable|string|max:5000',
+            'description' => 'nullable|string|max:65000',
             'customer_id' => 'nullable|exists:customers,id',
             'status' => 'required|in:draft,active,on_hold,completed,archived',
             'priority' => 'required|in:low,medium,high,urgent',
@@ -186,7 +186,7 @@ class ProjectController extends Controller
 
         $validated = $request->validate([
             'name' => 'required|string|max:255',
-            'description' => 'nullable|string|max:5000',
+            'description' => 'nullable|string|max:65000',
             'customer_id' => 'nullable|exists:customers,id',
             'status' => 'required|in:draft,active,on_hold,completed,archived',
             'priority' => 'required|in:low,medium,high,urgent',

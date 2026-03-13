@@ -37,7 +37,7 @@ class ContactController extends Controller
 
         try {
             // Send email to admin
-            Mail::to(config('mail.admin_email', 'admin@ballie.ng'))
+            Mail::to(config('mail.admin_email', 'admin@ballie.co'))
                 ->send(new ContactFormMail($contactData));
 
             // Optionally, send confirmation email to user

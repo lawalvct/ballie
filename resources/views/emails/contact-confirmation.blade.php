@@ -37,7 +37,7 @@
             <p>If you have any urgent questions, you can also reach us at:</p>
             <ul>
                 <li>Phone: +234 801 234 5678</li>
-                <li>Email: support@ballie.ng</li>
+                <li>Email: support@ballie.co</li>
             </ul>
 
             <p>Best regards,<br>The Ballie Team</p>

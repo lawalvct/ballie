@@ -18,7 +18,7 @@ return [
      */
     'central_domains' => [
         'ballie.test', // Your local domain
-        'ballie.ng',   // Your production domain
+        'ballie.co',   // Your production domain
     ],
 
     /**

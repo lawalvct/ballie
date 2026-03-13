@@ -66,7 +66,7 @@ class AffiliateController extends Controller
                 ['slug' => 'affiliates-system'],
                 [
                     'name' => 'Affiliates System',
-                    'email' => 'affiliates@ballie.ng',
+                    'email' => 'affiliates@ballie.co',
                     'subscription_status' => 'active',
                     'is_active' => true,
                 ]

@@ -316,7 +316,7 @@
                 </svg>
                 <h4 class="text-md font-semibold text-gray-800 mb-1">Need Help?</h4>
                 <p class="text-sm text-gray-500 mb-4">Contact our support team if you have any questions about your payout.</p>
-                <a href="mailto:support@ballie.ng"
+                <a href="mailto:support@ballie.co"
                    class="inline-flex items-center px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition">
                     <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />

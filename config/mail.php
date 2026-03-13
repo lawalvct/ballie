@@ -98,7 +98,7 @@ return [
     */
 
     'from' => [
-        'address' => env('MAIL_FROM_ADDRESS', 'hello@ballie.ng'),
+        'address' => env('MAIL_FROM_ADDRESS', 'hello@ballie.co'),
         'name' => env('MAIL_FROM_NAME', 'Ballie'),
     ],
 
@@ -111,7 +111,7 @@ return [
     |
     */
 
-    'admin_email' => env('MAIL_ADMIN_EMAIL', 'admin@ballie.ng'),
+    'admin_email' => env('MAIL_ADMIN_EMAIL', 'admin@ballie.co'),
     'send_contact_confirmation' => env('MAIL_SEND_CONTACT_CONFIRMATION', true),
 
     /*

@@ -63,4 +63,8 @@ return [
         'password' => env('CYBERPANEL_PASSWORD'),
     ],
 
+    'tinymce' => [
+        'key' => env('TINYMCE_API_KEY', ''),
+    ],
+
 ];

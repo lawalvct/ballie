@@ -18,6 +18,7 @@
         "laravel/tinker": "^2.8",
         "laravel/ui": "^4.6",
         "maatwebsite/excel": "^3.1",
+        "mews/purifier": "^3.4",
         "openai-php/laravel": "^0.11.0",
         "simplesoftwareio/simple-qrcode": "^4.2",
         "socialiteproviders/facebook": "^4.1",

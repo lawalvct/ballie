@@ -158,7 +158,7 @@
                         @if($project->description)
                             <div>
                                 <h4 class="text-sm font-medium text-gray-500 uppercase tracking-wider mb-2">Description</h4>
-                                <p class="text-gray-700 whitespace-pre-line">{{ $project->description }}</p>
+                                <div class="text-gray-700 prose prose-sm max-w-none">{!! clean($project->description) !!}</div>
                             </div>
                         @endif
 

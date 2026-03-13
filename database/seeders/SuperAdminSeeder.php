@@ -12,7 +12,7 @@ class SuperAdminSeeder extends Seeder
     {
         SuperAdmin::create([
             'name' => 'Super Administrator',
-            'email' => 'admin@ballie.ng',
+            'email' => 'admin@ballie.co',
             'password' => Hash::make('password'),
             'role' => SuperAdmin::ROLE_SUPER_ADMIN,
             'is_active' => true,
@@ -21,7 +21,7 @@ class SuperAdminSeeder extends Seeder
 
         SuperAdmin::create([
             'name' => 'Support Admin',
-            'email' => 'support@ballie.ng',
+            'email' => 'support@ballie.co',
             'password' => Hash::make('password'),
             'role' => SuperAdmin::ROLE_SUPPORT,
             'is_active' => true,
