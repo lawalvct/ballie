@@ -304,6 +304,7 @@
             @endpermission
 
             <!-- Cash Registers -->
+            @module('pos')
             @permission('settings.registers.manage')
             <li>
                 <a href="{{ route('tenant.settings.cash-registers.index', ['tenant' => tenant()->slug]) }}"
@@ -318,6 +319,7 @@
                 </a>
             </li>
             @endpermission
+            @endmodule
 
             <!-- Support Center -->
             <li>
