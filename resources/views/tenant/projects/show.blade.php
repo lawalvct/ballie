@@ -22,7 +22,6 @@
             </a>
         </div>
         <div class="mt-4 lg:mt-0 flex flex-wrap gap-3">
-            @if($project->status === 'draft')
             <div class="relative" x-data="{ open: false }">
                 <button @click="open = !open" type="button"
                         class="inline-flex items-center px-4 py-2 bg-amber-500 hover:bg-amber-600 text-white rounded-lg font-semibold text-xs uppercase tracking-widest shadow-sm transition ease-in-out duration-150">
@@ -36,7 +35,8 @@
                 </button>
                 <div x-show="open" @click.outside="open = false" x-transition
                      class="absolute right-0 mt-2 w-44 bg-white rounded-xl shadow-lg border border-gray-100 z-20 overflow-hidden">
-                    @foreach(['active' => ['label' => 'Active', 'color' => 'text-green-700', 'dot' => 'bg-green-500'], 'on_hold' => ['label' => 'On Hold', 'color' => 'text-yellow-700', 'dot' => 'bg-yellow-500'], 'completed' => ['label' => 'Completed', 'color' => 'text-blue-700', 'dot' => 'bg-blue-500'], 'archived' => ['label' => 'Archived', 'color' => 'text-gray-500', 'dot' => 'bg-gray-400']] as $value => $meta)
+                    @foreach(['draft' => ['label' => 'Draft', 'color' => 'text-gray-600', 'dot' => 'bg-gray-400'], 'active' => ['label' => 'Active', 'color' => 'text-green-700', 'dot' => 'bg-green-500'], 'on_hold' => ['label' => 'On Hold', 'color' => 'text-yellow-700', 'dot' => 'bg-yellow-500'], 'completed' => ['label' => 'Completed', 'color' => 'text-blue-700', 'dot' => 'bg-blue-500'], 'archived' => ['label' => 'Archived', 'color' => 'text-gray-500', 'dot' => 'bg-gray-400']] as $value => $meta)
+                    @if($value !== $project->status)
                     <form action="{{ route('tenant.projects.status.update', [$tenant->slug, $project->id]) }}" method="POST">
                         @csrf @method('PATCH')
                         <input type="hidden" name="status" value="{{ $value }}">
@@ -46,10 +46,10 @@
                             {{ $meta['label'] }}
                         </button>
                     </form>
+                    @endif
                     @endforeach
                 </div>
             </div>
-            @endif
             <a href="{{ route('tenant.projects.edit', [$tenant->slug, $project->id]) }}"
                class="inline-flex items-center px-4 py-2 bg-white border border-gray-300 rounded-lg font-semibold text-xs text-gray-700 uppercase tracking-widest shadow-sm hover:bg-gray-50 transition ease-in-out duration-150">
                 <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -64,6 +64,11 @@
     @if(session('success'))
     <div class="bg-green-50 border-l-4 border-green-500 p-4 rounded-md">
         <div class="flex"><div class="flex-shrink-0"><svg class="h-5 w-5 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg></div><div class="ml-3"><p class="text-sm font-medium text-green-800">{{ session('success') }}</p></div></div>
+    </div>
+    @endif
+    @if(session('error'))
+    <div class="bg-red-50 border-l-4 border-red-500 p-4 rounded-md">
+        <div class="flex"><div class="flex-shrink-0"><svg class="h-5 w-5 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg></div><div class="ml-3"><p class="text-sm font-medium text-red-800">{{ session('error') }}</p></div></div>
     </div>
     @endif
 
@@ -711,13 +716,41 @@
     }
 
     async function updateTaskStatus(taskId, status) {
+        const borderMap = {
+            todo: 'border-l-gray-400',
+            in_progress: 'border-l-blue-500',
+            review: 'border-l-yellow-500',
+            done: 'border-l-green-500',
+        };
         try {
             const res = await fetch(`${BASE_URL}/tasks/${taskId}`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': CSRF_TOKEN, 'Accept': 'application/json' },
                 body: JSON.stringify({ status })
             });
-            if (res.ok) window.location.reload();
+            if (res.ok) {
+                const row = document.getElementById(`task-${taskId}`);
+                if (row) {
+                    // Update left-border colour
+                    Object.values(borderMap).forEach(cls => row.classList.remove(cls));
+                    row.classList.add(borderMap[status] ?? 'border-l-gray-300');
+
+                    // Toggle strikethrough on title
+                    const title = row.querySelector('p.font-medium');
+                    if (title) {
+                        if (status === 'done') {
+                            title.classList.add('line-through', 'text-gray-400');
+                            title.classList.remove('text-gray-900');
+                        } else {
+                            title.classList.remove('line-through', 'text-gray-400');
+                            title.classList.add('text-gray-900');
+                        }
+                    }
+                }
+            } else {
+                const data = await res.json();
+                alert(data.message || 'Failed to update task');
+            }
         } catch (e) { alert('Error updating task'); }
     }
 

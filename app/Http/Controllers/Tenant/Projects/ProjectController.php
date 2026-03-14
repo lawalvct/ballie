@@ -217,6 +217,16 @@ class ProjectController extends Controller
             'status' => 'required|in:draft,active,on_hold,completed,archived',
         ]);
 
+        if ($validated['status'] === 'completed') {
+            $total = $project->tasks()->count();
+            $done  = $project->tasks()->where('status', 'done')->count();
+            if ($total > 0 && $done < $total) {
+                return redirect()
+                    ->route('tenant.projects.show', [$tenant->slug, $project->id])
+                    ->with('error', "Cannot mark project as completed — {$done} of {$total} tasks are done. All tasks must be completed first.");
+            }
+        }
+
         $project->update(['status' => $validated['status'], 'updated_by' => auth()->id()]);
 
         $label = ucfirst(str_replace('_', ' ', $validated['status']));
