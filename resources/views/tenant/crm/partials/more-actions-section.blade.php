@@ -35,7 +35,7 @@
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
                 </svg>
             </div>
-            Customer Management
+            @term('customer') Management
         </h4>
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             <!-- Add Customer Card -->
@@ -48,11 +48,11 @@
                         </svg>
                     </div>
                     <div>
-                        <h5 class="font-semibold text-white group-hover:text-blue-200 transition-colors duration-300">Add Customer</h5>
+                        <h5 class="font-semibold text-white group-hover:text-blue-200 transition-colors duration-300">Add @term('customer')</h5>
                         <p class="text-xs text-blue-200">Create new record</p>
                     </div>
                 </div>
-                <p class="text-xs text-blue-200">Create new customer records for your business.</p>
+                <p class="text-xs text-blue-200">Create new @term('customer') records for your business.</p>
             </a>
 
             <!-- Customer List Card -->
@@ -65,11 +65,11 @@
                         </svg>
                     </div>
                     <div>
-                        <h5 class="font-semibold text-white group-hover:text-green-200 transition-colors duration-300">Customer List</h5>
-                        <p class="text-xs text-green-200">View all customers</p>
+                        <h5 class="font-semibold text-white group-hover:text-green-200 transition-colors duration-300">@term('customer') List</h5>
+                        <p class="text-xs text-green-200">View all @term('customers')</p>
                     </div>
                 </div>
-                <p class="text-xs text-green-200">Browse and manage all your existing customers.</p>
+                <p class="text-xs text-green-200">Browse and manage all your existing @term('customers').</p>
             </a>
 
             <!-- Customer Statements Card -->
@@ -82,11 +82,11 @@
                         </svg>
                     </div>
                     <div>
-                        <h5 class="font-semibold text-white group-hover:text-purple-200 transition-colors duration-300">Customer Statements</h5>
+                        <h5 class="font-semibold text-white group-hover:text-purple-200 transition-colors duration-300">@term('customer') Statements</h5>
                         <p class="text-xs text-purple-200">Generate statements</p>
                     </div>
                 </div>
-                <p class="text-xs text-purple-200">Generate and send customer account statements.</p>
+                <p class="text-xs text-purple-200">Generate and send @term('customer') account statements.</p>
             </a>
 
             <!-- Customer Reports Card -->
@@ -99,11 +99,11 @@
                         </svg>
                     </div>
                     <div>
-                        <h5 class="font-semibold text-white group-hover:text-indigo-200 transition-colors duration-300">Customer Reports</h5>
+                        <h5 class="font-semibold text-white group-hover:text-indigo-200 transition-colors duration-300">@term('customer') Reports</h5>
                         <p class="text-xs text-indigo-200">Analytics & insights</p>
                     </div>
                 </div>
-                <p class="text-xs text-indigo-200">View comprehensive customer analytics and reports.</p>
+                <p class="text-xs text-indigo-200">View comprehensive @term('customer') analytics and reports.</p>
             </a>
         </div>
     </div>
@@ -130,10 +130,10 @@
                     </div>
                     <div>
                         <h5 class="font-semibold text-white group-hover:text-emerald-200 transition-colors duration-300">Create Invoice</h5>
-                        <p class="text-xs text-emerald-200">New customer invoice</p>
+                        <p class="text-xs text-emerald-200">New @term('customer') invoice</p>
                     </div>
                 </div>
-                <p class="text-xs text-emerald-200">Create new invoices for customer transactions.</p>
+                <p class="text-xs text-emerald-200">Create new invoices for @term('customer') transactions.</p>
             </a>
  <!-- Invoice List Card -->
                        <a href="{{ route('tenant.accounting.invoices.index',  ['tenant' => $tenant->slug] ) }}"
@@ -146,11 +146,11 @@
                         </svg>
                     </div>
                     <div>
-                        <h5 class="font-semibold text-white group-hover:text-sky-200 transition-colors duration-300">Customer Invoices</h5>
+                        <h5 class="font-semibold text-white group-hover:text-sky-200 transition-colors duration-300">@term('customer') Invoices</h5>
                         <p class="text-xs text-sky-200">List all invoices</p>
                     </div>
                 </div>
-                <p class="text-xs text-sky-200">View and manage all customer invoices.</p>
+                <p class="text-xs text-sky-200">View and manage all @term('customer') invoices.</p>
             </a>
             <!-- New Quote Card -->
                 <a href="{{ route('tenant.accounting.quotes.create', ['tenant' => $tenant->slug]) }}"
@@ -163,10 +163,10 @@
                     </div>
                     <div>
                         <h5 class="font-semibold text-white group-hover:text-teal-200 transition-colors duration-300">New Quote</h5>
-                        <p class="text-xs text-teal-200">Create customer quote</p>
+                        <p class="text-xs text-teal-200">Create @term('customer') quote</p>
                     </div>
                 </div>
-                <p class="text-xs text-teal-200">Generate professional quotes for customers.</p>
+                <p class="text-xs text-teal-200">Generate professional quotes for @term('customers').</p>
             </a>
 
             <!-- Quote List Card -->
@@ -183,7 +183,7 @@
                         <p class="text-xs text-cyan-200">View all quotes</p>
                     </div>
                 </div>
-                <p class="text-xs text-cyan-200">Browse and manage all customer quotes.</p>
+                <p class="text-xs text-cyan-200">Browse and manage all @term('customer') quotes.</p>
             </a>
 
 
@@ -212,10 +212,10 @@
                     </div>
                     <div>
                         <h5 class="font-semibold text-white group-hover:text-amber-200 transition-colors duration-300">Record Payment</h5>
-                        <p class="text-xs text-amber-200">Log customer payment</p>
+                        <p class="text-xs text-amber-200">Log @term('customer') payment</p>
                     </div>
                 </div>
-                <p class="text-xs text-amber-200">Record and track customer payment transactions.</p>
+                <p class="text-xs text-amber-200">Record and track @term('customer') payment transactions.</p>
             </a>
 
             <!-- Payment Reminder Card -->
@@ -232,7 +232,7 @@
                         <p class="text-xs text-yellow-200">Send reminder email</p>
                     </div>
                 </div>
-                <p class="text-xs text-yellow-200">Send payment reminders to customers automatically.</p>
+                <p class="text-xs text-yellow-200">Send payment reminders to @term('customers') automatically.</p>
             </a>
 
             <!-- Payment Reports Card -->
@@ -262,11 +262,11 @@
                         </svg>
                     </div>
                     <div>
-                        <h5 class="font-semibold text-white group-hover:text-orange-200 transition-colors duration-300">Customer Activities</h5>
+                        <h5 class="font-semibold text-white group-hover:text-orange-200 transition-colors duration-300">@term('customer') Activities</h5>
                         <p class="text-xs text-orange-200">Track interactions</p>
                     </div>
                 </div>
-                <p class="text-xs text-orange-200">Log and track customer interactions and follow-ups.</p>
+                <p class="text-xs text-orange-200">Log and track @term('customer') interactions and follow-ups.</p>
             </a>
         </div>
     </div>

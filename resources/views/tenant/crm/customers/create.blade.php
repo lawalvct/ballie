@@ -1,8 +1,8 @@
 @extends('layouts.tenant')
 
-@section('title', 'Add Customer')
-@section('page-title', 'Add New Customer')
-@section('page-description', 'Create a new customer record in your database.')
+@section('title') Add @term('customer') @endsection
+@section('page-title') Add New @term('customer') @endsection
+@section('page-description') Create a new @term('customer') record in your database. @endsection
 
 @section('content')
 <div class="space-y-6">
@@ -14,11 +14,11 @@
                 <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
                 </svg>
-                Back to Customers
+                Back to @term('customers')
             </a>
         </div>
         <div class="flex items-center space-x-3">
-            <span class="text-sm text-gray-500">Creating new customer</span>
+            <span class="text-sm text-gray-500">Creating new @term('customer')</span>
             <div class="w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
         </div>
     </div>
@@ -96,7 +96,7 @@
         <div class="bg-white rounded-2xl p-6 shadow-lg transition-all duration-300 hover:shadow-xl">
             <h3 class="text-lg font-medium text-gray-900 mb-4 flex items-center">
                 <span class="flex items-center justify-center w-6 h-6 rounded-full bg-blue-100 text-blue-600 mr-2 text-sm font-semibold">1</span>
-                Customer Type
+                @term('customer') Type
                 <span class="text-red-500 ml-1">*</span>
             </h3>
 
@@ -111,7 +111,7 @@
                         </div>
                         <div>
                             <p class="text-lg font-medium text-gray-900">Individual</p>
-                            <p class="text-sm text-gray-500">Personal customer account</p>
+                            <p class="text-sm text-gray-500">Personal @term('customer') account</p>
                         </div>
                     </label>
                 </div>
@@ -142,7 +142,7 @@
         <div class="bg-white rounded-2xl p-6 shadow-lg transition-all duration-300 hover:shadow-xl">
             <h3 class="text-lg font-medium text-gray-900 mb-4 flex items-center">
                 <span class="flex items-center justify-center w-6 h-6 rounded-full bg-blue-100 text-blue-600 mr-2 text-sm font-semibold">2</span>
-                Customer Information
+                @term('customer') Information
                 <span class="text-red-500 ml-1">*</span>
             </h3>
 
@@ -154,7 +154,7 @@
                             <label for="first_name" class="block text-sm font-medium text-gray-700 mb-1">
                                 First Name <span class="text-red-500">*</span>
                             </label>
-                            <input type="text" name="first_name" id="first_name"
+                            <input type="text" name="first_name" id="first_name" required
                                 class="mt-1 focus:ring-blue-500 focus:border-blue-500 block w-full shadow-sm sm:text-sm rounded-md {{ $errors->has('first_name') ? 'border-red-300' : 'border-gray-300' }}"
                                 value="{{ old('first_name') }}" placeholder="John">
                             @error('first_name')
@@ -167,7 +167,7 @@
                             <label for="last_name" class="block text-sm font-medium text-gray-700 mb-1">
                                 Last Name <span class="text-red-500">*</span>
                             </label>
-                            <input type="text" name="last_name" id="last_name"
+                            <input type="text" name="last_name" id="last_name" required
                                 class="mt-1 focus:ring-blue-500 focus:border-blue-500 block w-full shadow-sm sm:text-sm rounded-md {{ $errors->has('last_name') ? 'border-red-300' : 'border-gray-300' }}"
                                 value="{{ old('last_name') }}" placeholder="Doe">
                             @error('last_name')
@@ -213,7 +213,7 @@
                             <label for="email" class="block text-sm font-medium text-gray-700 mb-1">
                                 Email Address <span class="text-red-500">*</span>
                             </label>
-                            <input type="email" name="email" id="email"
+                            <input type="email" name="email" id="email" required
                                 class="mt-1 focus:ring-blue-500 focus:border-blue-500 block w-full shadow-sm sm:text-sm rounded-md {{ $errors->has('email') ? 'border-red-300' : 'border-gray-300' }}"
                                 value="{{ old('email') }}" placeholder="john@example.com">
                             @error('email')
@@ -226,7 +226,7 @@
                             <label for="phone" class="block text-sm font-medium text-gray-700 mb-1">
                                 Phone Number <span class="text-red-500">*</span>
                             </label>
-                            <input type="tel" name="phone" id="phone"
+                            <input type="tel" name="phone" id="phone" required
                                 class="mt-1 focus:ring-blue-500 focus:border-blue-500 block w-full shadow-sm sm:text-sm rounded-md {{ $errors->has('phone') ? 'border-red-300' : 'border-gray-300' }}"
                                 value="{{ old('phone') }}" placeholder="+1 (555) 123-4567">
                             @error('phone')
@@ -369,7 +369,7 @@
 
                     <div>
                         <label for="customer_status" class="block text-sm font-medium text-gray-700 mb-1">
-                            Customer Status
+                            @term('customer') Status
                         </label>
                         <select name="customer_status" id="customer_status"
                             class="mt-1 focus:ring-blue-500 focus:border-blue-500 block w-full shadow-sm sm:text-sm rounded-md border-gray-300">
@@ -444,8 +444,8 @@
                                 <select name="opening_balance_type" id="opening_balance_type"
                                     class="mt-1 focus:ring-blue-500 focus:border-blue-500 block w-full shadow-sm sm:text-sm rounded-md border-gray-300">
                                     <option value="none" {{ old('opening_balance_type', 'none') === 'none' ? 'selected' : '' }}>None (No Opening Balance)</option>
-                                    <option value="debit" {{ old('opening_balance_type') === 'debit' ? 'selected' : '' }}>Debit (Customer Owes You)</option>
-                                    <option value="credit" {{ old('opening_balance_type') === 'credit' ? 'selected' : '' }}>Credit (You Owe Customer)</option>
+                                    <option value="debit" {{ old('opening_balance_type') === 'debit' ? 'selected' : '' }}>Debit (@term('customer') Owes You)</option>
+                                    <option value="credit" {{ old('opening_balance_type') === 'credit' ? 'selected' : '' }}>Credit (You Owe @term('customer'))</option>
                                 </select>
                                 @error('opening_balance_type')
                                     <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
@@ -570,7 +570,7 @@
                     <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
                     </svg>
-                    Create Customer
+                    Create @term('customer')
                 </button>
             </div>
         </div>
@@ -647,12 +647,18 @@ document.addEventListener('DOMContentLoaded', function() {
             if (this.value === 'individual') {
                 individualFields.classList.remove('hidden');
                 businessFields.classList.add('hidden');
+                document.getElementById('first_name').required = true;
+                document.getElementById('last_name').required = true;
+                document.getElementById('company_name').required = false;
                 // Clear business fields
                 document.getElementById('company_name').value = '';
                 document.getElementById('tax_id').value = '';
             } else {
                 individualFields.classList.add('hidden');
                 businessFields.classList.remove('hidden');
+                document.getElementById('first_name').required = false;
+                document.getElementById('last_name').required = false;
+                document.getElementById('company_name').required = true;
                 // Clear individual fields
                 document.getElementById('first_name').value = '';
                 document.getElementById('last_name').value = '';
@@ -664,6 +670,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // Progress tracking
     function updateProgress() {
         const requiredFields = document.querySelectorAll('input[required], select[required]');
+        if (requiredFields.length === 0) return;
         const filledFields = Array.from(requiredFields).filter(field => field.value.trim() !== '');
         const progress = (filledFields.length / requiredFields.length) * 100;
 
@@ -742,6 +749,14 @@ document.addEventListener('DOMContentLoaded', function() {
         form.appendChild(draftInput);
         form.submit();
     });
+
+    // Initialize required fields based on the selected type (handles old() repopulation)
+    const currentType = document.querySelector('input[name="customer_type"]:checked')?.value || 'individual';
+    if (currentType === 'business') {
+        document.getElementById('first_name').required = false;
+        document.getElementById('last_name').required = false;
+        document.getElementById('company_name').required = true;
+    }
 
     // Initialize progress on page load
     updateProgress();
