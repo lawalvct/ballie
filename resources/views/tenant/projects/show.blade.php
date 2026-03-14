@@ -169,11 +169,11 @@
                 </button>
                 <button @click="activeTab = 'milestones'" :class="activeTab === 'milestones' ? 'border-violet-500 text-violet-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'"
                         class="whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition-colors duration-200">
-                    Milestones <span class="ml-1 px-2 py-0.5 rounded-full text-xs bg-gray-100 text-gray-600">{{ $milestoneStats['total'] }}</span>
+                    Milestones <span id="milestones-count-badge" class="ml-1 px-2 py-0.5 rounded-full text-xs bg-gray-100 text-gray-600">{{ $milestoneStats['total'] }}</span>
                 </button>
                 <button @click="activeTab = 'notes'" :class="activeTab === 'notes' ? 'border-violet-500 text-violet-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'"
                         class="whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition-colors duration-200">
-                    Notes <span class="ml-1 px-2 py-0.5 rounded-full text-xs bg-gray-100 text-gray-600">{{ $project->notes->count() }}</span>
+                    Notes <span id="notes-count-badge" class="ml-1 px-2 py-0.5 rounded-full text-xs bg-gray-100 text-gray-600">{{ $project->notes->count() }}</span>
                 </button>
                 <button @click="activeTab = 'files'" :class="activeTab === 'files' ? 'border-violet-500 text-violet-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'"
                         class="whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition-colors duration-200">
@@ -195,7 +195,23 @@
                         @if($project->description)
                             <div>
                                 <h4 class="text-sm font-medium text-gray-500 uppercase tracking-wider mb-2">Description</h4>
-                                <div class="text-gray-700 prose prose-sm max-w-none">{!! clean($project->description) !!}</div>
+                                @php
+                                    $cleanDescription = clean($project->description);
+                                    $descriptionPreview = \Illuminate\Support\Str::words(strip_tags($cleanDescription), 40, '...');
+                                    $hasLongDescription = trim(strip_tags($cleanDescription)) !== trim($descriptionPreview);
+                                @endphp
+                                <div x-data="{ expanded: false }" class="space-y-2">
+                                    <div x-show="!expanded" class="text-sm text-gray-700 leading-6">
+                                        {{ $descriptionPreview }}
+                                    </div>
+                                    <div x-show="expanded" x-transition class="text-gray-700 prose prose-sm max-w-none">{!! $cleanDescription !!}</div>
+                                    @if($hasLongDescription)
+                                        <button @click="expanded = !expanded" type="button" class="text-sm font-medium text-violet-600 hover:text-violet-700 transition-colors duration-200">
+                                            <span x-show="!expanded">Read more</span>
+                                            <span x-show="expanded">Show less</span>
+                                        </button>
+                                    @endif
+                                </div>
                             </div>
                         @endif
 
@@ -405,7 +421,7 @@
                                    class="block w-full border-gray-300 rounded-lg shadow-sm text-sm focus:ring-violet-500 focus:border-violet-500">
                         </div>
                         <div class="md:col-span-2">
-                            <input type="number" x-model="newMilestone.amount" placeholder="Amount (₦)" step="0.01" min="0"
+                            <input type="text" x-ref="milestoneAmountInput" :value="milestoneAmountDisplay" @input="setMilestoneAmount($event.target.value)" inputmode="decimal" placeholder="Amount (₦)"
                                    class="block w-full border-gray-300 rounded-lg shadow-sm text-sm focus:ring-violet-500 focus:border-violet-500">
                         </div>
                         <div class="md:col-span-2">
@@ -428,7 +444,7 @@
                 </div>
 
                 <!-- Milestones List -->
-                <div class="space-y-3">
+                <div id="milestones-list" class="space-y-3">
                     @forelse($project->milestones as $milestone)
                         <div class="flex items-center justify-between p-4 bg-white border border-gray-200 rounded-lg" id="milestone-{{ $milestone->id }}">
                             <div class="flex items-center space-x-4 flex-1 min-w-0">
@@ -481,7 +497,7 @@
                             </div>
                         </div>
                     @empty
-                        <div class="text-center py-8 text-gray-400">
+                        <div id="milestones-empty-state" class="text-center py-8 text-gray-400">
                             <svg class="w-12 h-12 mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 21v-4m0 0V5a2 2 0 012-2h6.5l1 1H21l-3 6 3 6h-8.5l-1-1H5a2 2 0 00-2 2zm9-13.5V9"></path>
                             </svg>
@@ -513,7 +529,7 @@
                 </div>
 
                 <!-- Notes Feed -->
-                <div class="space-y-4">
+                <div id="notes-list" class="space-y-4">
                     @forelse($project->notes as $note)
                         <div class="flex space-x-3" id="note-{{ $note->id }}">
                             <div class="flex-shrink-0">
@@ -540,7 +556,7 @@
                             </div>
                         </div>
                     @empty
-                        <div class="text-center py-8 text-gray-400">
+                        <div id="notes-empty-state" class="text-center py-8 text-gray-400">
                             <svg class="w-12 h-12 mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z"></path>
                             </svg>
@@ -734,6 +750,7 @@
             taskLoading: false,
             // Milestone
             newMilestone: { title: '', amount: '', due_date: '', is_billable: true },
+            milestoneAmountDisplay: '',
             milestoneLoading: false,
             // Note
             newNote: { content: '', is_internal: true },
@@ -771,6 +788,31 @@
                     : formattedWhole;
             },
 
+            setMilestoneAmount(value) {
+                const sanitized = value.replace(/,/g, '').replace(/[^\d.]/g, '');
+
+                if (!sanitized) {
+                    this.newMilestone.amount = '';
+                    this.milestoneAmountDisplay = '';
+                    return;
+                }
+
+                const hasDecimal = sanitized.includes('.');
+                const [wholePartRaw, ...decimalParts] = sanitized.split('.');
+                const wholePart = wholePartRaw.replace(/^0+(?=\d)/, '');
+                const decimalPart = decimalParts.join('').slice(0, 2);
+                const normalizedWhole = wholePart === '' ? '0' : wholePart;
+
+                this.newMilestone.amount = hasDecimal
+                    ? `${normalizedWhole}.${decimalPart}`
+                    : normalizedWhole;
+
+                const formattedWhole = Number(normalizedWhole).toLocaleString('en-NG');
+                this.milestoneAmountDisplay = hasDecimal
+                    ? `${formattedWhole}.${decimalPart}`
+                    : formattedWhole;
+            },
+
             async addTask() {
                 this.taskLoading = true;
                 try {
@@ -798,11 +840,13 @@
                         headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': CSRF_TOKEN, 'Accept': 'application/json' },
                         body: JSON.stringify(this.newMilestone)
                     });
+                    const data = await res.json();
                     if (res.ok) {
+                        appendMilestoneRow(data.milestone);
+                        updateCount('milestones-count-badge', 1);
                         this.newMilestone = { title: '', amount: '', due_date: '', is_billable: true };
-                        window.location.reload();
+                        this.milestoneAmountDisplay = '';
                     } else {
-                        const data = await res.json();
                         alert(data.message || 'Failed to add milestone');
                     }
                 } catch (e) { alert('Error adding milestone'); }
@@ -817,11 +861,12 @@
                         headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': CSRF_TOKEN, 'Accept': 'application/json' },
                         body: JSON.stringify(this.newNote)
                     });
+                    const data = await res.json();
                     if (res.ok) {
+                        appendNoteRow(data.note);
+                        updateCount('notes-count-badge', 1);
                         this.newNote = { content: '', is_internal: true };
-                        window.location.reload();
                     } else {
-                        const data = await res.json();
                         alert(data.message || 'Failed to add note');
                     }
                 } catch (e) { alert('Error adding note'); }
@@ -949,7 +994,11 @@
             });
             if (res.ok) {
                 const el = document.getElementById(`milestone-${milestoneId}`);
-                if (el) el.remove();
+                if (el) {
+                    el.remove();
+                    updateCount('milestones-count-badge', -1);
+                    ensureMilestoneEmptyState();
+                }
             }
         } catch (e) { alert('Error deleting milestone'); }
     }
@@ -963,7 +1012,11 @@
             });
             if (res.ok) {
                 const el = document.getElementById(`note-${noteId}`);
-                if (el) el.remove();
+                if (el) {
+                    el.remove();
+                    updateCount('notes-count-badge', -1);
+                    ensureNotesEmptyState();
+                }
             }
         } catch (e) { alert('Error deleting note'); }
     }
@@ -1043,12 +1096,16 @@
             .join(' ');
     }
 
-    function updateExpensesCount(delta) {
-        const badge = document.getElementById('expenses-count-badge');
+    function updateCount(badgeId, delta) {
+        const badge = document.getElementById(badgeId);
         if (!badge) return;
 
         const nextValue = Math.max(0, (parseInt(badge.textContent, 10) || 0) + delta);
         badge.textContent = nextValue;
+    }
+
+    function updateExpensesCount(delta) {
+        updateCount('expenses-count-badge', delta);
     }
 
     function updateBudgetSummary(actualCost, budgetUsedPercent) {
@@ -1116,6 +1173,89 @@
         list.prepend(row);
     }
 
+    function appendMilestoneRow(milestone) {
+        const list = document.getElementById('milestones-list');
+        if (!list || !milestone) return;
+
+        const emptyState = document.getElementById('milestones-empty-state');
+        if (emptyState) emptyState.remove();
+
+        const amountHtml = milestone.amount
+            ? `<span class="text-xs font-medium ${milestone.is_billable ? 'text-violet-600' : 'text-gray-500'}">${formatCurrency(milestone.amount)}${milestone.is_billable ? ' (Billable)' : ''}</span>`
+            : '';
+        const dueDateHtml = milestone.due_date
+            ? `<span class="text-xs text-gray-500">Due: ${escapeHtml(formatExpenseDate(milestone.due_date))}</span>`
+            : '';
+
+        const row = document.createElement('div');
+        row.id = `milestone-${milestone.id}`;
+        row.className = 'flex items-center justify-between p-4 bg-white border border-gray-200 rounded-lg';
+        row.innerHTML = `
+            <div class="flex items-center space-x-4 flex-1 min-w-0">
+                <button onclick="toggleMilestone(${milestone.id}, true)"
+                        class="flex-shrink-0 w-6 h-6 rounded-full border-2 flex items-center justify-center transition-colors duration-200 border-gray-300 hover:border-green-400">
+                </button>
+                <div class="flex-1 min-w-0">
+                    <p class="text-sm font-medium text-gray-900">${escapeHtml(milestone.title)}</p>
+                    <div class="flex items-center space-x-3 mt-1">
+                        ${amountHtml}
+                        ${dueDateHtml}
+                    </div>
+                </div>
+            </div>
+            <div class="flex items-center space-x-2 ml-3">
+                <button onclick="deleteMilestone(${milestone.id})" class="p-1 text-gray-400 hover:text-red-500 transition-colors duration-200" title="Delete milestone">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                    </svg>
+                </button>
+            </div>
+        `;
+
+        list.prepend(row);
+    }
+
+    function appendNoteRow(note) {
+        const list = document.getElementById('notes-list');
+        if (!list || !note) return;
+
+        const emptyState = document.getElementById('notes-empty-state');
+        if (emptyState) emptyState.remove();
+
+        const initials = (note.user?.name || '?').substring(0, 2).toUpperCase();
+        const internalHtml = note.is_internal
+            ? '<span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-yellow-100 text-yellow-700">Internal</span>'
+            : '';
+
+        const row = document.createElement('div');
+        row.id = `note-${note.id}`;
+        row.className = 'flex space-x-3';
+        row.innerHTML = `
+            <div class="flex-shrink-0">
+                <div class="w-8 h-8 bg-violet-100 rounded-full flex items-center justify-center">
+                    <span class="text-xs font-medium text-violet-600">${escapeHtml(initials)}</span>
+                </div>
+            </div>
+            <div class="flex-1 bg-white rounded-lg border border-gray-200 p-4">
+                <div class="flex items-center justify-between mb-2">
+                    <div class="flex items-center space-x-2">
+                        <span class="text-sm font-medium text-gray-900">${escapeHtml(note.user?.name || 'Unknown')}</span>
+                        <span class="text-xs text-gray-400">Just now</span>
+                        ${internalHtml}
+                    </div>
+                    <button onclick="deleteNote(${note.id})" class="p-1 text-gray-400 hover:text-red-500 transition-colors duration-200" title="Delete note">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                        </svg>
+                    </button>
+                </div>
+                <p class="text-sm text-gray-700 whitespace-pre-line">${escapeHtml(note.content)}</p>
+            </div>
+        `;
+
+        list.prepend(row);
+    }
+
     function ensureExpenseEmptyState() {
         const list = document.getElementById('expenses-list');
         if (!list || list.children.length > 0) return;
@@ -1128,6 +1268,40 @@
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"></path>
             </svg>
             <p>No expenses recorded yet. Add project costs above — they'll be posted to accounting automatically.</p>
+        `;
+
+        list.appendChild(emptyState);
+    }
+
+    function ensureMilestoneEmptyState() {
+        const list = document.getElementById('milestones-list');
+        if (!list || list.children.length > 0) return;
+
+        const emptyState = document.createElement('div');
+        emptyState.id = 'milestones-empty-state';
+        emptyState.className = 'text-center py-8 text-gray-400';
+        emptyState.innerHTML = `
+            <svg class="w-12 h-12 mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 21v-4m0 0V5a2 2 0 012-2h6.5l1 1H21l-3 6 3 6h-8.5l-1-1H5a2 2 0 00-2 2zm9-13.5V9"></path>
+            </svg>
+            <p>No milestones yet. Add one above to track project deliverables.</p>
+        `;
+
+        list.appendChild(emptyState);
+    }
+
+    function ensureNotesEmptyState() {
+        const list = document.getElementById('notes-list');
+        if (!list || list.children.length > 0) return;
+
+        const emptyState = document.createElement('div');
+        emptyState.id = 'notes-empty-state';
+        emptyState.className = 'text-center py-8 text-gray-400';
+        emptyState.innerHTML = `
+            <svg class="w-12 h-12 mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z"></path>
+            </svg>
+            <p>No notes yet. Add one to keep track of important information.</p>
         `;
 
         list.appendChild(emptyState);

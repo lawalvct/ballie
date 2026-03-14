@@ -344,9 +344,14 @@ class ProjectController extends Controller
         $validated['is_billable'] = $validated['is_billable'] ?? true;
 
         $milestone = ProjectMilestone::create($validated);
+        $project->refresh();
 
         if ($request->wantsJson()) {
-            return response()->json(['success' => true, 'milestone' => $milestone]);
+            return response()->json([
+                'success' => true,
+                'milestone' => $milestone,
+                'milestone_count' => $project->milestones()->count(),
+            ]);
         }
 
         return back()->with('success', 'Milestone added successfully.');
@@ -502,7 +507,11 @@ class ProjectController extends Controller
         $note->load('user');
 
         if ($request->wantsJson()) {
-            return response()->json(['success' => true, 'note' => $note]);
+            return response()->json([
+                'success' => true,
+                'note' => $note,
+                'note_count' => $project->notes()->count(),
+            ]);
         }
 
         return back()->with('success', 'Note added.');
