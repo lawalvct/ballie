@@ -113,6 +113,11 @@ class Project extends Model
         return $this->hasMany(ProjectAttachment::class)->latest();
     }
 
+    public function expenses()
+    {
+        return $this->hasMany(ProjectExpense::class)->latest();
+    }
+
     // ─── Scopes ───────────────────────────────────────────
 
     public function scopeForTenant($query, $tenantId)

@@ -409,9 +409,9 @@ function invoiceShow() {
         emailForm: {
             to: '{{ $customer->email ?? "" }}',
             subject: '@term('sales_invoice') {{ ($invoice->voucherType->prefix ?? '') . $invoice->voucher_number }} from {{ $tenant->name }}',
-            message: `Dear {{ $customer->display_name ?? '@term('customer')' }},
+            message: `Dear {{ $customer->display_name ?? $term->label('customer') }},
 
-Please find attached your @term('sales_invoice').toLowerCase() ({{ ($invoice->voucherType->prefix ?? '') . $invoice->voucher_number }}) for the amount of ₦{{ number_format($invoice->total_amount, 2) }}.
+Please find attached your invoice ({{ ($invoice->voucherType->prefix ?? '') . $invoice->voucher_number }}) for the amount of ₦{{ number_format($invoice->total_amount, 2) }}.
 
 Thank you for your business!
 
@@ -423,7 +423,7 @@ Best regards,
             amount: '{{ $balanceDue > 0 ? $balanceDue : "" }}',
             bank_account_id: '',
             reference: '',
-            notes: 'Payment for @term('sales_invoice').toLowerCase() {{ ($invoice->voucherType->prefix ?? '') . $invoice->voucher_number }}'
+            notes: 'Payment for invoice {{ ($invoice->voucherType->prefix ?? '') . $invoice->voucher_number }}'
         },
 
         openEmailModal() { this.showEmailModal = true; },

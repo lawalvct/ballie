@@ -453,6 +453,11 @@ Route::prefix('ledger-accounts')->name('ledger-accounts.')->group(function () {
             Route::post('/{project}/milestones', [\App\Http\Controllers\Tenant\Projects\ProjectController::class, 'storeMilestone'])->name('milestones.store');
             Route::put('/{project}/milestones/{milestone}', [\App\Http\Controllers\Tenant\Projects\ProjectController::class, 'updateMilestone'])->name('milestones.update');
             Route::delete('/{project}/milestones/{milestone}', [\App\Http\Controllers\Tenant\Projects\ProjectController::class, 'destroyMilestone'])->name('milestones.destroy');
+            Route::post('/{project}/milestones/{milestone}/invoice', [\App\Http\Controllers\Tenant\Projects\ProjectController::class, 'invoiceMilestone'])->name('milestones.invoice');
+
+            // Expenses (AJAX + accounting)
+            Route::post('/{project}/expenses', [\App\Http\Controllers\Tenant\Projects\ProjectController::class, 'storeExpense'])->name('expenses.store');
+            Route::delete('/{project}/expenses/{expense}', [\App\Http\Controllers\Tenant\Projects\ProjectController::class, 'destroyExpense'])->name('expenses.destroy');
 
             // Notes (AJAX)
             Route::post('/{project}/notes', [\App\Http\Controllers\Tenant\Projects\ProjectController::class, 'storeNote'])->name('notes.store');

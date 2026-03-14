@@ -6,11 +6,13 @@ use App\Http\Controllers\Controller;
 use App\Models\Customer;
 use App\Models\Project;
 use App\Models\ProjectAttachment;
+use App\Models\ProjectExpense;
 use App\Models\ProjectMilestone;
 use App\Models\ProjectNote;
 use App\Models\ProjectTask;
 use App\Models\Tenant;
 use App\Models\User;
+use App\Services\ProjectAccountingService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
@@ -136,6 +138,7 @@ class ProjectController extends Controller
             'milestones' => fn($q) => $q->with('invoice')->orderBy('sort_order'),
             'notes' => fn($q) => $q->with('user')->latest(),
             'attachments' => fn($q) => $q->with('user')->latest(),
+            'expenses' => fn($q) => $q->with(['creator', 'voucher'])->latest(),
         ]);
 
         $teamMembers = User::where('tenant_id', $tenant->id)->where('is_active', true)->orderBy('name')->get();
@@ -389,6 +392,93 @@ class ProjectController extends Controller
         }
 
         return back()->with('success', 'Milestone deleted.');
+    }
+
+    public function invoiceMilestone(Request $request, Tenant $tenant, Project $project, ProjectMilestone $milestone)
+    {
+        $this->authorizeProject($project, $tenant);
+
+        try {
+            $service = new ProjectAccountingService($tenant->id);
+            $voucher = $service->invoiceMilestone($milestone);
+
+            if ($request->wantsJson()) {
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Milestone invoiced successfully.',
+                    'voucher_number' => $voucher->voucher_number,
+                ]);
+            }
+
+            return back()->with('success', "Milestone \"{$milestone->title}\" invoiced — Voucher {$voucher->voucher_number} created.");
+        } catch (\Exception $e) {
+            if ($request->wantsJson()) {
+                return response()->json(['success' => false, 'message' => $e->getMessage()], 422);
+            }
+            return back()->with('error', $e->getMessage());
+        }
+    }
+
+    // ══════════════════════════════════════════════════════
+    //  EXPENSES — AJAX endpoints (with accounting)
+    // ══════════════════════════════════════════════════════
+
+    public function storeExpense(Request $request, Tenant $tenant, Project $project)
+    {
+        $this->authorizeProject($project, $tenant);
+
+        $validated = $request->validate([
+            'title'        => 'required|string|max:255',
+            'description'  => 'nullable|string|max:2000',
+            'amount'       => 'required|numeric|min:0.01',
+            'expense_date' => 'required|date',
+            'category'     => 'nullable|string|max:50',
+        ]);
+
+        try {
+            $service = new ProjectAccountingService($tenant->id);
+            $expense = $service->recordExpense($project, $validated);
+            $expense->load(['creator', 'voucher']);
+            $project->refresh();
+
+            if ($request->wantsJson()) {
+                return response()->json([
+                    'success' => true,
+                    'expense' => $expense,
+                    'project_actual_cost' => (float) $project->actual_cost,
+                    'budget_used_percent' => $project->budget_used_percent,
+                ]);
+            }
+
+            return back()->with('success', 'Expense recorded and posted to accounting.');
+        } catch (\Exception $e) {
+            if ($request->wantsJson()) {
+                return response()->json(['success' => false, 'message' => $e->getMessage()], 422);
+            }
+            return back()->with('error', $e->getMessage());
+        }
+    }
+
+    public function destroyExpense(Tenant $tenant, Project $project, ProjectExpense $expense)
+    {
+        $this->authorizeProject($project, $tenant);
+
+        DB::transaction(function () use ($project, $expense) {
+            $project->decrement('actual_cost', $expense->amount);
+
+            if ($expense->voucher_id && $expense->voucher) {
+                $expense->voucher->entries()->delete();
+                $expense->voucher->delete();
+            }
+
+            $expense->delete();
+        });
+
+        if (request()->wantsJson()) {
+            return response()->json(['success' => true]);
+        }
+
+        return back()->with('success', 'Expense deleted and reversed from accounting.');
     }
 
     // ══════════════════════════════════════════════════════
