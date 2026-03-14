@@ -205,11 +205,28 @@ class AdminController extends Controller
 
             DB::commit();
 
+            if ($request->ajax() || $request->expectsJson()) {
+                return response()->json([
+                    'success' => true,
+                    'message' => 'User created successfully!',
+                    'user_id' => $user->id,
+                    'display_name' => $user->name,
+                ]);
+            }
+
             return redirect()->route('tenant.admin.users.index', tenant('slug'))
                 ->with('success', 'User created successfully!');
 
         } catch (Exception $e) {
             DB::rollBack();
+
+            if ($request->ajax() || $request->expectsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Error creating user: ' . $e->getMessage(),
+                ], 422);
+            }
+
             return back()->withInput()
                 ->with('error', 'Error creating user: ' . $e->getMessage());
         }

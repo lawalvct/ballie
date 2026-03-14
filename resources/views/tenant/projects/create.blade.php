@@ -102,7 +102,16 @@
 
                 <!-- Assigned To -->
                 <div>
-                    <label for="assigned_to" class="block text-sm font-medium text-gray-700">Project Manager</label>
+                    <div class="flex items-center justify-between">
+                        <label for="assigned_to" class="block text-sm font-medium text-gray-700">Project Manager</label>
+                        <button type="button" onclick="openQuickAddManager()"
+                                class="inline-flex items-center text-xs font-medium text-violet-600 hover:text-violet-800 transition-colors">
+                            <svg class="w-3.5 h-3.5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+                            </svg>
+                            Add New Manager
+                        </button>
+                    </div>
                     <select name="assigned_to" id="assigned_to"
                             class="mt-1 block w-full border-gray-300 rounded-lg shadow-sm focus:ring-violet-500 focus:border-violet-500">
                         <option value="">— Select Team Member —</option>
@@ -175,8 +184,10 @@
                         </div>
                         <input type="number" name="budget" id="budget" value="{{ old('budget') }}" step="0.01" min="0"
                                class="block w-full pl-8 border-gray-300 rounded-lg focus:ring-violet-500 focus:border-violet-500 @error('budget') border-red-300 @enderror"
-                               placeholder="0.00">
+                               placeholder="0.00"
+                               oninput="updateBudgetPreview('budget', 'budget_preview')">
                     </div>
+                    <p id="budget_preview" class="mt-1 text-sm text-violet-600 font-medium hidden"></p>
                     @error('budget') <p class="mt-1 text-sm text-red-600">{{ $message }}</p> @enderror
                 </div>
             </div>
@@ -197,6 +208,99 @@
             </button>
         </div>
     </form>
+</div>
+
+<!-- Quick Add Manager Modal -->
+<div id="quickAddManagerModal" class="fixed inset-0 z-50 hidden" aria-modal="true" role="dialog">
+    <div class="fixed inset-0 bg-gray-900 bg-opacity-50 transition-opacity" onclick="closeQuickAddManager()"></div>
+    <div class="fixed inset-0 flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg transform transition-all">
+            <!-- Modal Header -->
+            <div class="flex items-center justify-between px-6 py-4 border-b border-gray-200">
+                <h3 class="text-lg font-semibold text-gray-900 flex items-center">
+                    <span class="flex items-center justify-center w-8 h-8 rounded-full bg-violet-100 text-violet-600 mr-3">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
+                        </svg>
+                    </span>
+                    Add New Project Manager
+                </h3>
+                <button type="button" onclick="closeQuickAddManager()" class="text-gray-400 hover:text-gray-600 transition-colors">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                    </svg>
+                </button>
+            </div>
+
+            <!-- Modal Body -->
+            <div class="px-6 py-5 space-y-4">
+                <div id="quickAddManagerAlert" class="hidden rounded-lg p-3 text-sm"></div>
+
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label for="qm_first_name" class="block text-sm font-medium text-gray-700">First Name <span class="text-red-500">*</span></label>
+                        <input type="text" id="qm_first_name" placeholder="John"
+                               class="mt-1 block w-full border-gray-300 rounded-lg shadow-sm focus:ring-violet-500 focus:border-violet-500 text-sm">
+                    </div>
+                    <div>
+                        <label for="qm_last_name" class="block text-sm font-medium text-gray-700">Last Name <span class="text-red-500">*</span></label>
+                        <input type="text" id="qm_last_name" placeholder="Doe"
+                               class="mt-1 block w-full border-gray-300 rounded-lg shadow-sm focus:ring-violet-500 focus:border-violet-500 text-sm">
+                    </div>
+                </div>
+
+                <div>
+                    <label for="qm_email" class="block text-sm font-medium text-gray-700">Email <span class="text-red-500">*</span></label>
+                    <input type="email" id="qm_email" placeholder="manager@example.com"
+                           class="mt-1 block w-full border-gray-300 rounded-lg shadow-sm focus:ring-violet-500 focus:border-violet-500 text-sm">
+                </div>
+
+                <div>
+                    <label for="qm_password" class="block text-sm font-medium text-gray-700">Password <span class="text-red-500">*</span></label>
+                    <div class="relative mt-1">
+                        <input type="password" id="qm_password" placeholder="Min. 8 characters"
+                               class="block w-full border-gray-300 rounded-lg shadow-sm focus:ring-violet-500 focus:border-violet-500 text-sm pr-10">
+                        <button type="button" onclick="toggleQmPassword()" class="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600">
+                            <svg id="qm_eye_open" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+                            </svg>
+                            <svg id="qm_eye_closed" class="w-4 h-4 hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21"/>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+
+                <div>
+                    <label for="qm_role_id" class="block text-sm font-medium text-gray-700">Role <span class="text-red-500">*</span></label>
+                    <select id="qm_role_id"
+                            class="mt-1 block w-full border-gray-300 rounded-lg shadow-sm focus:ring-violet-500 focus:border-violet-500 text-sm">
+                        <option value="">— Select Role —</option>
+                        @foreach($roles as $role)
+                            <option value="{{ $role->id }}">{{ $role->name }}</option>
+                        @endforeach
+                    </select>
+                </div>
+            </div>
+
+            <!-- Modal Footer -->
+            <div class="flex items-center justify-end space-x-3 px-6 py-4 border-t border-gray-200 bg-gray-50 rounded-b-2xl">
+                <button type="button" onclick="closeQuickAddManager()"
+                        class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
+                    Cancel
+                </button>
+                <button type="button" onclick="submitQuickAddManager()" id="quickAddManagerSubmitBtn"
+                        class="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-violet-600 rounded-lg hover:bg-violet-700 transition-colors disabled:opacity-60 disabled:cursor-not-allowed">
+                    <svg id="quickAddManagerSpinner" class="hidden w-4 h-4 mr-2 animate-spin" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
+                    </svg>
+                    Add Manager
+                </button>
+            </div>
+        </div>
+    </div>
 </div>
 
 <!-- Quick Add Client Modal -->
@@ -310,6 +414,16 @@
 @push('scripts')
 <script src="https://cdn.tiny.cloud/1/{{ config('services.tinymce.key') }}/tinymce/6/tinymce.min.js" referrerpolicy="origin"></script>
 <script>
+    // ── Budget thousands preview ──────────────────────────────
+    function updateBudgetPreview(inputId, previewId) {
+        const val   = parseFloat(document.getElementById(inputId).value);
+        const el    = document.getElementById(previewId);
+        if (isNaN(val) || val === 0) { el.classList.add('hidden'); el.textContent = ''; return; }
+        el.textContent = '₦ ' + val.toLocaleString('en-NG', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        el.classList.remove('hidden');
+    }
+    document.addEventListener('DOMContentLoaded', () => updateBudgetPreview('budget', 'budget_preview'));
+
     tinymce.init({
         selector: '#description',
         height: 300,
@@ -437,7 +551,91 @@
 
     // Close modal on Escape key
     document.addEventListener('keydown', e => {
-        if (e.key === 'Escape') closeQuickAddClient();
+        if (e.key === 'Escape') {
+            closeQuickAddClient();
+            closeQuickAddManager();
+        }
     });
+
+    // ── Quick Add Manager ──────────────────────────────
+    function openQuickAddManager() {
+        document.getElementById('quickAddManagerModal').classList.remove('hidden');
+        document.getElementById('qm_first_name').focus();
+        ['qm_first_name','qm_last_name','qm_email','qm_password'].forEach(id => {
+            const el = document.getElementById(id);
+            if (el) { el.value = ''; el.classList.remove('border-red-500'); }
+        });
+        document.getElementById('qm_role_id').value = '';
+        showManagerAlert('', '');
+    }
+
+    function closeQuickAddManager() {
+        document.getElementById('quickAddManagerModal').classList.add('hidden');
+    }
+
+    function toggleQmPassword() {
+        const input = document.getElementById('qm_password');
+        const isPass = input.type === 'password';
+        input.type = isPass ? 'text' : 'password';
+        document.getElementById('qm_eye_open').classList.toggle('hidden', isPass);
+        document.getElementById('qm_eye_closed').classList.toggle('hidden', !isPass);
+    }
+
+    function showManagerAlert(message, type) {
+        const alert = document.getElementById('quickAddManagerAlert');
+        if (!message) { alert.classList.add('hidden'); return; }
+        alert.className = 'rounded-lg p-3 text-sm ' + (type === 'error'
+            ? 'bg-red-50 text-red-700 border border-red-200'
+            : 'bg-green-50 text-green-700 border border-green-200');
+        alert.textContent = message;
+        alert.classList.remove('hidden');
+    }
+
+    function submitQuickAddManager() {
+        const firstName = document.getElementById('qm_first_name').value.trim();
+        const lastName  = document.getElementById('qm_last_name').value.trim();
+        const email     = document.getElementById('qm_email').value.trim();
+        const password  = document.getElementById('qm_password').value;
+        const roleId    = document.getElementById('qm_role_id').value;
+
+        if (!firstName || !lastName) { showManagerAlert('First and last name are required.', 'error'); return; }
+        if (!email)    { showManagerAlert('Email is required.', 'error'); document.getElementById('qm_email').classList.add('border-red-500'); return; }
+        if (password.length < 8) { showManagerAlert('Password must be at least 8 characters.', 'error'); return; }
+        if (!roleId)   { showManagerAlert('Please select a role.', 'error'); return; }
+
+        const btn     = document.getElementById('quickAddManagerSubmitBtn');
+        const spinner = document.getElementById('quickAddManagerSpinner');
+        btn.disabled  = true;
+        spinner.classList.remove('hidden');
+
+        const formData = new FormData();
+        formData.append('first_name', firstName);
+        formData.append('last_name', lastName);
+        formData.append('email', email);
+        formData.append('password', password);
+        formData.append('password_confirmation', password);
+        formData.append('role_id', roleId);
+        formData.append('status', 'active');
+        formData.append('_token', '{{ csrf_token() }}');
+
+        fetch('{{ route('tenant.admin.users.store', ['tenant' => $tenant->slug]) }}', {
+            method: 'POST',
+            headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json' },
+            body: formData
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.success) {
+                const select = document.getElementById('assigned_to');
+                const option = new Option(data.display_name, data.user_id, true, true);
+                select.add(option);
+                closeQuickAddManager();
+            } else {
+                showManagerAlert(data.message || 'Failed to create user.', 'error');
+            }
+        })
+        .catch(() => showManagerAlert('An unexpected error occurred. Please try again.', 'error'))
+        .finally(() => { btn.disabled = false; spinner.classList.add('hidden'); });
+    }
 </script>
 @endpush

@@ -90,8 +90,9 @@ class ProjectController extends Controller
     {
         $customers = Customer::where('tenant_id', $tenant->id)->active()->orderBy('first_name')->get();
         $teamMembers = User::where('tenant_id', $tenant->id)->where('is_active', true)->orderBy('name')->get();
+        $roles = \App\Models\Tenant\Role::where('tenant_id', $tenant->id)->where('is_active', true)->orderBy('priority')->orderBy('name')->get();
 
-        return view('tenant.projects.create', compact('customers', 'teamMembers', 'tenant'));
+        return view('tenant.projects.create', compact('customers', 'teamMembers', 'tenant', 'roles'));
     }
 
     // ─── Store ────────────────────────────────────────────
@@ -174,8 +175,9 @@ class ProjectController extends Controller
 
         $customers = Customer::where('tenant_id', $tenant->id)->active()->orderBy('first_name')->get();
         $teamMembers = User::where('tenant_id', $tenant->id)->where('is_active', true)->orderBy('name')->get();
+        $roles = \App\Models\Tenant\Role::where('tenant_id', $tenant->id)->where('is_active', true)->orderBy('priority')->orderBy('name')->get();
 
-        return view('tenant.projects.edit', compact('project', 'customers', 'teamMembers', 'tenant'));
+        return view('tenant.projects.edit', compact('project', 'customers', 'teamMembers', 'tenant', 'roles'));
     }
 
     // ─── Update ───────────────────────────────────────────
