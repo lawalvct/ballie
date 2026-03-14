@@ -438,6 +438,14 @@ Route::prefix('ledger-accounts')->name('ledger-accounts.')->group(function () {
             Route::get('/create', [\App\Http\Controllers\Tenant\Projects\ProjectController::class, 'create'])->name('create');
             Route::post('/', [\App\Http\Controllers\Tenant\Projects\ProjectController::class, 'store'])->name('store');
             Route::get('/reports', [\App\Http\Controllers\Tenant\Projects\ProjectController::class, 'reports'])->name('reports');
+
+            // Project Reports
+            Route::get('/reports/profitability', [\App\Http\Controllers\Tenant\Projects\ProjectReportController::class, 'profitability'])->name('reports.profitability');
+            Route::get('/reports/revenue-by-client', [\App\Http\Controllers\Tenant\Projects\ProjectReportController::class, 'revenueByClient'])->name('reports.revenue-by-client');
+            Route::get('/reports/active', [\App\Http\Controllers\Tenant\Projects\ProjectReportController::class, 'activeProjects'])->name('reports.active');
+            Route::get('/reports/completed', [\App\Http\Controllers\Tenant\Projects\ProjectReportController::class, 'completedProjects'])->name('reports.completed');
+            Route::get('/reports/cashflow', [\App\Http\Controllers\Tenant\Projects\ProjectReportController::class, 'cashflow'])->name('reports.cashflow');
+
             Route::get('/{project}', [\App\Http\Controllers\Tenant\Projects\ProjectController::class, 'show'])->name('show');
             Route::get('/{project}/edit', [\App\Http\Controllers\Tenant\Projects\ProjectController::class, 'edit'])->name('edit');
             Route::put('/{project}', [\App\Http\Controllers\Tenant\Projects\ProjectController::class, 'update'])->name('update');

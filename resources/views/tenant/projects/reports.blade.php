@@ -11,7 +11,7 @@
 @section('content')
 <div class="space-y-6">
     <!-- Header -->
-    <div class="flex items-center justify-between">
+    <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div class="flex items-center space-x-4">
             <a href="{{ route('tenant.projects.index', ['tenant' => $tenant->slug]) }}"
                class="inline-flex items-center p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors duration-200">
@@ -20,6 +20,13 @@
                 </svg>
                 Back to Projects
             </a>
+        </div>
+        <div class="flex flex-wrap gap-2">
+            <a href="{{ route('tenant.projects.reports.profitability', $tenant->slug) }}" class="inline-flex items-center px-3 py-2 bg-violet-600 rounded-lg text-xs font-semibold text-white uppercase hover:bg-violet-700 transition">Profitability</a>
+            <a href="{{ route('tenant.projects.reports.revenue-by-client', $tenant->slug) }}" class="inline-flex items-center px-3 py-2 bg-blue-600 rounded-lg text-xs font-semibold text-white uppercase hover:bg-blue-700 transition">Revenue by Client</a>
+            <a href="{{ route('tenant.projects.reports.active', $tenant->slug) }}" class="inline-flex items-center px-3 py-2 bg-green-600 rounded-lg text-xs font-semibold text-white uppercase hover:bg-green-700 transition">Active Projects</a>
+            <a href="{{ route('tenant.projects.reports.completed', $tenant->slug) }}" class="inline-flex items-center px-3 py-2 bg-blue-500 rounded-lg text-xs font-semibold text-white uppercase hover:bg-blue-600 transition">Completed Projects</a>
+            <a href="{{ route('tenant.projects.reports.cashflow', $tenant->slug) }}" class="inline-flex items-center px-3 py-2 bg-green-500 rounded-lg text-xs font-semibold text-white uppercase hover:bg-green-600 transition">Cashflow</a>
         </div>
     </div>
 
