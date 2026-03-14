@@ -457,6 +457,38 @@ Route::middleware('auth:sanctum')->group(function () {
     // POS
     // etc.
 
+    // Admin Management Module
+    Route::prefix('admin')->name('admin.')->group(function () {
+        // Dashboard stats
+        Route::get('/dashboard', [\App\Http\Controllers\Api\Tenant\Admin\AdminController::class, 'dashboard'])->name('dashboard');
+
+        // Users CRUD
+        Route::prefix('users')->name('users.')->group(function () {
+            Route::get('/', [\App\Http\Controllers\Api\Tenant\Admin\AdminController::class, 'users'])->name('index');
+            Route::get('/create', [\App\Http\Controllers\Api\Tenant\Admin\AdminController::class, 'createUser'])->name('create');
+            Route::post('/', [\App\Http\Controllers\Api\Tenant\Admin\AdminController::class, 'storeUser'])->name('store');
+            Route::get('/{userId}', [\App\Http\Controllers\Api\Tenant\Admin\AdminController::class, 'showUser'])->name('show');
+            Route::put('/{userId}', [\App\Http\Controllers\Api\Tenant\Admin\AdminController::class, 'updateUser'])->name('update');
+            Route::delete('/{userId}', [\App\Http\Controllers\Api\Tenant\Admin\AdminController::class, 'destroyUser'])->name('destroy');
+            Route::post('/{userId}/toggle-status', [\App\Http\Controllers\Api\Tenant\Admin\AdminController::class, 'toggleUserStatus'])->name('toggle-status');
+        });
+
+        // Roles CRUD
+        Route::prefix('roles')->name('roles.')->group(function () {
+            Route::get('/', [\App\Http\Controllers\Api\Tenant\Admin\AdminController::class, 'roles'])->name('index');
+            Route::get('/create', [\App\Http\Controllers\Api\Tenant\Admin\AdminController::class, 'createRole'])->name('create');
+            Route::post('/', [\App\Http\Controllers\Api\Tenant\Admin\AdminController::class, 'storeRole'])->name('store');
+            Route::get('/{roleId}', [\App\Http\Controllers\Api\Tenant\Admin\AdminController::class, 'showRole'])->name('show');
+            Route::put('/{roleId}', [\App\Http\Controllers\Api\Tenant\Admin\AdminController::class, 'updateRole'])->name('update');
+            Route::delete('/{roleId}', [\App\Http\Controllers\Api\Tenant\Admin\AdminController::class, 'destroyRole'])->name('destroy');
+            Route::post('/{roleId}/permissions', [\App\Http\Controllers\Api\Tenant\Admin\AdminController::class, 'assignPermissions'])->name('assign-permissions');
+        });
+
+        // Permissions & Matrix
+        Route::get('/permissions', [\App\Http\Controllers\Api\Tenant\Admin\AdminController::class, 'permissions'])->name('permissions');
+        Route::get('/permission-matrix', [\App\Http\Controllers\Api\Tenant\Admin\AdminController::class, 'permissionMatrix'])->name('permission-matrix');
+    });
+
 });
 
 // Public download routes (token in query)
