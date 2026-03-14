@@ -66,6 +66,7 @@
         </div>
 
         <!-- Purchase Reports -->
+        @module('procurement')
         <div class="bg-white rounded-2xl p-6 shadow-lg hover:shadow-xl transition-shadow">
             <div class="flex items-center mb-4">
                 <div class="w-12 h-12 bg-gradient-to-br from-purple-400 to-purple-600 rounded-xl flex items-center justify-center">
@@ -85,8 +86,10 @@
                 <a href="{{ route('tenant.reports.purchases-by-period', $tenant->slug) }}" class="block text-sm text-blue-600 hover:text-blue-800 hover:underline">• Purchases by Period</a>
             </div>
         </div>
+        @endmodule
 
         <!-- Inventory Reports -->
+        @module('inventory')
         <div class="bg-white rounded-2xl p-6 shadow-lg hover:shadow-xl transition-shadow">
             <div class="flex items-center mb-4">
                 <div class="w-12 h-12 bg-gradient-to-br from-yellow-400 to-yellow-600 rounded-xl flex items-center justify-center">
@@ -106,8 +109,10 @@
                 <a href="{{ route('tenant.reports.stock-movement', $tenant->slug) }}" class="block text-sm text-blue-600 hover:text-blue-800 hover:underline">• Stock Movement</a>
             </div>
         </div>
+        @endmodule
 
         <!-- Payroll Reports -->
+        @module('payroll')
         <div class="bg-white rounded-2xl p-6 shadow-lg hover:shadow-xl transition-shadow">
             <div class="flex items-center mb-4">
                 <div class="w-12 h-12 bg-gradient-to-br from-indigo-400 to-indigo-600 rounded-xl flex items-center justify-center">
@@ -127,8 +132,10 @@
                 <a href="{{ route('tenant.payroll.reports.bank-schedule', $tenant->slug) }}" class="block text-sm text-blue-600 hover:text-blue-800 hover:underline">• Bank Schedule</a>
             </div>
         </div>
+        @endmodule
 
         <!-- CRM Reports -->
+        @module('crm')
         <div class="bg-white rounded-2xl p-6 shadow-lg hover:shadow-xl transition-shadow">
             <div class="flex items-center mb-4">
                 <div class="w-12 h-12 bg-gradient-to-br from-pink-400 to-pink-600 rounded-xl flex items-center justify-center">
@@ -137,19 +144,21 @@
                     </svg>
                 </div>
                 <div class="ml-4">
-                    <h3 class="text-lg font-semibold text-gray-900">CRM Reports</h3>
-                    <p class="text-sm text-gray-500">Customer analytics and performance</p>
+                    <h3 class="text-lg font-semibold text-gray-900">@term('crm') Reports</h3>
+                    <p class="text-sm text-gray-500">@term('customer') analytics and performance</p>
                 </div>
             </div>
             <div class="space-y-2">
-                <a href="{{ route('tenant.crm.customers.statements', $tenant->slug) }}" class="block text-sm text-blue-600 hover:text-blue-800 hover:underline">• Customer Statements</a>
+                <a href="{{ route('tenant.crm.customers.statements', $tenant->slug) }}" class="block text-sm text-blue-600 hover:text-blue-800 hover:underline">• @term('customer') Statements</a>
                 <a href="{{ route('tenant.crm.payment-reports', $tenant->slug) }}" class="block text-sm text-blue-600 hover:text-blue-800 hover:underline">• Payment Reports</a>
-                <a href="{{ route('tenant.reports.customer-sales', $tenant->slug) }}" class="block text-sm text-blue-600 hover:text-blue-800 hover:underline">• Customer Sales Analysis</a>
+                <a href="{{ route('tenant.reports.customer-sales', $tenant->slug) }}" class="block text-sm text-blue-600 hover:text-blue-800 hover:underline">• @term('customer') Sales Analysis</a>
                 <a href="{{ route('tenant.crm.activities.index', $tenant->slug) }}" class="block text-sm text-blue-600 hover:text-blue-800 hover:underline">• Activity Summary</a>
             </div>
         </div>
+        @endmodule
 
         <!-- POS Reports -->
+        @module('pos')
         <div class="bg-white rounded-2xl p-6 shadow-lg hover:shadow-xl transition-shadow">
             <div class="flex items-center mb-4">
                 <div class="w-12 h-12 bg-gradient-to-br from-emerald-400 to-emerald-600 rounded-xl flex items-center justify-center">
@@ -169,8 +178,10 @@
                 <a href="{{ route('tenant.pos.reports', $tenant->slug) }}" class="block text-sm text-blue-600 hover:text-blue-800 hover:underline">• POS Overview</a>
             </div>
         </div>
+        @endmodule
 
         <!-- E-commerce Reports -->
+        @module('ecommerce')
         <div class="bg-white rounded-2xl p-6 shadow-lg hover:shadow-xl transition-shadow">
             <div class="flex items-center mb-4">
                 <div class="w-12 h-12 bg-gradient-to-br from-orange-400 to-orange-600 rounded-xl flex items-center justify-center">
@@ -191,8 +202,10 @@
                 <a href="{{ route('tenant.ecommerce.reports.abandoned-carts', $tenant->slug) }}" class="block text-sm text-blue-600 hover:text-blue-800 hover:underline">• Abandoned Carts</a>
             </div>
         </div>
+        @endmodule
 
         <!-- Project Reports -->
+        @module('projects')
         <div class="bg-white rounded-2xl p-6 shadow-lg hover:shadow-xl transition-shadow">
             <div class="flex items-center mb-4">
                 <div class="w-12 h-12 bg-gradient-to-br from-violet-400 to-violet-600 rounded-xl flex items-center justify-center">
@@ -213,6 +226,7 @@
                 <a href="{{ route('tenant.projects.reports.cashflow', $tenant->slug) }}" class="block text-sm text-blue-600 hover:text-blue-800 hover:underline">• Project Cashflow</a>
             </div>
         </div>
+        @endmodule
     </div>
 </div>
 @endsection
