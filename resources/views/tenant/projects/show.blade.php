@@ -22,6 +22,34 @@
             </a>
         </div>
         <div class="mt-4 lg:mt-0 flex flex-wrap gap-3">
+            @if($project->status === 'draft')
+            <div class="relative" x-data="{ open: false }">
+                <button @click="open = !open" type="button"
+                        class="inline-flex items-center px-4 py-2 bg-amber-500 hover:bg-amber-600 text-white rounded-lg font-semibold text-xs uppercase tracking-widest shadow-sm transition ease-in-out duration-150">
+                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                    </svg>
+                    Update Status
+                    <svg class="w-4 h-4 ml-1.5 transition-transform" :class="open ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                    </svg>
+                </button>
+                <div x-show="open" @click.outside="open = false" x-transition
+                     class="absolute right-0 mt-2 w-44 bg-white rounded-xl shadow-lg border border-gray-100 z-20 overflow-hidden">
+                    @foreach(['active' => ['label' => 'Active', 'color' => 'text-green-700', 'dot' => 'bg-green-500'], 'on_hold' => ['label' => 'On Hold', 'color' => 'text-yellow-700', 'dot' => 'bg-yellow-500'], 'completed' => ['label' => 'Completed', 'color' => 'text-blue-700', 'dot' => 'bg-blue-500'], 'archived' => ['label' => 'Archived', 'color' => 'text-gray-500', 'dot' => 'bg-gray-400']] as $value => $meta)
+                    <form action="{{ route('tenant.projects.status.update', [$tenant->slug, $project->id]) }}" method="POST">
+                        @csrf @method('PATCH')
+                        <input type="hidden" name="status" value="{{ $value }}">
+                        <button type="submit"
+                                class="w-full flex items-center px-4 py-2.5 text-sm {{ $meta['color'] }} hover:bg-gray-50 transition-colors">
+                            <span class="w-2 h-2 rounded-full {{ $meta['dot'] }} mr-2.5 flex-shrink-0"></span>
+                            {{ $meta['label'] }}
+                        </button>
+                    </form>
+                    @endforeach
+                </div>
+            </div>
+            @endif
             <a href="{{ route('tenant.projects.edit', [$tenant->slug, $project->id]) }}"
                class="inline-flex items-center px-4 py-2 bg-white border border-gray-300 rounded-lg font-semibold text-xs text-gray-700 uppercase tracking-widest shadow-sm hover:bg-gray-50 transition ease-in-out duration-150">
                 <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">

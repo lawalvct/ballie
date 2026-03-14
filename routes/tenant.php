@@ -441,6 +441,7 @@ Route::prefix('ledger-accounts')->name('ledger-accounts.')->group(function () {
             Route::get('/{project}', [\App\Http\Controllers\Tenant\Projects\ProjectController::class, 'show'])->name('show');
             Route::get('/{project}/edit', [\App\Http\Controllers\Tenant\Projects\ProjectController::class, 'edit'])->name('edit');
             Route::put('/{project}', [\App\Http\Controllers\Tenant\Projects\ProjectController::class, 'update'])->name('update');
+            Route::patch('/{project}/status', [\App\Http\Controllers\Tenant\Projects\ProjectController::class, 'updateStatus'])->name('status.update');
             Route::delete('/{project}', [\App\Http\Controllers\Tenant\Projects\ProjectController::class, 'destroy'])->name('destroy');
 
             // Tasks (AJAX)

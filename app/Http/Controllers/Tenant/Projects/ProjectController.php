@@ -207,6 +207,25 @@ class ProjectController extends Controller
             ->with('success', 'Project updated successfully.');
     }
 
+    // ─── Quick Status Update ───────────────────────────────
+
+    public function updateStatus(Request $request, Tenant $tenant, Project $project)
+    {
+        $this->authorizeProject($project, $tenant);
+
+        $validated = $request->validate([
+            'status' => 'required|in:draft,active,on_hold,completed,archived',
+        ]);
+
+        $project->update(['status' => $validated['status'], 'updated_by' => auth()->id()]);
+
+        $label = ucfirst(str_replace('_', ' ', $validated['status']));
+
+        return redirect()
+            ->route('tenant.projects.show', [$tenant->slug, $project->id])
+            ->with('success', "Project status updated to {$label}.");
+    }
+
     // ─── Delete ───────────────────────────────────────────
 
     public function destroy(Tenant $tenant, Project $project)
