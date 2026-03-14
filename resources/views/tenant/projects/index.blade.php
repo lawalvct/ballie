@@ -184,7 +184,7 @@
                             <option value="">All Clients</option>
                             @foreach($customers as $customer)
                                 <option value="{{ $customer->id }}" {{ request('customer_id') == $customer->id ? 'selected' : '' }}>
-                                    {{ $customer->first_name }} {{ $customer->last_name }}
+                                    {{ $customer->full_name }}
                                 </option>
                             @endforeach
                         </select>
@@ -275,7 +275,7 @@
                                         <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
                                         </svg>
-                                        {{ $project->customer->first_name }} {{ $project->customer->last_name }}
+                                        {{ $project->customer->full_name }}
                                     </span>
                                 @endif
 
