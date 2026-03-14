@@ -389,7 +389,7 @@
             </p>
         </div>
 
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             <!-- Phone Support -->
             <div class="contact-card rounded-2xl p-8 text-center">
                 <div class="contact-icon w-16 h-16 bg-brand-green rounded-full flex items-center justify-center mx-auto mb-6">
@@ -400,11 +400,11 @@
                 <h3 class="text-xl font-semibold text-gray-900 mb-3">Phone Support</h3>
                 <p class="text-gray-600 mb-4">Speak directly with our Nigerian support team for immediate assistance.</p>
                 <div class="space-y-2">
-                    <a href="tel:+2348012345678" class="block text-brand-blue hover:text-brand-teal font-medium transition-colors">
-                        +234 801 234 5678
+                    <a href="tel:+2348132712715" class="block text-brand-blue hover:text-brand-teal font-medium transition-colors">
+                        +234 813 271 2715
                     </a>
-                    <a href="tel:+2347012345678" class="block text-brand-blue hover:text-brand-teal font-medium transition-colors">
-                        +234 701 234 5678
+                    <a href="tel:+2349065357202" class="block text-brand-blue hover:text-brand-teal font-medium transition-colors">
+                        +234 906 535 7202
                     </a>
                 </div>
                 <div class="mt-4 text-sm text-gray-500">
@@ -437,7 +437,7 @@
             </div>
 
             <!-- Live Chat -->
-            <div class="contact-card rounded-2xl p-8 text-center">
+            {{-- <div class="contact-card rounded-2xl p-8 text-center">
                 <div class="contact-icon w-16 h-16 bg-brand-teal rounded-full flex items-center justify-center mx-auto mb-6">
                     <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path>
@@ -454,7 +454,7 @@
                         Online Now
                     </span>
                 </div>
-            </div>
+            </div> --}}
 
             <!-- WhatsApp Support -->
             <div class="contact-card rounded-2xl p-8 text-center">
@@ -465,7 +465,7 @@
                 </div>
                 <h3 class="text-xl font-semibold text-gray-900 mb-3">WhatsApp</h3>
                 <p class="text-gray-600 mb-4">Quick support through WhatsApp for urgent issues and quick questions.</p>
-                <a href="https://wa.me/2348012345678" target="_blank" class="bg-brand-green text-white px-6 py-2 rounded-lg hover:bg-opacity-90 font-medium transition-all transform hover:scale-105 interactive-element inline-block">
+                <a href="https://wa.me/2348132712715" target="_blank" class="bg-brand-green text-white px-6 py-2 rounded-lg hover:bg-opacity-90 font-medium transition-all transform hover:scale-105 interactive-element inline-block">
                     Message Us
                 </a>
                 <div class="mt-4 text-sm text-gray-500">
@@ -1047,7 +1047,7 @@
                             </svg>
                             <div>
                                 <div class="font-semibold text-gray-900">Emergency Hotline</div>
-                                <a href="tel:+2348000BALLIE" class="text-red-600 font-medium">+234 800 0BALLIE</a>
+                                <a href="tel:+2348132712715" class="text-red-600 font-medium">+234 813 271 2715</a>
                             </div>
                         </div>
 
