@@ -112,13 +112,16 @@ class Order extends Model
     public static function generateOrderNumber($tenantId)
     {
         $year = date('Y');
+        $prefix = 'ORD-' . $year . '-';
+
         $lastOrder = static::where('tenant_id', $tenantId)
-            ->whereYear('created_at', $year)
-            ->latest('id')
+            ->where('order_number', 'like', $prefix . '%')
+            ->orderByRaw('CAST(SUBSTRING(order_number, -4) AS UNSIGNED) DESC')
             ->first();
 
         $number = $lastOrder ? intval(substr($lastOrder->order_number, -4)) + 1 : 1;
-        return 'ORD-' . $year . '-' . str_pad($number, 4, '0', STR_PAD_LEFT);
+
+        return $prefix . str_pad($number, 4, '0', STR_PAD_LEFT);
     }
 
     /**
