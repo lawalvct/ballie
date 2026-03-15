@@ -8,11 +8,21 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 use App\Traits\HasAudit;
 
 class Product extends Model
 {
     use HasFactory, SoftDeletes, HasAudit;
+
+    protected static function booted()
+    {
+        static::saving(function ($product) {
+            if (empty($product->slug) && !empty($product->name)) {
+                $product->slug = Str::slug($product->name);
+            }
+        });
+    }
 
     protected $fillable = [
         'tenant_id',

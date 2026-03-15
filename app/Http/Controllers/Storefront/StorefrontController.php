@@ -143,12 +143,25 @@ class StorefrontController extends Controller
             abort(404, 'Store not available');
         }
 
+        // Try finding by stored slug first, then fall back to matching Str::slug(name)
         $product = Product::where('tenant_id', $tenant->id)
-            ->where('slug', $slug)
             ->where('is_visible_online', true)
             ->where('is_active', true)
+            ->where('slug', $slug)
             ->with('images', 'category', 'unit')
-            ->firstOrFail();
+            ->first();
+
+        if (!$product) {
+            $product = Product::where('tenant_id', $tenant->id)
+                ->where('is_visible_online', true)
+                ->where('is_active', true)
+                ->whereNull('slug')
+                ->with('images', 'category', 'unit')
+                ->get()
+                ->first(fn ($p) => \Illuminate\Support\Str::slug($p->name) === $slug);
+        }
+
+        abort_unless($product, 404);
 
         // Increment view count
         $product->increment('view_count');
