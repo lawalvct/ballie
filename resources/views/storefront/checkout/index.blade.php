@@ -19,6 +19,24 @@
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
                 <!-- Main Checkout Form -->
                 <div class="lg:col-span-2 space-y-6">
+                    <!-- Email (guests only) -->
+                    @guest('customer')
+                    <div class="bg-white rounded-lg shadow-sm p-6">
+                        <h2 class="text-xl font-semibold text-gray-800 mb-4">Contact Information</h2>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Email Address</label>
+                            <input type="email"
+                                   name="email"
+                                   class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                   value="{{ old('email') }}"
+                                   placeholder="you@example.com">
+                            @error('email')
+                                <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                            @enderror
+                        </div>
+                    </div>
+                    @endguest
+
                     <!-- Shipping Address -->
                     <div class="bg-white rounded-lg shadow-sm p-6">
                         <h2 class="text-xl font-semibold text-gray-800 mb-6">Shipping Address</h2>

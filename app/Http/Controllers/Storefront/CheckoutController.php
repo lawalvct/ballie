@@ -132,6 +132,7 @@ class CheckoutController extends Controller
             'payment_method' => 'required|in:cash_on_delivery,nomba,paystack,stripe,flutterwave,bank_transfer',
             'coupon_code' => 'nullable|string',
             'notes' => 'nullable|string',
+            'email' => 'nullable|email|max:255',
         ];
 
         // Only validate new_address fields if shipping_address_id is not provided
@@ -166,6 +167,15 @@ class CheckoutController extends Controller
             $customerName = $customer->first_name . ' ' . $customer->last_name;
             $customerEmail = $customer->email ?? 'no-email@example.com';
             $customerPhone = $customer->phone ?? '';
+        } else {
+            // For guests, pull name & phone from the shipping address fields
+            $customerName = $validated['new_address']['name'] ?? 'Guest';
+            $customerPhone = $validated['new_address']['phone'] ?? '';
+        }
+
+        // Use guest-supplied email if provided
+        if (!empty($validated['email'])) {
+            $customerEmail = $validated['email'];
         }
 
         try {
