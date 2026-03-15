@@ -489,6 +489,66 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/permission-matrix', [\App\Http\Controllers\Api\Tenant\Admin\AdminController::class, 'permissionMatrix'])->name('permission-matrix');
     });
 
+    // E-commerce Module
+    Route::prefix('ecommerce')->name('ecommerce.')->group(function () {
+
+        // Settings
+        Route::prefix('settings')->name('settings.')->group(function () {
+            Route::get('/', [\App\Http\Controllers\Api\Tenant\Ecommerce\SettingsController::class, 'index'])->name('index');
+            Route::post('/', [\App\Http\Controllers\Api\Tenant\Ecommerce\SettingsController::class, 'update'])->name('update');
+            Route::get('/qr-code', [\App\Http\Controllers\Api\Tenant\Ecommerce\SettingsController::class, 'generateQrCode'])->name('qr-code');
+        });
+
+        // Orders
+        Route::prefix('orders')->name('orders.')->group(function () {
+            Route::get('/', [\App\Http\Controllers\Api\Tenant\Ecommerce\OrderController::class, 'index'])->name('index');
+            Route::get('/{orderId}', [\App\Http\Controllers\Api\Tenant\Ecommerce\OrderController::class, 'show'])->name('show');
+            Route::put('/{orderId}/status', [\App\Http\Controllers\Api\Tenant\Ecommerce\OrderController::class, 'updateStatus'])->name('update-status');
+            Route::put('/{orderId}/payment-status', [\App\Http\Controllers\Api\Tenant\Ecommerce\OrderController::class, 'updatePaymentStatus'])->name('update-payment-status');
+            Route::post('/{orderId}/invoice', [\App\Http\Controllers\Api\Tenant\Ecommerce\OrderController::class, 'createInvoice'])->name('create-invoice');
+        });
+
+        // Shipping Methods
+        Route::prefix('shipping-methods')->name('shipping-methods.')->group(function () {
+            Route::get('/', [\App\Http\Controllers\Api\Tenant\Ecommerce\ShippingMethodController::class, 'index'])->name('index');
+            Route::post('/', [\App\Http\Controllers\Api\Tenant\Ecommerce\ShippingMethodController::class, 'store'])->name('store');
+            Route::get('/{shippingMethodId}', [\App\Http\Controllers\Api\Tenant\Ecommerce\ShippingMethodController::class, 'show'])->name('show');
+            Route::put('/{shippingMethodId}', [\App\Http\Controllers\Api\Tenant\Ecommerce\ShippingMethodController::class, 'update'])->name('update');
+            Route::delete('/{shippingMethodId}', [\App\Http\Controllers\Api\Tenant\Ecommerce\ShippingMethodController::class, 'destroy'])->name('destroy');
+            Route::post('/{shippingMethodId}/toggle', [\App\Http\Controllers\Api\Tenant\Ecommerce\ShippingMethodController::class, 'toggle'])->name('toggle');
+        });
+
+        // Coupons
+        Route::prefix('coupons')->name('coupons.')->group(function () {
+            Route::get('/', [\App\Http\Controllers\Api\Tenant\Ecommerce\CouponController::class, 'index'])->name('index');
+            Route::post('/', [\App\Http\Controllers\Api\Tenant\Ecommerce\CouponController::class, 'store'])->name('store');
+            Route::get('/{couponId}', [\App\Http\Controllers\Api\Tenant\Ecommerce\CouponController::class, 'show'])->name('show');
+            Route::put('/{couponId}', [\App\Http\Controllers\Api\Tenant\Ecommerce\CouponController::class, 'update'])->name('update');
+            Route::delete('/{couponId}', [\App\Http\Controllers\Api\Tenant\Ecommerce\CouponController::class, 'destroy'])->name('destroy');
+            Route::post('/{couponId}/toggle', [\App\Http\Controllers\Api\Tenant\Ecommerce\CouponController::class, 'toggle'])->name('toggle');
+        });
+
+        // Payouts
+        Route::prefix('payouts')->name('payouts.')->group(function () {
+            Route::get('/', [\App\Http\Controllers\Api\Tenant\Ecommerce\PayoutController::class, 'index'])->name('index');
+            Route::get('/create', [\App\Http\Controllers\Api\Tenant\Ecommerce\PayoutController::class, 'create'])->name('create');
+            Route::post('/', [\App\Http\Controllers\Api\Tenant\Ecommerce\PayoutController::class, 'store'])->name('store');
+            Route::get('/{payoutId}', [\App\Http\Controllers\Api\Tenant\Ecommerce\PayoutController::class, 'show'])->name('show');
+            Route::post('/{payoutId}/cancel', [\App\Http\Controllers\Api\Tenant\Ecommerce\PayoutController::class, 'cancel'])->name('cancel');
+            Route::post('/calculate-deduction', [\App\Http\Controllers\Api\Tenant\Ecommerce\PayoutController::class, 'calculateDeduction'])->name('calculate-deduction');
+        });
+
+        // Reports
+        Route::prefix('reports')->name('reports.')->group(function () {
+            Route::get('/orders', [\App\Http\Controllers\Api\Tenant\Ecommerce\ReportController::class, 'orders'])->name('orders');
+            Route::get('/revenue', [\App\Http\Controllers\Api\Tenant\Ecommerce\ReportController::class, 'revenue'])->name('revenue');
+            Route::get('/products', [\App\Http\Controllers\Api\Tenant\Ecommerce\ReportController::class, 'products'])->name('products');
+            Route::get('/customers', [\App\Http\Controllers\Api\Tenant\Ecommerce\ReportController::class, 'customers'])->name('customers');
+            Route::get('/abandoned-carts', [\App\Http\Controllers\Api\Tenant\Ecommerce\ReportController::class, 'abandonedCarts'])->name('abandoned-carts');
+        });
+
+    });
+
 });
 
 // Public download routes (token in query)
