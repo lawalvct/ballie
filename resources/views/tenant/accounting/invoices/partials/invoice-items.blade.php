@@ -94,7 +94,7 @@
                                             </button>
                                         </div>
                                         <input type="hidden"
-                                               :name="`inventory_items[${index}][product_id]`"
+                                               :name="item.item_type === 'product' ? `inventory_items[${index}][product_id]` : ''"
                                                x-model="selectedProductId"
                                                :required="item.item_type === 'product'">
 
@@ -138,7 +138,7 @@
                                                placeholder="Service description (e.g. Consulting, Installation)"
                                                required>
                                         <input type="hidden"
-                                               :name="`inventory_items[${index}][product_id]`"
+                                               :name="item.item_type === 'service' ? `inventory_items[${index}][product_id]` : ''"
                                                value="">
                                     </div>
 
