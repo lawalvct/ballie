@@ -56,6 +56,13 @@
                 </svg>
                 View Orders
             </a>
+            <a href="{{ route('tenant.ecommerce.coupons.index', ['tenant' => $tenant->slug]) }}"
+               class="inline-flex items-center px-4 py-2 bg-amber-500 border border-transparent rounded-lg font-semibold text-xs text-white uppercase tracking-widest hover:bg-amber-600 focus:bg-amber-600 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 transition">
+                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 8V6a2 2 0 00-2-2H6a2 2 0 00-2 2v8a2 2 0 002 2h2m4-8h6m0 0v6m0-6l-7 7"></path>
+                </svg>
+                View Coupons
+            </a>
         </div>
     </div>
 
