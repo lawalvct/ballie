@@ -52,13 +52,16 @@ class ShippingMethodController extends Controller
             'name' => 'required|string|max:255',
             'description' => 'nullable|string',
             'cost' => 'required|numeric|min:0',
-            'estimated_days' => 'nullable|string|max:255',
+            'estimated_days' => 'nullable|max:255',
             'is_active' => 'nullable|boolean',
         ]);
 
         try {
             $validated['tenant_id'] = $tenant->id;
             $validated['is_active'] = $request->boolean('is_active', true);
+            if (isset($validated['estimated_days'])) {
+                $validated['estimated_days'] = (string) $validated['estimated_days'];
+            }
 
             $method = ShippingMethod::create($validated);
 
@@ -124,12 +127,15 @@ class ShippingMethodController extends Controller
             'name' => 'required|string|max:255',
             'description' => 'nullable|string',
             'cost' => 'required|numeric|min:0',
-            'estimated_days' => 'nullable|string|max:255',
+            'estimated_days' => 'nullable|max:255',
             'is_active' => 'nullable|boolean',
         ]);
 
         try {
             $validated['is_active'] = $request->boolean('is_active', $method->is_active);
+            if (isset($validated['estimated_days'])) {
+                $validated['estimated_days'] = (string) $validated['estimated_days'];
+            }
             $method->update($validated);
 
             return response()->json([
