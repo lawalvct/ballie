@@ -961,20 +961,45 @@ POST /ecommerce/payouts/{payoutId}/cancel
 
 ## 6. Reports
 
-All report endpoints accept date range filters:
+All five report endpoints share the same structure: they accept optional date range query parameters and return a `data` object containing `stats` (summary KPIs) plus several breakdown arrays/objects. Counts and amounts are always cast to `int`/`float` in API responses.
 
-| Param       | Type | Default | Description             |
-| ----------- | ---- | ------- | ----------------------- |
-| `date_from` | date | varies  | Start date (YYYY-MM-DD) |
-| `date_to`   | date | today   | End date (YYYY-MM-DD)   |
+**Common query parameters (all report endpoints)**
+
+| Param       | Type   | Description             |
+| ----------- | ------ | ----------------------- |
+| `date_from` | string | Start date `YYYY-MM-DD` |
+| `date_to`   | string | End date `YYYY-MM-DD`   |
+
+**Common response envelope**
+
+```json
+{
+    "success": true,
+    "data": { ... },
+    "filters": {
+        "date_from": "2024-12-21",
+        "date_to": "2025-01-20"
+    }
+}
+```
+
+---
 
 ### 6.1 Order Reports
 
 ```
 GET /ecommerce/reports/orders
+Authorization: Bearer {token}
 ```
 
-Default date range: last 30 days
+**Default date range:** last 30 days
+
+**Query parameters**
+
+| Param       | Default         | Description             |
+| ----------- | --------------- | ----------------------- |
+| `date_from` | today − 30 days | Start date (YYYY-MM-DD) |
+| `date_to`   | today           | End date (YYYY-MM-DD)   |
 
 **Response:**
 
@@ -989,13 +1014,16 @@ Default date range: last 30 days
             "cancelled_orders": 8
         },
         "orders_by_status": [
-            { "status": "pending", "count": 12, "total": 420000.0 },
+            { "status": "pending", "count": 10, "total": 350000.0 },
             { "status": "confirmed", "count": 15, "total": 525000.0 },
-            { "status": "delivered", "count": 120, "total": 4200000.0 }
+            { "status": "processing", "count": 5, "total": 175000.0 },
+            { "status": "shipped", "count": 12, "total": 420000.0 },
+            { "status": "delivered", "count": 100, "total": 3500000.0 },
+            { "status": "cancelled", "count": 8, "total": 280000.0 }
         ],
         "orders_by_payment": [
-            { "payment_status": "paid", "count": 135, "total": 4725000.0 },
-            { "payment_status": "unpaid", "count": 15, "total": 525000.0 }
+            { "payment_status": "paid", "count": 127, "total": 4450000.0 },
+            { "payment_status": "unpaid", "count": 23, "total": 800000.0 }
         ],
         "daily_trends": [
             { "date": "2025-01-01", "orders": 5, "revenue": 175000.0 },
@@ -1031,13 +1059,62 @@ Default date range: last 30 days
 }
 ```
 
+**Field reference**
+
+| Field                                | Type   | Description                                          |
+| ------------------------------------ | ------ | ---------------------------------------------------- |
+| `stats.total_orders`                 | int    | All orders in period (all statuses)                  |
+| `stats.total_revenue`                | float  | Sum of `total_amount` for confirmed/delivered orders |
+| `stats.average_order_value`          | float  | Average `total_amount` (confirmed/delivered)         |
+| `stats.cancelled_orders`             | int    | Orders with `status = cancelled`                     |
+| `orders_by_status[].status`          | string | Order status key                                     |
+| `orders_by_status[].count`           | int    | Number of orders                                     |
+| `orders_by_status[].total`           | float  | Sum of `total_amount`                                |
+| `orders_by_payment[].payment_status` | string | `paid` / `unpaid` / `partially_paid` / `refunded`    |
+| `orders_by_payment[].count`          | int    | Number of orders                                     |
+| `orders_by_payment[].total`          | float  | Sum of `total_amount`                                |
+| `daily_trends[].date`                | string | `YYYY-MM-DD`                                         |
+| `daily_trends[].orders`              | int    | Orders created on this date                          |
+| `daily_trends[].revenue`             | float  | Revenue on this date                                 |
+| `payment_methods[].payment_method`   | string | Payment method key                                   |
+| `payment_methods[].count`            | int    | Number of orders                                     |
+| `payment_methods[].total`            | float  | Sum of `total_amount`                                |
+| `top_products[].product_id`          | int    | Product ID                                           |
+| `top_products[].product_name`        | string | Product name                                         |
+| `top_products[].product_price`       | float  | Current unit selling price (`sales_rate`)            |
+| `top_products[].total_quantity`      | int    | Total units sold                                     |
+| `top_products[].total_revenue`       | float  | Revenue from this product                            |
+
+**Screen sections — Order Report**
+
+| Widget                    | Data source         | Notes                                                             |
+| ------------------------- | ------------------- | ----------------------------------------------------------------- |
+| **4 KPI cards**           | `stats.*`           | Total Orders / Total Revenue / Avg Order Value / Cancelled Orders |
+| **Status breakdown list** | `orders_by_status`  | Show each status with count + total amount                        |
+| **Payment status list**   | `orders_by_payment` | Paid vs unpaid count and value                                    |
+| **Daily trends chart**    | `daily_trends`      | Dual-axis line: orders (left) + revenue (right), x = date         |
+| **Payment methods grid**  | `payment_methods`   | Each method with count + total amount                             |
+| **Top 10 products table** | `top_products`      | Ranked by revenue, show qty + revenue columns                     |
+
+---
+
 ### 6.2 Revenue Reports
 
 ```
 GET /ecommerce/reports/revenue
+Authorization: Bearer {token}
 ```
 
-Default date range: last 6 months
+**Default date range:** First day of the month 6 months ago → today
+
+**Query parameters**
+
+| Param       | Default                      | Description             |
+| ----------- | ---------------------------- | ----------------------- |
+| `date_from` | start of month, 6 months ago | Start date (YYYY-MM-DD) |
+| `date_to`   | today                        | End date (YYYY-MM-DD)   |
+
+> Stats compare the selected period vs an equal-length period immediately before it. `growth_rate` is always a percentage (positive = growth, negative = decline).
 
 **Response:**
 
@@ -1068,7 +1145,17 @@ Default date range: last 6 months
             { "payment_status": "unpaid", "total": 525000.0 }
         ],
         "revenue_by_method": [
-            { "payment_method": "paystack", "total": 2800000.0, "count": 80 }
+            { "payment_method": "paystack", "total": 2800000.0, "count": 80 },
+            {
+                "payment_method": "bank_transfer",
+                "total": 1400000.0,
+                "count": 40
+            },
+            {
+                "payment_method": "cash_on_delivery",
+                "total": 1050000.0,
+                "count": 30
+            }
         ]
     },
     "filters": {
@@ -1078,13 +1165,58 @@ Default date range: last 6 months
 }
 ```
 
+**Field reference**
+
+| Field                                 | Type   | Description                                                                         |
+| ------------------------------------- | ------ | ----------------------------------------------------------------------------------- |
+| `stats.current_revenue`               | float  | Total revenue in selected date range                                                |
+| `stats.previous_revenue`              | float  | Revenue in the equal-length period before `date_from`                               |
+| `stats.growth_rate`                   | float  | `(current - previous) / previous × 100`, rounded to 2 dp. `0` if no previous period |
+| `stats.total_orders`                  | int    | Count of confirmed/delivered orders in period                                       |
+| `stats.average_order_value`           | float  | Average `total_amount` in period                                                    |
+| `monthly_revenue[].month`             | string | `YYYY-MM`                                                                           |
+| `monthly_revenue[].orders`            | int    | Order count for that month                                                          |
+| `monthly_revenue[].subtotal`          | float  | Sum of `subtotal`                                                                   |
+| `monthly_revenue[].tax`               | float  | Sum of `tax_amount`                                                                 |
+| `monthly_revenue[].shipping`          | float  | Sum of `shipping_amount`                                                            |
+| `monthly_revenue[].discount`          | float  | Sum of `discount_amount`                                                            |
+| `monthly_revenue[].total`             | float  | Sum of `total_amount`                                                               |
+| `revenue_by_payment[].payment_status` | string | Payment status key                                                                  |
+| `revenue_by_payment[].total`          | float  | Sum of `total_amount`                                                               |
+| `revenue_by_method[].payment_method`  | string | Payment method key                                                                  |
+| `revenue_by_method[].total`           | float  | Sum of `total_amount`                                                               |
+| `revenue_by_method[].count`           | int    | Order count                                                                         |
+
+**Screen sections — Revenue Report**
+
+| Widget                        | Data source          | Notes                                                               |
+| ----------------------------- | -------------------- | ------------------------------------------------------------------- |
+| **4 KPI cards**               | `stats.*`            | Current Revenue / Previous Revenue / Growth Rate / Avg Order Value  |
+| **Growth rate indicator**     | `stats.growth_rate`  | Green if positive, red if negative; show `+25.00%` or `-5.50%`      |
+| **Monthly stacked bar chart** | `monthly_revenue`    | Bars stacked: subtotal / tax / shipping (discount shown separately) |
+| **Monthly details table**     | `monthly_revenue`    | Columns: Month, Orders, Subtotal, Tax, Shipping, Discount, Total    |
+| **Revenue by payment status** | `revenue_by_payment` | Pie/donut or bar: paid vs unpaid totals                             |
+| **Revenue by payment method** | `revenue_by_method`  | Bar chart or list: method, order count, total                       |
+
+---
+
 ### 6.3 Product Reports
 
 ```
 GET /ecommerce/reports/products
+Authorization: Bearer {token}
 ```
 
-Default date range: last 30 days
+**Default date range:** last 30 days
+
+**Query parameters**
+
+| Param       | Default         | Description             |
+| ----------- | --------------- | ----------------------- |
+| `date_from` | today − 30 days | Start date (YYYY-MM-DD) |
+| `date_to`   | today           | End date (YYYY-MM-DD)   |
+
+> `low_stock_products` is based on current stock levels (not date-filtered). A product is low-stock when its `stock_quantity` ≤ its `reorder_level`.
 
 **Response:**
 
@@ -1142,13 +1274,63 @@ Default date range: last 30 days
 }
 ```
 
+**Field reference**
+
+| Field                                   | Type         | Description                                                            |
+| --------------------------------------- | ------------ | ---------------------------------------------------------------------- |
+| `stats.total_products_sold`             | int          | Distinct product count with at least 1 sale in period                  |
+| `stats.total_quantity_sold`             | int          | Sum of all `order_items.quantity` in period                            |
+| `stats.total_revenue`                   | float        | Sum of `order_items.total_price` in period                             |
+| `stats.low_stock_count`                 | int          | Products currently at or below reorder level                           |
+| `top_by_revenue[].product_id`           | int          | Product ID                                                             |
+| `top_by_revenue[].product_name`         | string       | Product name                                                           |
+| `top_by_revenue[].category`             | string\|null | Category name (null if uncategorised)                                  |
+| `top_by_revenue[].total_quantity`       | int          | Units sold                                                             |
+| `top_by_revenue[].total_revenue`        | float        | Revenue from this product                                              |
+| `top_by_revenue[].order_count`          | int          | Distinct orders containing this product                                |
+| `top_by_quantity`                       | array        | Same shape as `top_by_revenue` minus `order_count`; sorted by quantity |
+| `category_performance[].category`       | string       | Category name                                                          |
+| `category_performance[].total_quantity` | int          | Total units across all products in this category                       |
+| `category_performance[].total_revenue`  | float        | Total revenue for this category                                        |
+| `category_performance[].order_count`    | int          | Distinct orders containing products in this category                   |
+| `low_stock_products[].product_id`       | int          | Product ID                                                             |
+| `low_stock_products[].name`             | string       | Product name                                                           |
+| `low_stock_products[].current_stock`    | int          | Current stock level                                                    |
+| `low_stock_products[].reorder_level`    | int          | Configured reorder threshold                                           |
+| `low_stock_products[].sold_quantity`    | int          | Units sold in the date range                                           |
+
+**Screen sections — Product Report**
+
+| Widget                         | Data source            | Notes                                                         |
+| ------------------------------ | ---------------------- | ------------------------------------------------------------- |
+| **4 KPI cards**                | `stats.*`              | Products Sold / Qty Sold / Total Revenue / Low Stock Count    |
+| **Top 20 by revenue table**    | `top_by_revenue`       | Columns: Product, Category, Qty, Revenue, Orders              |
+| **Top 20 by quantity table**   | `top_by_quantity`      | Columns: Product, Category, Qty, Revenue                      |
+| **Category performance table** | `category_performance` | Columns: Category, Qty, Revenue, Orders                       |
+| **Low stock alert list**       | `low_stock_products`   | Show current stock vs reorder level; highlight when stock = 0 |
+
+---
+
 ### 6.4 Customer Reports
 
 ```
 GET /ecommerce/reports/customers
+Authorization: Bearer {token}
 ```
 
-Default date range: last 90 days
+**Default date range:** last 90 days
+
+**Query parameters**
+
+| Param       | Default         | Description             |
+| ----------- | --------------- | ----------------------- |
+| `date_from` | today − 90 days | Start date (YYYY-MM-DD) |
+| `date_to`   | today           | End date (YYYY-MM-DD)   |
+
+> `total_customers` and `average_lifetime_value` are calculated across **all time**, not just the selected date range.
+> `new_customers` = registered customers whose first-ever order was in the selected period.
+> `returning_customers` = registered customers who have ordered before `date_from` AND placed another order in the period.
+> `lifetime_value_segments` covers all-time orders (not date-filtered).
 
 **Response:**
 
@@ -1191,13 +1373,56 @@ Default date range: last 90 days
 }
 ```
 
+**Field reference**
+
+| Field                             | Type         | Description                                                                                                                           |
+| --------------------------------- | ------------ | ------------------------------------------------------------------------------------------------------------------------------------- |
+| `stats.total_customers`           | int          | All-time distinct registered customers who have ordered                                                                               |
+| `stats.new_customers`             | int          | First-time buyers in the period (date-filtered)                                                                                       |
+| `stats.returning_customers`       | int          | Buyers with a prior order before `date_from` who bought again in period                                                               |
+| `stats.guest_orders`              | int          | Orders with no customer account (`customer_id` is null)                                                                               |
+| `stats.registered_orders`         | int          | Orders placed by registered customers                                                                                                 |
+| `stats.average_lifetime_value`    | float        | Average total spent per customer across all time                                                                                      |
+| `top_customers[].customer_id`     | int          | Customer ID                                                                                                                           |
+| `top_customers[].customer_name`   | string       | Customer full name                                                                                                                    |
+| `top_customers[].customer_email`  | string\|null | Customer email                                                                                                                        |
+| `top_customers[].customer_phone`  | string\|null | Customer phone                                                                                                                        |
+| `top_customers[].order_count`     | int          | Orders in the selected period                                                                                                         |
+| `top_customers[].total_spent`     | float        | Revenue from confirmed/delivered orders in the period                                                                                 |
+| `top_customers[].avg_order_value` | float        | Average per order in the period                                                                                                       |
+| `top_customers[].last_order_date` | string       | Datetime string `YYYY-MM-DD HH:mm:ss`                                                                                                 |
+| `lifetime_value_segments`         | object       | Fixed keys: `"< 10,000"`, `"10,000 - 50,000"`, `"50,000 - 100,000"`, `"100,000 - 500,000"`, `"500,000+"` — values are customer counts |
+
+**Screen sections — Customer Report**
+
+| Widget                      | Data source                                      | Notes                                                      |
+| --------------------------- | ------------------------------------------------ | ---------------------------------------------------------- |
+| **4 KPI cards**             | `stats.*`                                        | Total Customers / New / Returning / Avg Lifetime Value     |
+| **Guest vs registered bar** | `stats.guest_orders` + `stats.registered_orders` | Show order count split                                     |
+| **Top 20 customers table**  | `top_customers`                                  | Columns: Name, Email, Orders, Total Spent, Last Order      |
+| **LTV segment chart**       | `lifetime_value_segments`                        | Horizontal bar or doughnut; fixed 5 buckets, value = count |
+
+---
+
 ### 6.5 Abandoned Carts Report
 
 ```
 GET /ecommerce/reports/abandoned-carts
+Authorization: Bearer {token}
 ```
 
-Default date range: last 30 days
+**Default date range:** last 30 days
+
+**Query parameters**
+
+| Param       | Default         | Description             |
+| ----------- | --------------- | ----------------------- |
+| `date_from` | today − 30 days | Start date (YYYY-MM-DD) |
+| `date_to`   | today           | End date (YYYY-MM-DD)   |
+
+> **Abandoned cart definition:** a cart that was last updated more than 1 hour ago and has at least one item. Carts updated within the last hour are excluded (considered still-active sessions).
+> **`recovery_rate`** is always `0.0` — the platform does not currently link a cart to its converted order, so recovery cannot be tracked. Display this as "0%" with a note.
+> **`price`** on each abandoned product is the product's `sales_rate` (selling price).
 
 **Response:**
 
@@ -1208,7 +1433,7 @@ Default date range: last 30 days
         "stats": {
             "abandoned_carts": 85,
             "potential_revenue": 3400000.0,
-            "recovery_rate": 62.5,
+            "recovery_rate": 0.0,
             "average_cart_value": 40000.0
         },
         "daily_trends": [
@@ -1231,6 +1456,31 @@ Default date range: last 30 days
     }
 }
 ```
+
+**Field reference**
+
+| Field                                      | Type   | Description                                                      |
+| ------------------------------------------ | ------ | ---------------------------------------------------------------- |
+| `stats.abandoned_carts`                    | int    | Carts updated > 1 hr ago with at least 1 item, within date range |
+| `stats.potential_revenue`                  | float  | Sum of `price × quantity` across all abandoned cart items        |
+| `stats.recovery_rate`                      | float  | Always `0.0` (not yet tracked)                                   |
+| `stats.average_cart_value`                 | float  | `potential_revenue / abandoned_carts`                            |
+| `daily_trends[].date`                      | string | `YYYY-MM-DD`                                                     |
+| `daily_trends[].abandoned_carts`           | int    | Number of abandoned carts on this date                           |
+| `most_abandoned_products[].id`             | int    | Product ID                                                       |
+| `most_abandoned_products[].name`           | string | Product name                                                     |
+| `most_abandoned_products[].price`          | float  | Current selling price (`sales_rate`)                             |
+| `most_abandoned_products[].total_quantity` | int    | Total units left in abandoned carts                              |
+| `most_abandoned_products[].cart_count`     | int    | Distinct carts containing this product                           |
+
+**Screen sections — Abandoned Carts Report**
+
+| Widget                            | Data source               | Notes                                                                         |
+| --------------------------------- | ------------------------- | ----------------------------------------------------------------------------- |
+| **4 KPI cards**                   | `stats.*`                 | Abandoned Carts / Potential Revenue / Recovery Rate / Avg Cart Value          |
+| **Recovery rate card**            | `stats.recovery_rate`     | Always 0% — show "N/A" or greyed-out until platform tracks cart-to-order link |
+| **Daily trend chart**             | `daily_trends`            | Line chart, x = date, y = abandoned_carts count                               |
+| **Most abandoned products table** | `most_abandoned_products` | Columns: Product, Price, Qty in Carts, Cart Count                             |
 
 ---
 
@@ -1596,6 +1846,7 @@ interface OrderReportStats {
 interface RevenueReportStats {
     current_revenue: number;
     previous_revenue: number;
+    /** Percentage. Positive = growth, negative = decline. 0 if no previous period. */
     growth_rate: number;
     total_orders: number;
     average_order_value: number;
@@ -1609,30 +1860,56 @@ interface ProductReportStats {
 }
 
 interface CustomerReportStats {
+    /** All-time distinct customers with at least one order */
     total_customers: number;
     new_customers: number;
     returning_customers: number;
+    /** Orders placed without a customer account */
     guest_orders: number;
     registered_orders: number;
+    /** All-time average total spend per customer */
     average_lifetime_value: number;
 }
 
 interface AbandonedCartStats {
     abandoned_carts: number;
     potential_revenue: number;
+    /** Always 0.0 — cart-to-order link not yet tracked */
     recovery_rate: number;
     average_cart_value: number;
 }
 
-interface DailyTrend {
-    date: string;
-    orders?: number;
-    revenue?: number;
-    abandoned_carts?: number;
+interface OrdersByStatus {
+    status: string;
+    count: number;
+    total: number;
+}
+
+interface OrdersByPayment {
+    payment_status: string;
+    count: number;
+    total: number;
+}
+
+interface DailyOrderTrend {
+    date: string; // YYYY-MM-DD
+    orders: number;
+    revenue: number;
+}
+
+interface DailyAbandonedTrend {
+    date: string; // YYYY-MM-DD
+    abandoned_carts: number;
+}
+
+interface PaymentMethodSummary {
+    payment_method: string;
+    count: number;
+    total: number;
 }
 
 interface MonthlyRevenue {
-    month: string;
+    month: string; // YYYY-MM
     orders: number;
     subtotal: number;
     tax: number;
@@ -1641,13 +1918,41 @@ interface MonthlyRevenue {
     total: number;
 }
 
+interface RevenueByPayment {
+    payment_status: string;
+    total: number;
+}
+
+interface RevenueByMethod {
+    payment_method: string;
+    total: number;
+    count: number;
+}
+
 interface TopProduct {
     product_id: number;
     product_name: string;
-    category?: string;
+    /** Current selling price (sales_rate) */
+    product_price?: number;
+    category?: string | null;
     total_quantity: number;
     total_revenue: number;
     order_count?: number;
+}
+
+interface CategoryPerformance {
+    category: string;
+    total_quantity: number;
+    total_revenue: number;
+    order_count: number;
+}
+
+interface LowStockProduct {
+    product_id: number;
+    name: string;
+    current_stock: number;
+    reorder_level: number;
+    sold_quantity: number;
 }
 
 interface TopCustomer {
@@ -1661,20 +1966,53 @@ interface TopCustomer {
     last_order_date: string;
 }
 
+/** Keys: "< 10,000" | "10,000 - 50,000" | "50,000 - 100,000" | "100,000 - 500,000" | "500,000+" */
+type LifetimeValueSegments = Record<string, number>;
+
 interface AbandonedProduct {
     id: number;
     name: string;
+    /** Selling price (sales_rate column) */
     price: number;
     total_quantity: number;
     cart_count: number;
 }
 
-interface LowStockProduct {
-    product_id: number;
-    name: string;
-    current_stock: number;
-    reorder_level: number;
-    sold_quantity: number;
+// Full report response shapes
+interface OrderReportData {
+    stats: OrderReportStats;
+    orders_by_status: OrdersByStatus[];
+    orders_by_payment: OrdersByPayment[];
+    daily_trends: DailyOrderTrend[];
+    payment_methods: PaymentMethodSummary[];
+    top_products: TopProduct[];
+}
+
+interface RevenueReportData {
+    stats: RevenueReportStats;
+    monthly_revenue: MonthlyRevenue[];
+    revenue_by_payment: RevenueByPayment[];
+    revenue_by_method: RevenueByMethod[];
+}
+
+interface ProductReportData {
+    stats: ProductReportStats;
+    top_by_revenue: TopProduct[];
+    top_by_quantity: TopProduct[];
+    category_performance: CategoryPerformance[];
+    low_stock_products: LowStockProduct[];
+}
+
+interface CustomerReportData {
+    stats: CustomerReportStats;
+    top_customers: TopCustomer[];
+    lifetime_value_segments: LifetimeValueSegments;
+}
+
+interface AbandonedCartReportData {
+    stats: AbandonedCartStats;
+    daily_trends: DailyAbandonedTrend[];
+    most_abandoned_products: AbandonedProduct[];
 }
 ```
 

@@ -64,8 +64,8 @@ class ReportController extends Controller
                         ->whereBetween('created_at', [$dateFrom, $dateTo])
                         ->whereIn('status', ['confirmed', 'processing', 'shipped', 'delivered']);
                 })
-                ->with('product:id,name,price')
-                ->select('product_id', DB::raw('sum(quantity) as total_quantity'), DB::raw('sum(total) as total_revenue'))
+                ->with('product:id,name,sales_rate')
+                ->select('product_id', DB::raw('sum(quantity) as total_quantity'), DB::raw('sum(total_price) as total_revenue'))
                 ->groupBy('product_id')
                 ->orderByDesc('total_revenue')
                 ->limit(10)
@@ -73,7 +73,7 @@ class ReportController extends Controller
                 ->map(fn($item) => [
                     'product_id' => $item->product_id,
                     'product_name' => $item->product?->name,
-                    'product_price' => (float) ($item->product?->price ?? 0),
+                    'product_price' => (float) ($item->product?->sales_rate ?? 0),
                     'total_quantity' => (int) $item->total_quantity,
                     'total_revenue' => (float) $item->total_revenue,
                 ]);
@@ -234,10 +234,10 @@ class ReportController extends Controller
                         ->whereBetween('created_at', [$dateFrom, $dateTo])
                         ->whereIn('status', ['confirmed', 'processing', 'shipped', 'delivered']);
                 })
-                ->with(['product:id,name,price', 'product.category:id,name'])
+                ->with(['product:id,name,sales_rate', 'product.category:id,name'])
                 ->select('product_id',
                     DB::raw('sum(quantity) as total_quantity'),
-                    DB::raw('sum(total) as total_revenue'),
+                    DB::raw('sum(total_price) as total_revenue'),
                     DB::raw('count(DISTINCT order_id) as order_count')
                 )
                 ->groupBy('product_id')
@@ -259,10 +259,10 @@ class ReportController extends Controller
                         ->whereBetween('created_at', [$dateFrom, $dateTo])
                         ->whereIn('status', ['confirmed', 'processing', 'shipped', 'delivered']);
                 })
-                ->with(['product:id,name,price', 'product.category:id,name'])
+                ->with(['product:id,name,sales_rate', 'product.category:id,name'])
                 ->select('product_id',
                     DB::raw('sum(quantity) as total_quantity'),
-                    DB::raw('sum(total) as total_revenue')
+                    DB::raw('sum(total_price) as total_revenue')
                 )
                 ->groupBy('product_id')
                 ->orderByDesc('total_quantity')
@@ -286,7 +286,7 @@ class ReportController extends Controller
                 ->join('product_categories', 'products.category_id', '=', 'product_categories.id')
                 ->select('product_categories.name as category',
                     DB::raw('sum(order_items.quantity) as total_quantity'),
-                    DB::raw('sum(order_items.total) as total_revenue'),
+                    DB::raw('sum(order_items.total_price) as total_revenue'),
                     DB::raw('count(DISTINCT order_items.order_id) as order_count')
                 )
                 ->groupBy('product_categories.id', 'product_categories.name')
@@ -333,7 +333,7 @@ class ReportController extends Controller
                             ->whereBetween('created_at', [$dateFrom, $dateTo])
                             ->whereIn('status', ['confirmed', 'processing', 'shipped', 'delivered']);
                     })
-                    ->sum('total'),
+                    ->sum('total_price'),
                 'low_stock_count' => $lowStockProducts->count(),
             ];
 
@@ -496,7 +496,7 @@ class ReportController extends Controller
             $dailyTrends = Cart::where('tenant_id', $tenant->id)
                 ->whereBetween('updated_at', [$dateFrom, $dateTo])
                 ->where('updated_at', '<=', Carbon::now()->subHour())
-                ->whereDoesntHave('order')
+                ->whereHas('items')
                 ->select(
                     DB::raw('DATE(updated_at) as date'),
                     DB::raw('count(*) as abandoned_carts')
@@ -509,7 +509,7 @@ class ReportController extends Controller
             $potentialRevenue = (float) Cart::where('tenant_id', $tenant->id)
                 ->whereBetween('updated_at', [$dateFrom, $dateTo])
                 ->where('updated_at', '<=', Carbon::now()->subHour())
-                ->whereDoesntHave('order')
+                ->whereHas('items')
                 ->with('items')
                 ->get()
                 ->sum(function ($cart) {
@@ -525,29 +525,21 @@ class ReportController extends Controller
                 ->where('carts.tenant_id', $tenant->id)
                 ->whereBetween('carts.updated_at', [$dateFrom, $dateTo])
                 ->where('carts.updated_at', '<=', Carbon::now()->subHour())
-                ->whereNotExists(function ($query) {
-                    $query->select(DB::raw(1))
-                        ->from('orders')
-                        ->whereRaw('orders.id = carts.order_id');
-                })
-                ->select('products.id', 'products.name', 'products.price',
+                ->select('products.id', 'products.name', 'products.sales_rate as price',
                     DB::raw('sum(cart_items.quantity) as total_quantity'),
                     DB::raw('count(DISTINCT carts.id) as cart_count')
                 )
-                ->groupBy('products.id', 'products.name', 'products.price')
+                ->groupBy('products.id', 'products.name', 'products.sales_rate')
                 ->orderByDesc('cart_count')
                 ->limit(10)
                 ->get();
 
-            // Cart recovery rate
+            // Cart recovery rate (no direct cart->order link currently)
             $totalCartsCreated = Cart::where('tenant_id', $tenant->id)
                 ->whereBetween('created_at', [$dateFrom, $dateTo])
                 ->count();
 
-            $convertedCarts = Cart::where('tenant_id', $tenant->id)
-                ->whereBetween('created_at', [$dateFrom, $dateTo])
-                ->whereHas('order')
-                ->count();
+            $convertedCarts = 0;
 
             $recoveryRate = $totalCartsCreated > 0
                 ? ($convertedCarts / $totalCartsCreated) * 100
@@ -557,13 +549,13 @@ class ReportController extends Controller
             $abandonedCount = Cart::where('tenant_id', $tenant->id)
                 ->whereBetween('updated_at', [$dateFrom, $dateTo])
                 ->where('updated_at', '<=', Carbon::now()->subHour())
-                ->whereDoesntHave('order')
+                ->whereHas('items')
                 ->count();
 
             $averageCartValue = (float) Cart::where('tenant_id', $tenant->id)
                 ->whereBetween('updated_at', [$dateFrom, $dateTo])
                 ->where('updated_at', '<=', Carbon::now()->subHour())
-                ->whereDoesntHave('order')
+                ->whereHas('items')
                 ->with('items')
                 ->get()
                 ->avg(function ($cart) {
