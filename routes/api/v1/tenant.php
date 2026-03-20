@@ -191,6 +191,8 @@ Route::middleware('auth:sanctum')->group(function () {
             });
             Route::prefix('audit')->name('audit.')->group(function () {
                 Route::get('/', [\App\Http\Controllers\Api\Tenant\Reports\AuditReportsController::class, 'index'])->name('index');
+                Route::get('/statistics', [\App\Http\Controllers\Api\Tenant\Reports\AuditReportsController::class, 'statistics'])->name('statistics');
+                Route::get('/models', [\App\Http\Controllers\Api\Tenant\Reports\AuditReportsController::class, 'models'])->name('models');
                 Route::get('/{model}/{id}', [\App\Http\Controllers\Api\Tenant\Reports\AuditReportsController::class, 'show'])->name('show');
             });
             Route::prefix('financial')->name('financial.')->group(function () {
