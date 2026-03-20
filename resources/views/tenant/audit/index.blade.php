@@ -196,12 +196,13 @@
                             <label class="block text-sm font-medium text-gray-700 mb-2">Model Type</label>
                             <select name="model" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 text-sm">
                                 <option value="">All Types</option>
-                                <option value="customer" {{ ($modelFilter ?? '') == 'customer' ? 'selected' : '' }}>Customers</option>
-                                <option value="vendor" {{ ($modelFilter ?? '') == 'vendor' ? 'selected' : '' }}>Vendors</option>
-                                <option value="product" {{ ($modelFilter ?? '') == 'product' ? 'selected' : '' }}>Products</option>
-                                <option value="voucher" {{ ($modelFilter ?? '') == 'voucher' ? 'selected' : '' }}>Vouchers</option>
-                                <option value="invoice" {{ ($modelFilter ?? '') == 'invoice' ? 'selected' : '' }}>Invoices</option>
-                                <option value="payment" {{ ($modelFilter ?? '') == 'payment' ? 'selected' : '' }}>Payments</option>
+                                @foreach($modelOptions ?? [] as $category => $models)
+                                    <optgroup label="{{ $category }}">
+                                        @foreach($models as $m)
+                                            <option value="{{ $m['key'] }}" {{ ($modelFilter ?? '') == $m['key'] ? 'selected' : '' }}>{{ $m['label'] }}</option>
+                                        @endforeach
+                                    </optgroup>
+                                @endforeach
                             </select>
                         </div>
 
@@ -393,13 +394,20 @@
                                                     <div class="text-xs text-gray-500">{{ $activity['timestamp']->format('H:i:s') }}</div>
                                                     <div class="text-xs text-gray-400 mt-1">{{ $activity['timestamp']->diffForHumans() }}</div>
                                                 </div>
-                                                @if(isset($activity['model']) && isset($activity['id']))
+                                                @if(isset($activity['model_key']) && isset($activity['id']))
                                                     @php
-                                                        $showRoute = match(strtolower($activity['model'])) {
+                                                        $showRoute = match($activity['model_key']) {
                                                             'customer' => route('tenant.crm.customers.show', ['tenant' => $tenant->slug, 'customer' => $activity['id']]),
                                                             'vendor' => route('tenant.crm.vendors.show', ['tenant' => $tenant->slug, 'vendor' => $activity['id']]),
                                                             'product' => route('tenant.inventory.products.show', ['tenant' => $tenant->slug, 'product' => $activity['id']]),
                                                             'voucher' => route('tenant.accounting.vouchers.show', ['tenant' => $tenant->slug, 'voucher' => $activity['id']]),
+                                                            'sale' => route('tenant.pos.receipt', ['tenant' => $tenant->slug, 'sale' => $activity['id']]),
+                                                            'project' => route('tenant.projects.show', ['tenant' => $tenant->slug, 'project' => $activity['id']]),
+                                                            'purchase_order' => route('tenant.procurement.purchase-orders.show', ['tenant' => $tenant->slug, 'purchaseOrder' => $activity['id']]),
+                                                            'quotation' => route('tenant.accounting.quotations.show', ['tenant' => $tenant->slug, 'quotation' => $activity['id']]),
+                                                            'ledger_account' => route('tenant.accounting.ledger-accounts.show', ['tenant' => $tenant->slug, 'ledgerAccount' => $activity['id']]),
+                                                            'order' => route('tenant.ecommerce.orders.show', ['tenant' => $tenant->slug, 'order' => $activity['id']]),
+                                                            'physical_stock_voucher' => route('tenant.inventory.physical-stock.show', ['tenant' => $tenant->slug, 'voucher' => $activity['id']]),
                                                             default => '#'
                                                         };
                                                     @endphp
@@ -454,13 +462,20 @@
                                             <div class="text-sm text-gray-900">{{ $activity['timestamp']->format('M d, Y H:i') }}</div>
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                            @if(isset($activity['model']) && isset($activity['id']))
+                                            @if(isset($activity['model_key']) && isset($activity['id']))
                                                 @php
-                                                    $showRoute = match(strtolower($activity['model'])) {
+                                                    $showRoute = match($activity['model_key']) {
                                                         'customer' => route('tenant.crm.customers.show', ['tenant' => $tenant->slug, 'customer' => $activity['id']]),
                                                         'vendor' => route('tenant.crm.vendors.show', ['tenant' => $tenant->slug, 'vendor' => $activity['id']]),
                                                         'product' => route('tenant.inventory.products.show', ['tenant' => $tenant->slug, 'product' => $activity['id']]),
                                                         'voucher' => route('tenant.accounting.vouchers.show', ['tenant' => $tenant->slug, 'voucher' => $activity['id']]),
+                                                        'sale' => route('tenant.pos.receipt', ['tenant' => $tenant->slug, 'sale' => $activity['id']]),
+                                                        'project' => route('tenant.projects.show', ['tenant' => $tenant->slug, 'project' => $activity['id']]),
+                                                        'purchase_order' => route('tenant.procurement.purchase-orders.show', ['tenant' => $tenant->slug, 'purchaseOrder' => $activity['id']]),
+                                                        'quotation' => route('tenant.accounting.quotations.show', ['tenant' => $tenant->slug, 'quotation' => $activity['id']]),
+                                                        'ledger_account' => route('tenant.accounting.ledger-accounts.show', ['tenant' => $tenant->slug, 'ledgerAccount' => $activity['id']]),
+                                                        'order' => route('tenant.ecommerce.orders.show', ['tenant' => $tenant->slug, 'order' => $activity['id']]),
+                                                        'physical_stock_voucher' => route('tenant.inventory.physical-stock.show', ['tenant' => $tenant->slug, 'voucher' => $activity['id']]),
                                                         default => '#'
                                                     };
                                                 @endphp

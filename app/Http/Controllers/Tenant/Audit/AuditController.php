@@ -4,17 +4,136 @@ namespace App\Http\Controllers\Tenant\Audit;
 
 use App\Http\Controllers\Controller;
 use App\Models\Customer;
-use App\Models\Vendor;
-use App\Models\Product;
-use App\Models\Voucher;
 use App\Models\LedgerAccount;
+use App\Models\Order;
+use App\Models\PhysicalStockVoucher;
+use App\Models\Product;
+use App\Models\Project;
+use App\Models\PurchaseOrder;
+use App\Models\Quotation;
 use App\Models\Sale;
 use App\Models\User;
+use App\Models\Vendor;
+use App\Models\Voucher;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 
 class AuditController extends Controller
 {
+    /**
+     * Models included in the audit trail with their configuration.
+     */
+    private function getAuditableModels(): array
+    {
+        return [
+            'customer' => [
+                'class' => Customer::class,
+                'label' => 'Customer',
+                'category' => 'CRM',
+                'relations' => ['creator', 'updater'],
+                'has_updated_by' => true,
+                'has_deleted_by' => true,
+                'name_field' => fn($item) => $item->getFullNameAttribute(),
+            ],
+            'vendor' => [
+                'class' => Vendor::class,
+                'label' => 'Vendor',
+                'category' => 'CRM',
+                'relations' => ['creator', 'updater'],
+                'has_updated_by' => true,
+                'has_deleted_by' => true,
+                'name_field' => fn($item) => $item->getFullNameAttribute(),
+            ],
+            'product' => [
+                'class' => Product::class,
+                'label' => 'Product',
+                'category' => 'Inventory',
+                'relations' => ['creator', 'updater'],
+                'has_updated_by' => true,
+                'has_deleted_by' => false,
+                'name_field' => fn($item) => $item->name,
+            ],
+            'voucher' => [
+                'class' => Voucher::class,
+                'label' => 'Voucher',
+                'category' => 'Accounting',
+                'relations' => ['creator', 'updater', 'poster', 'voucherType'],
+                'has_updated_by' => true,
+                'has_deleted_by' => false,
+                'has_posted_by' => true,
+                'name_field' => fn($item) => ($item->voucherType->name ?? 'Voucher') . ' #' . $item->voucher_number,
+            ],
+            'sale' => [
+                'class' => Sale::class,
+                'label' => 'Sale',
+                'category' => 'POS',
+                'relations' => ['creator', 'updater'],
+                'has_updated_by' => true,
+                'has_deleted_by' => false,
+                'name_field' => fn($item) => 'Sale #' . $item->sale_number,
+            ],
+            'project' => [
+                'class' => Project::class,
+                'label' => 'Project',
+                'category' => 'Projects',
+                'relations' => ['creator', 'updater'],
+                'has_updated_by' => true,
+                'has_deleted_by' => true,
+                'name_field' => fn($item) => $item->name . ' (' . $item->project_number . ')',
+            ],
+            'purchase_order' => [
+                'class' => PurchaseOrder::class,
+                'label' => 'Purchase Order',
+                'category' => 'Procurement',
+                'relations' => ['creator', 'updater'],
+                'has_updated_by' => true,
+                'has_deleted_by' => false,
+                'name_field' => fn($item) => 'LPO #' . $item->lpo_number,
+            ],
+            'quotation' => [
+                'class' => Quotation::class,
+                'label' => 'Quotation',
+                'category' => 'Accounting',
+                'relations' => ['createdBy', 'updatedBy'],
+                'creator_relation' => 'createdBy',
+                'updater_relation' => 'updatedBy',
+                'has_updated_by' => true,
+                'has_deleted_by' => false,
+                'name_field' => fn($item) => 'Quotation #' . $item->quotation_number,
+            ],
+            'ledger_account' => [
+                'class' => LedgerAccount::class,
+                'label' => 'Ledger Account',
+                'category' => 'Accounting',
+                'relations' => ['creator', 'updater'],
+                'has_updated_by' => true,
+                'has_deleted_by' => false,
+                'name_field' => fn($item) => $item->name . ' (' . $item->code . ')',
+            ],
+            'order' => [
+                'class' => Order::class,
+                'label' => 'Order',
+                'category' => 'E-commerce',
+                'relations' => ['customer'],
+                'has_created_by' => false,
+                'has_updated_by' => false,
+                'has_deleted_by' => false,
+                'name_field' => fn($item) => 'Order #' . $item->order_number,
+            ],
+            'physical_stock_voucher' => [
+                'class' => PhysicalStockVoucher::class,
+                'label' => 'Physical Stock Voucher',
+                'category' => 'Inventory',
+                'relations' => ['creator', 'updater', 'approver'],
+                'has_updated_by' => true,
+                'has_deleted_by' => false,
+                'has_approved_by' => true,
+                'name_field' => fn($item) => 'PSV #' . $item->voucher_number,
+            ],
+        ];
+    }
+
     /**
      * Display the audit trail dashboard.
      */
@@ -22,22 +141,18 @@ class AuditController extends Controller
     {
         $tenant = tenant();
 
-        // Get filter parameters
         $userFilter = $request->input('user_id');
         $actionFilter = $request->input('action');
         $modelFilter = $request->input('model');
         $dateFrom = $request->input('date_from');
         $dateTo = $request->input('date_to');
 
-        // Get all users for the tenant
         $users = User::where('tenant_id', $tenant->id)
             ->orderBy('name')
             ->get(['id', 'name', 'email']);
 
-        // Get summary statistics
-        $stats = $this->getAuditStatistics($tenant->id, $dateFrom, $dateTo);
+        $stats = $this->getAuditStatistics($tenant->id);
 
-        // Get recent activities
         $activities = $this->getRecentActivities($tenant->id, [
             'user_id' => $userFilter,
             'action' => $actionFilter,
@@ -45,6 +160,15 @@ class AuditController extends Controller
             'date_from' => $dateFrom,
             'date_to' => $dateTo,
         ]);
+
+        // Build model options for filter dropdown, grouped by category
+        $modelOptions = collect($this->getAuditableModels())
+            ->map(fn($config, $key) => [
+                'key' => $key,
+                'label' => $config['label'],
+                'category' => $config['category'],
+            ])
+            ->groupBy('category');
 
         return view('tenant.audit.index', compact(
             'tenant',
@@ -55,81 +179,80 @@ class AuditController extends Controller
             'actionFilter',
             'modelFilter',
             'dateFrom',
-            'dateTo'
+            'dateTo',
+            'modelOptions'
         ));
     }
 
     /**
      * Get audit statistics.
      */
-    private function getAuditStatistics($tenantId, $dateFrom = null, $dateTo = null)
+    private function getAuditStatistics($tenantId)
     {
-        $stats = [
-            'total_records' => 0,
-            'created_today' => 0,
-            'updated_today' => 0,
-            'posted_today' => 0,
-            'active_users' => 0,
-        ];
+        $models = $this->getAuditableModels();
+        $totalRecords = 0;
+        $createdToday = 0;
+        $updatedToday = 0;
 
-        $dateFilter = function($query) use ($dateFrom, $dateTo) {
-            if ($dateFrom) {
-                $query->whereDate('created_at', '>=', $dateFrom);
+        foreach ($models as $key => $config) {
+            $class = $config['class'];
+            $hasCreatedBy = $config['has_created_by'] ?? true;
+
+            $base = $class::where('tenant_id', $tenantId);
+
+            if ($hasCreatedBy) {
+                $totalRecords += (clone $base)->whereNotNull('created_by')->count();
+            } else {
+                $totalRecords += (clone $base)->count();
             }
-            if ($dateTo) {
-                $query->whereDate('created_at', '<=', $dateTo);
+
+            $createdToday += (clone $base)->whereDate('created_at', today())->count();
+
+            if ($config['has_updated_by'] ?? false) {
+                $updatedToday += (clone $base)->whereDate('updated_at', today())
+                    ->whereNotNull('updated_by')->count();
             }
-        };
+        }
 
-        // Count total records with audit columns
-        $stats['total_records'] = collect([
-            Customer::where('tenant_id', $tenantId)->whereNotNull('created_by')->count(),
-            Vendor::where('tenant_id', $tenantId)->whereNotNull('created_by')->count(),
-            Product::where('tenant_id', $tenantId)->whereNotNull('created_by')->count(),
-            Voucher::where('tenant_id', $tenantId)->whereNotNull('created_by')->count(),
-        ])->sum();
-
-        // Count created today
-        $stats['created_today'] = collect([
-            Customer::where('tenant_id', $tenantId)->whereDate('created_at', today())->count(),
-            Vendor::where('tenant_id', $tenantId)->whereDate('created_at', today())->count(),
-            Product::where('tenant_id', $tenantId)->whereDate('created_at', today())->count(),
-            Voucher::where('tenant_id', $tenantId)->whereDate('created_at', today())->count(),
-        ])->sum();
-
-        // Count updated today
-        $stats['updated_today'] = collect([
-            Customer::where('tenant_id', $tenantId)->whereDate('updated_at', today())->whereNotNull('updated_by')->count(),
-            Vendor::where('tenant_id', $tenantId)->whereDate('updated_at', today())->whereNotNull('updated_by')->count(),
-            Product::where('tenant_id', $tenantId)->whereDate('updated_at', today())->whereNotNull('updated_by')->count(),
-            Voucher::where('tenant_id', $tenantId)->whereDate('updated_at', today())->whereNotNull('updated_by')->count(),
-        ])->sum();
-
-        // Count posted today
-        $stats['posted_today'] = Voucher::where('tenant_id', $tenantId)
+        $postedToday = Voucher::where('tenant_id', $tenantId)
             ->whereDate('posted_at', today())
             ->whereNotNull('posted_by')
             ->count();
 
-        // Count active users (users who performed actions today)
-        $stats['active_users'] = User::where('tenant_id', $tenantId)
-            ->where(function($query) use ($tenantId) {
-                $query->whereHas('createdCustomers', function($q) use ($tenantId) {
-                    $q->where('tenant_id', $tenantId)->whereDate('created_at', today());
-                })
-                ->orWhereHas('createdVendors', function($q) use ($tenantId) {
-                    $q->where('tenant_id', $tenantId)->whereDate('created_at', today());
-                })
-                ->orWhereHas('createdProducts', function($q) use ($tenantId) {
-                    $q->where('tenant_id', $tenantId)->whereDate('created_at', today());
-                })
-                ->orWhereHas('createdVouchers', function($q) use ($tenantId) {
-                    $q->where('tenant_id', $tenantId)->whereDate('created_at', today());
-                });
+        // Approved physical stock vouchers today
+        $postedToday += PhysicalStockVoucher::where('tenant_id', $tenantId)
+            ->whereDate('approved_at', today())
+            ->whereNotNull('approved_by')
+            ->count();
+
+        $activeUsers = DB::table('users')
+            ->where('tenant_id', $tenantId)
+            ->where(function ($query) use ($tenantId) {
+                $auditableTables = ['customers', 'vendors', 'products', 'vouchers', 'sales',
+                    'projects', 'purchase_orders', 'quotations', 'ledger_accounts', 'physical_stock_vouchers'];
+
+                foreach ($auditableTables as $i => $table) {
+                    if (!Schema::hasColumn($table, 'created_by')) continue;
+
+                    $method = $i === 0 ? 'whereExists' : 'orWhereExists';
+                    $query->$method(function ($sub) use ($table, $tenantId) {
+                        $sub->select(DB::raw(1))
+                            ->from($table)
+                            ->where($table . '.tenant_id', $tenantId)
+                            ->whereColumn($table . '.created_by', 'users.id')
+                            ->whereDate($table . '.created_at', today());
+                    });
+                }
             })
             ->count();
 
-        return $stats;
+        return [
+            'total_records' => $totalRecords,
+            'created_today' => $createdToday,
+            'updated_today' => $updatedToday,
+            'posted_today' => $postedToday,
+            'active_users' => $activeUsers,
+        ];
     }
 
     /**
@@ -138,124 +261,160 @@ class AuditController extends Controller
     private function getRecentActivities($tenantId, $filters = [])
     {
         $activities = collect();
+        $models = $this->getAuditableModels();
+        $modelFilter = $filters['model'] ?? null;
 
-        // Get recent customers
-        $customers = Customer::where('tenant_id', $tenantId)
-            ->with('creator', 'updater')
-            ->when($filters['user_id'], function($q, $userId) {
-                $q->where(function($query) use ($userId) {
-                    $query->where('created_by', $userId)
-                          ->orWhere('updated_by', $userId);
+        foreach ($models as $key => $config) {
+            // Skip if a specific model filter is set and doesn't match
+            if ($modelFilter && $modelFilter !== $key) {
+                continue;
+            }
+
+            $class = $config['class'];
+            $hasCreatedBy = $config['has_created_by'] ?? true;
+            $creatorRelation = $config['creator_relation'] ?? 'creator';
+            $updaterRelation = $config['updater_relation'] ?? 'updater';
+
+            $query = $class::where('tenant_id', $tenantId)
+                ->with($config['relations']);
+
+            // User filter
+            if (!empty($filters['user_id']) && $hasCreatedBy) {
+                $userId = $filters['user_id'];
+                $query->where(function ($q) use ($userId, $config) {
+                    $q->where('created_by', $userId);
+                    if ($config['has_updated_by'] ?? false) {
+                        $q->orWhere('updated_by', $userId);
+                    }
+                    if ($config['has_posted_by'] ?? false) {
+                        $q->orWhere('posted_by', $userId);
+                    }
+                    if ($config['has_approved_by'] ?? false) {
+                        $q->orWhere('approved_by', $userId);
+                    }
                 });
-            })
-            ->when($filters['date_from'], function($q, $date) {
-                $q->whereDate('created_at', '>=', $date);
-            })
-            ->when($filters['date_to'], function($q, $date) {
-                $q->whereDate('created_at', '<=', $date);
-            })
-            ->latest()
-            ->limit(20)
-            ->get()
-            ->map(function($item) {
-                return [
-                    'id' => $item->id,
-                    'model' => 'Customer',
-                    'model_name' => $item->getFullNameAttribute(),
-                    'action' => 'created',
-                    'user' => $item->creator,
-                    'timestamp' => $item->created_at,
-                    'details' => "Created customer: {$item->getFullNameAttribute()}",
-                ];
-            });
+            }
 
-        $activities = $activities->merge($customers);
+            // Date filters
+            if (!empty($filters['date_from'])) {
+                $query->whereDate('created_at', '>=', $filters['date_from']);
+            }
+            if (!empty($filters['date_to'])) {
+                $query->whereDate('created_at', '<=', $filters['date_to']);
+            }
 
-        // Get recent vendors
-        $vendors = Vendor::where('tenant_id', $tenantId)
-            ->with('creator', 'updater')
-            ->when($filters['user_id'], function($q, $userId) {
-                $q->where(function($query) use ($userId) {
-                    $query->where('created_by', $userId)
-                          ->orWhere('updated_by', $userId);
-                });
-            })
-            ->when($filters['date_from'], function($q, $date) {
-                $q->whereDate('created_at', '>=', $date);
-            })
-            ->when($filters['date_to'], function($q, $date) {
-                $q->whereDate('created_at', '<=', $date);
-            })
-            ->latest()
-            ->limit(20)
-            ->get()
-            ->map(function($item) {
-                return [
-                    'id' => $item->id,
-                    'model' => 'Vendor',
-                    'model_name' => $item->getFullNameAttribute(),
-                    'action' => 'created',
-                    'user' => $item->creator,
-                    'timestamp' => $item->created_at,
-                    'details' => "Created vendor: {$item->getFullNameAttribute()}",
-                ];
-            });
+            $items = $query->latest()->limit(15)->get();
 
-        $activities = $activities->merge($vendors);
-
-        // Get recent vouchers
-        $vouchers = Voucher::where('tenant_id', $tenantId)
-            ->with('creator', 'updater', 'poster', 'voucherType')
-            ->when($filters['user_id'], function($q, $userId) {
-                $q->where(function($query) use ($userId) {
-                    $query->where('created_by', $userId)
-                          ->orWhere('updated_by', $userId)
-                          ->orWhere('posted_by', $userId);
-                });
-            })
-            ->when($filters['date_from'], function($q, $date) {
-                $q->whereDate('created_at', '>=', $date);
-            })
-            ->when($filters['date_to'], function($q, $date) {
-                $q->whereDate('created_at', '<=', $date);
-            })
-            ->latest()
-            ->limit(20)
-            ->get()
-            ->flatMap(function($item) {
-                $activities = [];
+            foreach ($items as $item) {
+                $nameField = $config['name_field'];
+                $itemName = $nameField($item);
 
                 // Created activity
-                $activities[] = [
-                    'id' => $item->id,
-                    'model' => 'Voucher',
-                    'model_name' => $item->voucherType->name . ' #' . $item->voucher_number,
-                    'action' => 'created',
-                    'user' => $item->creator,
-                    'timestamp' => $item->created_at,
-                    'details' => "Created {$item->voucherType->name} #{$item->voucher_number}",
-                ];
+                if ($hasCreatedBy && $item->{$creatorRelation}) {
+                    if (!$this->matchesActionFilter($filters, 'created')) continue;
 
-                // Posted activity
-                if ($item->posted_at && $item->poster) {
-                    $activities[] = [
+                    $activities->push([
                         'id' => $item->id,
-                        'model' => 'Voucher',
-                        'model_name' => $item->voucherType->name . ' #' . $item->voucher_number,
-                        'action' => 'posted',
-                        'user' => $item->poster,
-                        'timestamp' => $item->posted_at,
-                        'details' => "Posted {$item->voucherType->name} #{$item->voucher_number}",
-                    ];
+                        'model' => $config['label'],
+                        'model_key' => $key,
+                        'model_name' => $itemName,
+                        'action' => 'created',
+                        'user' => $item->{$creatorRelation},
+                        'timestamp' => $item->created_at,
+                        'details' => "Created {$config['label']}: {$itemName}",
+                    ]);
+                } elseif (!$hasCreatedBy) {
+                    // For models without created_by (e.g. Order), use timestamp only
+                    if (!$this->matchesActionFilter($filters, 'created')) continue;
+
+                    $activities->push([
+                        'id' => $item->id,
+                        'model' => $config['label'],
+                        'model_key' => $key,
+                        'model_name' => $itemName,
+                        'action' => 'created',
+                        'user' => null,
+                        'timestamp' => $item->created_at,
+                        'details' => "Created {$config['label']}: {$itemName}",
+                    ]);
                 }
 
-                return $activities;
-            });
+                // Updated activity
+                if (($config['has_updated_by'] ?? false) && $item->{$updaterRelation}
+                    && $item->updated_at && $item->updated_at->gt($item->created_at)) {
+                    if ($this->matchesActionFilter($filters, 'updated')) {
+                        $activities->push([
+                            'id' => $item->id,
+                            'model' => $config['label'],
+                            'model_key' => $key,
+                            'model_name' => $itemName,
+                            'action' => 'updated',
+                            'user' => $item->{$updaterRelation},
+                            'timestamp' => $item->updated_at,
+                            'details' => "Updated {$config['label']}: {$itemName}",
+                        ]);
+                    }
+                }
 
-        $activities = $activities->merge($vouchers);
+                // Posted activity (Vouchers)
+                if (($config['has_posted_by'] ?? false) && $item->posted_at && $item->poster) {
+                    if ($this->matchesActionFilter($filters, 'posted')) {
+                        $activities->push([
+                            'id' => $item->id,
+                            'model' => $config['label'],
+                            'model_key' => $key,
+                            'model_name' => $itemName,
+                            'action' => 'posted',
+                            'user' => $item->poster,
+                            'timestamp' => $item->posted_at,
+                            'details' => "Posted {$config['label']}: {$itemName}",
+                        ]);
+                    }
+                }
 
-        // Sort by timestamp and paginate
-        return $activities->sortByDesc('timestamp')->take(50);
+                // Approved activity (Physical Stock Vouchers)
+                if (($config['has_approved_by'] ?? false) && $item->approved_at && $item->approver) {
+                    if ($this->matchesActionFilter($filters, 'posted')) {
+                        $activities->push([
+                            'id' => $item->id,
+                            'model' => $config['label'],
+                            'model_key' => $key,
+                            'model_name' => $itemName,
+                            'action' => 'posted',
+                            'user' => $item->approver,
+                            'timestamp' => $item->approved_at,
+                            'details' => "Approved {$config['label']}: {$itemName}",
+                        ]);
+                    }
+                }
+
+                // Deleted activity
+                if (($config['has_deleted_by'] ?? false) && $item->deleted_at && method_exists($item, 'deleter') && $item->deleter) {
+                    if ($this->matchesActionFilter($filters, 'deleted')) {
+                        $activities->push([
+                            'id' => $item->id,
+                            'model' => $config['label'],
+                            'model_key' => $key,
+                            'model_name' => $itemName,
+                            'action' => 'deleted',
+                            'user' => $item->deleter,
+                            'timestamp' => $item->deleted_at,
+                            'details' => "Deleted {$config['label']}: {$itemName}",
+                        ]);
+                    }
+                }
+            }
+        }
+
+        return $activities->sortByDesc('timestamp')->take(50)->values();
+    }
+
+    /**
+     * Check if the activity action matches the filter.
+     */
+    private function matchesActionFilter(array $filters, string $action): bool
+    {
+        return empty($filters['action']) || $filters['action'] === $action;
     }
 
     /**
@@ -264,174 +423,150 @@ class AuditController extends Controller
     public function show(Request $request, $model, $id)
     {
         $tenant = tenant();
+        $models = $this->getAuditableModels();
 
-        $record = null;
-        $activities = collect();
-
-        switch ($model) {
-            case 'customer':
-                $record = Customer::where('tenant_id', $tenant->id)->findOrFail($id);
-                $activities = $this->getCustomerAuditTrail($record);
-                break;
-            case 'vendor':
-                $record = Vendor::where('tenant_id', $tenant->id)->findOrFail($id);
-                $activities = $this->getVendorAuditTrail($record);
-                break;
-            case 'voucher':
-                $record = Voucher::where('tenant_id', $tenant->id)->findOrFail($id);
-                $activities = $this->getVoucherAuditTrail($record);
-                break;
-            case 'product':
-                $record = Product::where('tenant_id', $tenant->id)->findOrFail($id);
-                $activities = $this->getProductAuditTrail($record);
-                break;
-            default:
-                abort(404);
+        if (!isset($models[$model])) {
+            abort(404);
         }
 
-        return view('tenant.audit.show', compact('tenant', 'record', 'activities', 'model'));
+        $config = $models[$model];
+        $class = $config['class'];
+
+        $record = $class::where('tenant_id', $tenant->id)->findOrFail($id);
+        $auditTrail = $this->getModelAuditTrail($record, $config);
+        $modelType = $model;
+        $recordId = $id;
+
+        return view('tenant.audit.show', compact('tenant', 'record', 'auditTrail', 'modelType', 'recordId'));
     }
 
     /**
-     * Get customer audit trail.
+     * Build audit trail for any auditable model.
      */
-    private function getCustomerAuditTrail($customer)
+    private function getModelAuditTrail($record, array $config): \Illuminate\Support\Collection
     {
         $activities = collect();
+        $label = $config['label'];
+        $hasCreatedBy = $config['has_created_by'] ?? true;
+        $creatorRelation = $config['creator_relation'] ?? 'creator';
+        $updaterRelation = $config['updater_relation'] ?? 'updater';
 
         // Created
-        if ($customer->creator) {
+        if ($hasCreatedBy && $record->{$creatorRelation}) {
             $activities->push([
                 'action' => 'created',
-                'user' => $customer->creator,
-                'timestamp' => $customer->created_at,
-                'details' => "Customer created",
+                'user' => $record->{$creatorRelation},
+                'timestamp' => $record->created_at,
+                'details' => "{$label} created",
+            ]);
+        } elseif (!$hasCreatedBy) {
+            $activities->push([
+                'action' => 'created',
+                'user' => null,
+                'timestamp' => $record->created_at,
+                'details' => "{$label} created",
             ]);
         }
 
         // Updated
-        if ($customer->updater && $customer->updated_at > $customer->created_at) {
+        if (($config['has_updated_by'] ?? false) && $record->{$updaterRelation}
+            && $record->updated_at && $record->updated_at->gt($record->created_at)) {
             $activities->push([
                 'action' => 'updated',
-                'user' => $customer->updater,
-                'timestamp' => $customer->updated_at,
-                'details' => "Customer information updated",
+                'user' => $record->{$updaterRelation},
+                'timestamp' => $record->updated_at,
+                'details' => "{$label} information updated",
+            ]);
+        }
+
+        // Posted (Vouchers)
+        if (($config['has_posted_by'] ?? false) && $record->posted_at && $record->poster) {
+            $activities->push([
+                'action' => 'posted',
+                'user' => $record->poster,
+                'timestamp' => $record->posted_at,
+                'details' => "{$label} posted to ledger",
+            ]);
+        }
+
+        // Approved (Physical Stock Vouchers)
+        if (($config['has_approved_by'] ?? false) && $record->approved_at && $record->approver) {
+            $activities->push([
+                'action' => 'posted',
+                'user' => $record->approver,
+                'timestamp' => $record->approved_at,
+                'details' => "{$label} approved",
             ]);
         }
 
         // Deleted
-        if ($customer->deleted_at && $customer->deleter) {
+        if (($config['has_deleted_by'] ?? false) && $record->deleted_at
+            && method_exists($record, 'deleter') && $record->deleter) {
             $activities->push([
                 'action' => 'deleted',
-                'user' => $customer->deleter,
-                'timestamp' => $customer->deleted_at,
-                'details' => "Customer deleted",
+                'user' => $record->deleter,
+                'timestamp' => $record->deleted_at,
+                'details' => "{$label} deleted",
             ]);
         }
 
-        return $activities->sortByDesc('timestamp');
-    }
-
-    /**
-     * Get vendor audit trail.
-     */
-    private function getVendorAuditTrail($vendor)
-    {
-        $activities = collect();
-
-        if ($vendor->creator) {
-            $activities->push([
-                'action' => 'created',
-                'user' => $vendor->creator,
-                'timestamp' => $vendor->created_at,
-                'details' => "Vendor created",
-            ]);
+        // Quotation-specific lifecycle events
+        if ($record instanceof Quotation) {
+            if ($record->sent_at) {
+                $activities->push([
+                    'action' => 'updated',
+                    'user' => $record->createdBy,
+                    'timestamp' => $record->sent_at,
+                    'details' => "Quotation sent to customer",
+                ]);
+            }
+            if ($record->accepted_at) {
+                $activities->push([
+                    'action' => 'posted',
+                    'user' => $record->createdBy,
+                    'timestamp' => $record->accepted_at,
+                    'details' => "Quotation accepted",
+                ]);
+            }
+            if ($record->rejected_at) {
+                $activities->push([
+                    'action' => 'deleted',
+                    'user' => $record->createdBy,
+                    'timestamp' => $record->rejected_at,
+                    'details' => "Quotation rejected" . ($record->rejection_reason ? ": {$record->rejection_reason}" : ''),
+                ]);
+            }
+            if ($record->converted_at) {
+                $activities->push([
+                    'action' => 'posted',
+                    'user' => $record->createdBy,
+                    'timestamp' => $record->converted_at,
+                    'details' => "Quotation converted to invoice",
+                ]);
+            }
         }
 
-        if ($vendor->updater && $vendor->updated_at > $vendor->created_at) {
-            $activities->push([
-                'action' => 'updated',
-                'user' => $vendor->updater,
-                'timestamp' => $vendor->updated_at,
-                'details' => "Vendor information updated",
-            ]);
+        // Order-specific lifecycle events
+        if ($record instanceof Order) {
+            if ($record->fulfilled_at) {
+                $activities->push([
+                    'action' => 'posted',
+                    'user' => null,
+                    'timestamp' => $record->fulfilled_at,
+                    'details' => "Order fulfilled",
+                ]);
+            }
+            if ($record->cancelled_at) {
+                $activities->push([
+                    'action' => 'deleted',
+                    'user' => null,
+                    'timestamp' => $record->cancelled_at,
+                    'details' => "Order cancelled" . ($record->cancellation_reason ? ": {$record->cancellation_reason}" : ''),
+                ]);
+            }
         }
 
-        if ($vendor->deleted_at && $vendor->deleter) {
-            $activities->push([
-                'action' => 'deleted',
-                'user' => $vendor->deleter,
-                'timestamp' => $vendor->deleted_at,
-                'details' => "Vendor deleted",
-            ]);
-        }
-
-        return $activities->sortByDesc('timestamp');
-    }
-
-    /**
-     * Get voucher audit trail.
-     */
-    private function getVoucherAuditTrail($voucher)
-    {
-        $activities = collect();
-
-        if ($voucher->creator) {
-            $activities->push([
-                'action' => 'created',
-                'user' => $voucher->creator,
-                'timestamp' => $voucher->created_at,
-                'details' => "Voucher created as draft",
-            ]);
-        }
-
-        if ($voucher->updater && $voucher->updated_at > $voucher->created_at) {
-            $activities->push([
-                'action' => 'updated',
-                'user' => $voucher->updater,
-                'timestamp' => $voucher->updated_at,
-                'details' => "Voucher updated",
-            ]);
-        }
-
-        if ($voucher->posted_at && $voucher->poster) {
-            $activities->push([
-                'action' => 'posted',
-                'user' => $voucher->poster,
-                'timestamp' => $voucher->posted_at,
-                'details' => "Voucher posted to ledger",
-            ]);
-        }
-
-        return $activities->sortByDesc('timestamp');
-    }
-
-    /**
-     * Get product audit trail.
-     */
-    private function getProductAuditTrail($product)
-    {
-        $activities = collect();
-
-        if ($product->creator) {
-            $activities->push([
-                'action' => 'created',
-                'user' => $product->creator,
-                'timestamp' => $product->created_at,
-                'details' => "Product created",
-            ]);
-        }
-
-        if ($product->updater && $product->updated_at > $product->created_at) {
-            $activities->push([
-                'action' => 'updated',
-                'user' => $product->updater,
-                'timestamp' => $product->updated_at,
-                'details' => "Product information updated",
-            ]);
-        }
-
-        return $activities->sortByDesc('timestamp');
+        return $activities->sortByDesc('timestamp')->values();
     }
 
     /**
