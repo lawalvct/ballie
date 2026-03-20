@@ -13,7 +13,7 @@
             <p class="text-gray-600 mt-1">VAT collected from customers on sales</p>
         </div>
         <a href="{{ route('tenant.statutory.index', $tenant->slug) }}" class="bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700">
-            Back to Statutory
+            Back to Tax
         </a>
     </div>
 

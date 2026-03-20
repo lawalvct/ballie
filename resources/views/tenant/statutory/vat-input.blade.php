@@ -9,11 +9,11 @@
     <!-- Header -->
     <div class="flex items-center justify-between">
         <div>
-            <h2 class="text-2xl font-bold text-gray-900">VAT Input Transactions</h2>
+            {{-- <h2 class="text-2xl font-bold text-gray-900">VAT Input Transactions</h2> --}}
             <p class="text-gray-600 mt-1">VAT paid to suppliers on purchases</p>
         </div>
         <a href="{{ route('tenant.statutory.index', $tenant->slug) }}" class="bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700">
-            Back to Statutory
+            Back to Tax
         </a>
     </div>
 

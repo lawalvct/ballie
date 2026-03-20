@@ -1119,6 +1119,18 @@ Route::prefix('ledger-accounts')->name('ledger-accounts.')->group(function () {
             // Pension Management
             Route::get('/pension/report', [\App\Http\Controllers\Tenant\StatutoryController::class, 'pensionReport'])->name('pension.report');
 
+            // PAYE Tax Report
+            Route::get('/paye/report', [\App\Http\Controllers\Tenant\StatutoryController::class, 'payeReport'])->name('paye.report');
+
+            // NSITF Report
+            Route::get('/nsitf/report', [\App\Http\Controllers\Tenant\StatutoryController::class, 'nsitfReport'])->name('nsitf.report');
+
+            // Tax Filing History
+            Route::get('/filings', [\App\Http\Controllers\Tenant\StatutoryController::class, 'filings'])->name('filings.index');
+            Route::post('/filings', [\App\Http\Controllers\Tenant\StatutoryController::class, 'storeFiling'])->name('filings.store');
+            Route::patch('/filings/{filing}/status', [\App\Http\Controllers\Tenant\StatutoryController::class, 'updateFilingStatus'])->name('filings.update-status');
+            Route::delete('/filings/{filing}', [\App\Http\Controllers\Tenant\StatutoryController::class, 'destroyFiling'])->name('filings.destroy');
+
             // Tax Settings
             Route::get('/settings', [\App\Http\Controllers\Tenant\StatutoryController::class, 'settings'])->name('settings');
             Route::put('/settings', [\App\Http\Controllers\Tenant\StatutoryController::class, 'updateSettings'])->name('settings.update');

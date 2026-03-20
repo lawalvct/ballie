@@ -20,7 +20,7 @@
     <!-- Header -->
     <div class="flex items-center justify-between no-print">
         <div>
-            <h2 class="text-2xl font-bold text-gray-900">VAT Return Report</h2>
+            <h2 class="text-2xl font-bold text-gray-900">VAT Return</h2>
             <p class="text-gray-600 mt-1">{{ date('M d, Y', strtotime($startDate)) }} - {{ date('M d, Y', strtotime($endDate)) }}</p>
         </div>
         <div class="flex space-x-3">
@@ -28,7 +28,7 @@
                 Print Report
             </button>
             <a href="{{ route('tenant.statutory.index', $tenant->slug) }}" class="bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700">
-                Back to Statutory
+                Back to Tax
             </a>
         </div>
     </div>
@@ -56,7 +56,7 @@
     <div id="printable-report" class="bg-white rounded-lg shadow-sm border border-gray-200 p-8">
         <div class="text-center mb-8">
             <h3 class="text-2xl font-bold text-gray-900">{{ $tenant->name }}</h3>
-            <p class="text-gray-600 mt-1">VAT Return Report</p>
+            <p class="text-gray-600 mt-1">VAT Return</p>
             <p class="text-sm text-gray-500 mt-1">Period: {{ date('M d, Y', strtotime($startDate)) }} - {{ date('M d, Y', strtotime($endDate)) }}</p>
         </div>
 

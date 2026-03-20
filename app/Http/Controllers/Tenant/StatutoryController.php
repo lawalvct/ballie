@@ -8,6 +8,9 @@ use App\Models\LedgerAccount;
 use App\Models\VoucherEntry;
 use App\Models\Voucher;
 use App\Models\PayrollRun;
+use App\Models\TaxRate;
+use App\Models\TaxFiling;
+use App\Models\Department;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
@@ -53,12 +56,30 @@ class StatutoryController extends Controller
         $netVatPayable = $vatOutput - $vatInput;
 
         // Calculate pension contributions for current month
-        $pensionTotal = PayrollRun::whereHas('payrollPeriod', function($q) use ($tenant, $startOfMonth, $endOfMonth) {
+        $payrollQuery = PayrollRun::whereHas('payrollPeriod', function($q) use ($tenant, $startOfMonth, $endOfMonth) {
                 $q->where('tenant_id', $tenant->id)
                   ->whereBetween('start_date', [$startOfMonth, $endOfMonth]);
             })
-            ->where('payment_status', '!=', 'cancelled')
-            ->sum(DB::raw('pension_employee + pension_employer'));
+            ->where('payment_status', '!=', 'cancelled');
+
+        $pensionTotal = (clone $payrollQuery)->sum(DB::raw('pension_employee + pension_employer'));
+
+        // PAYE tax total for current month
+        $payeTaxTotal = (clone $payrollQuery)->sum('monthly_tax');
+
+        // NSITF total for current month
+        $nsitfTotal = (clone $payrollQuery)->sum('nsitf_contribution');
+
+        // Overdue filings count
+        $overdueFilingsCount = TaxFiling::where('tenant_id', $tenant->id)
+            ->where(function($q) {
+                $q->where('status', 'overdue')
+                  ->orWhere(function($q2) {
+                      $q2->whereIn('status', ['draft', 'filed'])
+                         ->where('due_date', '<', now());
+                  });
+            })
+            ->count();
 
         return view('tenant.statutory.index', compact(
             'tenant',
@@ -66,6 +87,9 @@ class StatutoryController extends Controller
             'vatInput',
             'netVatPayable',
             'pensionTotal',
+            'payeTaxTotal',
+            'nsitfTotal',
+            'overdueFilingsCount',
             'vatOutputAccount',
             'vatInputAccount'
         ));
@@ -196,21 +220,24 @@ class StatutoryController extends Controller
 
     public function settings(Tenant $tenant)
     {
-        return view('tenant.statutory.settings', compact('tenant'));
+        $taxRates = TaxRate::where('is_active', true)
+            ->get();
+
+        return view('tenant.statutory.settings', compact('tenant', 'taxRates'));
     }
 
     public function updateSettings(Request $request, Tenant $tenant)
     {
-        // Validate and update tax settings
         $request->validate([
             'vat_rate' => 'required|numeric|min:0|max:100',
             'vat_registration_number' => 'nullable|string|max:255',
+            'tax_identification_number' => 'nullable|string|max:255',
         ]);
 
-        // Update tenant settings (you may need to add these fields to tenants table)
         $tenant->update([
             'vat_rate' => $request->vat_rate,
             'vat_registration_number' => $request->vat_registration_number,
+            'tax_identification_number' => $request->tax_identification_number,
         ]);
 
         return redirect()->back()->with('success', 'Tax settings updated successfully.');
@@ -250,5 +277,187 @@ class StatutoryController extends Controller
             'startDate',
             'endDate'
         ));
+    }
+
+    public function payeReport(Request $request, Tenant $tenant)
+    {
+        $startDate = $request->input('start_date', Carbon::now()->startOfMonth()->format('Y-m-d'));
+        $endDate = $request->input('end_date', Carbon::now()->endOfMonth()->format('Y-m-d'));
+        $departmentId = $request->input('department_id');
+
+        $query = PayrollRun::whereHas('payrollPeriod', function($q) use ($tenant, $startDate, $endDate) {
+                $q->where('tenant_id', $tenant->id)
+                  ->whereBetween('start_date', [$startDate, $endDate]);
+            })
+            ->with(['employee.department', 'payrollPeriod'])
+            ->where('payment_status', '!=', 'cancelled');
+
+        if ($departmentId) {
+            $query->whereHas('employee', function($q) use ($departmentId) {
+                $q->where('department_id', $departmentId);
+            });
+        }
+
+        $payrollRuns = $query->get();
+
+        $groupedByEmployee = $payrollRuns->groupBy('employee_id');
+
+        $summary = [
+            'total_gross' => $payrollRuns->sum('gross_salary'),
+            'total_relief' => $payrollRuns->sum('consolidated_relief'),
+            'total_taxable' => $payrollRuns->sum('taxable_income'),
+            'total_tax' => $payrollRuns->sum('monthly_tax'),
+        ];
+
+        $departments = Department::where('tenant_id', $tenant->id)->orderBy('name')->get();
+
+        return view('tenant.statutory.paye-report', compact(
+            'tenant',
+            'payrollRuns',
+            'groupedByEmployee',
+            'summary',
+            'departments',
+            'startDate',
+            'endDate'
+        ));
+    }
+
+    public function nsitfReport(Request $request, Tenant $tenant)
+    {
+        $startDate = $request->input('start_date', Carbon::now()->startOfMonth()->format('Y-m-d'));
+        $endDate = $request->input('end_date', Carbon::now()->endOfMonth()->format('Y-m-d'));
+
+        $payrollRuns = PayrollRun::whereHas('payrollPeriod', function($q) use ($tenant, $startDate, $endDate) {
+                $q->where('tenant_id', $tenant->id)
+                  ->whereBetween('start_date', [$startDate, $endDate]);
+            })
+            ->with(['employee.department', 'payrollPeriod'])
+            ->where('payment_status', '!=', 'cancelled')
+            ->get();
+
+        $groupedByEmployee = $payrollRuns->groupBy('employee_id');
+
+        $summary = [
+            'total_nsitf' => $payrollRuns->sum('nsitf_contribution'),
+            'employee_count' => $payrollRuns->unique('employee_id')->count(),
+            'rate' => 1,
+        ];
+
+        return view('tenant.statutory.nsitf-report', compact(
+            'tenant',
+            'payrollRuns',
+            'groupedByEmployee',
+            'summary',
+            'startDate',
+            'endDate'
+        ));
+    }
+
+    public function filings(Request $request, Tenant $tenant)
+    {
+        $query = TaxFiling::where('tenant_id', $tenant->id);
+
+        if ($request->filled('type')) {
+            $query->where('type', $request->type);
+        }
+        if ($request->filled('status')) {
+            $query->where('status', $request->status);
+        }
+        if ($request->filled('year')) {
+            $query->whereYear('period_start', $request->year);
+        }
+
+        $filings = $query->orderByDesc('period_start')->paginate(20);
+
+        $overdueFilings = TaxFiling::where('tenant_id', $tenant->id)
+            ->where(function($q) {
+                $q->where('status', 'overdue')
+                  ->orWhere(function($q2) {
+                      $q2->whereIn('status', ['draft', 'filed'])
+                         ->where('due_date', '<', now());
+                  });
+            })
+            ->get();
+
+        $filingSummary = [
+            'paid' => TaxFiling::where('tenant_id', $tenant->id)->where('status', 'paid')->count(),
+            'filed' => TaxFiling::where('tenant_id', $tenant->id)->where('status', 'filed')->count(),
+            'draft' => TaxFiling::where('tenant_id', $tenant->id)->where('status', 'draft')->count(),
+        ];
+
+        return view('tenant.statutory.filings', compact(
+            'tenant',
+            'filings',
+            'overdueFilings',
+            'filingSummary'
+        ));
+    }
+
+    public function storeFiling(Request $request, Tenant $tenant)
+    {
+        $validated = $request->validate([
+            'type' => 'required|in:vat,paye,pension,nsitf,wht,cit',
+            'period_label' => 'required|string|max:255',
+            'period_start' => 'required|date',
+            'period_end' => 'required|date|after_or_equal:period_start',
+            'amount' => 'required|numeric|min:0',
+            'status' => 'required|in:draft,filed,paid',
+            'due_date' => 'nullable|date',
+            'reference_number' => 'nullable|string|max:255',
+            'notes' => 'nullable|string|max:1000',
+        ]);
+
+        $validated['tenant_id'] = $tenant->id;
+        $validated['filed_by'] = auth()->id();
+
+        if ($validated['status'] === 'filed') {
+            $validated['filed_date'] = now();
+        } elseif ($validated['status'] === 'paid') {
+            $validated['filed_date'] = now();
+            $validated['paid_date'] = now();
+        }
+
+        TaxFiling::create($validated);
+
+        return redirect()->back()->with('success', 'Tax filing recorded successfully.');
+    }
+
+    public function updateFilingStatus(Request $request, Tenant $tenant, TaxFiling $filing)
+    {
+        if ($filing->tenant_id !== $tenant->id) {
+            abort(403);
+        }
+
+        $request->validate([
+            'status' => 'required|in:draft,filed,paid,overdue',
+        ]);
+
+        $data = ['status' => $request->status];
+
+        if ($request->status === 'filed' && !$filing->filed_date) {
+            $data['filed_date'] = now();
+            $data['filed_by'] = auth()->id();
+        } elseif ($request->status === 'paid') {
+            $data['paid_date'] = now();
+            if (!$filing->filed_date) {
+                $data['filed_date'] = now();
+                $data['filed_by'] = auth()->id();
+            }
+        }
+
+        $filing->update($data);
+
+        return redirect()->back()->with('success', 'Filing status updated successfully.');
+    }
+
+    public function destroyFiling(Tenant $tenant, TaxFiling $filing)
+    {
+        if ($filing->tenant_id !== $tenant->id) {
+            abort(403);
+        }
+
+        $filing->delete();
+
+        return redirect()->back()->with('success', 'Filing record deleted.');
     }
 }

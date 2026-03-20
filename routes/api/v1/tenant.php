@@ -451,6 +451,23 @@ Route::middleware('auth:sanctum')->group(function () {
         });
     });
 
+    // Statutory & Tax Module
+    Route::prefix('statutory')->name('statutory.')->group(function () {
+        Route::get('/dashboard', [\App\Http\Controllers\Api\Tenant\Statutory\StatutoryController::class, 'dashboard'])->name('dashboard');
+        Route::get('/vat/report', [\App\Http\Controllers\Api\Tenant\Statutory\StatutoryController::class, 'vatReport'])->name('vat.report');
+        Route::get('/paye/report', [\App\Http\Controllers\Api\Tenant\Statutory\StatutoryController::class, 'payeReport'])->name('paye.report');
+        Route::get('/pension/report', [\App\Http\Controllers\Api\Tenant\Statutory\StatutoryController::class, 'pensionReport'])->name('pension.report');
+        Route::get('/nsitf/report', [\App\Http\Controllers\Api\Tenant\Statutory\StatutoryController::class, 'nsitfReport'])->name('nsitf.report');
+
+        Route::get('/settings', [\App\Http\Controllers\Api\Tenant\Statutory\StatutoryController::class, 'settings'])->name('settings');
+        Route::put('/settings', [\App\Http\Controllers\Api\Tenant\Statutory\StatutoryController::class, 'updateSettings'])->name('settings.update');
+
+        Route::get('/filings', [\App\Http\Controllers\Api\Tenant\Statutory\StatutoryController::class, 'filings'])->name('filings.index');
+        Route::post('/filings', [\App\Http\Controllers\Api\Tenant\Statutory\StatutoryController::class, 'storeFiling'])->name('filings.store');
+        Route::patch('/filings/{filing}/status', [\App\Http\Controllers\Api\Tenant\Statutory\StatutoryController::class, 'updateFilingStatus'])->name('filings.update-status');
+        Route::delete('/filings/{filing}', [\App\Http\Controllers\Api\Tenant\Statutory\StatutoryController::class, 'destroyFiling'])->name('filings.destroy');
+    });
+
     // Future API routes will be added here:
     // Dashboard
     // Support Tickets
