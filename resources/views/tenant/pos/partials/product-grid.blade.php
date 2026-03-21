@@ -105,7 +105,7 @@
                     <!-- Product Image for Grid -->
                     <div>
                         @if($product->image_path)
-                            <img src="{{ Storage::url($product->image_path) }}"
+                            <img src="{{ Storage::disk('public')->url($product->image_path) }}"
                                  alt="{{ $product->name }}"
                                  class="w-full h-32 object-cover rounded-lg mb-3">
                         @else
@@ -124,7 +124,7 @@
                             <div class="flex items-center gap-2">
                                 <span class="stock-indicator {{ $product->current_stock > 10 ? 'bg-green-500' : ($product->current_stock > 0 ? 'bg-yellow-500' : 'bg-red-500') }}"></span>
                                 <span class="text-xs {{ $product->current_stock > 10 ? 'text-green-600 dark:text-green-400' : ($product->current_stock > 0 ? 'text-yellow-600 dark:text-yellow-400' : 'text-red-600 dark:text-red-400') }}">
-                                    {{ number_format($product->current_stock, 2) }} left
+                                    {{ $product->current_stock == intval($product->current_stock) ? number_format($product->current_stock, 0) : number_format($product->current_stock, 2) }} left
                                 </span>
                             </div>
                         </div>
@@ -150,7 +150,7 @@
                     <!-- Product Image for List -->
                     <div class="flex-shrink-0">
                         @if($product->image_path)
-                            <img src="{{ Storage::url($product->image_path) }}"
+                            <img src="{{ Storage::disk('public')->url($product->image_path) }}"
                                  alt="{{ $product->name }}"
                                  class="w-16 h-16 object-cover rounded-lg shadow-sm">
                         @else
@@ -174,7 +174,7 @@
                                     <div class="flex items-center gap-1">
                                         <span class="w-2 h-2 rounded-full {{ $product->current_stock > 10 ? 'bg-green-500' : ($product->current_stock > 0 ? 'bg-yellow-500' : 'bg-red-500') }}"></span>
                                         <span class="text-xs {{ $product->current_stock > 10 ? 'text-green-600 dark:text-green-400' : ($product->current_stock > 0 ? 'text-yellow-600 dark:text-yellow-400' : 'text-red-600 dark:text-red-400') }}">
-                                            {{ number_format($product->current_stock, 2) }} in stock
+                                            {{ $product->current_stock == intval($product->current_stock) ? number_format($product->current_stock, 0) : number_format($product->current_stock, 2) }} in stock
                                         </span>
                                     </div>
                                     @if($product->category)
@@ -220,6 +220,22 @@
             </template>
         </div>
         @endforeach
+
+        <!-- No Search Results State (shown via Alpine when filters match nothing) -->
+        <div x-show="document.querySelectorAll('.product-card:not([style*=display\\: none])').length === 0 && (searchQuery !== '' || selectedCategory !== '')"
+             x-effect="$nextTick(() => { noResults = document.querySelectorAll('.product-card').length > 0 && [...document.querySelectorAll('.product-card')].every(el => el.style.display === 'none') })"
+             class="col-span-full text-center py-12 bg-white/80 dark:bg-gray-800/50 backdrop-blur-sm rounded-2xl border border-gray-200/80 dark:border-gray-700/50"
+             style="display: none;">
+            <div class="w-16 h-16 bg-gray-100 dark:bg-gray-700/50 rounded-full flex items-center justify-center mx-auto mb-4">
+                <i class="fas fa-search text-gray-400 dark:text-gray-500 text-xl"></i>
+            </div>
+            <h3 class="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">No Products Found</h3>
+            <p class="text-gray-500 dark:text-gray-400 mb-4">Try adjusting your search or filter criteria</p>
+            <button @click="searchQuery = ''; selectedCategory = ''; filterProducts()"
+                    class="px-4 py-2 rounded-lg text-sm font-medium text-[var(--color-dark-purple)] dark:text-[var(--color-purple-accent)] bg-[var(--color-dark-purple)]/10 dark:bg-[var(--color-purple-accent)]/20 hover:bg-[var(--color-dark-purple)]/20 dark:hover:bg-[var(--color-purple-accent)]/30 transition-colors duration-200">
+                <i class="fas fa-times mr-1"></i> Clear Filters
+            </button>
+        </div>
     @else
         <div class="col-span-full text-center py-12 bg-white/80 dark:bg-gray-800/50 backdrop-blur-sm rounded-2xl border border-gray-200/80 dark:border-gray-700/50">
             <div class="w-16 h-16 bg-gray-100 dark:bg-gray-700/50 rounded-full flex items-center justify-center mx-auto mb-4">

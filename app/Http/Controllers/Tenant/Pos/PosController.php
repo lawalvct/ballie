@@ -93,16 +93,16 @@ class PosController extends Controller
     public function store(Request $request, Tenant $tenant)
     {
         $validated = $request->validate([
-            'customer_id' => 'nullable|exists:customers,id',
+            'customer_id' => ['nullable', 'exists:customers,id,tenant_id,' . $tenant->id],
             'items' => 'required|array|min:1',
-            'items.*.product_id' => 'required|exists:products,id',
+            'items.*.product_id' => ['required', 'exists:products,id,tenant_id,' . $tenant->id],
             'items.*.quantity' => 'required|numeric|min:0.01',
             'items.*.unit_price' => 'required|numeric|min:0',
             'items.*.discount_amount' => 'nullable|numeric|min:0',
             'payments' => 'required|array|min:1',
-            'payments.*.method_id' => 'required|exists:payment_methods,id',
+            'payments.*.method_id' => ['required', 'exists:payment_methods,id,tenant_id,' . $tenant->id],
             'payments.*.amount' => 'required|numeric|min:0.01',
-            'payments.*.reference' => 'nullable|string',
+            'payments.*.reference' => 'nullable|string|max:255',
             'notes' => 'nullable|string|max:1000',
         ]);
 
@@ -141,11 +141,18 @@ class PosController extends Controller
 
             // Create sale items and update inventory
             foreach ($validated['items'] as $item) {
-                $product = Product::find($item['product_id']);
+                // Lock product row to prevent race conditions on stock
+                $product = Product::where('id', $item['product_id'])
+                    ->where('tenant_id', $tenant->id)
+                    ->lockForUpdate()
+                    ->firstOrFail();
 
-                // Check stock availability
-                if ($product->maintain_stock && $product->current_stock < $item['quantity']) {
-                    throw new \Exception("Insufficient stock for {$product->name}. Available: {$product->current_stock}");
+                // Check stock availability (re-check after lock)
+                if ($product->maintain_stock) {
+                    $freshStock = $product->getStockAsOfDate(now(), true);
+                    if ($freshStock < $item['quantity']) {
+                        throw new \Exception("Insufficient stock for {$product->name}. Available: " . number_format($freshStock, 2));
+                    }
                 }
 
                 $itemSubtotal = $item['quantity'] * $item['unit_price'];
@@ -217,6 +224,10 @@ class PosController extends Controller
 
     public function receipt(Request $request, Tenant $tenant, Sale $sale)
     {
+        if ($sale->tenant_id !== $tenant->id) {
+            abort(403);
+        }
+
         $sale->load(['customer', 'items.product', 'payments.paymentMethod', 'cashRegister', 'user']);
 
         $receipt = $sale->receipts()->where('type', 'original')->first();
@@ -252,7 +263,9 @@ class PosController extends Controller
             'opening_notes' => 'nullable|string|max:1000',
         ]);
 
-        $cashRegister = CashRegister::find($validated['cash_register_id']);
+        $cashRegister = CashRegister::where('id', $validated['cash_register_id'])
+            ->where('tenant_id', $tenant->id)
+            ->firstOrFail();
 
         // Check if user already has an active session
         $existingSession = CashRegisterSession::where('user_id', Auth::id())
@@ -591,7 +604,7 @@ class PosController extends Controller
                 'posted_by' => $sale->user_id,
             ]);
 
-            // Entry 1: Debit Cash Account (Money received)
+            // Entry 1: Debit Cash Account (Total amount received)
             VoucherEntry::create([
                 'voucher_id' => $voucher->id,
                 'ledger_account_id' => $cashAccount->id,
@@ -600,14 +613,51 @@ class PosController extends Controller
                 'particulars' => 'Cash received - ' . $sale->sale_number,
             ]);
 
-            // Entry 2: Credit Sales Revenue Account (Income earned)
+            // Entry 2: Credit Sales Revenue (Subtotal minus discount)
+            $netSalesRevenue = $sale->subtotal - $sale->discount_amount;
             VoucherEntry::create([
                 'voucher_id' => $voucher->id,
                 'ledger_account_id' => $salesAccount->id,
                 'debit_amount' => 0,
-                'credit_amount' => $sale->total_amount,
+                'credit_amount' => $netSalesRevenue,
                 'particulars' => 'Sales revenue - ' . $sale->sale_number,
             ]);
+
+            // Entry 3: Credit Tax Payable (if tax collected)
+            if ($sale->tax_amount > 0) {
+                $taxAccount = LedgerAccount::where('tenant_id', $tenant->id)
+                    ->where('account_type', 'liability')
+                    ->where(function($q) {
+                        $q->where('name', 'LIKE', '%Tax Payable%')
+                          ->orWhere('name', 'LIKE', '%VAT Payable%')
+                          ->orWhere('name', 'LIKE', '%Output Tax%')
+                          ->orWhere('code', 'LIKE', 'TAX%');
+                    })
+                    ->where('is_active', true)
+                    ->first();
+
+                if ($taxAccount) {
+                    VoucherEntry::create([
+                        'voucher_id' => $voucher->id,
+                        'ledger_account_id' => $taxAccount->id,
+                        'debit_amount' => 0,
+                        'credit_amount' => $sale->tax_amount,
+                        'particulars' => 'Sales tax collected - ' . $sale->sale_number,
+                    ]);
+                } else {
+                    // No tax account found - add tax to sales revenue to keep journal balanced
+                    $salesEntry = VoucherEntry::where('voucher_id', $voucher->id)
+                        ->where('ledger_account_id', $salesAccount->id)
+                        ->first();
+                    if ($salesEntry) {
+                        $salesEntry->update(['credit_amount' => $salesEntry->credit_amount + $sale->tax_amount]);
+                    }
+                    Log::warning('POS: No tax liability account found, tax added to sales revenue', [
+                        'sale_id' => $sale->id,
+                        'tax_amount' => $sale->tax_amount,
+                    ]);
+                }
+            }
 
             // Entry 3 & 4: COGS and Inventory (if accounts exist and we have cost data)
             if ($cogsAccount && $inventoryAccount) {
@@ -643,6 +693,20 @@ class PosController extends Controller
                 }
             }
 
+            // Verify journal balance (DR must equal CR)
+            $totalDebit = VoucherEntry::where('voucher_id', $voucher->id)->sum('debit_amount');
+            $totalCredit = VoucherEntry::where('voucher_id', $voucher->id)->sum('credit_amount');
+
+            if (abs($totalDebit - $totalCredit) > 0.01) {
+                Log::error('POS: Accounting journal is unbalanced', [
+                    'sale_id' => $sale->id,
+                    'voucher_id' => $voucher->id,
+                    'total_debit' => $totalDebit,
+                    'total_credit' => $totalCredit,
+                    'difference' => $totalDebit - $totalCredit,
+                ]);
+            }
+
             Log::info('POS: Accounting entries created successfully', [
                 'sale_id' => $sale->id,
                 'voucher_id' => $voucher->id,
@@ -657,5 +721,203 @@ class PosController extends Controller
             ]);
             // Don't throw - let the sale complete even if accounting fails
         }
+    }
+
+    /**
+     * Print receipt page
+     */
+    public function printReceipt(Request $request, Tenant $tenant, Sale $sale)
+    {
+        if ($sale->tenant_id !== $tenant->id) {
+            abort(403);
+        }
+
+        $sale->load(['customer', 'items.product', 'payments.paymentMethod', 'cashRegister', 'user']);
+        $receipt = $sale->receipts()->where('type', 'original')->first();
+
+        if (!$receipt) {
+            $receipt = $this->generateReceipt($sale);
+        }
+
+        return view('tenant.pos.receipt', compact('tenant', 'sale', 'receipt'));
+    }
+
+    /**
+     * Email receipt to customer
+     */
+    public function emailReceipt(Request $request, Tenant $tenant, Sale $sale)
+    {
+        if ($sale->tenant_id !== $tenant->id) {
+            abort(403);
+        }
+
+        $customer = $sale->customer;
+
+        if (!$customer || !$customer->email) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Customer has no email address.'
+            ], 422);
+        }
+
+        // TODO: Implement email sending via Mailable
+        return response()->json([
+            'success' => false,
+            'message' => 'Email receipt feature is coming soon.'
+        ], 501);
+    }
+
+    /**
+     * Void a sale transaction
+     */
+    public function voidTransaction(Request $request, Tenant $tenant, Sale $sale)
+    {
+        if ($sale->tenant_id !== $tenant->id) {
+            abort(403);
+        }
+
+        if ($sale->status === 'voided') {
+            return response()->json([
+                'success' => false,
+                'message' => 'This sale is already voided.'
+            ], 422);
+        }
+
+        return DB::transaction(function () use ($sale, $tenant) {
+            // Reverse stock movements
+            foreach ($sale->items as $item) {
+                $product = $item->product;
+                if ($product && $product->maintain_stock) {
+                    $oldStock = $product->getStockAsOfDate(now(), true);
+                    $movementQuantity = abs($item->quantity);
+                    $newStock = $oldStock + $movementQuantity;
+
+                    StockMovement::create([
+                        'tenant_id' => $tenant->id,
+                        'product_id' => $product->id,
+                        'type' => 'in',
+                        'quantity' => $movementQuantity,
+                        'old_stock' => $oldStock,
+                        'new_stock' => $newStock,
+                        'rate' => $product->purchase_rate ?? $product->sales_rate ?? 0,
+                        'reference' => 'POS Void - ' . $sale->sale_number,
+                        'remarks' => 'Stock reversal from voided POS sale',
+                        'created_by' => Auth::id(),
+                        'transaction_type' => 'sales_return',
+                        'transaction_date' => now()->toDateString(),
+                        'transaction_reference' => $sale->sale_number,
+                        'source_transaction_type' => Sale::class,
+                        'source_transaction_id' => $sale->id,
+                    ]);
+
+                    $today = now()->toDateString();
+                    Cache::forget("product_stock_{$product->id}_{$today}");
+                    Cache::forget("product_stock_value_{$product->id}_{$today}_weighted_average");
+                }
+            }
+
+            $sale->update(['status' => 'voided']);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Sale voided successfully. Stock has been restored.'
+            ]);
+        });
+    }
+
+    /**
+     * Refund a sale transaction
+     */
+    public function refundTransaction(Request $request, Tenant $tenant, Sale $sale)
+    {
+        if ($sale->tenant_id !== $tenant->id) {
+            abort(403);
+        }
+
+        if ($sale->status !== 'completed') {
+            return response()->json([
+                'success' => false,
+                'message' => 'Only completed sales can be refunded.'
+            ], 422);
+        }
+
+        return DB::transaction(function () use ($sale, $tenant) {
+            // Reverse stock movements
+            foreach ($sale->items as $item) {
+                $product = $item->product;
+                if ($product && $product->maintain_stock) {
+                    $oldStock = $product->getStockAsOfDate(now(), true);
+                    $movementQuantity = abs($item->quantity);
+                    $newStock = $oldStock + $movementQuantity;
+
+                    StockMovement::create([
+                        'tenant_id' => $tenant->id,
+                        'product_id' => $product->id,
+                        'type' => 'in',
+                        'quantity' => $movementQuantity,
+                        'old_stock' => $oldStock,
+                        'new_stock' => $newStock,
+                        'rate' => $product->purchase_rate ?? $product->sales_rate ?? 0,
+                        'reference' => 'POS Refund - ' . $sale->sale_number,
+                        'remarks' => 'Stock reversal from refunded POS sale',
+                        'created_by' => Auth::id(),
+                        'transaction_type' => 'sales_return',
+                        'transaction_date' => now()->toDateString(),
+                        'transaction_reference' => $sale->sale_number,
+                        'source_transaction_type' => Sale::class,
+                        'source_transaction_id' => $sale->id,
+                    ]);
+
+                    $today = now()->toDateString();
+                    Cache::forget("product_stock_{$product->id}_{$today}");
+                    Cache::forget("product_stock_value_{$product->id}_{$today}_weighted_average");
+                }
+            }
+
+            $sale->update(['status' => 'refunded']);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Sale refunded successfully. Stock has been restored.'
+            ]);
+        });
+    }
+
+    /**
+     * Show the sale page (alias for POS index)
+     */
+    public function sale(Tenant $tenant)
+    {
+        return redirect()->route('tenant.pos.index', ['tenant' => $tenant->slug]);
+    }
+
+    /**
+     * Process a sale (alias for store)
+     */
+    public function processSale(Request $request, Tenant $tenant)
+    {
+        return $this->store($request, $tenant);
+    }
+
+    /**
+     * Show a single transaction
+     */
+    public function showTransaction(Tenant $tenant, Sale $sale)
+    {
+        if ($sale->tenant_id !== $tenant->id) {
+            abort(403);
+        }
+
+        $sale->load(['customer', 'items.product', 'payments.paymentMethod', 'cashRegister', 'user']);
+
+        return view('tenant.pos.receipt', compact('tenant', 'sale'));
+    }
+
+    /**
+     * Monthly sales report
+     */
+    public function monthlySalesReport(Tenant $tenant)
+    {
+        return view('tenant.pos.reports.daily-sales', compact('tenant'));
     }
 }
