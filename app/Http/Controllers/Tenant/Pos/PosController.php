@@ -22,6 +22,7 @@ use App\Models\VoucherType;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
 
 class PosController extends Controller
@@ -143,8 +144,8 @@ class PosController extends Controller
                 $product = Product::find($item['product_id']);
 
                 // Check stock availability
-                if ($product->track_stock && $product->stock_quantity < $item['quantity']) {
-                    throw new \Exception("Insufficient stock for {$product->name}. Available: {$product->stock_quantity}");
+                if ($product->maintain_stock && $product->current_stock < $item['quantity']) {
+                    throw new \Exception("Insufficient stock for {$product->name}. Available: {$product->current_stock}");
                 }
 
                 $itemSubtotal = $item['quantity'] * $item['unit_price'];
@@ -165,12 +166,9 @@ class PosController extends Controller
                     'line_total' => $lineTotal,
                 ]);
 
-                // Update product stock
-                if ($product->track_stock) {
-                    $product->decrement('stock_quantity', $item['quantity']);
-
-                    // Create stock movement record
-                    $this->createStockMovement($product, $item['quantity'], 'sale', $sale->id);
+                // Update product stock through movement tracking
+                if ($product->maintain_stock) {
+                    $this->createStockMovement($product, $item['quantity'], 'sale', $sale);
                 }
 
                 $subtotal += $itemSubtotal;
@@ -368,21 +366,41 @@ class PosController extends Controller
             ->first();
     }
 
-    private function createStockMovement($product, $quantity, $type, $referenceId)
+    private function createStockMovement($product, $quantity, $type, $sale)
     {
-        // Create stock movement record if StockMovement model exists
-        if (class_exists(StockMovement::class)) {
-            StockMovement::create([
-                'tenant_id' => $product->tenant_id,
-                'product_id' => $product->id,
-                'type' => $type,
-                'quantity' => -$quantity, // Negative for sale
-                'reference_type' => 'sale',
-                'reference_id' => $referenceId,
-                'date' => now(),
-                'notes' => "Sale transaction",
-            ]);
+        if (!class_exists(StockMovement::class)) {
+            return;
         }
+
+        $oldStock = $product->getStockAsOfDate(now(), true);
+        $movementQuantity = -abs($quantity);
+        $newStock = $oldStock + $movementQuantity;
+
+        StockMovement::create([
+            'tenant_id' => $product->tenant_id,
+            'product_id' => $product->id,
+            'type' => 'out',
+            'quantity' => $movementQuantity,
+            'old_stock' => $oldStock,
+            'new_stock' => $newStock,
+            'rate' => $product->purchase_rate ?? $product->sales_rate ?? 0,
+            'reference' => 'POS Sale - ' . $sale->sale_number,
+            'remarks' => 'POS sale stock deduction',
+            'created_by' => Auth::id(),
+            'transaction_type' => 'sales',
+            'transaction_date' => optional($sale->sale_date)->toDateString() ?? now()->toDateString(),
+            'transaction_reference' => $sale->sale_number,
+            'source_transaction_type' => Sale::class,
+            'source_transaction_id' => $sale->id,
+        ]);
+
+        $today = now()->toDateString();
+        $saleDate = optional($sale->sale_date)->toDateString() ?? $today;
+
+        Cache::forget("product_stock_{$product->id}_{$today}");
+        Cache::forget("product_stock_{$product->id}_{$saleDate}");
+        Cache::forget("product_stock_value_{$product->id}_{$today}_weighted_average");
+        Cache::forget("product_stock_value_{$product->id}_{$saleDate}_weighted_average");
     }
 
     private function generateReceipt($sale)

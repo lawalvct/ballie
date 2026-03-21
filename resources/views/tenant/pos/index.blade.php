@@ -177,7 +177,7 @@
                        placeholder="0.00"
                        autofocus>
                 <p class="text-xs text-gray-500 dark:text-gray-400 mt-2">
-                    Available: <span x-text="quantityModalProduct?.stock_quantity"></span> units
+                    Available: <span x-text="formatMoney(getAvailableStock(quantityModalProduct))"></span> units
                 </p>
             </div>
 
@@ -368,6 +368,10 @@ function posSystem() {
             return Math.max(0, this.balance);
         },
 
+        getAvailableStock(product) {
+            return parseFloat(product?.current_stock ?? product?.stock_quantity ?? 0);
+        },
+
         // Helper methods
         formatMoney(amount) {
             return new Intl.NumberFormat('en-NG', {
@@ -532,8 +536,8 @@ function posSystem() {
 
             if (existingItem) {
                 // Check stock before adding
-                if (existingItem.quantity + 1 > existingItem.stock_quantity) {
-                    this.notificationMessage = `Only ${existingItem.stock_quantity} units available in stock`;
+                if (existingItem.quantity + 1 > this.getAvailableStock(existingItem)) {
+                    this.notificationMessage = `Only ${this.formatMoney(this.getAvailableStock(existingItem))} units available in stock`;
                     this.notificationType = 'warning';
                     this.showNotification = true;
                     setTimeout(() => this.showNotification = false, 3000);
@@ -542,7 +546,7 @@ function posSystem() {
                 this.updateQuantity(this.cartItems.indexOf(existingItem), parseFloat(existingItem.quantity) + 1);
             } else {
                 // Check if product has stock
-                if (product.stock_quantity <= 0) {
+                if (this.getAvailableStock(product) <= 0) {
                     this.notificationMessage = `${product.name} is out of stock`;
                     this.notificationType = 'error';
                     this.showNotification = true;
@@ -557,7 +561,7 @@ function posSystem() {
                     quantity: 1,
                     unit_price: parseFloat(product.selling_price),
                     tax_rate: parseFloat(product.tax_rate || 0),
-                    stock_quantity: product.stock_quantity,
+                    current_stock: this.getAvailableStock(product),
                     lineTotal: parseFloat(product.selling_price)
                 });
 
@@ -591,8 +595,8 @@ function posSystem() {
             }
 
             const item = this.cartItems[index];
-            if (newQuantity > item.stock_quantity) {
-                alert(`Only ${item.stock_quantity} items available in stock`);
+            if (newQuantity > this.getAvailableStock(item)) {
+                alert(`Only ${this.formatMoney(this.getAvailableStock(item))} items available in stock`);
                 return;
             }
 
@@ -776,8 +780,8 @@ function posSystem() {
             } else {
                 // Adding new item with custom quantity
                 const product = this.quantityModalProduct;
-                if (qty > product.stock_quantity) {
-                    this.notificationMessage = `Only ${product.stock_quantity} units available`;
+                if (qty > this.getAvailableStock(product)) {
+                    this.notificationMessage = `Only ${this.formatMoney(this.getAvailableStock(product))} units available`;
                     this.notificationType = 'warning';
                     this.showNotification = true;
                     setTimeout(() => this.showNotification = false, 3000);
@@ -796,7 +800,7 @@ function posSystem() {
                         quantity: qty,
                         unit_price: parseFloat(product.selling_price),
                         tax_rate: parseFloat(product.tax_rate || 0),
-                        stock_quantity: product.stock_quantity,
+                        current_stock: this.getAvailableStock(product),
                         lineTotal: 0
                     });
                     this.updateLineTotal(this.cartItems.length - 1);

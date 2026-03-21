@@ -122,9 +122,9 @@
 
                         <div class="flex items-center justify-between mt-2">
                             <div class="flex items-center gap-2">
-                                <span class="stock-indicator {{ $product->stock_quantity > 10 ? 'bg-green-500' : ($product->stock_quantity > 0 ? 'bg-yellow-500' : 'bg-red-500') }}"></span>
-                                <span class="text-xs {{ $product->stock_quantity > 10 ? 'text-green-600 dark:text-green-400' : ($product->stock_quantity > 0 ? 'text-yellow-600 dark:text-yellow-400' : 'text-red-600 dark:text-red-400') }}">
-                                    {{ $product->stock_quantity }} left
+                                <span class="stock-indicator {{ $product->current_stock > 10 ? 'bg-green-500' : ($product->current_stock > 0 ? 'bg-yellow-500' : 'bg-red-500') }}"></span>
+                                <span class="text-xs {{ $product->current_stock > 10 ? 'text-green-600 dark:text-green-400' : ($product->current_stock > 0 ? 'text-yellow-600 dark:text-yellow-400' : 'text-red-600 dark:text-red-400') }}">
+                                    {{ number_format($product->current_stock, 2) }} left
                                 </span>
                             </div>
                         </div>
@@ -172,9 +172,9 @@
                                 <!-- Stock and Category Info -->
                                 <div class="flex items-center gap-3 mb-2">
                                     <div class="flex items-center gap-1">
-                                        <span class="w-2 h-2 rounded-full {{ $product->stock_quantity > 10 ? 'bg-green-500' : ($product->stock_quantity > 0 ? 'bg-yellow-500' : 'bg-red-500') }}"></span>
-                                        <span class="text-xs {{ $product->stock_quantity > 10 ? 'text-green-600 dark:text-green-400' : ($product->stock_quantity > 0 ? 'text-yellow-600 dark:text-yellow-400' : 'text-red-600 dark:text-red-400') }}">
-                                            {{ $product->stock_quantity }} in stock
+                                        <span class="w-2 h-2 rounded-full {{ $product->current_stock > 10 ? 'bg-green-500' : ($product->current_stock > 0 ? 'bg-yellow-500' : 'bg-red-500') }}"></span>
+                                        <span class="text-xs {{ $product->current_stock > 10 ? 'text-green-600 dark:text-green-400' : ($product->current_stock > 0 ? 'text-yellow-600 dark:text-yellow-400' : 'text-red-600 dark:text-red-400') }}">
+                                            {{ number_format($product->current_stock, 2) }} in stock
                                         </span>
                                     </div>
                                     @if($product->category)
