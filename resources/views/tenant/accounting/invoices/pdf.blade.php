@@ -473,8 +473,30 @@ if (!function_exists('numberToWords')) {
             </div>
         </div>
 
+        @php
+            $lineItems = collect($invoice->items ?? []);
+
+            if ($lineItems->isEmpty() && !empty($invoice->meta_data)) {
+                $metaData = is_array($invoice->meta_data) ? $invoice->meta_data : json_decode($invoice->meta_data, true);
+                $lineItems = collect($metaData['inventory_items'] ?? [])->map(function ($item) {
+                    return is_array($item) ? (object) $item : $item;
+                });
+            }
+
+            $subtotal = $lineItems->sum(function ($item) {
+                if (isset($item->amount)) {
+                    return (float) $item->amount;
+                }
+
+                $quantity = (float) ($item->quantity ?? 0);
+                $rate = (float) ($item->rate ?? $item->unit_price ?? 0);
+
+                return $quantity * $rate;
+            });
+        @endphp
+
         <!-- Items Table -->
-        @if($invoice->items && $invoice->items->count() > 0)
+        @if($lineItems->count() > 0)
         <div class="no-break">
             <table class="items-table">
                 <thead>
@@ -487,20 +509,22 @@ if (!function_exists('numberToWords')) {
                     </tr>
                 </thead>
                 <tbody>
-                    @php $subtotal = 0; @endphp
-                    @foreach($invoice->items as $index => $item)
-                        @php $subtotal += $item->amount; @endphp
+                    @foreach($lineItems as $index => $item)
+                        @php
+                            $itemAmount = (float) ($item->amount ?? (((float) ($item->quantity ?? 0)) * ((float) ($item->rate ?? $item->unit_price ?? 0))));
+                            $itemRate = (float) ($item->rate ?? $item->unit_price ?? 0);
+                        @endphp
                         <tr>
                             <td class="sn-col">{{ $index + 1 }}</td>
                             <td class="desc-col">
-                                <div class="product-name">{{ $item->product_name }}</div>
-                                @if($item->description && $item->description !== $item->product_name)
+                                <div class="product-name">{{ $item->product_name ?? $item->description ?? 'Invoice Item' }}</div>
+                                @if(($item->description ?? null) && ($item->description ?? null) !== ($item->product_name ?? null))
                                     <div class="product-desc">{{ $item->description }}</div>
                                 @endif
                             </td>
-                            <td class="qty-col">{{ number_format($item->quantity, 2) }}</td>
-                            <td class="rate-col">₦{{ number_format($item->rate, 2) }}</td>
-                            <td class="amount-col">₦{{ number_format($item->amount, 2) }}</td>
+                            <td class="qty-col">{{ number_format((float) ($item->quantity ?? 0), 2) }}</td>
+                            <td class="rate-col">₦{{ number_format($itemRate, 2) }}</td>
+                            <td class="amount-col">₦{{ number_format($itemAmount, 2) }}</td>
                         </tr>
                     @endforeach
                 </tbody>
@@ -524,8 +548,8 @@ if (!function_exists('numberToWords')) {
                     });
 
                     // Get product accounts from inventory items to exclude from additional charges
-                    $productAccountIds = $invoice->items->map(function($item) use ($invoice) {
-                        $product = \App\Models\Product::find($item->product_id);
+                    $productAccountIds = $lineItems->map(function($item) use ($invoice) {
+                        $product = \App\Models\Product::find($item->product_id ?? null);
                         return $invoice->voucherType->inventory_effect === 'decrease' ?
                                $product?->sales_account_id : $product?->purchase_account_id;
                     })->filter()->unique()->toArray();
