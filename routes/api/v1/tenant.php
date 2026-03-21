@@ -568,6 +568,41 @@ Route::middleware('auth:sanctum')->group(function () {
 
     });
 
+    // ─────────────────────────────────────────────────
+    //  POS (Point of Sale)
+    // ─────────────────────────────────────────────────
+    Route::prefix('pos')->name('pos.')->group(function () {
+        // Session management
+        Route::get('/session', [\App\Http\Controllers\Api\Tenant\Pos\PosApiController::class, 'session'])->name('session');
+        Route::get('/cash-registers', [\App\Http\Controllers\Api\Tenant\Pos\PosApiController::class, 'cashRegisters'])->name('cash-registers');
+        Route::post('/session/open', [\App\Http\Controllers\Api\Tenant\Pos\PosApiController::class, 'openSession'])->name('session.open');
+        Route::post('/session/close', [\App\Http\Controllers\Api\Tenant\Pos\PosApiController::class, 'closeSession'])->name('session.close');
+
+        // POS init (all-in-one)
+        Route::get('/init', [\App\Http\Controllers\Api\Tenant\Pos\PosApiController::class, 'init'])->name('init');
+
+        // Products, categories, customers, payment methods
+        Route::get('/products', [\App\Http\Controllers\Api\Tenant\Pos\PosApiController::class, 'products'])->name('products');
+        Route::get('/categories', [\App\Http\Controllers\Api\Tenant\Pos\PosApiController::class, 'categories'])->name('categories');
+        Route::get('/customers', [\App\Http\Controllers\Api\Tenant\Pos\PosApiController::class, 'customers'])->name('customers');
+        Route::get('/payment-methods', [\App\Http\Controllers\Api\Tenant\Pos\PosApiController::class, 'paymentMethods'])->name('payment-methods');
+
+        // Sales
+        Route::post('/sales', [\App\Http\Controllers\Api\Tenant\Pos\PosApiController::class, 'store'])->name('sales.store');
+        Route::get('/transactions', [\App\Http\Controllers\Api\Tenant\Pos\PosApiController::class, 'transactions'])->name('transactions');
+        Route::get('/transactions/{sale}', [\App\Http\Controllers\Api\Tenant\Pos\PosApiController::class, 'showTransaction'])->name('transactions.show');
+        Route::post('/transactions/{sale}/void', [\App\Http\Controllers\Api\Tenant\Pos\PosApiController::class, 'voidSale'])->name('transactions.void');
+        Route::post('/transactions/{sale}/refund', [\App\Http\Controllers\Api\Tenant\Pos\PosApiController::class, 'refundSale'])->name('transactions.refund');
+
+        // Receipts
+        Route::get('/transactions/{sale}/receipt', [\App\Http\Controllers\Api\Tenant\Pos\PosApiController::class, 'receipt'])->name('transactions.receipt');
+        Route::post('/transactions/{sale}/email-receipt', [\App\Http\Controllers\Api\Tenant\Pos\PosApiController::class, 'emailReceipt'])->name('transactions.email-receipt');
+
+        // Reports
+        Route::get('/reports/daily-sales', [\App\Http\Controllers\Api\Tenant\Pos\PosApiController::class, 'dailySalesReport'])->name('reports.daily-sales');
+        Route::get('/reports/top-products', [\App\Http\Controllers\Api\Tenant\Pos\PosApiController::class, 'topProductsReport'])->name('reports.top-products');
+    });
+
 });
 
 // Public download routes (token in query)
