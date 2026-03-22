@@ -4,6 +4,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\Tenant\AuthController;
 use App\Http\Controllers\Api\Tenant\OnboardingController;
 use App\Http\Controllers\Api\Tenant\Settings\CompanySettingsApiController;
+use App\Http\Controllers\Api\Tenant\DashboardApiController;
 
 /*
 |--------------------------------------------------------------------------
@@ -42,6 +43,24 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::delete('/avatar', [AuthController::class, 'removeAvatar'])->name('avatar.remove');
         Route::post('/verification/resend', [AuthController::class, 'resendVerification'])->name('verification.resend');
         Route::post('/verification/verify', [AuthController::class, 'verifyEmail'])->name('verification.verify');
+    });
+
+    // Dashboard
+    Route::prefix('dashboard')->name('dashboard.')->group(function () {
+        Route::get('/', [DashboardApiController::class, 'index'])->name('index');
+        Route::get('/summary', [DashboardApiController::class, 'summary'])->name('summary');
+        Route::get('/revenue-chart', [DashboardApiController::class, 'revenueChart'])->name('revenue-chart');
+        Route::get('/daily-revenue', [DashboardApiController::class, 'dailyRevenue'])->name('daily-revenue');
+        Route::get('/revenue-breakdown', [DashboardApiController::class, 'revenueBreakdown'])->name('revenue-breakdown');
+        Route::get('/balances', [DashboardApiController::class, 'balances'])->name('balances');
+        Route::get('/top-products', [DashboardApiController::class, 'topProducts'])->name('top-products');
+        Route::get('/top-customers', [DashboardApiController::class, 'topCustomers'])->name('top-customers');
+        Route::get('/recent-transactions', [DashboardApiController::class, 'recentTransactions'])->name('recent-transactions');
+        Route::get('/outstanding-invoices', [DashboardApiController::class, 'outstandingInvoices'])->name('outstanding-invoices');
+        Route::get('/alerts', [DashboardApiController::class, 'alerts'])->name('alerts');
+        Route::get('/pos-today', [DashboardApiController::class, 'posTodaySales'])->name('pos-today');
+        Route::get('/inventory-stats', [DashboardApiController::class, 'inventoryStats'])->name('inventory-stats');
+        Route::post('/dismiss-tour', [DashboardApiController::class, 'dismissTour'])->name('dismiss-tour');
     });
 
     // Company Settings
