@@ -3,6 +3,7 @@
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\Tenant\AuthController;
 use App\Http\Controllers\Api\Tenant\OnboardingController;
+use App\Http\Controllers\Api\Tenant\Settings\CompanySettingsApiController;
 
 /*
 |--------------------------------------------------------------------------
@@ -41,6 +42,23 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::delete('/avatar', [AuthController::class, 'removeAvatar'])->name('avatar.remove');
         Route::post('/verification/resend', [AuthController::class, 'resendVerification'])->name('verification.resend');
         Route::post('/verification/verify', [AuthController::class, 'verifyEmail'])->name('verification.verify');
+    });
+
+    // Company Settings
+    Route::prefix('settings/company')->name('settings.company.')->group(function () {
+        Route::get('/', [CompanySettingsApiController::class, 'index'])->name('index');
+        Route::get('/info', [CompanySettingsApiController::class, 'companyInfo'])->name('info');
+        Route::put('/info', [CompanySettingsApiController::class, 'updateCompanyInfo'])->name('info.update');
+        Route::get('/business', [CompanySettingsApiController::class, 'businessDetails'])->name('business');
+        Route::put('/business', [CompanySettingsApiController::class, 'updateBusinessDetails'])->name('business.update');
+        Route::get('/branding', [CompanySettingsApiController::class, 'branding'])->name('branding');
+        Route::post('/logo', [CompanySettingsApiController::class, 'updateLogo'])->name('logo.update');
+        Route::delete('/logo', [CompanySettingsApiController::class, 'removeLogo'])->name('logo.remove');
+        Route::get('/preferences', [CompanySettingsApiController::class, 'preferences'])->name('preferences');
+        Route::put('/preferences', [CompanySettingsApiController::class, 'updatePreferences'])->name('preferences.update');
+        Route::get('/modules', [CompanySettingsApiController::class, 'modules'])->name('modules');
+        Route::put('/modules', [CompanySettingsApiController::class, 'updateModules'])->name('modules.update');
+        Route::post('/modules/reset', [CompanySettingsApiController::class, 'resetModules'])->name('modules.reset');
     });
 
     // Onboarding
