@@ -25,6 +25,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Validation\ValidationException;
 
 class PosApiController extends Controller
 {
@@ -398,124 +399,149 @@ class PosApiController extends Controller
      */
     public function store(Request $request, Tenant $tenant)
     {
-        $validated = $request->validate([
-            'customer_id' => ['nullable', 'exists:customers,id,tenant_id,' . $tenant->id],
-            'items' => 'required|array|min:1',
-            'items.*.product_id' => ['required', 'exists:products,id,tenant_id,' . $tenant->id],
-            'items.*.quantity' => 'required|numeric|min:0.01',
-            'items.*.unit_price' => 'required|numeric|min:0',
-            'items.*.discount_amount' => 'nullable|numeric|min:0',
-            'payments' => 'required|array|min:1',
-            'payments.*.method_id' => ['required', 'exists:payment_methods,id,tenant_id,' . $tenant->id],
-            'payments.*.amount' => 'required|numeric|min:0.01',
-            'payments.*.reference' => 'nullable|string|max:255',
-            'notes' => 'nullable|string|max:1000',
-        ]);
-
-        return DB::transaction(function () use ($validated, $tenant) {
-            $activeSession = $this->getActiveSession($tenant);
-
-            if (!$activeSession) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'No active cash register session found.',
-                ], 400);
-            }
-
-            $sale = Sale::create([
-                'tenant_id' => $tenant->id,
-                'sale_number' => Sale::generateSaleNumber($tenant),
-                'customer_id' => $validated['customer_id'] ?? null,
-                'user_id' => Auth::id(),
-                'cash_register_id' => $activeSession->cash_register_id,
-                'cash_register_session_id' => $activeSession->id,
-                'subtotal' => 0,
-                'tax_amount' => 0,
-                'discount_amount' => 0,
-                'total_amount' => 0,
-                'paid_amount' => array_sum(array_column($validated['payments'], 'amount')),
-                'change_amount' => 0,
-                'status' => 'completed',
-                'sale_date' => now(),
-                'notes' => $validated['notes'] ?? null,
+        try {
+            $validated = $request->validate([
+                'customer_id' => ['nullable', 'exists:customers,id,tenant_id,' . $tenant->id],
+                'items' => 'required|array|min:1',
+                'items.*.product_id' => ['required', 'exists:products,id,tenant_id,' . $tenant->id],
+                'items.*.quantity' => 'required|numeric|min:0.01',
+                'items.*.unit_price' => 'required|numeric|min:0',
+                'items.*.discount_amount' => 'nullable|numeric|min:0',
+                'payments' => 'required|array|min:1',
+                'payments.*.method_id' => ['required', 'exists:payment_methods,id,tenant_id,' . $tenant->id],
+                'payments.*.amount' => 'required|numeric|min:0.01',
+                'payments.*.reference' => 'nullable|string|max:255',
+                'notes' => 'nullable|string|max:1000',
             ]);
 
-            $subtotal = 0;
-            $taxAmount = 0;
-            $discountAmount = 0;
+            return DB::transaction(function () use ($validated, $tenant) {
+                $activeSession = $this->getActiveSession($tenant);
 
-            foreach ($validated['items'] as $item) {
-                $product = Product::where('id', $item['product_id'])
-                    ->where('tenant_id', $tenant->id)
-                    ->lockForUpdate()
-                    ->firstOrFail();
+                if (!$activeSession) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'No active cash register session found.',
+                    ], 400);
+                }
 
-                if ($product->maintain_stock) {
-                    $freshStock = $product->getStockAsOfDate(now(), true);
-                    if ($freshStock < $item['quantity']) {
-                        throw new \Exception("Insufficient stock for {$product->name}. Available: " . number_format($freshStock, 2));
+                $sale = Sale::create([
+                    'tenant_id' => $tenant->id,
+                    'sale_number' => Sale::generateSaleNumber($tenant),
+                    'customer_id' => $validated['customer_id'] ?? null,
+                    'user_id' => Auth::id(),
+                    'cash_register_id' => $activeSession->cash_register_id,
+                    'cash_register_session_id' => $activeSession->id,
+                    'subtotal' => 0,
+                    'tax_amount' => 0,
+                    'discount_amount' => 0,
+                    'total_amount' => 0,
+                    'paid_amount' => array_sum(array_column($validated['payments'], 'amount')),
+                    'change_amount' => 0,
+                    'status' => 'completed',
+                    'sale_date' => now(),
+                    'notes' => $validated['notes'] ?? null,
+                ]);
+
+                $subtotal = 0;
+                $taxAmount = 0;
+                $discountAmount = 0;
+
+                foreach ($validated['items'] as $item) {
+                    $product = Product::where('id', $item['product_id'])
+                        ->where('tenant_id', $tenant->id)
+                        ->lockForUpdate()
+                        ->firstOrFail();
+
+                    if ($product->maintain_stock) {
+                        $freshStock = $product->getStockAsOfDate(now(), true);
+                        if ($freshStock < $item['quantity']) {
+                            throw ValidationException::withMessages([
+                                'items' => [
+                                    "Insufficient stock for {$product->name}. Available: " . number_format($freshStock, 2),
+                                ],
+                            ]);
+                        }
                     }
+
+                    $itemSubtotal = $item['quantity'] * $item['unit_price'];
+                    $itemDiscount = $item['discount_amount'] ?? 0;
+                    $itemTax = ($itemSubtotal - $itemDiscount) * ($product->tax_rate ?? 0) / 100;
+                    $lineTotal = $itemSubtotal - $itemDiscount + $itemTax;
+
+                    SaleItem::create([
+                        'tenant_id' => $tenant->id,
+                        'sale_id' => $sale->id,
+                        'product_id' => $product->id,
+                        'product_name' => $product->name,
+                        'product_sku' => $product->sku,
+                        'quantity' => $item['quantity'],
+                        'unit_price' => $item['unit_price'],
+                        'discount_amount' => $itemDiscount,
+                        'tax_amount' => $itemTax,
+                        'line_total' => $lineTotal,
+                    ]);
+
+                    if ($product->maintain_stock) {
+                        $this->createStockMovement($product, $item['quantity'], $sale);
+                    }
+
+                    $subtotal += $itemSubtotal;
+                    $taxAmount += $itemTax;
+                    $discountAmount += $itemDiscount;
                 }
 
-                $itemSubtotal = $item['quantity'] * $item['unit_price'];
-                $itemDiscount = $item['discount_amount'] ?? 0;
-                $itemTax = ($itemSubtotal - $itemDiscount) * ($product->tax_rate ?? 0) / 100;
-                $lineTotal = $itemSubtotal - $itemDiscount + $itemTax;
-
-                SaleItem::create([
-                    'tenant_id' => $tenant->id,
-                    'sale_id' => $sale->id,
-                    'product_id' => $product->id,
-                    'product_name' => $product->name,
-                    'product_sku' => $product->sku,
-                    'quantity' => $item['quantity'],
-                    'unit_price' => $item['unit_price'],
-                    'discount_amount' => $itemDiscount,
-                    'tax_amount' => $itemTax,
-                    'line_total' => $lineTotal,
-                ]);
-
-                if ($product->maintain_stock) {
-                    $this->createStockMovement($product, $item['quantity'], $sale);
+                foreach ($validated['payments'] as $payment) {
+                    SalePayment::create([
+                        'tenant_id' => $tenant->id,
+                        'sale_id' => $sale->id,
+                        'payment_method_id' => $payment['method_id'],
+                        'amount' => $payment['amount'],
+                        'reference_number' => $payment['reference'] ?? null,
+                    ]);
                 }
 
-                $subtotal += $itemSubtotal;
-                $taxAmount += $itemTax;
-                $discountAmount += $itemDiscount;
-            }
+                $totalAmount = $subtotal - $discountAmount + $taxAmount;
+                $changeAmount = max(0, $sale->paid_amount - $totalAmount);
 
-            foreach ($validated['payments'] as $payment) {
-                SalePayment::create([
-                    'tenant_id' => $tenant->id,
-                    'sale_id' => $sale->id,
-                    'payment_method_id' => $payment['method_id'],
-                    'amount' => $payment['amount'],
-                    'reference_number' => $payment['reference'] ?? null,
+                $sale->update([
+                    'subtotal' => $subtotal,
+                    'tax_amount' => $taxAmount,
+                    'discount_amount' => $discountAmount,
+                    'total_amount' => $totalAmount,
+                    'change_amount' => $changeAmount,
                 ]);
-            }
 
-            $totalAmount = $subtotal - $discountAmount + $taxAmount;
-            $changeAmount = max(0, $sale->paid_amount - $totalAmount);
+                $this->generateReceipt($sale);
+                $this->createAccountingEntries($sale);
 
-            $sale->update([
-                'subtotal' => $subtotal,
-                'tax_amount' => $taxAmount,
-                'discount_amount' => $discountAmount,
-                'total_amount' => $totalAmount,
-                'change_amount' => $changeAmount,
-            ]);
-
-            $this->generateReceipt($sale);
-            $this->createAccountingEntries($sale);
+                return response()->json([
+                    'success' => true,
+                    'sale_id' => $sale->id,
+                    'sale_number' => $sale->sale_number,
+                    'change_amount' => $changeAmount,
+                    'message' => 'Sale completed successfully!',
+                ]);
+            });
+        } catch (ValidationException $e) {
+            $message = collect($e->errors())->flatten()->first() ?? 'Validation failed.';
 
             return response()->json([
-                'success' => true,
-                'sale_id' => $sale->id,
-                'sale_number' => $sale->sale_number,
-                'change_amount' => $changeAmount,
-                'message' => 'Sale completed successfully!',
+                'success' => false,
+                'message' => $message,
+                'errors' => $e->errors(),
+            ], 422);
+        } catch (\Throwable $e) {
+            Log::error('POS API sale error', [
+                'tenant_id' => $tenant->id,
+                'user_id' => Auth::id(),
+                'message' => $e->getMessage(),
             ]);
-        });
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to complete sale. Please try again.',
+            ], 500);
+        }
     }
 
     /**
