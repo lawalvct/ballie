@@ -603,6 +603,47 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/reports/top-products', [\App\Http\Controllers\Api\Tenant\Pos\PosApiController::class, 'topProductsReport'])->name('reports.top-products');
     });
 
+    // ─────────────────────────────────────────────────
+    //  Projects
+    // ─────────────────────────────────────────────────
+    Route::prefix('projects')->name('projects.')->group(function () {
+        // List & form data
+        Route::get('/', [\App\Http\Controllers\Api\Tenant\Projects\ProjectApiController::class, 'index'])->name('index');
+        Route::get('/form-data', [\App\Http\Controllers\Api\Tenant\Projects\ProjectApiController::class, 'formData'])->name('form-data');
+        Route::get('/reports', [\App\Http\Controllers\Api\Tenant\Projects\ProjectApiController::class, 'reports'])->name('reports');
+
+        // CRUD
+        Route::post('/', [\App\Http\Controllers\Api\Tenant\Projects\ProjectApiController::class, 'store'])->name('store');
+        Route::get('/{project}', [\App\Http\Controllers\Api\Tenant\Projects\ProjectApiController::class, 'show'])->name('show');
+        Route::put('/{project}', [\App\Http\Controllers\Api\Tenant\Projects\ProjectApiController::class, 'update'])->name('update');
+        Route::delete('/{project}', [\App\Http\Controllers\Api\Tenant\Projects\ProjectApiController::class, 'destroy'])->name('destroy');
+        Route::patch('/{project}/status', [\App\Http\Controllers\Api\Tenant\Projects\ProjectApiController::class, 'updateStatus'])->name('update-status');
+
+        // Tasks
+        Route::post('/{project}/tasks', [\App\Http\Controllers\Api\Tenant\Projects\ProjectApiController::class, 'storeTask'])->name('tasks.store');
+        Route::put('/{project}/tasks/{task}', [\App\Http\Controllers\Api\Tenant\Projects\ProjectApiController::class, 'updateTask'])->name('tasks.update');
+        Route::delete('/{project}/tasks/{task}', [\App\Http\Controllers\Api\Tenant\Projects\ProjectApiController::class, 'destroyTask'])->name('tasks.destroy');
+
+        // Milestones
+        Route::post('/{project}/milestones', [\App\Http\Controllers\Api\Tenant\Projects\ProjectApiController::class, 'storeMilestone'])->name('milestones.store');
+        Route::put('/{project}/milestones/{milestone}', [\App\Http\Controllers\Api\Tenant\Projects\ProjectApiController::class, 'updateMilestone'])->name('milestones.update');
+        Route::delete('/{project}/milestones/{milestone}', [\App\Http\Controllers\Api\Tenant\Projects\ProjectApiController::class, 'destroyMilestone'])->name('milestones.destroy');
+        Route::post('/{project}/milestones/{milestone}/invoice', [\App\Http\Controllers\Api\Tenant\Projects\ProjectApiController::class, 'invoiceMilestone'])->name('milestones.invoice');
+
+        // Expenses
+        Route::post('/{project}/expenses', [\App\Http\Controllers\Api\Tenant\Projects\ProjectApiController::class, 'storeExpense'])->name('expenses.store');
+        Route::delete('/{project}/expenses/{expense}', [\App\Http\Controllers\Api\Tenant\Projects\ProjectApiController::class, 'destroyExpense'])->name('expenses.destroy');
+
+        // Notes
+        Route::post('/{project}/notes', [\App\Http\Controllers\Api\Tenant\Projects\ProjectApiController::class, 'storeNote'])->name('notes.store');
+        Route::delete('/{project}/notes/{note}', [\App\Http\Controllers\Api\Tenant\Projects\ProjectApiController::class, 'destroyNote'])->name('notes.destroy');
+
+        // Attachments
+        Route::post('/{project}/attachments', [\App\Http\Controllers\Api\Tenant\Projects\ProjectApiController::class, 'storeAttachment'])->name('attachments.store');
+        Route::delete('/{project}/attachments/{attachment}', [\App\Http\Controllers\Api\Tenant\Projects\ProjectApiController::class, 'destroyAttachment'])->name('attachments.destroy');
+        Route::get('/{project}/attachments/{attachment}/download', [\App\Http\Controllers\Api\Tenant\Projects\ProjectApiController::class, 'downloadAttachment'])->name('attachments.download');
+    });
+
 });
 
 // Public download routes (token in query)
