@@ -6,10 +6,13 @@ use App\Http\Controllers\Api\BaseApiController;
 use App\Http\Resources\UserResource;
 use App\Models\Tenant;
 use App\Models\User;
+use App\Notifications\WelcomeNotification;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rules\Password;
 
@@ -189,8 +192,9 @@ class AuthController extends BaseApiController
 
         $validator = Validator::make($request->all(), [
             'name' => ['sometimes', 'string', 'max:255'],
+            'email' => ['sometimes', 'string', 'email', 'max:255', 'unique:users,email,' . $user->id],
             'phone' => ['nullable', 'string', 'max:20'],
-            'avatar' => ['nullable', 'image', 'max:2048'],
+            'avatar' => ['nullable', 'image', 'mimes:jpeg,png,jpg,gif', 'max:2048'],
         ]);
 
         if ($validator->fails()) {
@@ -201,11 +205,20 @@ class AuthController extends BaseApiController
             $user->name = $request->name;
         }
 
+        if ($request->has('email') && $request->email !== $user->email) {
+            $user->email = $request->email;
+            $user->email_verified_at = null;
+        }
+
         if ($request->has('phone')) {
             $user->phone = $request->phone;
         }
 
         if ($request->hasFile('avatar')) {
+            // Delete old avatar if exists
+            if ($user->avatar && Storage::disk('public')->exists($user->avatar)) {
+                Storage::disk('public')->delete($user->avatar);
+            }
             $path = $request->file('avatar')->store('avatars', 'public');
             $user->avatar = $path;
         }
@@ -213,7 +226,7 @@ class AuthController extends BaseApiController
         $user->save();
 
         return $this->success([
-            'user' => new UserResource($user),
+            'user' => new UserResource($user->fresh()),
         ], 'Profile updated successfully');
     }
 
@@ -330,5 +343,96 @@ class AuthController extends BaseApiController
         $token->delete();
 
         return $this->success(null, 'Session revoked successfully');
+    }
+
+    /**
+     * Remove the authenticated user's avatar.
+     */
+    public function removeAvatar(Request $request): JsonResponse
+    {
+        $user = $request->user();
+
+        if ($user->avatar && Storage::disk('public')->exists($user->avatar)) {
+            Storage::disk('public')->delete($user->avatar);
+        }
+
+        $user->update(['avatar' => null]);
+
+        return $this->success([
+            'user' => new UserResource($user->fresh()),
+        ], 'Avatar removed successfully');
+    }
+
+    /**
+     * Resend email verification code.
+     */
+    public function resendVerification(Request $request): JsonResponse
+    {
+        $user = $request->user();
+
+        if ($user->hasVerifiedEmail()) {
+            return $this->success(null, 'Your email is already verified.');
+        }
+
+        // Delete any existing codes
+        DB::table('email_verification_codes')
+            ->where('user_id', $user->id)
+            ->delete();
+
+        // Generate new 4-digit code
+        $code = sprintf('%04d', random_int(0, 9999));
+
+        DB::table('email_verification_codes')->insert([
+            'user_id'    => $user->id,
+            'code'       => $code,
+            'expires_at' => now()->addMinutes(60),
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        $user->notify(new WelcomeNotification($code));
+
+        return $this->success(null, 'Verification code sent to ' . $user->email . '. Please check your inbox or spam folder.');
+    }
+
+    /**
+     * Verify email with 4-digit code.
+     */
+    public function verifyEmail(Request $request): JsonResponse
+    {
+        $validator = Validator::make($request->all(), [
+            'code' => ['required', 'digits:4'],
+        ]);
+
+        if ($validator->fails()) {
+            return $this->validationError($validator->errors());
+        }
+
+        $user = $request->user();
+
+        if ($user->hasVerifiedEmail()) {
+            return $this->success(null, 'Your email is already verified.');
+        }
+
+        $verification = DB::table('email_verification_codes')
+            ->where('user_id', $user->id)
+            ->where('code', $request->code)
+            ->where('expires_at', '>', now())
+            ->first();
+
+        if (!$verification) {
+            return $this->error('Invalid or expired verification code.', 422);
+        }
+
+        $user->email_verified_at = now();
+        $user->save();
+
+        DB::table('email_verification_codes')
+            ->where('id', $verification->id)
+            ->delete();
+
+        return $this->success([
+            'user' => new UserResource($user->fresh()),
+        ], 'Email verified successfully.');
     }
 }

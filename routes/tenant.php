@@ -177,6 +177,7 @@ Route::middleware(['auth'])->group(function () {
             Route::put('/update', [\App\Http\Controllers\Tenant\ProfileController::class, 'update'])->name('update');
             Route::put('/password', [\App\Http\Controllers\Tenant\ProfileController::class, 'updatePassword'])->name('password.update');
             Route::delete('/avatar', [\App\Http\Controllers\Tenant\ProfileController::class, 'removeAvatar'])->name('avatar.remove');
+            Route::post('/verification/resend', [\App\Http\Controllers\Tenant\ProfileController::class, 'resendVerification'])->name('verification.resend');
         });
 
         // Tour Routes - Guide for new users

@@ -38,6 +38,9 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/', [AuthController::class, 'profile'])->name('show');
         Route::put('/', [AuthController::class, 'updateProfile'])->name('update');
         Route::post('/change-password', [AuthController::class, 'changePassword'])->name('change-password');
+        Route::delete('/avatar', [AuthController::class, 'removeAvatar'])->name('avatar.remove');
+        Route::post('/verification/resend', [AuthController::class, 'resendVerification'])->name('verification.resend');
+        Route::post('/verification/verify', [AuthController::class, 'verifyEmail'])->name('verification.verify');
     });
 
     // Onboarding

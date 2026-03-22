@@ -5,9 +5,11 @@ namespace App\Http\Controllers\Tenant;
 use App\Http\Controllers\Controller;
 use App\Models\Tenant;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rules\Password;
+use App\Notifications\WelcomeNotification;
 
 class ProfileController extends Controller
 {
@@ -103,5 +105,43 @@ class ProfileController extends Controller
         return redirect()
             ->route('tenant.profile.index', ['tenant' => $tenant->slug])
             ->with('success', 'Avatar removed successfully!');
+    }
+
+    /**
+     * Resend email verification code
+     */
+    public function resendVerification(Request $request, Tenant $tenant)
+    {
+        $user = $request->user();
+
+        if ($user->hasVerifiedEmail()) {
+            return redirect()
+                ->route('tenant.profile.index', ['tenant' => $tenant->slug])
+                ->with('success', 'Your email is already verified.');
+        }
+
+        // Delete any existing codes for this user
+        DB::table('email_verification_codes')
+            ->where('user_id', $user->id)
+            ->delete();
+
+        // Generate new 4-digit verification code
+        $code = sprintf('%04d', random_int(0, 9999));
+
+        // Store new verification code
+        DB::table('email_verification_codes')->insert([
+            'user_id'    => $user->id,
+            'code'       => $code,
+            'expires_at' => now()->addMinutes(60),
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        // Send verification email
+        $user->notify(new WelcomeNotification($code));
+
+        return redirect()
+            ->route('tenant.profile.index', ['tenant' => $tenant->slug])
+            ->with('success', 'A verification code has been sent to ' . $user->email . '. Please check your inbox.');
     }
 }
