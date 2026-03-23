@@ -1218,7 +1218,18 @@ class InvoiceController extends Controller
             }
         }
 
-        return view('tenant.accounting.invoices.print', compact('tenant', 'invoice', 'inventoryItems', 'customer'));
+        // Determine invoice template from tenant settings
+        $template = $tenant->settings['invoice_template'] ?? 'ballie';
+        $allowedTemplates = ['ballie', 'tally', 'zoho', 'sage', 'quickbooks'];
+        if (!in_array($template, $allowedTemplates)) {
+            $template = 'ballie';
+        }
+
+        if ($template === 'ballie') {
+            return view('tenant.accounting.invoices.print', compact('tenant', 'invoice', 'inventoryItems', 'customer'));
+        }
+
+        return view('tenant.accounting.invoices.templates.' . $template, compact('tenant', 'invoice', 'inventoryItems', 'customer'));
     }
 
     public function searchCustomers(Request $request, Tenant $tenant)
@@ -1804,7 +1815,17 @@ class InvoiceController extends Controller
         $prefix = trim($prefix, '-');
         $prefix = $prefix === '' ? 'customer' : $prefix;
 
-        $pdf = Pdf::loadView('tenant.accounting.invoices.pdf', compact('tenant', 'invoice', 'customer'));
+        // Determine invoice template from tenant settings
+        $template = $tenant->settings['invoice_template'] ?? 'ballie';
+        $allowedTemplates = ['ballie', 'tally', 'zoho', 'sage', 'quickbooks'];
+        if (!in_array($template, $allowedTemplates)) {
+            $template = 'ballie';
+        }
+        $view = $template === 'ballie'
+            ? 'tenant.accounting.invoices.pdf'
+            : 'tenant.accounting.invoices.templates.' . $template;
+
+        $pdf = Pdf::loadView($view, compact('tenant', 'invoice', 'customer'));
 
         $filename = $prefix . '-invoice-' . ($invoice->voucherType->prefix ?? '') . $invoice->voucher_number . '.pdf';
         return $pdf->download($filename);
@@ -1838,8 +1859,18 @@ class InvoiceController extends Controller
                 $inventoryItems = collect($metaData['inventory_items'] ?? []);
             }
 
+            // Determine invoice template from tenant settings
+            $template = $tenant->settings['invoice_template'] ?? 'ballie';
+            $allowedTemplates = ['ballie', 'tally', 'zoho', 'sage', 'quickbooks'];
+            if (!in_array($template, $allowedTemplates)) {
+                $template = 'ballie';
+            }
+            $emailView = $template === 'ballie'
+                ? 'tenant.accounting.invoices.pdf'
+                : 'tenant.accounting.invoices.templates.' . $template;
+
             // Generate PDF
-            $pdf = Pdf::loadView('tenant.accounting.invoices.pdf', compact('tenant', 'invoice', 'customer', 'inventoryItems'));
+            $pdf = Pdf::loadView($emailView, compact('tenant', 'invoice', 'customer', 'inventoryItems'));
 
             // Generate download URL for the PDF (using public route)
             $downloadUrl = route('tenant.public.invoices.pdf', [

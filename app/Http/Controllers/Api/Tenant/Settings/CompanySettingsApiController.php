@@ -240,6 +240,7 @@ class CompanySettingsApiController extends BaseApiController
             'time_format' => ['nullable', 'string', 'max:20'],
             'timezone' => ['nullable', 'string', 'max:50'],
             'language' => ['nullable', 'string', 'max:10'],
+            'invoice_template' => ['nullable', 'string', 'in:ballie,tally,zoho,sage,quickbooks'],
         ]);
 
         if ($validator->fails()) {

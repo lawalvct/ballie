@@ -529,6 +529,129 @@
                             </div>
                         </div>
 
+                        <!-- Invoice Template Selection -->
+                        <div class="mb-6 mt-6">
+                            <h3 class="text-lg font-semibold text-gray-900 mb-2">Invoice Template</h3>
+                            <p class="text-sm text-gray-600 mb-4">Choose an invoice design for your PDF downloads and prints</p>
+
+                            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" x-data="{ selected: '{{ old('invoice_template', $tenant->settings['invoice_template'] ?? 'ballie') }}' }">
+                                <input type="hidden" name="invoice_template" x-model="selected">
+
+                                <!-- Ballie Invoice Template -->
+                                <label class="cursor-pointer">
+                                    <div :class="selected === 'ballie' ? 'ring-2 ring-purple-500 border-purple-500' : 'border-gray-200 hover:border-gray-300'"
+                                         class="relative rounded-xl border-2 p-4 transition-all"
+                                         @click="selected = 'ballie'">
+                                        <div class="flex items-center justify-between mb-3">
+                                            <span class="text-sm font-semibold text-gray-900">Ballie Invoice</span>
+                                            <div x-show="selected === 'ballie'" class="w-5 h-5 bg-purple-500 rounded-full flex items-center justify-center">
+                                                <svg class="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
+                                            </div>
+                                        </div>
+                                        <div class="h-24 rounded-lg bg-gradient-to-br from-blue-50 to-blue-100 border border-blue-200 flex items-center justify-center">
+                                            <div class="text-center">
+                                                <div class="w-16 h-1 bg-blue-600 rounded mb-2 mx-auto"></div>
+                                                <div class="w-12 h-1 bg-blue-400 rounded mb-1 mx-auto"></div>
+                                                <div class="w-14 h-1 bg-blue-300 rounded mx-auto"></div>
+                                            </div>
+                                        </div>
+                                        <p class="text-xs text-gray-500 mt-2">Modern blue-themed design (Default)</p>
+                                    </div>
+                                </label>
+
+                                <!-- Tally Invoice Template -->
+                                <label class="cursor-pointer">
+                                    <div :class="selected === 'tally' ? 'ring-2 ring-purple-500 border-purple-500' : 'border-gray-200 hover:border-gray-300'"
+                                         class="relative rounded-xl border-2 p-4 transition-all"
+                                         @click="selected = 'tally'">
+                                        <div class="flex items-center justify-between mb-3">
+                                            <span class="text-sm font-semibold text-gray-900">Tally</span>
+                                            <div x-show="selected === 'tally'" class="w-5 h-5 bg-purple-500 rounded-full flex items-center justify-center">
+                                                <svg class="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
+                                            </div>
+                                        </div>
+                                        <div class="h-24 rounded-lg bg-white border-2 border-gray-800 flex items-center justify-center">
+                                            <div class="text-center">
+                                                <div class="w-16 h-0.5 bg-gray-800 rounded mb-2 mx-auto"></div>
+                                                <div class="w-12 h-0.5 bg-gray-600 rounded mb-1 mx-auto"></div>
+                                                <div class="w-14 h-0.5 bg-gray-800 rounded mx-auto"></div>
+                                            </div>
+                                        </div>
+                                        <p class="text-xs text-gray-500 mt-2">Classic bordered table layout</p>
+                                    </div>
+                                </label>
+
+                                <!-- Zoho Invoice Template -->
+                                <label class="cursor-pointer">
+                                    <div :class="selected === 'zoho' ? 'ring-2 ring-purple-500 border-purple-500' : 'border-gray-200 hover:border-gray-300'"
+                                         class="relative rounded-xl border-2 p-4 transition-all"
+                                         @click="selected = 'zoho'">
+                                        <div class="flex items-center justify-between mb-3">
+                                            <span class="text-sm font-semibold text-gray-900">Zoho</span>
+                                            <div x-show="selected === 'zoho'" class="w-5 h-5 bg-purple-500 rounded-full flex items-center justify-center">
+                                                <svg class="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
+                                            </div>
+                                        </div>
+                                        <div class="h-24 rounded-lg bg-gradient-to-br from-sky-50 to-sky-100 border border-sky-200 flex items-center justify-center">
+                                            <div class="text-center">
+                                                <div class="w-16 h-1 bg-sky-600 rounded mb-2 mx-auto"></div>
+                                                <div class="w-12 h-1 bg-sky-400 rounded mb-1 mx-auto"></div>
+                                                <div class="w-14 h-1 bg-sky-300 rounded mx-auto"></div>
+                                            </div>
+                                        </div>
+                                        <p class="text-xs text-gray-500 mt-2">Clean modern blue accent design</p>
+                                    </div>
+                                </label>
+
+                                <!-- Sage Invoice Template -->
+                                <label class="cursor-pointer">
+                                    <div :class="selected === 'sage' ? 'ring-2 ring-purple-500 border-purple-500' : 'border-gray-200 hover:border-gray-300'"
+                                         class="relative rounded-xl border-2 p-4 transition-all"
+                                         @click="selected = 'sage'">
+                                        <div class="flex items-center justify-between mb-3">
+                                            <span class="text-sm font-semibold text-gray-900">Sage</span>
+                                            <div x-show="selected === 'sage'" class="w-5 h-5 bg-purple-500 rounded-full flex items-center justify-center">
+                                                <svg class="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
+                                            </div>
+                                        </div>
+                                        <div class="h-24 rounded-lg bg-gradient-to-br from-green-50 to-green-100 border border-green-200 flex items-center justify-center">
+                                            <div class="text-center">
+                                                <div class="w-16 h-1 bg-green-600 rounded mb-2 mx-auto"></div>
+                                                <div class="w-12 h-1 bg-green-400 rounded mb-1 mx-auto"></div>
+                                                <div class="w-14 h-1 bg-green-300 rounded mx-auto"></div>
+                                            </div>
+                                        </div>
+                                        <p class="text-xs text-gray-500 mt-2">Professional green corporate theme</p>
+                                    </div>
+                                </label>
+
+                                <!-- QuickBooks Invoice Template -->
+                                <label class="cursor-pointer">
+                                    <div :class="selected === 'quickbooks' ? 'ring-2 ring-purple-500 border-purple-500' : 'border-gray-200 hover:border-gray-300'"
+                                         class="relative rounded-xl border-2 p-4 transition-all"
+                                         @click="selected = 'quickbooks'">
+                                        <div class="flex items-center justify-between mb-3">
+                                            <span class="text-sm font-semibold text-gray-900">QuickBooks</span>
+                                            <div x-show="selected === 'quickbooks'" class="w-5 h-5 bg-purple-500 rounded-full flex items-center justify-center">
+                                                <svg class="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
+                                            </div>
+                                        </div>
+                                        <div class="h-24 rounded-lg bg-gradient-to-br from-gray-50 to-gray-100 border border-gray-300 flex items-center justify-center">
+                                            <div class="text-center">
+                                                <div class="w-16 h-1 bg-gray-800 rounded mb-2 mx-auto"></div>
+                                                <div class="w-12 h-1 bg-green-500 rounded mb-1 mx-auto"></div>
+                                                <div class="w-14 h-1 bg-gray-600 rounded mx-auto"></div>
+                                            </div>
+                                        </div>
+                                        <p class="text-xs text-gray-500 mt-2">Simple clean dark-header style</p>
+                                    </div>
+                                </label>
+                            </div>
+                            @error('invoice_template')
+                            <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
+                            @enderror
+                        </div>
+
                         <!-- Submit Button -->
                         <div class="flex items-center justify-end space-x-4 pt-6 border-t border-gray-200">
                             <button type="submit"

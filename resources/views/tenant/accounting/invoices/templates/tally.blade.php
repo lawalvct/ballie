@@ -1,0 +1,433 @@
+{{-- Tally Invoice Template - Classic bordered table layout --}}
+@php include resource_path('views/tenant/accounting/invoices/templates/partials/data.blade.php'); @endphp
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>{{ $term->label('sales_invoice') }} {{ $invoiceNumber }} - {{ $tenant->name }}</title>
+    <style>
+        body {
+            font-family: 'DejaVu Sans', Arial, sans-serif;
+            margin: 0;
+            padding: 10px;
+            color: #000;
+            font-size: 12px;
+            line-height: 1.3;
+        }
+        .invoice-container {
+            max-width: 100%;
+            margin: 0 auto;
+            border: 2px solid #000;
+        }
+        /* Title */
+        .invoice-title-row {
+            text-align: center;
+            font-size: 16px;
+            font-weight: bold;
+            padding: 8px;
+            border-bottom: 2px solid #000;
+            text-decoration: underline;
+        }
+        /* Top section: company + meta in table */
+        .top-section {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        .top-section td {
+            vertical-align: top;
+            padding: 6px 10px;
+            border-bottom: 1px solid #000;
+        }
+        .top-left {
+            width: 55%;
+            border-right: 1px solid #000;
+        }
+        .top-right {
+            width: 45%;
+        }
+        .company-name {
+            font-size: 15px;
+            font-weight: bold;
+            text-transform: uppercase;
+            margin-bottom: 3px;
+        }
+        .company-detail {
+            font-size: 11px;
+            color: #333;
+            line-height: 1.4;
+        }
+        /* Meta info rows */
+        .meta-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        .meta-table td {
+            padding: 3px 4px;
+            font-size: 11px;
+            border: none;
+        }
+        .meta-label {
+            width: 45%;
+            color: #555;
+        }
+        .meta-value {
+            font-weight: bold;
+        }
+        /* Buyer section */
+        .buyer-section {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        .buyer-section td {
+            vertical-align: top;
+            padding: 6px 10px;
+            border-bottom: 1px solid #000;
+        }
+        .buyer-left {
+            width: 55%;
+            border-right: 1px solid #000;
+        }
+        .buyer-right {
+            width: 45%;
+        }
+        .buyer-label {
+            font-size: 11px;
+            color: #555;
+            margin-bottom: 2px;
+        }
+        .buyer-name {
+            font-size: 13px;
+            font-weight: bold;
+            margin-bottom: 3px;
+        }
+        .buyer-detail {
+            font-size: 11px;
+            color: #333;
+            line-height: 1.4;
+        }
+        /* Items table */
+        .items-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        .items-table th {
+            background: #f5f5f5;
+            border-bottom: 2px solid #000;
+            border-right: 1px solid #000;
+            padding: 6px 4px;
+            text-align: center;
+            font-size: 11px;
+            font-weight: bold;
+        }
+        .items-table th:last-child {
+            border-right: none;
+        }
+        .items-table td {
+            border-bottom: 1px solid #ccc;
+            border-right: 1px solid #ccc;
+            padding: 5px 4px;
+            font-size: 11px;
+            vertical-align: top;
+        }
+        .items-table td:last-child {
+            border-right: none;
+        }
+        .col-sn { width: 5%; text-align: center; }
+        .col-desc { width: 40%; }
+        .col-qty { width: 15%; text-align: right; padding-right: 8px !important; }
+        .col-rate { width: 15%; text-align: right; padding-right: 8px !important; }
+        .col-per { width: 8%; text-align: center; }
+        .col-amount { width: 17%; text-align: right; padding-right: 8px !important; font-weight: bold; }
+        .item-sub {
+            font-size: 10px;
+            color: #666;
+            font-style: italic;
+        }
+        /* Charges rows */
+        .charge-row td {
+            border-bottom: 1px solid #ccc;
+            font-size: 11px;
+        }
+        /* Total row */
+        .total-row {
+            border-top: 2px solid #000;
+        }
+        .total-row td {
+            padding: 8px 4px;
+            font-weight: bold;
+            font-size: 13px;
+            border-bottom: none;
+            border-right: 1px solid #000;
+        }
+        .total-row td:last-child {
+            border-right: none;
+        }
+        /* Amount in words */
+        .amount-words {
+            padding: 8px 10px;
+            border-top: 2px solid #000;
+            font-size: 11px;
+        }
+        .amount-words-label {
+            font-weight: bold;
+            color: #555;
+        }
+        .amount-words-text {
+            font-weight: bold;
+            font-style: italic;
+        }
+        /* Declaration / footer */
+        .footer-section {
+            width: 100%;
+            border-collapse: collapse;
+            border-top: 1px solid #000;
+        }
+        .footer-section td {
+            padding: 10px;
+            vertical-align: top;
+        }
+        .footer-left {
+            width: 55%;
+            border-right: 1px solid #000;
+            font-size: 11px;
+            line-height: 1.5;
+        }
+        .footer-right {
+            width: 45%;
+            text-align: right;
+            font-size: 11px;
+        }
+        .auth-signatory {
+            margin-top: 40px;
+            font-weight: bold;
+            font-style: italic;
+        }
+        /* Bank details */
+        .bank-details {
+            font-size: 10px;
+            padding: 5px 10px;
+            border-top: 1px solid #ccc;
+            color: #555;
+        }
+        .computer-generated {
+            text-align: center;
+            font-size: 10px;
+            color: #999;
+            padding: 5px;
+            border-top: 1px solid #000;
+        }
+        @page {
+            margin: 15mm;
+            size: A4;
+        }
+        .no-break { page-break-inside: avoid; }
+    </style>
+</head>
+<body>
+    <div class="invoice-container">
+        <!-- Title -->
+        <div class="invoice-title-row">{{ strtoupper($term->label('sales_invoice')) }}</div>
+
+        <!-- Company Info + Invoice Meta -->
+        <table class="top-section">
+            <tr>
+                <td class="top-left">
+                    <div class="company-name">{{ $tenant->name }}</div>
+                    <div class="company-detail">
+                        @if($tenant->address){{ $tenant->address }}<br>@endif
+                        @if($tenant->email)E-mail: {{ $tenant->email }}<br>@endif
+                        @if($tenant->phone)Phone: {{ $tenant->phone }}@endif
+                    </div>
+                </td>
+                <td class="top-right">
+                    <table class="meta-table">
+                        <tr>
+                            <td class="meta-label">{{ $term->label('sales_invoice') }} No.</td>
+                            <td class="meta-value">{{ $invoiceNumber }}</td>
+                        </tr>
+                        <tr>
+                            <td class="meta-label">Dated</td>
+                            <td class="meta-value">{{ $invoice->voucher_date->format('d-M-Y') }}</td>
+                        </tr>
+                        @if($invoice->reference_number)
+                        <tr>
+                            <td class="meta-label">Delivery Note</td>
+                            <td class="meta-value">{{ $invoice->reference_number }}</td>
+                        </tr>
+                        @endif
+                        <tr>
+                            <td class="meta-label">Mode/Terms of Payment</td>
+                            <td class="meta-value">{{ $customer->payment_terms ?? 'on delivery' }}</td>
+                        </tr>
+                        @if($tenant->tax_number)
+                        <tr>
+                            <td class="meta-label">Supplier's Ref.</td>
+                            <td class="meta-value">{{ $tenant->tax_number }}</td>
+                        </tr>
+                        @endif
+                    </table>
+                </td>
+            </tr>
+        </table>
+
+        <!-- Buyer Section -->
+        <table class="buyer-section">
+            <tr>
+                <td class="buyer-left">
+                    <div class="buyer-label">Buyer</div>
+                    <div class="buyer-name">{{ $displayName }}</div>
+                    <div class="buyer-detail">
+                        @if($customer)
+                            @if($customer->address ?? ($customer->address_line1 ?? null)){{ $customer->address ?? $customer->address_line1 }}<br>@endif
+                            @if(($customer->city ?? null) || ($customer->state ?? null)){{ $customer->city ?? '' }}{{ ($customer->city ?? null) && ($customer->state ?? null) ? ', ' : '' }}{{ $customer->state ?? '' }}<br>@endif
+                            @if($customer->phone ?? null)Phone: {{ $customer->phone }}<br>@endif
+                            @if($customer->email ?? null)Email: {{ $customer->email }}@endif
+                        @endif
+                    </div>
+                </td>
+                <td class="buyer-right">
+                    <table class="meta-table">
+                        @if($invoice->reference_number)
+                        <tr>
+                            <td class="meta-label">Buyer's Order No.</td>
+                            <td class="meta-value">{{ $invoice->reference_number }}</td>
+                        </tr>
+                        @endif
+                        <tr>
+                            <td class="meta-label">Dated</td>
+                            <td class="meta-value">{{ $invoice->voucher_date->format('d-M-Y') }}</td>
+                        </tr>
+                        @if(($customer->city ?? null) || ($customer->state ?? null))
+                        <tr>
+                            <td class="meta-label">Destination</td>
+                            <td class="meta-value">{{ $customer->city ?? $customer->state ?? '' }}</td>
+                        </tr>
+                        @endif
+                    </table>
+                </td>
+            </tr>
+        </table>
+
+        <!-- Items Table -->
+        <div class="no-break">
+            <table class="items-table">
+                <thead>
+                    <tr>
+                        <th class="col-sn">Sl<br>No.</th>
+                        <th class="col-desc">Description of Goods</th>
+                        <th class="col-qty">Quantity</th>
+                        <th class="col-rate">Rate</th>
+                        <th class="col-per">per</th>
+                        <th class="col-amount">Amount</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach($lineItems as $index => $item)
+                        @php
+                            $itemAmount = (float) ($item->amount ?? ((float)($item->quantity ?? 0) * (float)($item->rate ?? $item->unit_price ?? 0)));
+                            $itemRate = (float) ($item->rate ?? $item->unit_price ?? 0);
+                            $itemQty = (float) ($item->quantity ?? 0);
+                            $unit = $item->unit ?? $item->unit_name ?? '';
+                        @endphp
+                        <tr>
+                            <td class="col-sn">{{ $index + 1 }}</td>
+                            <td class="col-desc">
+                                <strong>{{ $item->product_name ?? $item->description ?? 'Item' }}</strong>
+                                @if(($item->description ?? null) && ($item->description ?? null) !== ($item->product_name ?? null))
+                                    <br><span class="item-sub">{{ $item->description }}</span>
+                                @endif
+                            </td>
+                            <td class="col-qty">{{ number_format($itemQty, 2) }}{{ $unit ? ' ' . $unit : '' }}</td>
+                            <td class="col-rate">{{ number_format($itemRate, 2) }}</td>
+                            <td class="col-per">{{ $unit ?: 'Nos' }}</td>
+                            <td class="col-amount">{{ $currencySymbol }}{{ number_format($itemAmount, 2) }}</td>
+                        </tr>
+                    @endforeach
+
+                    {{-- Additional charges --}}
+                    @if($additionalCharges->count() > 0)
+                        @foreach($additionalCharges as $charge)
+                            @php
+                                $chargeAmount = $charge->credit_amount > 0 ? $charge->credit_amount : $charge->debit_amount;
+                            @endphp
+                            <tr class="charge-row">
+                                <td class="col-sn"></td>
+                                <td class="col-desc" colspan="4">
+                                    <em>{{ $charge->ledgerAccount->name }}</em>
+                                    @if($charge->narration && $charge->narration !== $charge->ledgerAccount->name)
+                                        <br><span class="item-sub">{{ $charge->narration }}</span>
+                                    @endif
+                                </td>
+                                <td class="col-amount">{{ $currencySymbol }}{{ number_format($chargeAmount, 2) }}</td>
+                            </tr>
+                        @endforeach
+                    @endif
+
+                    {{-- VAT --}}
+                    @if($vatEntries->count() > 0)
+                        @foreach($vatEntries as $vatEntry)
+                            @php
+                                $vatAmount = $vatEntry->credit_amount > 0 ? $vatEntry->credit_amount : $vatEntry->debit_amount;
+                            @endphp
+                            <tr class="charge-row">
+                                <td class="col-sn"></td>
+                                <td class="col-desc" colspan="4">
+                                    <em>{{ $vatEntry->ledgerAccount->name }}</em>
+                                    @if($vatEntry->narration && $vatEntry->narration !== $vatEntry->ledgerAccount->name)
+                                        <br><span class="item-sub">{{ $vatEntry->narration }}</span>
+                                    @endif
+                                </td>
+                                <td class="col-amount">{{ $currencySymbol }}{{ number_format($vatAmount, 2) }}</td>
+                            </tr>
+                        @endforeach
+                    @endif
+
+                    {{-- Total row --}}
+                    <tr class="total-row">
+                        <td class="col-sn"></td>
+                        <td class="col-desc" style="text-align: right; padding-right: 10px;" colspan="4"><strong>Total</strong></td>
+                        <td class="col-amount">{{ $currencySymbol }}{{ number_format($totalAmount, 2) }}</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Amount in Words -->
+        <div class="amount-words">
+            <span class="amount-words-label">Amount Chargeable (in words):</span><br>
+            <span class="amount-words-text">{{ ucfirst(numberToWords((int)$totalAmount)) }} {{ $tenant->settings['currency'] ?? 'Naira' }} Only</span>
+        </div>
+
+        @if($tenant->tax_number)
+        <div class="bank-details">
+            VAT Regn. No. : {{ $tenant->tax_number }}
+        </div>
+        @endif
+
+        <!-- Declaration & Signature -->
+        <table class="footer-section">
+            <tr>
+                <td class="footer-left">
+                    <strong>Declaration</strong><br>
+                    We hereby declare that the information on this {{ strtolower($term->label('sales_invoice')) }} is
+                    true and correct.<br>
+                    Thanks for your regular patronage.
+
+                    @if($invoice->narration)
+                        <br><br><strong>Notes:</strong> {{ $invoice->narration }}
+                    @endif
+                </td>
+                <td class="footer-right">
+                    <strong>for {{ strtoupper($tenant->name) }}</strong>
+                    <div class="auth-signatory">Authorised Signatory</div>
+                </td>
+            </tr>
+        </table>
+
+        <!-- Computer Generated -->
+        <div class="computer-generated">
+            This is a Computer Generated {{ $term->label('sales_invoice') }}
+        </div>
+    </div>
+</body>
+</html>

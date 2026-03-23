@@ -1140,7 +1140,17 @@ class InvoiceController extends Controller
             $prefix = preg_replace('/[^a-z0-9]+/i', '-', $prefix);
             $prefix = trim($prefix, '-') ?: 'party';
 
-            $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('tenant.accounting.invoices.pdf', compact('tenant', 'invoice', 'party', 'customer'));
+            // Determine invoice template from tenant settings
+            $template = $tenant->settings['invoice_template'] ?? 'ballie';
+            $allowedTemplates = ['ballie', 'tally', 'zoho', 'sage', 'quickbooks'];
+            if (!in_array($template, $allowedTemplates)) {
+                $template = 'ballie';
+            }
+            $pdfView = $template === 'ballie'
+                ? 'tenant.accounting.invoices.pdf'
+                : 'tenant.accounting.invoices.templates.' . $template;
+
+            $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView($pdfView, compact('tenant', 'invoice', 'party', 'customer'));
 
             $filename = $prefix . '-invoice-' . ($invoice->voucherType->prefix ?? '') . $invoice->voucher_number . '.pdf';
 
@@ -1217,7 +1227,17 @@ class InvoiceController extends Controller
             $pdf = null;
 
             if ($attachPdf) {
-                $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('tenant.accounting.invoices.pdf', compact('tenant', 'invoice', 'party', 'customer'));
+                // Determine invoice template from tenant settings
+                $template = $tenant->settings['invoice_template'] ?? 'ballie';
+                $allowedTemplates = ['ballie', 'tally', 'zoho', 'sage', 'quickbooks'];
+                if (!in_array($template, $allowedTemplates)) {
+                    $template = 'ballie';
+                }
+                $emailPdfView = $template === 'ballie'
+                    ? 'tenant.accounting.invoices.pdf'
+                    : 'tenant.accounting.invoices.templates.' . $template;
+
+                $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView($emailPdfView, compact('tenant', 'invoice', 'party', 'customer'));
             }
 
             // Send email
