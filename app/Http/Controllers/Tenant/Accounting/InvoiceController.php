@@ -1831,6 +1831,69 @@ class InvoiceController extends Controller
         return $pdf->download($filename);
     }
 
+    public function deliveryNote(Tenant $tenant, Voucher $invoice)
+    {
+        if ($invoice->tenant_id !== $tenant->id) {
+            abort(404);
+        }
+
+        $invoice->load(['voucherType', 'entries.ledgerAccount', 'createdBy', 'postedBy', 'items']);
+
+        // Check if invoice has physical items
+        $hasPhysicalItems = $invoice->items->contains(function ($item) {
+            return strtolower((string)($item->item_type ?? '')) !== 'service';
+        });
+
+        if (!$hasPhysicalItems) {
+            return back()->with('error', 'This invoice has no physical items for delivery.');
+        }
+
+        // Determine customer info
+        $customerLedgerEntry = $invoice->entries->where('debit_amount', '>', 0)->first();
+        $customer = null;
+        $customerNameForFile = 'customer';
+
+        if ($customerLedgerEntry && $customerLedgerEntry->ledgerAccount) {
+            $ledger = $customerLedgerEntry->ledgerAccount;
+            $custModel = \App\Models\Customer::where('ledger_account_id', $ledger->id)->first();
+
+            if ($custModel) {
+                $customer = $custModel;
+                if (!empty($custModel->company_name)) {
+                    $customerNameForFile = $custModel->company_name;
+                } else {
+                    $fullName = trim((($custModel->first_name ?? '') . ' ' . ($custModel->last_name ?? '')));
+                    $customerNameForFile = $fullName !== '' ? $fullName : ($custModel->name ?? $ledger->name ?? 'customer');
+                }
+            } else {
+                $customer = $ledger;
+                $customerNameForFile = $ledger->name ?? 'customer';
+            }
+        } else {
+            $customerNameForFile = 'walk-in-customer';
+        }
+
+        $prefix = strtolower($customerNameForFile);
+        $prefix = preg_replace('/[^a-z0-9]+/i', '-', $prefix);
+        $prefix = trim($prefix, '-');
+        $prefix = $prefix === '' ? 'customer' : $prefix;
+
+        // Determine template from tenant settings
+        $template = $tenant->settings['invoice_template'] ?? 'ballie';
+        $allowedTemplates = ['ballie', 'tally', 'zoho', 'sage', 'quickbooks'];
+        if (!in_array($template, $allowedTemplates)) {
+            $template = 'ballie';
+        }
+
+        $view = 'tenant.accounting.invoices.templates.delivery-notes.' . $template;
+
+        $pdf = Pdf::loadView($view, compact('tenant', 'invoice', 'customer'));
+        $pdf->setPaper('A4', 'portrait');
+
+        $filename = $prefix . '-delivery-note-' . ($invoice->voucherType->prefix ?? '') . $invoice->voucher_number . '.pdf';
+        return $pdf->download($filename);
+    }
+
     public function email(Request $request, Tenant $tenant, Voucher $invoice)
     {
         // Ensure the invoice belongs to the tenant
