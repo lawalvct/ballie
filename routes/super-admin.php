@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\SuperAdmin\AuthController;
 use App\Http\Controllers\SuperAdmin\DashboardController;
+use App\Http\Controllers\SuperAdmin\PlanController;
 use App\Http\Controllers\SuperAdmin\TenantController;
 use Illuminate\Support\Facades\Route;
 
@@ -35,6 +36,10 @@ Route::prefix('super-admin')->name('super-admin.')->group(function () {
 
         // Logout
         Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
+
+        // Plan / Pricing Management
+        Route::resource('plans', PlanController::class);
+        Route::post('/plans/{plan}/toggle-status', [PlanController::class, 'toggleStatus'])->name('plans.toggle-status');
 
         // Tenant Management
         Route::get('/tenants/export', [TenantController::class, 'export'])->name('tenants.export');

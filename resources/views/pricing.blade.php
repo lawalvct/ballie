@@ -220,354 +220,112 @@
 <!-- Pricing Cards -->
 <section class="py-20 bg-gray-50">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-8 lg:gap-12">
+        @php
+            $cardColors = [
+                ['icon_bg' => 'bg-brand-teal',   'btn' => 'bg-brand-teal text-white hover:opacity-90'],
+                ['icon_bg' => 'bg-brand-blue',   'btn' => 'bg-brand-blue text-white hover:opacity-90'],
+                ['icon_bg' => 'bg-brand-purple', 'btn' => 'bg-brand-purple text-white hover:opacity-90'],
+                ['icon_bg' => 'bg-brand-green',  'btn' => 'bg-brand-green text-white hover:opacity-90'],
+            ];
+            $cardIconPaths = [
+                'M13 10V3L4 14h7v7l9-11h-7z',
+                'M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z',
+                'M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4',
+                'M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z',
+            ];
+        @endphp
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 lg:gap-12">
+            @forelse($plans as $plan)
+                @php
+                    $ci           = $loop->index % count($cardColors);
+                    $color        = $cardColors[$ci];
+                    $iconPath     = $cardIconPaths[$ci];
+                    $monthly      = $plan->monthly_price / 100;
+                    $quarterly    = $plan->quarterly_price / 100;
+                    $biannual     = $plan->biannual_price / 100;
+                    $yearly       = $plan->yearly_price / 100;
+                    $savingQ      = max(0, ($plan->monthly_price * 3  - $plan->quarterly_price) / 100);
+                    $savingB      = max(0, ($plan->monthly_price * 6  - $plan->biannual_price)  / 100);
+                    $savingY      = max(0, ($plan->monthly_price * 12 - $plan->yearly_price)    / 100);
+                @endphp
 
-            <!-- Starter Plan -->
-            <div class="pricing-card bg-white border-2 border-gray-200 rounded-2xl p-8 relative">
-                <div class="text-center">
-                    <div class="w-16 h-16 bg-brand-teal rounded-full flex items-center justify-center mx-auto mb-4">
-                        <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
-                        </svg>
-                    </div>
-                    <h3 class="text-2xl font-bold text-gray-900 mb-2">Starter</h3>
-                    <p class="text-gray-600 mb-6">Perfect for small businesses and startups</p>
-
-                    <div class="mb-8">
-                        <div class="cycle-monthly">
-                            <span class="text-4xl font-bold price-highlight">₦7,500</span>
-                            <span class="text-gray-600">/month</span>
+                <div class="pricing-card {{ $plan->is_popular ? 'popular bg-white border-2 border-brand-gold shadow-xl' : 'bg-white border-2 border-gray-200' }} rounded-2xl p-8 relative">
+                    @if($plan->is_popular)
+                        <div class="absolute -top-1 left-1/2 transform -translate-x-1/2">
+                            <span class="bg-brand-gold text-gray-900 px-6 py-2 rounded-full text-sm font-bold shadow-lg">Most Popular</span>
                         </div>
-                        <div class="cycle-quarterly hidden">
-                            <span class="text-4xl font-bold price-highlight">₦18,750</span>
-                            <span class="text-gray-600">/quarter</span>
-                            <div class="text-sm text-brand-green mt-1 font-semibold">Save ₦3,750 (½ month free)</div>
+                    @endif
+
+                    <div class="text-center">
+                        <div class="w-16 h-16 {{ $plan->is_popular ? 'bg-brand-gold' : $color['icon_bg'] }} rounded-full flex items-center justify-center mx-auto mb-4">
+                            <svg class="w-8 h-8 {{ $plan->is_popular ? 'text-gray-900' : 'text-white' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="{{ $iconPath }}"></path>
+                            </svg>
                         </div>
-                        <div class="cycle-biannual hidden">
-                            <span class="text-4xl font-bold price-highlight">₦37,500</span>
-                            <span class="text-gray-600">/6 months</span>
-                            <div class="text-sm text-brand-green mt-1 font-semibold">Save ₦7,500 (1 month free)</div>
+                        <h3 class="text-2xl font-bold text-gray-900 mb-2">{{ $plan->name }}</h3>
+                        <p class="text-gray-600 mb-6">{{ $plan->description ?: 'A great plan for your business' }}</p>
+
+                        <div class="mb-8">
+                            <div class="cycle-monthly">
+                                <span class="text-4xl font-bold price-highlight">₦{{ number_format($monthly) }}</span>
+                                <span class="text-gray-600">/month</span>
+                            </div>
+                            <div class="cycle-quarterly hidden">
+                                <span class="text-4xl font-bold price-highlight">₦{{ number_format($quarterly) }}</span>
+                                <span class="text-gray-600">/quarter</span>
+                                @if($savingQ > 0)
+                                    <div class="text-sm text-brand-green mt-1 font-semibold">Save ₦{{ number_format($savingQ) }}</div>
+                                @endif
+                            </div>
+                            <div class="cycle-biannual hidden">
+                                <span class="text-4xl font-bold price-highlight">₦{{ number_format($biannual) }}</span>
+                                <span class="text-gray-600">/6 months</span>
+                                @if($savingB > 0)
+                                    <div class="text-sm text-brand-green mt-1 font-semibold">Save ₦{{ number_format($savingB) }}</div>
+                                @endif
+                            </div>
+                            <div class="cycle-yearly hidden">
+                                <span class="text-4xl font-bold price-highlight">₦{{ number_format($yearly) }}</span>
+                                <span class="text-gray-600">/year</span>
+                                @if($savingY > 0)
+                                    <div class="text-sm text-brand-green mt-1 font-semibold">Save ₦{{ number_format($savingY) }}</div>
+                                @endif
+                            </div>
                         </div>
-                        <div class="cycle-yearly hidden">
-                            <span class="text-4xl font-bold price-highlight">₦75,000</span>
-                            <span class="text-gray-600">/year</span>
-                            <div class="text-sm text-brand-green mt-1 font-semibold">Save ₦15,000 (2 months free)</div>
-                        </div>
+
+                        <a href="{{ route('register') }}"
+                           class="w-full {{ $plan->is_popular ? 'bg-brand-gold text-gray-900 hover:bg-yellow-400' : $color['btn'] }} py-3 px-6 rounded-lg font-semibold transition-all mb-8 block text-center">
+                            Start Free Trial
+                        </a>
                     </div>
 
-                    <a href="{{ route('register') }}" class="w-full bg-brand-teal text-white py-3 px-6 rounded-lg hover:opacity-90 font-semibold transition-all mb-8 block text-center">
-                        Start Free Trial
-                    </a>
-                </div>
-
-                <div class="space-y-4">
-                    <div class="flex items-center">
-                        <svg class="w-5 h-5 feature-check mr-3" fill="currentColor" viewBox="0 0 20 20">
-                            <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
-                        </svg>
-                        <span class="text-gray-700">Up to 5 users</span>
-                    </div>
-                    <div class="flex items-center">
-                        <svg class="w-5 h-5 feature-check mr-3" fill="currentColor" viewBox="0 0 20 20">
-                            <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
-                        </svg>
-                        <span class="text-gray-700">Basic accounting + AI assistance</span>
-                    </div>
-                    <div class="flex items-center">
-                        <svg class="w-5 h-5 feature-check mr-3" fill="currentColor" viewBox="0 0 20 20">
-                            <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
-                        </svg>
-                        <span class="text-gray-700">Inventory management</span>
-                    </div>
-                    <div class="flex items-center">
-                        <svg class="w-5 h-5 feature-check mr-3" fill="currentColor" viewBox="0 0 20 20">
-                            <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
-                        </svg>
-                        <span class="text-gray-700">Basic CRM</span>
-                    </div>
-                    <div class="flex items-center">
-                        <svg class="w-5 h-5 feature-check mr-3" fill="currentColor" viewBox="0 0 20 20">
-                            <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
-                        </svg>
-                        <span class="text-gray-700">Standard reports</span>
-                    </div>
-                    <div class="flex items-center">
-                        <svg class="w-5 h-5 feature-check mr-3" fill="currentColor" viewBox="0 0 20 20">
-                            <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
-                        </svg>
-                        <span class="text-gray-700">Email support</span>
-                    </div>
-                    <div class="flex items-center">
-                        <svg class="w-5 h-5 feature-check mr-3" fill="currentColor" viewBox="0 0 20 20">
-                            <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
-                        </svg>
-                        <span class="text-gray-700">Mobile app access</span>
-                    </div>
-                    <div class="flex items-center">
-                        <svg class="w-5 h-5 feature-check mr-3" fill="currentColor" viewBox="0 0 20 20">
-                            <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
-                        </svg>
-                        <span class="text-gray-700">Basic AI Q&A assistant</span>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Professional Plan -->
-            <div class="pricing-card popular bg-white border-2 border-brand-gold rounded-2xl p-8 relative shadow-xl ">
-                <div class="absolute -top-1 left-1/2 transform -translate-x-1/2">
-                    <span class="bg-brand-gold text-gray-900 px-6 py-2 rounded-full text-sm font-bold shadow-lg">Most Popular</span>
-                </div>
-
-                <div class="text-center">
-                    <div class="w-16 h-16 bg-brand-gold rounded-full flex items-center justify-center mx-auto mb-4">
-                        <svg class="w-8 h-8 text-gray-900" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z"></path>
-                        </svg>
-                    </div>
-                    <h3 class="text-2xl font-bold text-gray-900 mb-2">Professional</h3>
-                    <p class="text-gray-600 mb-6">Ideal for growing businesses</p>
-
-                    <div class="mb-8">
-                        <div class="cycle-monthly">
-                            <span class="text-4xl font-bold price-highlight">₦10,000</span>
-                            <span class="text-gray-600">/month</span>
+                    <div class="space-y-4">
+                        {{-- Users bullet --}}
+                        <div class="flex items-center">
+                            <svg class="w-5 h-5 feature-check mr-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
+                            </svg>
+                            <span class="text-gray-700">{{ $plan->max_users >= 9999 ? 'Unlimited users' : 'Up to ' . $plan->max_users . ' users' }}</span>
                         </div>
-                        <div class="cycle-quarterly hidden">
-                            <span class="text-4xl font-bold price-highlight">₦25,000</span>
-                            <span class="text-gray-600">/quarter</span>
-                            <div class="text-sm text-brand-green mt-1 font-semibold">Save ₦5,000 (½ month free)</div>
-                        </div>
-                        <div class="cycle-biannual hidden">
-                            <span class="text-4xl font-bold price-highlight">₦50,000</span>
-                            <span class="text-gray-600">/6 months</span>
-                            <div class="text-sm text-brand-green mt-1 font-semibold">Save ₦10,000 (1 month free)</div>
-                        </div>
-                        <div class="cycle-yearly hidden">
-                            <span class="text-4xl font-bold price-highlight">₦100,000</span>
-                            <span class="text-gray-600">/year</span>
-                            <div class="text-sm text-brand-green mt-1 font-semibold">Save ₦20,000 (2 months free)</div>
-                        </div>
-                    </div>
-
-                    <a href="{{ route('register') }}" class="w-full bg-brand-gold text-gray-900 py-3 px-6 rounded-lg hover:bg-yellow-400 font-semibold transition-all mb-8 block text-center">
-                        Start Free Trial
-                    </a>
-                </div>
-
-                <div class="space-y-4">
-                    <div class="flex items-center">
-                        <svg class="w-5 h-5 feature-check mr-3" fill="currentColor" viewBox="0 0 20 20">
-                            <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
-                        </svg>
-                        <span class="text-gray-700">Up to 15 users</span>
-                    </div>
-                    <div class="flex items-center">
-                        <svg class="w-5 h-5 feature-check mr-3" fill="currentColor" viewBox="0 0 20 20">
-                            <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
-                        </svg>
-                        <span class="text-gray-700">Advanced accounting + Full AI suite</span>
-                    </div>
-                    <div class="flex items-center">
-                        <svg class="w-5 h-5 feature-check mr-3" fill="currentColor" viewBox="0 0 20 20">
-                            <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
-                        </svg>
-                        <span class="text-gray-700">Full inventory management</span>
-                    </div>
-                    <div class="flex items-center">
-                        <svg class="w-5 h-5 feature-check mr-3" fill="currentColor" viewBox="0 0 20 20">
-                            <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
-                        </svg>
-                        <span class="text-gray-700">Advanced CRM & sales pipeline</span>
-                    </div>
-                    <div class="flex items-center">
-                        <svg class="w-5 h-5 feature-check mr-3" fill="currentColor" viewBox="0 0 20 20">
-                            <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
-                        </svg>
-                        <span class="text-gray-700">POS system</span>
-                    </div>
-                    <div class="flex items-center">
-                        <svg class="w-5 h-5 feature-check mr-3" fill="currentColor" viewBox="0 0 20 20">
-                            <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
-                        </svg>
-                        <span class="text-gray-700">Basic payroll management</span>
-                    </div>
-                    <div class="flex items-center">
-                        <svg class="w-5 h-5 feature-check mr-3" fill="currentColor" viewBox="0 0 20 20">
-                            <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
-                        </svg>
-                        <span class="text-gray-700">Bank reconciliation & multi-currency</span>
-                    </div>
-                    <div class="flex items-center">
-                        <svg class="w-5 h-5 feature-check mr-3" fill="currentColor" viewBox="0 0 20 20">
-                            <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
-                        </svg>
-                        <span class="text-gray-700">VAT, WHT & tax compliance</span>
-                    </div>
-                    <div class="flex items-center">
-                        <svg class="w-5 h-5 feature-check mr-3" fill="currentColor" viewBox="0 0 20 20">
-                            <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
-                        </svg>
-                        <span class="text-gray-700">Audit log & change history</span>
-                    </div>
-                    <div class="flex items-center">
-                        <svg class="w-5 h-5 feature-check mr-3" fill="currentColor" viewBox="0 0 20 20">
-                            <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
-                        </svg>
-                        <span class="text-gray-700">Advanced reports & analytics</span>
-                    </div>
-                    <div class="flex items-center">
-                        <svg class="w-5 h-5 feature-check mr-3" fill="currentColor" viewBox="0 0 20 20">
-                            <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
-                        </svg>
-                        <span class="text-gray-700">Priority support</span>
-                    </div>
-                    <div class="flex items-center">
-                        <svg class="w-5 h-5 feature-check mr-3" fill="currentColor" viewBox="0 0 20 20">
-                            <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
-                        </svg>
-                        <span class="text-gray-700">API access</span>
-                    </div>
-                    <div class="flex items-center">
-                        <svg class="w-5 h-5 feature-check mr-3" fill="currentColor" viewBox="0 0 20 20">
-                            <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
-                        </svg>
-                        <span class="text-gray-700">Full AI assistant suite</span>
-                    </div>
-                    <div class="flex items-center">
-                        <svg class="w-5 h-5 feature-check mr-3" fill="currentColor" viewBox="0 0 20 20">
-                            <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
-                        </svg>
-                        <span class="text-gray-700">Smart automation & templates</span>
+                        {{-- Feature bullets from DB --}}
+                        @if(!empty($plan->features) && is_array($plan->features))
+                            @foreach($plan->features as $feature)
+                                <div class="flex items-center">
+                                    <svg class="w-5 h-5 feature-check mr-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
+                                    </svg>
+                                    <span class="text-gray-700">{{ $feature }}</span>
+                                </div>
+                            @endforeach
+                        @endif
                     </div>
                 </div>
-            </div>
-
-            <!-- Enterprise Plan -->
-            <div class="pricing-card bg-white border-2 border-gray-200 rounded-2xl p-8 relative">
-                <div class="text-center">
-                    <div class="w-16 h-16 bg-brand-blue rounded-full flex items-center justify-center mx-auto mb-4">
-                        <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path>
-                        </svg>
-                    </div>
-                    <h3 class="text-2xl font-bold text-gray-900 mb-2">Enterprise</h3>
-                    <p class="text-gray-600 mb-6">For large businesses and corporations</p>
-
-                    <div class="mb-8">
-                        <div class="cycle-monthly">
-                            <span class="text-4xl font-bold price-highlight">₦15,000</span>
-                            <span class="text-gray-600">/month</span>
-                        </div>
-                        <div class="cycle-quarterly hidden">
-                            <span class="text-4xl font-bold price-highlight">₦37,500</span>
-                            <span class="text-gray-600">/quarter</span>
-                            <div class="text-sm text-brand-green mt-1 font-semibold">Save ₦7,500 (½ month free)</div>
-                        </div>
-                        <div class="cycle-biannual hidden">
-                            <span class="text-4xl font-bold price-highlight">₦75,000</span>
-                            <span class="text-gray-600">/6 months</span>
-                            <div class="text-sm text-brand-green mt-1 font-semibold">Save ₦15,000 (1 month free)</div>
-                        </div>
-                        <div class="cycle-yearly hidden">
-                            <span class="text-4xl font-bold price-highlight">₦150,000</span>
-                            <span class="text-gray-600">/year</span>
-                            <div class="text-sm text-brand-green mt-1 font-semibold">Save ₦30,000 (2 months free)</div>
-                        </div>
-                    </div>
-
-                    <a href="{{ route('register') }}" class="w-full bg-brand-blue text-white py-3 px-6 rounded-lg hover:opacity-90 font-semibold transition-all mb-8 block text-center">
-                        Start Free Trial
-                    </a>
+            @empty
+                <div class="col-span-3 text-center py-20">
+                    <p class="text-gray-500 text-lg">No subscription plans are currently available.</p>
+                    <p class="text-gray-400 mt-2">Please check back soon or contact us for pricing.</p>
                 </div>
-
-                <div class="space-y-4">
-                    <div class="flex items-center">
-                        <svg class="w-5 h-5 feature-check mr-3" fill="currentColor" viewBox="0 0 20 20">
-                            <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
-                        </svg>
-                        <span class="text-gray-700">Unlimited users</span>
-                    </div>
-                    <div class="flex items-center">
-                        <svg class="w-5 h-5 feature-check mr-3" fill="currentColor" viewBox="0 0 20 20">
-                            <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
-                        </svg>
-                        <span class="text-gray-700">Full accounting + Advanced AI features</span>
-                    </div>
-                    <div class="flex items-center">
-                        <svg class="w-5 h-5 feature-check mr-3" fill="currentColor" viewBox="0 0 20 20">
-                            <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
-                        </svg>
-                        <span class="text-gray-700">Multi-location inventory</span>
-                    </div>
-                    <div class="flex items-center">
-                        <svg class="w-5 h-5 feature-check mr-3" fill="currentColor" viewBox="0 0 20 20">
-                            <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
-                        </svg>
-                        <span class="text-gray-700">Enterprise CRM & automation</span>
-                    </div>
-                    <div class="flex items-center">
-                        <svg class="w-5 h-5 feature-check mr-3" fill="currentColor" viewBox="0 0 20 20">
-                            <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
-                        </svg>
-                        <span class="text-gray-700">Multi-location POS</span>
-                    </div>
-                    <div class="flex items-center">
-                        <svg class="w-5 h-5 feature-check mr-3" fill="currentColor" viewBox="0 0 20 20">
-                            <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
-                        </svg>
-                        <span class="text-gray-700 font-semibold">E-Commerce Store (Online storefront & payments)</span>
-                    </div>
-                    <div class="flex items-center">
-                        <svg class="w-5 h-5 feature-check mr-3" fill="currentColor" viewBox="0 0 20 20">
-                            <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
-                        </svg>
-                        <span class="text-gray-700">Order management & fulfillment</span>
-                    </div>
-                    <div class="flex items-center">
-                        <svg class="w-5 h-5 feature-check mr-3" fill="currentColor" viewBox="0 0 20 20">
-                            <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
-                        </svg>
-                        <span class="text-gray-700">Full payroll & HR management</span>
-                    </div>
-                    <div class="flex items-center">
-                        <svg class="w-5 h-5 feature-check mr-3" fill="currentColor" viewBox="0 0 20 20">
-                            <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
-                        </svg>
-                        <span class="text-gray-700">Custom reports & dashboards</span>
-                    </div>
-                    <div class="flex items-center">
-                        <svg class="w-5 h-5 feature-check mr-3" fill="currentColor" viewBox="0 0 20 20">
-                            <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
-                        </svg>
-                        <span class="text-gray-700">24/7 dedicated support</span>
-                    </div>
-                    <div class="flex items-center">
-                        <svg class="w-5 h-5 feature-check mr-3" fill="currentColor" viewBox="0 0 20 20">
-                            <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
-                        </svg>
-                        <span class="text-gray-700">Advanced API & integrations</span>
-                    </div>
-                    <div class="flex items-center">
-                        <svg class="w-5 h-5 feature-check mr-3" fill="currentColor" viewBox="0 0 20 20">
-                            <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
-                        </svg>
-                        <span class="text-gray-700">Custom training & onboarding</span>
-                    </div>
-                    <div class="flex items-center">
-                        <svg class="w-5 h-5 feature-check mr-3" fill="currentColor" viewBox="0 0 20 20">
-                            <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
-                        </svg>
-                        <span class="text-gray-700">Enterprise AI & predictive analytics</span>
-                    </div>
-                    <div class="flex items-center">
-                        <svg class="w-5 h-5 feature-check mr-3" fill="currentColor" viewBox="0 0 20 20">
-                            <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
-                        </svg>
-                        <span class="text-gray-700">Custom AI workflows & automation</span>
-                    </div>
-                </div>
-            </div>
-
+            @endforelse
         </div>
     </div>
 </section>
@@ -764,227 +522,106 @@
         </div>
 
         <div class="overflow-x-auto">
+            @php
+                $checkSvg = '<svg class="w-5 h-5 feature-check mx-auto" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path></svg>';
+                $crossSvg = '<svg class="w-5 h-5 feature-cross mx-auto" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"></path></svg>';
+            @endphp
             <table class="w-full border-collapse bg-white rounded-xl shadow-lg overflow-hidden">
                 <thead>
                     <tr class="bg-gray-50">
                         <th class="text-left p-6 font-semibold text-gray-900">Features</th>
-                        <th class="text-center p-6 font-semibold text-gray-900">Starter</th>
-                        <th class="text-center p-6 font-semibold text-gray-900 bg-brand-gold bg-opacity-10">Professional</th>
-                        <th class="text-center p-6 font-semibold text-gray-900">Enterprise</th>
+                        @foreach($plans as $plan)
+                        <th class="text-center p-6 font-semibold text-gray-900 {{ $plan->is_popular ? 'bg-brand-gold bg-opacity-10' : '' }}">
+                            {{ $plan->name }}
+                            @if($plan->is_popular)
+                                <div class="text-xs font-normal mt-0.5" style="color:var(--color-gold)">Most Popular</div>
+                            @endif
+                        </th>
+                        @endforeach
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-gray-200">
                     <tr>
                         <td class="p-6 font-medium text-gray-900">Number of Users</td>
-                        <td class="p-6 text-center text-gray-600">Up to 5</td>
-                        <td class="p-6 text-center text-gray-600 bg-brand-gold bg-opacity-5">Up to 15</td>
-                        <td class="p-6 text-center text-gray-600">Unlimited</td>
+                        @foreach($plans as $plan)
+                        <td class="p-6 text-center text-gray-600 {{ $plan->is_popular ? 'bg-brand-gold bg-opacity-5' : '' }}">
+                            {{ $plan->max_users >= 9999 ? 'Unlimited' : 'Up to ' . $plan->max_users }}
+                        </td>
+                        @endforeach
                     </tr>
                     <tr>
                         <td class="p-6 font-medium text-gray-900">Accounting Features</td>
-                        <td class="p-6 text-center">
-                            <svg class="w-5 h-5 feature-check mx-auto" fill="currentColor" viewBox="0 0 20 20">
-                                <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
-                            </svg>
-                        </td>
-                        <td class="p-6 text-center bg-brand-gold bg-opacity-5">
-                            <svg class="w-5 h-5 feature-check mx-auto" fill="currentColor" viewBox="0 0 20 20">
-                                <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
-                            </svg>
-                        </td>
-                        <td class="p-6 text-center">
-                            <svg class="w-5 h-5 feature-check mx-auto" fill="currentColor" viewBox="0 0 20 20">
-                                <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
-                            </svg>
-                        </td>
+                        @foreach($plans as $plan)
+                        <td class="p-6 text-center {{ $plan->is_popular ? 'bg-brand-gold bg-opacity-5' : '' }}">{!! $checkSvg !!}</td>
+                        @endforeach
                     </tr>
                     <tr>
                         <td class="p-6 font-medium text-gray-900">Inventory Management</td>
-                        <td class="p-6 text-center">
-                            <svg class="w-5 h-5 feature-check mx-auto" fill="currentColor" viewBox="0 0 20 20">
-                                <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
-                            </svg>
-                        </td>
-                        <td class="p-6 text-center bg-brand-gold bg-opacity-5">
-                            <svg class="w-5 h-5 feature-check mx-auto" fill="currentColor" viewBox="0 0 20 20">
-                                <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
-                            </svg>
-                        </td>
-                        <td class="p-6 text-center">
-                            <svg class="w-5 h-5 feature-check mx-auto" fill="currentColor" viewBox="0 0 20 20">
-                                <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
-                            </svg>
-                        </td>
+                        @foreach($plans as $plan)
+                        <td class="p-6 text-center {{ $plan->is_popular ? 'bg-brand-gold bg-opacity-5' : '' }}">{!! $checkSvg !!}</td>
+                        @endforeach
                     </tr>
                     <tr>
                         <td class="p-6 font-medium text-gray-900">CRM & Sales Pipeline</td>
-                        <td class="p-6 text-center">
-                            <span class="text-gray-400 text-sm">Basic</span>
-                        </td>
-                        <td class="p-6 text-center bg-brand-gold bg-opacity-5">
-                            <svg class="w-5 h-5 feature-check mx-auto" fill="currentColor" viewBox="0 0 20 20">
-                                <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
-                            </svg>
-                        </td>
-                        <td class="p-6 text-center">
-                            <svg class="w-5 h-5 feature-check mx-auto" fill="currentColor" viewBox="0 0 20 20">
-                                <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
-                            </svg>
-                        </td>
+                        @foreach($plans as $plan)
+                        <td class="p-6 text-center {{ $plan->is_popular ? 'bg-brand-gold bg-opacity-5' : '' }}">{!! $checkSvg !!}</td>
+                        @endforeach
                     </tr>
                     <tr>
                         <td class="p-6 font-medium text-gray-900">POS System</td>
-                        <td class="p-6 text-center">
-                            <svg class="w-5 h-5 feature-cross mx-auto" fill="currentColor" viewBox="0 0 20 20">
-                                <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"></path>
-                            </svg>
-                        </td>
-                        <td class="p-6 text-center bg-brand-gold bg-opacity-5">
-                            <svg class="w-5 h-5 feature-check mx-auto" fill="currentColor" viewBox="0 0 20 20">
-                                <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
-                            </svg>
-                        </td>
-                        <td class="p-6 text-center">
-                            <svg class="w-5 h-5 feature-check mx-auto" fill="currentColor" viewBox="0 0 20 20">
-                                <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
-                            </svg>
-                        </td>
+                        @foreach($plans as $plan)
+                        <td class="p-6 text-center {{ $plan->is_popular ? 'bg-brand-gold bg-opacity-5' : '' }}">{!! $plan->has_pos ? $checkSvg : $crossSvg !!}</td>
+                        @endforeach
                     </tr>
                     <tr>
                         <td class="p-6 font-medium text-gray-900">Payroll Management</td>
-                        <td class="p-6 text-center">
-                            <svg class="w-5 h-5 feature-cross mx-auto" fill="currentColor" viewBox="0 0 20 20">
-                                <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"></path>
-                            </svg>
-                        </td>
-                        <td class="p-6 text-center bg-brand-gold bg-opacity-5">
-                            <span class="text-gray-600 text-sm">Basic</span>
-                        </td>
-                        <td class="p-6 text-center">
-                            <svg class="w-5 h-5 feature-check mx-auto" fill="currentColor" viewBox="0 0 20 20">
-                                <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
-                            </svg>
-                        </td>
+                        @foreach($plans as $plan)
+                        <td class="p-6 text-center {{ $plan->is_popular ? 'bg-brand-gold bg-opacity-5' : '' }}">{!! $plan->has_payroll ? $checkSvg : $crossSvg !!}</td>
+                        @endforeach
                     </tr>
                     <tr>
                         <td class="p-6 font-medium text-gray-900">API Access</td>
-                        <td class="p-6 text-center">
-                            <svg class="w-5 h-5 feature-cross mx-auto" fill="currentColor" viewBox="0 0 20 20">
-                                <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"></path>
-                            </svg>
-                        </td>
-                        <td class="p-6 text-center bg-brand-gold bg-opacity-5">
-                            <svg class="w-5 h-5 feature-check mx-auto" fill="currentColor" viewBox="0 0 20 20">
-                                <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
-                            </svg>
-                        </td>
-                        <td class="p-6 text-center">
-                            <svg class="w-5 h-5 feature-check mx-auto" fill="currentColor" viewBox="0 0 20 20">
-                                <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
-                            </svg>
-                        </td>
+                        @foreach($plans as $plan)
+                        <td class="p-6 text-center {{ $plan->is_popular ? 'bg-brand-gold bg-opacity-5' : '' }}">{!! $plan->has_api_access ? $checkSvg : $crossSvg !!}</td>
+                        @endforeach
                     </tr>
                     <tr>
                         <td class="p-6 font-medium text-gray-900">E-Commerce Store</td>
-                        <td class="p-6 text-center">
-                            <svg class="w-5 h-5 feature-cross mx-auto" fill="currentColor" viewBox="0 0 20 20">
-                                <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"></path>
-                            </svg>
-                        </td>
-                        <td class="p-6 text-center bg-brand-gold bg-opacity-5">
-                            <svg class="w-5 h-5 feature-cross mx-auto" fill="currentColor" viewBox="0 0 20 20">
-                                <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"></path>
-                            </svg>
-                        </td>
-                        <td class="p-6 text-center">
-                            <svg class="w-5 h-5 feature-check mx-auto" fill="currentColor" viewBox="0 0 20 20">
-                                <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
-                            </svg>
-                        </td>
+                        @foreach($plans as $plan)
+                        <td class="p-6 text-center {{ $plan->is_popular ? 'bg-brand-gold bg-opacity-5' : '' }}">{!! $plan->has_ecommerce ? $checkSvg : $crossSvg !!}</td>
+                        @endforeach
                     </tr>
                     <tr>
                         <td class="p-6 font-medium text-gray-900">Multi-Location Support</td>
-                        <td class="p-6 text-center">
-                            <svg class="w-5 h-5 feature-cross mx-auto" fill="currentColor" viewBox="0 0 20 20">
-                                <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"></path>
-                            </svg>
-                        </td>
-                        <td class="p-6 text-center bg-brand-gold bg-opacity-5">
-                            <svg class="w-5 h-5 feature-cross mx-auto" fill="currentColor" viewBox="0 0 20 20">
-                                <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"></path>
-                            </svg>
-                        </td>
-                        <td class="p-6 text-center">
-                            <svg class="w-5 h-5 feature-check mx-auto" fill="currentColor" viewBox="0 0 20 20">
-                                <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
-                            </svg>
-                        </td>
+                        @foreach($plans as $plan)
+                        <td class="p-6 text-center {{ $plan->is_popular ? 'bg-brand-gold bg-opacity-5' : '' }}">{!! $plan->has_multi_location ? $checkSvg : $crossSvg !!}</td>
+                        @endforeach
                     </tr>
                     <tr>
                         <td class="p-6 font-medium text-gray-900">Multi-Currency</td>
-                        <td class="p-6 text-center">
-                            <svg class="w-5 h-5 feature-cross mx-auto" fill="currentColor" viewBox="0 0 20 20">
-                                <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"></path>
-                            </svg>
-                        </td>
-                        <td class="p-6 text-center bg-brand-gold bg-opacity-5">
-                            <svg class="w-5 h-5 feature-check mx-auto" fill="currentColor" viewBox="0 0 20 20">
-                                <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
-                            </svg>
-                        </td>
-                        <td class="p-6 text-center">
-                            <svg class="w-5 h-5 feature-check mx-auto" fill="currentColor" viewBox="0 0 20 20">
-                                <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
-                            </svg>
-                        </td>
+                        @foreach($plans as $plan)
+                        <td class="p-6 text-center {{ $plan->is_popular ? 'bg-brand-gold bg-opacity-5' : '' }}">{!! $plan->has_multi_currency ? $checkSvg : $crossSvg !!}</td>
+                        @endforeach
                     </tr>
                     <tr>
                         <td class="p-6 font-medium text-gray-900">Audit Log</td>
-                        <td class="p-6 text-center">
-                            <svg class="w-5 h-5 feature-cross mx-auto" fill="currentColor" viewBox="0 0 20 20">
-                                <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"></path>
-                            </svg>
-                        </td>
-                        <td class="p-6 text-center bg-brand-gold bg-opacity-5">
-                            <svg class="w-5 h-5 feature-check mx-auto" fill="currentColor" viewBox="0 0 20 20">
-                                <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
-                            </svg>
-                        </td>
-                        <td class="p-6 text-center">
-                            <svg class="w-5 h-5 feature-check mx-auto" fill="currentColor" viewBox="0 0 20 20">
-                                <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
-                            </svg>
-                        </td>
+                        @foreach($plans as $plan)
+                        <td class="p-6 text-center {{ $plan->is_popular ? 'bg-brand-gold bg-opacity-5' : '' }}">{!! $plan->has_audit_log ? $checkSvg : $crossSvg !!}</td>
+                        @endforeach
                     </tr>
                     <tr>
-                        <td class="p-6 font-medium text-gray-900">Tax & Statutory Compliance</td>
-                        <td class="p-6 text-center">
-                            <svg class="w-5 h-5 feature-cross mx-auto" fill="currentColor" viewBox="0 0 20 20">
-                                <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"></path>
-                            </svg>
-                        </td>
-                        <td class="p-6 text-center bg-brand-gold bg-opacity-5">
-                            <svg class="w-5 h-5 feature-check mx-auto" fill="currentColor" viewBox="0 0 20 20">
-                                <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
-                            </svg>
-                        </td>
-                        <td class="p-6 text-center">
-                            <svg class="w-5 h-5 feature-check mx-auto" fill="currentColor" viewBox="0 0 20 20">
-                                <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
-                            </svg>
-                        </td>
-                    </tr>
-                    <tr>
-                        <td class="p-6 font-medium text-gray-900">AI Assistant Features</td>
-                        <td class="p-6 text-center text-gray-600">Basic Q&A</td>
-                        <td class="p-6 text-center text-gray-600 bg-brand-gold bg-opacity-5">Full AI Suite</td>
-                        <td class="p-6 text-center text-gray-600">Enterprise AI + Custom</td>
+                        <td class="p-6 font-medium text-gray-900">Advanced Reports</td>
+                        @foreach($plans as $plan)
+                        <td class="p-6 text-center {{ $plan->is_popular ? 'bg-brand-gold bg-opacity-5' : '' }}">{!! $plan->has_advanced_reports ? $checkSvg : $crossSvg !!}</td>
+                        @endforeach
                     </tr>
                     <tr>
                         <td class="p-6 font-medium text-gray-900">Support Level</td>
-                        <td class="p-6 text-center text-gray-600">Email</td>
-                        <td class="p-6 text-center text-gray-600 bg-brand-gold bg-opacity-5">Priority</td>
-                        <td class="p-6 text-center text-gray-600">24/7 Dedicated</td>
+                        @foreach($plans as $plan)
+                        <td class="p-6 text-center text-gray-600 {{ $plan->is_popular ? 'bg-brand-gold bg-opacity-5' : '' }}">
+                            {{ ucfirst($plan->support_level) }}
+                        </td>
+                        @endforeach
                     </tr>
                 </tbody>
             </table>

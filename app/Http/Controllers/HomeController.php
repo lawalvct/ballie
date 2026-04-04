@@ -28,7 +28,12 @@ class HomeController extends Controller
 
     public function pricing()
     {
-        return view('pricing');
+        $plans = \App\Models\Plan::where('is_active', true)
+            ->orderBy('sort_order')
+            ->orderBy('monthly_price')
+            ->get();
+
+        return view('pricing', compact('plans'));
     }
 
     public function about()
