@@ -64,6 +64,7 @@ class SubscriptionController extends Controller
     {
         $tenant = tenant(); // Use the tenant() helper instead of the route parameter
         $currentPlan = $tenant->plan;
+        $paymentGateways = $this->getPaymentGatewayOptions();
 
         // Check if upgrade is valid
         if ($currentPlan && $currentPlan->id === $plan->id) {
@@ -74,7 +75,8 @@ class SubscriptionController extends Controller
         return view('tenant.subscription.upgrade', compact(
             'tenant',
             'plan',
-            'currentPlan'
+            'currentPlan',
+            'paymentGateways'
         ));
     }
 
@@ -84,6 +86,10 @@ class SubscriptionController extends Controller
     public function processUpgrade(Request $request, $tenant, Plan $plan)
     {
         $allowedGateways = $this->getAllowedPaymentGateways();
+
+        if (empty($allowedGateways)) {
+            return back()->with('error', 'No payment gateway is currently active. Please contact the administrator.');
+        }
 
         $request->validate([
             'billing_cycle' => 'required|in:monthly,quarterly,biannual,yearly',
@@ -784,6 +790,7 @@ class SubscriptionController extends Controller
     {
         $tenant = tenant();
         $currentPlan = $tenant->plan;
+        $paymentGateways = $this->getPaymentGatewayOptions();
 
         if (!$currentPlan) {
             return redirect()->route('tenant.subscription.plans', tenant()->slug)
@@ -792,7 +799,8 @@ class SubscriptionController extends Controller
 
         return view('tenant.subscription.renew', compact(
             'tenant',
-            'currentPlan'
+            'currentPlan',
+            'paymentGateways'
         ));
     }
 
@@ -802,6 +810,10 @@ class SubscriptionController extends Controller
     public function processRenewal(Request $request)
     {
         $allowedGateways = $this->getAllowedPaymentGateways();
+
+        if (empty($allowedGateways)) {
+            return back()->with('error', 'No payment gateway is currently active. Please contact the administrator.');
+        }
 
         $request->validate([
             'billing_cycle' => 'required|in:monthly,quarterly,biannual,yearly',
@@ -1027,15 +1039,33 @@ class SubscriptionController extends Controller
 
     protected function getAllowedPaymentGateways(): array
     {
+        return array_keys($this->getPaymentGatewayOptions());
+    }
+
+    protected function getPaymentGatewayOptions(): array
+    {
         $gateways = [];
-        if (SystemSetting::getValue('paystack_enabled', true)) {
-            $gateways[] = 'paystack';
-        }
+
         if (SystemSetting::getValue('nomba_enabled', false)) {
-            $gateways[] = 'nomba';
+            $gateways['nomba'] = [
+                'value' => 'nomba',
+                'name' => 'Nomba',
+                'title' => 'Pay with Nomba',
+                'description' => 'Pay securely with card, bank transfer, or USSD via Nomba',
+                'badge_class' => 'bg-green-100 text-green-700',
+            ];
         }
 
-        // Fallback: if all gateways disabled, still allow paystack to avoid breaking
-        return !empty($gateways) ? $gateways : ['paystack'];
+        if (SystemSetting::getValue('paystack_enabled', true)) {
+            $gateways['paystack'] = [
+                'value' => 'paystack',
+                'name' => 'Paystack',
+                'title' => 'Pay with Paystack',
+                'description' => 'Pay securely with card, bank transfer, or USSD via Paystack',
+                'badge_class' => 'bg-blue-100 text-blue-700',
+            ];
+        }
+
+        return $gateways;
     }
 }

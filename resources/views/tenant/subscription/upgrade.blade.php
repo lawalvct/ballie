@@ -4,6 +4,11 @@
 
 @section('content')
 <div class="space-y-6">
+    @php
+        $selectedPaymentMethod = old('payment_method', array_key_first($paymentGateways ?? []));
+        $gatewayNames = collect($paymentGateways ?? [])->pluck('name')->implode(' & ');
+    @endphp
+
     <!-- Header -->
     <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
         <div class="flex items-center justify-between">
@@ -145,49 +150,47 @@
             <!-- Payment Method Selection -->
             <div class="mb-6">
                 <h4 class="text-sm font-medium text-gray-900 mb-3">Choose Payment Method</h4>
-                <div class="space-y-3">
-                    <label class="flex items-start gap-3 p-4 border border-gray-200 rounded-lg cursor-pointer hover:border-blue-500 transition">
-                        <input type="radio"
-                               name="payment_method"
-                               value="nomba"
-                               class="mt-1"
-                               checked
-                               required>
-                        <div class="flex-1">
-                            <div class="font-semibold text-gray-800 flex items-center gap-2">
-                                Pay with Nomba
-                                <span class="px-2 py-0.5 bg-green-100 text-green-700 text-xs rounded-full">Secure</span>
-                            </div>
-                            <div class="text-gray-600 text-sm mt-1">Pay securely with card, bank transfer, or USSD via Nomba</div>
-                        </div>
-                    </label>
+                @if(!empty($paymentGateways))
+                    <div class="space-y-3">
+                        @foreach($paymentGateways as $gateway)
+                            <label class="flex items-start gap-3 p-4 border border-gray-200 rounded-lg cursor-pointer hover:border-blue-500 transition">
+                                <input type="radio"
+                                       name="payment_method"
+                                       value="{{ $gateway['value'] }}"
+                                       class="mt-1"
+                                       {{ $selectedPaymentMethod === $gateway['value'] ? 'checked' : '' }}
+                                       required>
+                                <div class="flex-1">
+                                    <div class="font-semibold text-gray-800 flex items-center gap-2">
+                                        {{ $gateway['title'] }}
+                                        <span class="px-2 py-0.5 {{ $gateway['badge_class'] }} text-xs rounded-full">Secure</span>
+                                    </div>
+                                    <div class="text-gray-600 text-sm mt-1">{{ $gateway['description'] }}</div>
+                                </div>
+                            </label>
+                        @endforeach
+                    </div>
+                @else
+                    <div class="bg-amber-50 border border-amber-200 rounded-lg p-4 text-sm text-amber-800">
+                        No payment gateway is currently active. Please contact the administrator.
+                    </div>
+                @endif
 
-                    <label class="flex items-start gap-3 p-4 border border-gray-200 rounded-lg cursor-pointer hover:border-blue-500 transition">
-                        <input type="radio"
-                               name="payment_method"
-                               value="paystack"
-                               class="mt-1"
-                               required>
-                        <div class="flex-1">
-                            <div class="font-semibold text-gray-800 flex items-center gap-2">
-                                Pay with Paystack
-                                <span class="px-2 py-0.5 bg-blue-100 text-blue-700 text-xs rounded-full">Secure</span>
-                            </div>
-                            <div class="text-gray-600 text-sm mt-1">Pay securely with card, bank transfer, or USSD via Paystack</div>
-                        </div>
-                    </label>
-                </div>
+                @error('payment_method')
+                    <div class="text-red-600 text-sm mt-2">{{ $message }}</div>
+                @enderror
             </div>
 
             <div class="text-center">
                 <button type="submit"
-                        class="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-semibold py-3 px-8 rounded-lg transition-all duration-200 transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
-                        id="upgradeBtn">
+                        class="font-semibold py-3 px-8 rounded-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 {{ empty($paymentGateways) ? 'bg-gray-400 text-white cursor-not-allowed' : 'bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white transform hover:scale-105' }}"
+                        id="upgradeBtn"
+                        {{ empty($paymentGateways) ? 'disabled' : '' }}>
                     <span class="flex items-center gap-2">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/>
                         </svg>
-                        <span id="upgradeText">Upgrade to {{ $plan->name }} - Monthly</span>
+                        <span id="upgradeText">{{ empty($paymentGateways) ? 'No Gateway Available' : 'Upgrade to ' . $plan->name . ' - Monthly' }}</span>
                     </span>
                 </button>
             </div>
@@ -225,7 +228,7 @@
 
             <div>
                 <h4 class="font-medium text-gray-900 mb-2">Is my payment secure?</h4>
-                <p class="text-gray-600 text-sm">Yes, all payments are processed securely through our trusted payment partners (Nomba & Paystack). We never store your payment information.</p>
+                <p class="text-gray-600 text-sm">{{ $gatewayNames ? 'Yes, all payments are processed securely through our trusted payment partner' . (count($paymentGateways) > 1 ? 's' : '') . ' (' . $gatewayNames . '). We never store your payment information.' : 'No online payment gateway is currently available for this upgrade. Please contact the administrator.' }}</p>
             </div>
         </div>
     </div>
@@ -233,6 +236,7 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
+    const paymentGatewaysAvailable = @json(!empty($paymentGateways));
     const cycleButtons = {
         monthly: document.getElementById('monthlyBtn'),
         quarterly: document.getElementById('quarterlyBtn'),
@@ -265,7 +269,9 @@ document.addEventListener('DOMContentLoaded', function() {
         });
 
         billingCycleInput.value = cycle;
-        upgradeText.textContent = 'Upgrade to {{ $plan->name }} - ' + cycleLabels[cycle];
+        if (paymentGatewaysAvailable) {
+            upgradeText.textContent = 'Upgrade to {{ $plan->name }} - ' + cycleLabels[cycle];
+        }
     }
 
     Object.entries(cycleButtons).forEach(([cycle, btn]) => {
@@ -276,7 +282,12 @@ document.addEventListener('DOMContentLoaded', function() {
     showCycle('monthly');
 
     // Handle form submission
-    document.getElementById('upgradeForm').addEventListener('submit', function() {
+    document.getElementById('upgradeForm').addEventListener('submit', function(event) {
+        if (!paymentGatewaysAvailable) {
+            event.preventDefault();
+            return;
+        }
+
         const btn = document.getElementById('upgradeBtn');
         btn.innerHTML = `
             <span class="flex items-center gap-2">

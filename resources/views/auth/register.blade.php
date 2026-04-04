@@ -253,7 +253,7 @@
                     </div>
 
                     <input type="hidden" name="business_structure" id="business_structure">
-                    <input type="hidden" name="business_type_id" id="business_type_id" required>
+                    <input type="hidden" name="business_type_id" id="business_type_id">
 
                     <div class="text-center">
                         <button type="button" id="next-step-1" class="px-8 py-3 rounded-lg font-semibold text-white transition-all duration-300" style="background-color: var(--color-gold);" disabled>
@@ -299,28 +299,30 @@
 
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
                         <div>
-                            <label for="business_name" class="block text-sm font-medium text-gray-700 mb-2">Business Name</label>
-                            <input type="text" id="business_name" name="business_name" required
+                            <label for="business_name" class="block text-sm font-medium text-gray-700 mb-2">Business Name <span class="text-red-500">*</span></label>
+                            <input type="text" id="business_name" name="business_name"
                                    class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                                    placeholder="Your Business Name">
                             @error('business_name')
                                 <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                             @enderror
+                            <p class="mt-1 text-sm text-red-600 hidden" id="business_name_error"></p>
                         </div>
 
                         <div>
-                            <label for="name" class="block text-sm font-medium text-gray-700 mb-2">Your Full Name</label>
-                            <input type="text" id="name" name="name" required
+                            <label for="name" class="block text-sm font-medium text-gray-700 mb-2">Your Full Name <span class="text-red-500">*</span></label>
+                            <input type="text" id="name" name="name"
                                    class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                                    placeholder="John Doe">
                             @error('name')
                                 <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                             @enderror
+                            <p class="mt-1 text-sm text-red-600 hidden" id="name_error"></p>
                         </div>
 
                         <div class="relative">
-                            <label for="email" class="block text-sm font-medium text-gray-700 mb-2">Email Address</label>
-                            <input type="email" id="email" name="email" required autocomplete="off"
+                            <label for="email" class="block text-sm font-medium text-gray-700 mb-2">Email Address <span class="text-red-500">*</span></label>
+                            <input type="email" id="email" name="email" autocomplete="off"
                                    class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                                    placeholder="lawal@ballie.co">
 
@@ -332,6 +334,7 @@
                             @error('email')
                                 <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                             @enderror
+                            <p class="mt-1 text-sm text-red-600 hidden" id="email_error"></p>
                         </div>
 
                         <div>
@@ -345,20 +348,22 @@
                         </div>
 
                         <div>
-                            <label for="password" class="block text-sm font-medium text-gray-700 mb-2">Password</label>
-                            <input type="password" id="password" name="password" required
+                            <label for="password" class="block text-sm font-medium text-gray-700 mb-2">Password <span class="text-red-500">*</span></label>
+                            <input type="password" id="password" name="password"
                                    class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                                    placeholder="••••••••">
                             @error('password')
                                 <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                             @enderror
+                            <p class="mt-1 text-sm text-red-600 hidden" id="password_error"></p>
                         </div>
 
                         <div>
-                            <label for="password_confirmation" class="block text-sm font-medium text-gray-700 mb-2">Confirm Password</label>
-                            <input type="password" id="password_confirmation" name="password_confirmation" required
+                            <label for="password_confirmation" class="block text-sm font-medium text-gray-700 mb-2">Confirm Password <span class="text-red-500">*</span></label>
+                            <input type="password" id="password_confirmation" name="password_confirmation"
                                    class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                                    placeholder="••••••••">
+                            <p class="mt-1 text-sm text-red-600 hidden" id="password_confirmation_error"></p>
                         </div>
                     </div>
 
@@ -723,9 +728,88 @@ document.addEventListener('DOMContentLoaded', function() {
         currentStep = step;
     }
 
+    // Validation function for Step 2
+    function validateStep2() {
+        let isValid = true;
+        
+        // Clear previous errors
+        ['business_name', 'name', 'email', 'password', 'password_confirmation'].forEach(field => {
+            const errorEl = document.getElementById(`${field}_error`);
+            if (errorEl) errorEl.classList.add('hidden');
+            document.getElementById(field).classList.remove('border-red-500');
+        });
+
+        // Validate business name
+        const businessName = document.getElementById('business_name').value.trim();
+        if (!businessName) {
+            document.getElementById('business_name_error').textContent = 'Business name is required';
+            document.getElementById('business_name_error').classList.remove('hidden');
+            document.getElementById('business_name').classList.add('border-red-500');
+            isValid = false;
+        }
+
+        // Validate name
+        const name = document.getElementById('name').value.trim();
+        if (!name) {
+            document.getElementById('name_error').textContent = 'Your full name is required';
+            document.getElementById('name_error').classList.remove('hidden');
+            document.getElementById('name').classList.add('border-red-500');
+            isValid = false;
+        }
+
+        // Validate email
+        const email = document.getElementById('email').value.trim();
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!email) {
+            document.getElementById('email_error').textContent = 'Email address is required';
+            document.getElementById('email_error').classList.remove('hidden');
+            document.getElementById('email').classList.add('border-red-500');
+            isValid = false;
+        } else if (!emailRegex.test(email)) {
+            document.getElementById('email_error').textContent = 'Please enter a valid email address';
+            document.getElementById('email_error').classList.remove('hidden');
+            document.getElementById('email').classList.add('border-red-500');
+            isValid = false;
+        }
+
+        // Validate password
+        const password = document.getElementById('password').value;
+        if (!password) {
+            document.getElementById('password_error').textContent = 'Password is required';
+            document.getElementById('password_error').classList.remove('hidden');
+            document.getElementById('password').classList.add('border-red-500');
+            isValid = false;
+        } else if (password.length < 8) {
+            document.getElementById('password_error').textContent = 'Password must be at least 8 characters';
+            document.getElementById('password_error').classList.remove('hidden');
+            document.getElementById('password').classList.add('border-red-500');
+            isValid = false;
+        }
+
+        // Validate password confirmation
+        const passwordConfirmation = document.getElementById('password_confirmation').value;
+        if (!passwordConfirmation) {
+            document.getElementById('password_confirmation_error').textContent = 'Please confirm your password';
+            document.getElementById('password_confirmation_error').classList.remove('hidden');
+            document.getElementById('password_confirmation').classList.add('border-red-500');
+            isValid = false;
+        } else if (password !== passwordConfirmation) {
+            document.getElementById('password_confirmation_error').textContent = 'Passwords do not match';
+            document.getElementById('password_confirmation_error').classList.remove('hidden');
+            document.getElementById('password_confirmation').classList.add('border-red-500');
+            isValid = false;
+        }
+
+        return isValid;
+    }
+
     // Next/Back button handlers
     document.getElementById('next-step-1').addEventListener('click', () => showStep(2));
-    document.getElementById('next-step-2').addEventListener('click', () => showStep(3));
+    document.getElementById('next-step-2').addEventListener('click', () => {
+        if (validateStep2()) {
+            showStep(3);
+        }
+    });
     document.getElementById('back-step-2').addEventListener('click', () => showStep(1));
     document.getElementById('back-step-3').addEventListener('click', () => showStep(2));
 
