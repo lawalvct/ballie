@@ -11,6 +11,7 @@ use App\Models\Plan;
 use App\Models\Affiliate;
 use App\Models\AffiliateReferral;
 use App\Models\SuperAdmin;
+use App\Models\SystemSetting;
 use App\Services\ModuleRegistry;
 use App\Notifications\NewUserRegisteredNotification;
 use App\Notifications\WelcomeNotification;
@@ -31,6 +32,10 @@ class RegisteredUserController extends Controller
      */
     public function create(): View
     {
+        if (!SystemSetting::getValue('registration_enabled', true)) {
+            abort(403, 'Registration is currently disabled.');
+        }
+
         $plans = Plan::where('is_active', true)
                     ->orderBy('sort_order')
                     ->orderBy('monthly_price')
@@ -48,6 +53,10 @@ class RegisteredUserController extends Controller
      */
     public function store(Request $request): RedirectResponse
     {
+        if (!SystemSetting::getValue('registration_enabled', true)) {
+            abort(403, 'Registration is currently disabled.');
+        }
+
         Log::info('Registration attempt started', ['email' => $request->email]);
 
         $request->validate([
@@ -85,7 +94,7 @@ class RegisteredUserController extends Controller
                     'business_structure' => $request->business_structure,
                     'business_type_id' => $request->business_type_id,
                     'plan_id' => $selectedPlan->id,
-                    'trial_ends_at' => now()->addDays(30), // 30-day trial
+                    'trial_ends_at' => now()->addDays(SystemSetting::getValue('default_trial_days', 14)),
                     'is_active' => true,
                     'onboarding_completed' => false,
                 ];

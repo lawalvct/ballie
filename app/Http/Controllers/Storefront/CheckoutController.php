@@ -16,6 +16,7 @@ use App\Models\Product;
 use App\Models\LedgerAccount;
 use App\Helpers\PaymentHelper;
 use App\Helpers\PaystackPaymentHelper;
+use App\Models\SystemSetting;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -287,9 +288,15 @@ class CheckoutController extends Controller
                 return redirect()->route('storefront.order.success', ['tenant' => $tenant->slug, 'order' => $order->id])
                     ->with('success', 'Order placed successfully! You will pay on delivery.');
             } elseif ($validated['payment_method'] === 'nomba') {
+                if (!SystemSetting::getValue('nomba_enabled', false)) {
+                    return back()->with('error', 'Nomba payment gateway is currently unavailable.');
+                }
                 // Process Nomba payment
                 return $this->processNombaPayment($order, $tenant, $customerEmail);
             } elseif ($validated['payment_method'] === 'paystack') {
+                if (!SystemSetting::getValue('paystack_enabled', true)) {
+                    return back()->with('error', 'Paystack payment gateway is currently unavailable.');
+                }
                 // Process Paystack payment
                 return $this->processPaystackPayment($order, $tenant, $customerEmail);
             } else {

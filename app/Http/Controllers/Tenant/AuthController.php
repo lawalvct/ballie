@@ -7,7 +7,9 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Password;
+use Illuminate\Support\Facades\RateLimiter;
 use App\Models\User;
+use App\Models\SystemSetting;
 use Illuminate\Auth\Events\Registered;
 use App\Notifications\WelcomeNotification;
 
@@ -31,14 +33,28 @@ class AuthController extends Controller
             'password' => 'required',
         ]);
 
+        $throttleKey = 'tenant-login:' . strtolower($request->input('email')) . '|' . $request->ip();
+        $maxAttempts = SystemSetting::getValue('max_login_attempts', 5);
+
+        if (RateLimiter::tooManyAttempts($throttleKey, $maxAttempts)) {
+            $seconds = RateLimiter::availableIn($throttleKey);
+            return back()->withErrors([
+                'email' => "Too many login attempts. Please try again in {$seconds} seconds.",
+            ])->onlyInput('email');
+        }
+
         $credentials = $request->only('email', 'password');
         $remember = $request->boolean('remember');
 
         if (Auth::attempt($credentials, $remember)) {
+            RateLimiter::clear($throttleKey);
             $request->session()->regenerate();
 
             return redirect()->intended(route('tenant.dashboard'));
         }
+
+        $lockoutSeconds = SystemSetting::getValue('lockout_duration_minutes', 15) * 60;
+        RateLimiter::hit($throttleKey, $lockoutSeconds);
 
         return back()->withErrors([
             'email' => 'The provided credentials do not match our records.',

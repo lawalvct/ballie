@@ -6,6 +6,7 @@ use App\Models\Affiliate;
 use App\Models\AffiliateReferral;
 use App\Models\AffiliateCommission;
 use App\Models\AffiliatePayout;
+use App\Models\SystemSetting;
 use App\Models\Tenant;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -27,6 +28,10 @@ class AffiliateController extends Controller
      */
     public function register()
     {
+        if (!SystemSetting::getValue('affiliate_registration_enabled', true)) {
+            abort(403, 'Affiliate registration is currently disabled.');
+        }
+
         // Check if user is already an affiliate
         if (Auth::check()) {
             $existingAffiliate = Affiliate::where('user_id', Auth::id())->first();
@@ -44,6 +49,10 @@ class AffiliateController extends Controller
      */
     public function store(Request $request)
     {
+        if (!SystemSetting::getValue('affiliate_registration_enabled', true)) {
+            abort(403, 'Affiliate registration is currently disabled.');
+        }
+
         $validated = $request->validate([
             'first_name' => 'required|string|max:255',
             'last_name' => 'required|string|max:255',

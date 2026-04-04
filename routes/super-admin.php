@@ -3,6 +3,7 @@
 use App\Http\Controllers\SuperAdmin\AuthController;
 use App\Http\Controllers\SuperAdmin\DashboardController;
 use App\Http\Controllers\SuperAdmin\PlanController;
+use App\Http\Controllers\SuperAdmin\SystemSettingController;
 use App\Http\Controllers\SuperAdmin\TenantController;
 use Illuminate\Support\Facades\Route;
 
@@ -151,11 +152,10 @@ Route::prefix('super-admin')->name('super-admin.')->group(function () {
             Route::put('/settings', [\App\Http\Controllers\SuperAdmin\SupportController::class, 'updateSettings'])->name('settings.update');
         });
 
-        // System Management (Future implementation)
+        // System Management
         Route::prefix('system')->name('system.')->group(function () {
-            Route::get('/settings', function () {
-                return view('super-admin.system.settings');
-            })->name('settings');
+            Route::get('/settings', [SystemSettingController::class, 'index'])->name('settings');
+            Route::put('/settings', [SystemSettingController::class, 'update'])->name('settings.update');
             Route::get('/logs', function () {
                 return view('super-admin.system.logs');
             })->name('logs');

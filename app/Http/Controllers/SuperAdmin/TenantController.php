@@ -5,6 +5,7 @@ namespace App\Http\Controllers\SuperAdmin;
 use App\Http\Controllers\Controller;
 use App\Models\Tenant;
 use App\Models\User;
+use App\Models\SystemSetting;
 use App\Helpers\TenantHelper;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
@@ -88,7 +89,7 @@ class TenantController extends Controller
                 'plan_id' => $selectedPlan->id,
                 'billing_cycle' => $validated['billing_cycle'],
                 'subscription_status' => 'trial',
-                'trial_ends_at' => now()->addDays(30),
+                'trial_ends_at' => now()->addDays(SystemSetting::getValue('default_trial_days', 14)),
                 'created_by' => Auth::guard('super_admin')->id(),
                 'is_active' => true,
             ]);

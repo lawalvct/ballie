@@ -11,6 +11,7 @@ use App\Models\AffiliateReferral;
 use App\Models\AffiliateCommission;
 use App\Helpers\PaymentHelper;
 use App\Helpers\PaystackPaymentHelper;
+use App\Models\SystemSetting;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -82,9 +83,11 @@ class SubscriptionController extends Controller
      */
     public function processUpgrade(Request $request, $tenant, Plan $plan)
     {
+        $allowedGateways = $this->getAllowedPaymentGateways();
+
         $request->validate([
             'billing_cycle' => 'required|in:monthly,quarterly,biannual,yearly',
-            'payment_method' => 'required|in:nomba,paystack',
+            'payment_method' => 'required|in:' . implode(',', $allowedGateways),
         ]);
 
         $tenant = tenant(); // Use the tenant() helper instead of the route parameter
@@ -798,9 +801,11 @@ class SubscriptionController extends Controller
      */
     public function processRenewal(Request $request)
     {
+        $allowedGateways = $this->getAllowedPaymentGateways();
+
         $request->validate([
             'billing_cycle' => 'required|in:monthly,quarterly,biannual,yearly',
-            'payment_method' => 'required|in:nomba,paystack',
+            'payment_method' => 'required|in:' . implode(',', $allowedGateways),
         ]);
 
         $tenant = tenant();
@@ -1018,5 +1023,19 @@ class SubscriptionController extends Controller
                 'trace' => $e->getTraceAsString()
             ]);
         }
+    }
+
+    protected function getAllowedPaymentGateways(): array
+    {
+        $gateways = [];
+        if (SystemSetting::getValue('paystack_enabled', true)) {
+            $gateways[] = 'paystack';
+        }
+        if (SystemSetting::getValue('nomba_enabled', false)) {
+            $gateways[] = 'nomba';
+        }
+
+        // Fallback: if all gateways disabled, still allow paystack to avoid breaking
+        return !empty($gateways) ? $gateways : ['paystack'];
     }
 }
