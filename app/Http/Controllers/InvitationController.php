@@ -10,6 +10,7 @@ use Illuminate\Support\Str;
 use App\Models\Tenant;
 use App\Models\User;
 use App\Models\Plan;
+use App\Models\SystemSetting;
 use Carbon\Carbon;
 
 class InvitationController extends Controller
@@ -79,7 +80,7 @@ class InvitationController extends Controller
                 'plan_id' => $invitation->plan_id,
                 'billing_cycle' => $invitation->billing_cycle,
                 'subscription_status' => 'trial',
-                'trial_ends_at' => now()->addDays(30), // 30-day trial
+                'trial_ends_at' => now()->addDays(SystemSetting::getValue('default_trial_days', 14)),
                 'is_active' => true,
             ]);
 

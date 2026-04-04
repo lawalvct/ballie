@@ -252,12 +252,15 @@ class Tenant extends Model
      */
     public function startTrial(Plan $plan): void
     {
+        $trialDays = SystemSetting::getValue('default_trial_days', 14);
+        $trialEndsAt = now()->addDays($trialDays);
+
         $this->update([
             'plan_id' => $plan->id,
             'subscription_status' => self::STATUS_TRIAL,
-            'trial_ends_at' => now()->addDays(30),
+            'trial_ends_at' => $trialEndsAt,
             'subscription_starts_at' => now(),
-            'subscription_ends_at' => now()->addDays(30),
+            'subscription_ends_at' => $trialEndsAt,
         ]);
     }
 

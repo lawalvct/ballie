@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Resources\UserResource;
 use App\Models\User;
 use App\Models\Tenant;
+use App\Models\SystemSetting;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -237,7 +238,7 @@ class GlobalAuthController extends BaseApiController
                     'business_structure' => $request->business_structure,
                     'business_type_id' => $request->business_type_id,
                     'plan_id' => $selectedPlan->id,
-                    'trial_ends_at' => now()->addDays(30), // 30-day trial
+                    'trial_ends_at' => now()->addDays(SystemSetting::getValue('default_trial_days', 14)),
                     'is_active' => true,
                     'onboarding_completed' => false,
                 ]);
