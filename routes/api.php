@@ -78,5 +78,9 @@ Route::prefix('ai')->middleware(['web', 'auth'])->group(function () {
         Route::post('/parse-invoice', [AccountingAssistantController::class, 'parseInvoiceFromNaturalLanguage'])
              ->name('api.ai.invoice.parse');
 
+        // AI-powered ledger account creation from natural language
+        Route::post('/parse-account', [AccountingAssistantController::class, 'parseAccountFromNaturalLanguage'])
+             ->name('api.ai.account.parse');
+
     });
 });

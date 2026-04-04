@@ -1705,4 +1705,233 @@ Use Naira (₦) amounts. Respond ONLY with valid JSON, no additional text.
         return $result;
     }
 
+    /**
+     * Parse natural language description into a ledger account.
+     */
+    public function parseAccountFromNaturalLanguage(Request $request)
+    {
+        try {
+            $description = $request->input('description', '');
+            $tenantId = $request->input('tenant_id');
+
+            if (empty($description)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Please describe the account you want to create.'
+                ], 400);
+            }
+
+            $tenant = \App\Models\Tenant::find($tenantId);
+            if (!$tenant) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Tenant not found.'
+                ], 404);
+            }
+
+            // Fetch account groups for matching
+            $accountGroups = \App\Models\AccountGroup::where('tenant_id', $tenantId)
+                ->where('is_active', true)
+                ->get()
+                ->map(fn($g) => [
+                    'id' => $g->id,
+                    'name' => $g->name,
+                    'nature' => $g->nature,
+                ]);
+
+            // Build AI prompt
+            $prompt = $this->buildAccountParsingPrompt($description, $accountGroups->toArray());
+
+            try {
+                $response = $this->callAI($prompt);
+                $parsed = $this->parseAccountResponse($response, $accountGroups);
+            } catch (\Exception $e) {
+                Log::warning('AI unavailable for account parsing, using heuristic: ' . $e->getMessage());
+                $parsed = $this->buildHeuristicAccountFromDescription($description, $accountGroups);
+            }
+
+            // Generate next code for the determined type
+            $prefixMap = [
+                'asset' => '1', 'liability' => '2', 'equity' => '3',
+                'income' => '4', 'expense' => '5',
+            ];
+            $prefix = $prefixMap[$parsed['account_type']] ?? '1';
+
+            $maxCode = \App\Models\LedgerAccount::where('tenant_id', $tenantId)
+                ->where('code', 'LIKE', $prefix . '%')
+                ->where('code', 'REGEXP', '^' . $prefix . '[0-9]+$')
+                ->orderByRaw('CAST(code AS UNSIGNED) DESC')
+                ->value('code');
+
+            $nextCode = $maxCode ? (string)((int)$maxCode + 1) : $prefix . '001';
+            while (\App\Models\LedgerAccount::where('tenant_id', $tenantId)->where('code', $nextCode)->exists()) {
+                $nextCode = (string)((int)$nextCode + 1);
+            }
+
+            $parsed['code'] = $nextCode;
+
+            return response()->json([
+                'success' => true,
+                'parsed_account' => $parsed,
+            ]);
+        } catch (\Exception $e) {
+            Log::error('AI Account parsing error: ' . $e->getMessage());
+
+            return response()->json([
+                'success' => false,
+                'message' => 'AI assistant temporarily unavailable. Please fill the form manually.',
+            ], 500);
+        }
+    }
+
+    private function buildAccountParsingPrompt(string $description, array $accountGroups): string
+    {
+        $groupsList = collect($accountGroups)->map(fn($g) => "ID:{$g['id']} Name:\"{$g['name']}\" Nature:{$g['nature']}")->implode("\n");
+
+        return <<<PROMPT
+You are an expert accounting assistant. Parse the following natural language description into a ledger account.
+
+User's description: "{$description}"
+
+Available account groups:
+{$groupsList}
+
+Respond ONLY with valid JSON (no markdown, no explanation):
+{
+  "name": "Account Name",
+  "account_type": "asset|liability|equity|income|expense",
+  "balance_type": "dr|cr",
+  "account_group_id": <matching group id or null>,
+  "description": "Brief description of what this account is for",
+  "opening_balance": 0,
+  "interpretation": "One sentence explaining what you understood"
+}
+
+Rules:
+- account_type must be one of: asset, liability, equity, income, expense
+- balance_type: dr for asset/expense, cr for liability/equity/income
+- Match account_group_id to the most relevant group from the list based on nature alignment
+- Nature mapping: assets→asset, liabilities→liability, equity→equity, income→income, expenses→expense
+- name should be a proper accounting name (e.g. "Office Rent Expense" not just "rent")
+- If user mentions an opening balance amount, include it
+PROMPT;
+    }
+
+    private function parseAccountResponse(string $response, $accountGroups): array
+    {
+        // Try to extract JSON from response
+        $json = $response;
+        if (preg_match('/\{[\s\S]*\}/', $response, $matches)) {
+            $json = $matches[0];
+        }
+
+        $data = json_decode($json, true);
+        if (json_last_error() !== JSON_ERROR_NONE) {
+            throw new \Exception('Could not parse AI response as JSON');
+        }
+
+        $accountType = $data['account_type'] ?? 'expense';
+        $validTypes = ['asset', 'liability', 'equity', 'income', 'expense'];
+        if (!in_array($accountType, $validTypes)) {
+            $accountType = 'expense';
+        }
+
+        // Validate account_group_id exists
+        $groupId = $data['account_group_id'] ?? null;
+        if ($groupId && !$accountGroups->contains('id', $groupId)) {
+            $groupId = null;
+        }
+
+        // Auto-match group if not matched
+        if (!$groupId) {
+            $natureMap = ['asset' => 'assets', 'liability' => 'liabilities', 'equity' => 'equity', 'income' => 'income', 'expense' => 'expenses'];
+            $matchNature = $natureMap[$accountType] ?? 'expenses';
+            $matched = $accountGroups->firstWhere('nature', $matchNature);
+            $groupId = $matched['id'] ?? null;
+        }
+
+        return [
+            'name' => $data['name'] ?? 'New Account',
+            'account_type' => $accountType,
+            'balance_type' => $data['balance_type'] ?? (in_array($accountType, ['asset', 'expense']) ? 'dr' : 'cr'),
+            'account_group_id' => $groupId,
+            'description' => $data['description'] ?? '',
+            'opening_balance' => (float)($data['opening_balance'] ?? 0),
+            'interpretation' => $data['interpretation'] ?? 'Parsed from your description.',
+        ];
+    }
+
+    private function buildHeuristicAccountFromDescription(string $description, $accountGroups): array
+    {
+        $lower = strtolower($description);
+
+        // Determine account type from keywords
+        $accountType = 'expense'; // default
+        $balanceType = 'dr';
+
+        $assetKeywords = ['cash', 'bank', 'inventory', 'equipment', 'vehicle', 'furniture', 'land', 'building', 'computer', 'machinery', 'receivable', 'prepaid', 'deposit'];
+        $liabilityKeywords = ['payable', 'loan', 'mortgage', 'accrued', 'unearned', 'tax payable', 'vat payable', 'credit card', 'overdraft'];
+        $equityKeywords = ['capital', 'equity', 'retained', 'drawings', 'owner', 'shareholder', 'dividend'];
+        $incomeKeywords = ['sales', 'revenue', 'income', 'interest income', 'commission income', 'rental income', 'service income', 'fee income', 'gain'];
+        $expenseKeywords = ['expense', 'cost', 'salary', 'wages', 'rent', 'utilities', 'office', 'travel', 'insurance', 'depreciation', 'maintenance', 'advertising', 'marketing', 'fuel', 'telephone', 'internet', 'subscription', 'repair', 'supplies', 'stationery', 'entertainment', 'training', 'professional fee', 'legal', 'audit', 'tax', 'delivery', 'transport', 'cleaning', 'security', 'medical', 'food', 'meal', 'refreshment'];
+
+        foreach ($assetKeywords as $kw) {
+            if (str_contains($lower, $kw)) { $accountType = 'asset'; $balanceType = 'dr'; break; }
+        }
+        if ($accountType === 'expense') {
+            foreach ($liabilityKeywords as $kw) {
+                if (str_contains($lower, $kw)) { $accountType = 'liability'; $balanceType = 'cr'; break; }
+            }
+        }
+        if ($accountType === 'expense') {
+            foreach ($equityKeywords as $kw) {
+                if (str_contains($lower, $kw)) { $accountType = 'equity'; $balanceType = 'cr'; break; }
+            }
+        }
+        if ($accountType === 'expense') {
+            foreach ($incomeKeywords as $kw) {
+                if (str_contains($lower, $kw)) { $accountType = 'income'; $balanceType = 'cr'; break; }
+            }
+        }
+        // Default remains expense with dr
+
+        // Generate a nice name
+        $name = ucwords(trim($description));
+        // Ensure it ends with a category suffix if not present
+        $typeLabels = ['asset' => 'Asset', 'liability' => 'Liability', 'equity' => 'Equity', 'income' => 'Income', 'expense' => 'Expense'];
+        $suffix = $typeLabels[$accountType];
+        if (!str_contains($lower, strtolower($suffix)) && strlen($name) < 60) {
+            // Only add suffix if not already present-ish
+            $hasSuffix = false;
+            foreach ($typeLabels as $lbl) {
+                if (str_contains(strtolower($name), strtolower($lbl))) { $hasSuffix = true; break; }
+            }
+            if (!$hasSuffix && !str_contains($lower, 'account')) {
+                $name .= ' ' . $suffix;
+            }
+        }
+
+        // Match account group
+        $natureMap = ['asset' => 'assets', 'liability' => 'liabilities', 'equity' => 'equity', 'income' => 'income', 'expense' => 'expenses'];
+        $matchNature = $natureMap[$accountType] ?? 'expenses';
+        $matched = $accountGroups->firstWhere('nature', $matchNature);
+        $groupId = $matched['id'] ?? null;
+
+        // Extract opening balance if mentioned
+        $openingBalance = 0;
+        if (preg_match('/(?:opening\s*balance|balance\s*of|starting\s*with|with)\s*(?:₦|N|NGN)?\s*([\d,]+(?:\.\d{1,2})?)/i', $description, $m)) {
+            $openingBalance = (float) str_replace(',', '', $m[1]);
+        }
+
+        return [
+            'name' => $name,
+            'account_type' => $accountType,
+            'balance_type' => $balanceType,
+            'account_group_id' => $groupId,
+            'description' => 'Account for tracking ' . strtolower($name),
+            'opening_balance' => $openingBalance,
+            'interpretation' => "Detected as {$suffix} account based on keywords in your description.",
+        ];
+    }
+
 }

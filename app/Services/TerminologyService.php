@@ -184,7 +184,7 @@ class TerminologyService
             'equity_report'   => 'Statement of Changes in Equity',
         ],
         'hybrid' => [
-            'crm'             => 'Clients & Customers',
+            'crm'             => 'Clients & Vendors',
             'statutory'       => 'Tax',
             'sales'           => 'Revenue',
             'customers'       => 'Clients',

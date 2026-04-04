@@ -136,6 +136,46 @@ class LedgerAccountController extends Controller
     ));
 }
 
+    /**
+     * Get the next available account code for a given account type.
+     */
+    public function nextCode(Request $request, Tenant $tenant)
+    {
+        $accountType = $request->get('account_type', 'asset');
+
+        $prefixMap = [
+            'asset'     => '1',
+            'liability' => '2',
+            'equity'    => '3',
+            'income'    => '4',
+            'expense'   => '5',
+        ];
+
+        $prefix = $prefixMap[$accountType] ?? '1';
+
+        // Find the highest numeric code with this prefix
+        $maxCode = LedgerAccount::where('tenant_id', $tenant->id)
+            ->where('code', 'LIKE', $prefix . '%')
+            ->where('code', 'REGEXP', '^' . $prefix . '[0-9]+$')
+            ->orderByRaw('CAST(code AS UNSIGNED) DESC')
+            ->value('code');
+
+        if ($maxCode) {
+            $nextNumber = (int) $maxCode + 1;
+            $nextCode = (string) $nextNumber;
+        } else {
+            // Start with prefix + 001 (e.g., 1001, 2001)
+            $nextCode = $prefix . '001';
+        }
+
+        // Ensure uniqueness
+        while (LedgerAccount::where('tenant_id', $tenant->id)->where('code', $nextCode)->exists()) {
+            $nextCode = (string) ((int) $nextCode + 1);
+        }
+
+        return response()->json(['code' => $nextCode]);
+    }
+
     public function store(Request $request, Tenant $tenant)
     {
         try {
