@@ -987,7 +987,7 @@ Use clear, simple language suitable for a Nigerian business owner who may not be
                 'netProfit'
             ));
 
-            return $pdf->download('profit_loss_interpretation_' . $fromDate . '_to_' . $toDate . '.pdf');
+            return $pdf->download($tenant->slug . '_profit-loss-interpretation_' . $fromDate . '_to_' . $toDate . '.pdf');
 
         } catch (\Exception $e) {
             Log::error('PDF generation error: ' . $e->getMessage(), [
@@ -1224,7 +1224,7 @@ Use clear, simple language suitable for a Nigerian business owner who may not be
                 'totalEquity'
             ));
 
-            return $pdf->download('balance_sheet_interpretation_' . $asOfDate . '.pdf');
+            return $pdf->download($tenant->slug . '_balance-sheet-interpretation_' . $asOfDate . '.pdf');
 
         } catch (\Exception $e) {
             Log::error('Balance Sheet PDF generation error: ' . $e->getMessage(), [

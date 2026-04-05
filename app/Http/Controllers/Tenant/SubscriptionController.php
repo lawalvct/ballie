@@ -577,7 +577,7 @@ class SubscriptionController extends Controller
         ]);
 
         // Generate filename
-        $filename = 'Invoice-' . $payment->payment_reference . '.pdf';
+        $filename = $tenant->slug . '_subscription-invoice_' . $payment->payment_reference . '.pdf';
 
         // Return PDF for download
         return $pdf->download($filename);

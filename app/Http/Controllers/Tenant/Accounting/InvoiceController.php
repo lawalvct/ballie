@@ -20,6 +20,7 @@ use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Str;
 use Barryvdh\DomPDF\Facade\Pdf;
 use App\Exports\InvoicesExport;
 use Maatwebsite\Excel\Facades\Excel;
@@ -127,7 +128,7 @@ class InvoiceController extends Controller
 
         if ($format === 'pdf') {
             $pdf = Pdf::loadView('tenant.accounting.invoices.export-pdf', compact('tenant', 'invoices'));
-            $filename = 'invoices-' . now()->format('Y-m-d') . '.pdf';
+            $filename = $tenant->slug . '_invoices_' . now()->format('Y-m-d') . '.pdf';
 
             return $pdf->download($filename);
         }
@@ -1849,7 +1850,7 @@ class InvoiceController extends Controller
 
         $pdf = Pdf::loadView($view, compact('tenant', 'invoice', 'customer', 'invoiceBank', 'invoiceTerms'));
 
-        $filename = $prefix . '-invoice-' . ($invoice->voucherType->prefix ?? '') . $invoice->voucher_number . '.pdf';
+        $filename = $tenant->slug . '_' . Str::slug($invoice->voucherType->name ?? 'sales-invoice') . '_' . $invoice->voucher_number . '.pdf';
         return $pdf->download($filename);
     }
 
@@ -1912,7 +1913,7 @@ class InvoiceController extends Controller
         $pdf = Pdf::loadView($view, compact('tenant', 'invoice', 'customer'));
         $pdf->setPaper('A4', 'portrait');
 
-        $filename = $prefix . '-delivery-note-' . ($invoice->voucherType->prefix ?? '') . $invoice->voucher_number . '.pdf';
+        $filename = $tenant->slug . '_delivery-note_' . $invoice->voucher_number . '.pdf';
         return $pdf->download($filename);
     }
 

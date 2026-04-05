@@ -16,6 +16,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Str;
 use Barryvdh\DomPDF\Facade\Pdf;
 
 class QuotationController extends Controller
@@ -694,7 +695,7 @@ class QuotationController extends Controller
         $pdf = Pdf::loadView('tenant.accounting.quotations.pdf', compact('tenant', 'quotation'))
             ->setPaper('a4', 'portrait');
 
-        return $pdf->download('quotation-' . $quotation->getQuotationNumber() . '.pdf');
+        return $pdf->download($tenant->slug . '_' . Str::slug($quotation->document_title ?? 'quotation') . '_' . $quotation->getQuotationNumber() . '.pdf');
     }
 
     public function email(Request $request, Tenant $tenant, Quotation $quotation)

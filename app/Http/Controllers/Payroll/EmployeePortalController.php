@@ -128,7 +128,7 @@ class EmployeePortalController extends Controller
         $pdf = app('dompdf.wrapper');
         $pdf->loadView('payroll.portal.payslip-pdf', compact('employee', 'payslip'));
 
-        $filename = "payslip_{$employee->employee_number}_{$payslip->payrollPeriod->name}.pdf";
+        $filename = $tenant . '_payslip_' . $employee->employee_number . '.pdf';
 
         return $pdf->download($filename);
     }
@@ -247,7 +247,7 @@ class EmployeePortalController extends Controller
             'taxData'
         ));
 
-        $filename = "tax_certificate_{$employee->employee_id}_{$year}.pdf";
+        $filename = $tenant . '_tax-certificate_' . $employee->employee_id . '_' . $year . '.pdf';
 
         return $pdf->download($filename);
     }

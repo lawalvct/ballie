@@ -82,7 +82,7 @@ class VoucherController extends Controller
 
         if ($format === 'pdf') {
             $pdf = Pdf::loadView('tenant.accounting.vouchers.export-pdf', compact('tenant', 'vouchers'));
-            $filename = 'vouchers-' . now()->format('Y-m-d') . '.pdf';
+            $filename = $tenant->slug . '_vouchers_' . now()->format('Y-m-d') . '.pdf';
 
             return $pdf->download($filename);
         }
@@ -742,7 +742,7 @@ class VoucherController extends Controller
 
         $pdf = Pdf::loadView($viewName, compact('tenant', 'voucher') + $receiptData + $contextData);
 
-        return $pdf->stream($voucher->voucherType->name . '_' . $voucher->voucher_number . '.pdf');
+        return $pdf->stream($tenant->slug . '_' . Str::slug($voucher->voucherType->name) . '_' . $voucher->voucher_number . '.pdf');
     }
 
     /**

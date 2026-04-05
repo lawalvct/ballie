@@ -57,7 +57,7 @@ public function profitLossPdf(Request $request, Tenant $tenant)
         'toDate'
     ))->setPaper('a4', 'portrait');
 
-    return $pdf->download('profit_loss_' . $fromDate . '_to_' . $toDate . '.pdf');
+    return $pdf->download($tenant->slug . '_profit-loss_' . $fromDate . '_to_' . $toDate . '.pdf');
 }
 
 public function profitLossExcel(Request $request, Tenant $tenant)

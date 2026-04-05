@@ -166,7 +166,7 @@ class ReportsController extends Controller
         $netProfit = $totalIncome - $totalExpenses;
 
         $pdf = Pdf::loadView('tenant.reports.profit-loss-pdf', compact('tenant', 'incomeData', 'expenseData', 'totalIncome', 'totalExpenses', 'netProfit', 'fromDate', 'toDate'));
-        return $pdf->download('profit_loss_' . $fromDate . '_to_' . $toDate . '.pdf');
+        return $pdf->download($tenant->slug . '_profit-loss_' . $fromDate . '_to_' . $toDate . '.pdf');
     }
 
     public function profitLossExcel(Request $request, Tenant $tenant)
@@ -395,7 +395,7 @@ class ReportsController extends Controller
         $pdf = \PDF::loadView('tenant.reports.trial-balance-pdf', $data);
 
         // Generate filename
-        $filename = 'trial_balance';
+        $filename = $data['tenant']->slug . '_trial-balance';
         if (isset($data['fromDate']) && isset($data['toDate'])) {
             $filename .= '_' . $data['fromDate'] . '_to_' . $data['toDate'];
         } else {
@@ -421,7 +421,7 @@ class ReportsController extends Controller
         if ($request->get('download') === 'pdf') {
             $pdf = Pdf::loadView('tenant.reports.cash-flow-pdf', $viewData)
                 ->setPaper('a4', 'portrait');
-            return $pdf->download('cash_flow_' . $fromDate . '_to_' . $toDate . '.pdf');
+            return $pdf->download($tenant->slug . '_cash-flow_' . $fromDate . '_to_' . $toDate . '.pdf');
         }
 
         return view('tenant.reports.cash-flow', $viewData);
@@ -707,7 +707,7 @@ class ReportsController extends Controller
         $asOfDate = $request->get('as_of_date', now()->toDateString());
         $data = $this->getBalanceSheetData($tenant, $asOfDate);
         $pdf = Pdf::loadView('tenant.reports.balance-sheet-pdf', $data);
-        return $pdf->download('balance_sheet_' . $asOfDate . '.pdf');
+        return $pdf->download($tenant->slug . '_balance-sheet_' . $asOfDate . '.pdf');
     }
 
     public function balanceSheetExcel(Request $request, Tenant $tenant)

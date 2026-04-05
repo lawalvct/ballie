@@ -153,7 +153,7 @@ class PurchaseOrderController extends Controller
         $pdf = Pdf::loadView('tenant.procurement.purchase-orders.pdf', compact('tenant', 'purchaseOrder'))
             ->setPaper('a4', 'portrait');
 
-        return $pdf->download($purchaseOrder->lpo_number . '.pdf');
+        return $pdf->download($tenant->slug . '_purchase-order_' . $purchaseOrder->lpo_number . '.pdf');
     }
 
     public function email(Request $request, Tenant $tenant, PurchaseOrder $purchaseOrder)

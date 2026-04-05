@@ -614,10 +614,7 @@ class OvertimeController extends Controller
         // Generate PDF
         $pdf = \PDF::loadView('tenant.overtime.payment-slip-pdf', compact('tenant', 'overtime'));
 
-        $fileName = 'overtime_payment_slip_' .
-                    $overtime->employee->employee_number . '_' .
-                    $overtime->overtime_number . '_' .
-                    \Carbon\Carbon::parse($overtime->overtime_date)->format('Y-m-d') . '.pdf';
+        $fileName = $tenant->slug . '_overtime-payment-slip_' . $overtime->overtime_number . '.pdf';
 
         return $pdf->download($fileName);
     }

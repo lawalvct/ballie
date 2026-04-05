@@ -16,6 +16,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Str;
 
 class InvoiceController extends Controller
 {
@@ -1152,7 +1153,7 @@ class InvoiceController extends Controller
 
             $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView($pdfView, compact('tenant', 'invoice', 'party', 'customer'));
 
-            $filename = $prefix . '-invoice-' . ($invoice->voucherType->prefix ?? '') . $invoice->voucher_number . '.pdf';
+            $filename = $tenant->slug . '_' . Str::slug($invoice->voucherType->name ?? 'sales-invoice') . '_' . $invoice->voucher_number . '.pdf';
 
             return $pdf->download($filename);
 

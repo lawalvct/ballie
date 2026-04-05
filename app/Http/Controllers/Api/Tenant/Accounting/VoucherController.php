@@ -14,6 +14,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\ValidationException;
+use Illuminate\Support\Str;
 use Laravel\Sanctum\PersonalAccessToken;
 
 /**
@@ -515,7 +516,7 @@ class VoucherController extends Controller
                 'voucher' => $voucher,
             ]);
 
-            $filename = 'voucher-' . $voucher->voucher_number . '.pdf';
+            $filename = $tenant->slug . '_' . Str::slug($voucher->voucherType->name ?? 'voucher') . '_' . $voucher->voucher_number . '.pdf';
 
             return $pdf->download($filename);
         } catch (\Exception $e) {
