@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Tenant;
 
 use App\Http\Controllers\Controller;
+use App\Models\Bank;
 use App\Models\Tenant;
 use App\Services\ModuleRegistry;
 use Illuminate\Http\Request;
@@ -24,6 +25,7 @@ class CompanySettingsController extends Controller
             'tenant' => $tenant,
             'allModules' => ModuleRegistry::getAllModulesWithMeta($tenant),
             'businessCategory' => $tenant->getBusinessCategory(),
+            'bankAccounts' => Bank::where('tenant_id', $tenant->id)->active()->get(),
         ]);
     }
 
@@ -131,6 +133,52 @@ class CompanySettingsController extends Controller
     }
 
     /**
+     * Upload company signature
+     */
+    public function updateSignature(Request $request, Tenant $tenant)
+    {
+        if (!$request->user()->isOwner()) {
+            abort(403, 'Only tenant owners can update company signature.');
+        }
+
+        $request->validate([
+            'signature' => ['required', 'image', 'mimes:jpeg,png,jpg,gif', 'max:2048'],
+        ]);
+
+        // Delete old signature if exists
+        if ($tenant->signature && Storage::disk('public')->exists($tenant->signature)) {
+            Storage::disk('public')->delete($tenant->signature);
+        }
+
+        $signaturePath = $request->file('signature')->store('signatures', 'public');
+        $tenant->update(['signature' => $signaturePath]);
+
+        return redirect()
+            ->route('tenant.settings.company', ['tenant' => $tenant->slug])
+            ->with('success', 'Company signature updated successfully!');
+    }
+
+    /**
+     * Remove company signature
+     */
+    public function removeSignature(Request $request, Tenant $tenant)
+    {
+        if (!$request->user()->isOwner()) {
+            abort(403, 'Only tenant owners can remove company signature.');
+        }
+
+        if ($tenant->signature && Storage::disk('public')->exists($tenant->signature)) {
+            Storage::disk('public')->delete($tenant->signature);
+        }
+
+        $tenant->update(['signature' => null]);
+
+        return redirect()
+            ->route('tenant.settings.company', ['tenant' => $tenant->slug])
+            ->with('success', 'Company signature removed successfully!');
+    }
+
+    /**
      * Update company preferences
      */
     public function updatePreferences(Request $request, Tenant $tenant)
@@ -148,11 +196,20 @@ class CompanySettingsController extends Controller
             'timezone' => ['nullable', 'string', 'max:50'],
             'language' => ['nullable', 'string', 'max:10'],
             'invoice_template' => ['nullable', 'string', 'in:ballie,tally,zoho,sage,quickbooks'],
+            'invoice_terms' => ['nullable', 'string', 'max:2000'],
+            'invoice_bank_account_id' => ['nullable', 'integer', 'exists:banks,id'],
         ]);
+
+        // Separate invoice_terms and invoice_bank_account_id from other settings
+        $invoiceTerms = $validated['invoice_terms'] ?? null;
+        $invoiceBankAccountId = $validated['invoice_bank_account_id'] ?? null;
+        unset($validated['invoice_terms'], $validated['invoice_bank_account_id']);
 
         // Update settings array
         $settings = $tenant->settings ?? [];
         $settings = array_merge($settings, $validated);
+        $settings['invoice_terms'] = $invoiceTerms;
+        $settings['invoice_bank_account_id'] = $invoiceBankAccountId;
 
         $tenant->update(['settings' => $settings]);
 

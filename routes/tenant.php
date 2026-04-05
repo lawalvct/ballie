@@ -1191,6 +1191,8 @@ Route::prefix('ledger-accounts')->name('ledger-accounts.')->group(function () {
             Route::put('/company/business', [\App\Http\Controllers\Tenant\CompanySettingsController::class, 'updateBusinessDetails'])->name('company.update-business');
             Route::put('/company/logo', [\App\Http\Controllers\Tenant\CompanySettingsController::class, 'updateLogo'])->name('company.update-logo');
             Route::delete('/company/logo', [\App\Http\Controllers\Tenant\CompanySettingsController::class, 'removeLogo'])->name('company.remove-logo');
+            Route::put('/company/signature', [\App\Http\Controllers\Tenant\CompanySettingsController::class, 'updateSignature'])->name('company.update-signature');
+            Route::delete('/company/signature', [\App\Http\Controllers\Tenant\CompanySettingsController::class, 'removeSignature'])->name('company.remove-signature');
             Route::put('/company/preferences', [\App\Http\Controllers\Tenant\CompanySettingsController::class, 'updatePreferences'])->name('company.update-preferences');
 
             // Module Management (Owner Only)

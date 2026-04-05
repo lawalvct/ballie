@@ -813,17 +813,46 @@ if (!function_exists('convertChunkToWords')) {
         </div>
         @endif
 
-        <!-- Terms and Conditions -->
-        <div class="notes-section">
-            <div class="notes-title">📋 Terms & Conditions</div>
-            <div class="notes-content">
-                <ul style="margin: 0; padding-left: 20px; line-height: 1.8;">
-                    <li>Payment is due within {{ $customer->payment_terms ?? '30 days' }} of invoice date</li>
-                    <li>Late payments may be subject to service charges</li>
-                    <li>All disputes must be reported within 7 days of invoice date</li>
-                    <li>Goods sold are not returnable unless defective</li>
-                    <li>This invoice is computer generated and does not require signature</li>
-                </ul>
+        <!-- Bank Details & Terms -->
+        <div style="display: flex; gap: 20px; margin-bottom: 30px;">
+            @if(isset($invoiceBank) && $invoiceBank)
+            <div style="flex: 1;">
+                <div class="notes-section">
+                    <div class="notes-title">🏦 Bank Details</div>
+                    <div class="notes-content">
+                        <table style="width: 100%; font-size: 14px;">
+                            <tr><td style="padding: 3px 0; font-weight: 600; width: 130px;">Bank:</td><td>{{ $invoiceBank->bank_name }}</td></tr>
+                            <tr><td style="padding: 3px 0; font-weight: 600;">Account Name:</td><td>{{ $invoiceBank->account_name }}</td></tr>
+                            <tr><td style="padding: 3px 0; font-weight: 600;">Account No:</td><td>{{ $invoiceBank->account_number }}</td></tr>
+                            @if($invoiceBank->sort_code)<tr><td style="padding: 3px 0; font-weight: 600;">Sort Code:</td><td>{{ $invoiceBank->sort_code }}</td></tr>@endif
+                            @if($invoiceBank->swift_code)<tr><td style="padding: 3px 0; font-weight: 600;">Swift Code:</td><td>{{ $invoiceBank->swift_code }}</td></tr>@endif
+                            @if($invoiceBank->branch_name)<tr><td style="padding: 3px 0; font-weight: 600;">Branch:</td><td>{{ $invoiceBank->branch_name }}</td></tr>@endif
+                        </table>
+                    </div>
+                </div>
+            </div>
+            @endif
+            <div style="flex: 1;">
+                <div class="notes-section">
+                    <div class="notes-title">📋 Terms & Conditions</div>
+                    <div class="notes-content">
+                        <ul style="margin: 0; padding-left: 20px; line-height: 1.8;">
+                            @if(!empty($invoiceTerms))
+                                @foreach(explode("\n", $invoiceTerms) as $termLine)
+                                    @if(trim($termLine))
+                                    <li>{{ trim($termLine) }}</li>
+                                    @endif
+                                @endforeach
+                            @else
+                                <li>Payment is due within {{ $customer->payment_terms ?? '30 days' }} of invoice date</li>
+                                <li>Late payments may be subject to service charges</li>
+                                <li>All disputes must be reported within 7 days of invoice date</li>
+                                <li>Goods sold are not returnable unless defective</li>
+                                <li>This invoice is computer generated and does not require signature</li>
+                            @endif
+                        </ul>
+                    </div>
+                </div>
             </div>
         </div>
 
@@ -833,6 +862,9 @@ if (!function_exists('convertChunkToWords')) {
                 <div class="signature-line">{{ $term->label('customer') }} Signature</div>
             </div>
             <div class="signature-box">
+                @if($tenant->signature)
+                    <img src="{{ asset('storage/' . $tenant->signature) }}" alt="Authorized Signature" style="max-width: 200px; max-height: 80px; margin-bottom: 10px;">
+                @endif
                 <div class="signature-line">Authorized Signature</div>
             </div>
         </div>

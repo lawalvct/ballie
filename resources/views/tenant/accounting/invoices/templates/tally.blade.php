@@ -404,14 +404,42 @@
         </div>
         @endif
 
+        <!-- Bank Details -->
+        @if(isset($invoiceBank) && $invoiceBank)
+        <table style="width: 100%; margin-bottom: 10px; border: 1px solid #000;">
+            <tr>
+                <td style="padding: 8px; font-weight: bold; background: #f5f5f5; border-bottom: 1px solid #000;" colspan="2">Bank Details for Payment</td>
+            </tr>
+            <tr>
+                <td style="padding: 5px 8px; width: 50%; border-right: 1px solid #ccc;">
+                    <strong>Bank:</strong> {{ $invoiceBank->bank_name }}<br>
+                    <strong>Account Name:</strong> {{ $invoiceBank->account_name }}
+                </td>
+                <td style="padding: 5px 8px;">
+                    <strong>Account No:</strong> {{ $invoiceBank->account_number }}
+                    @if($invoiceBank->branch_name)<br><strong>Branch:</strong> {{ $invoiceBank->branch_name }}@endif
+                    @if($invoiceBank->sort_code)<br><strong>Sort Code:</strong> {{ $invoiceBank->sort_code }}@endif
+                </td>
+            </tr>
+        </table>
+        @endif
+
         <!-- Declaration & Signature -->
         <table class="footer-section">
             <tr>
                 <td class="footer-left">
                     <strong>Declaration</strong><br>
+                    @if(!empty($invoiceTerms))
+                        @foreach(explode("\n", $invoiceTerms) as $termLine)
+                            @if(trim($termLine))
+                            {{ trim($termLine) }}<br>
+                            @endif
+                        @endforeach
+                    @else
                     We hereby declare that the information on this {{ strtolower($term->label('sales_invoice')) }} is
                     true and correct.<br>
                     Thanks for your regular patronage.
+                    @endif
 
                     @if($invoice->narration)
                         <br><br><strong>Notes:</strong> {{ $invoice->narration }}
@@ -419,6 +447,9 @@
                 </td>
                 <td class="footer-right">
                     <strong>for {{ strtoupper($tenant->name) }}</strong>
+                    @if($tenant->signature)
+                        <br><img src="{{ storage_path('app/public/' . $tenant->signature) }}" alt="Authorized Signature" style="max-width: 120px; max-height: 50px; margin: 5px 0;">
+                    @endif
                     <div class="auth-signatory">Authorised Signatory</div>
                 </td>
             </tr>

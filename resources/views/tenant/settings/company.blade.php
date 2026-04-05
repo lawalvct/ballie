@@ -418,6 +418,68 @@
                         </div>
                     </div>
                 </div>
+
+                <!-- Authorized Signature -->
+                <div class="bg-white rounded-2xl shadow-lg border border-gray-200 p-8 mt-6">
+                    <div class="mb-6">
+                        <h3 class="text-lg font-semibold text-gray-900 mb-2">Authorized Signature</h3>
+                        <p class="text-sm text-gray-600">Upload your authorized signature to appear on invoices</p>
+                    </div>
+
+                    <div class="flex items-center space-x-6 mb-8">
+                        <div class="relative">
+                            @if($tenant->signature)
+                            <img id="signature-preview"
+                                 src="{{ asset('storage/' . $tenant->signature) }}"
+                                 alt="Authorized Signature"
+                                 class="w-48 h-24 rounded-lg object-contain border-2 border-gray-200 bg-white p-2">
+                            <form method="POST" action="{{ route('tenant.settings.company.remove-signature', ['tenant' => $tenant->slug]) }}" class="absolute -bottom-2 -right-2">
+                                @csrf
+                                @method('DELETE')
+                                <button type="submit" class="bg-red-500 hover:bg-red-600 text-white rounded-full p-2 shadow-lg transition-colors">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                                    </svg>
+                                </button>
+                            </form>
+                            @else
+                            <div class="w-48 h-24 rounded-lg bg-gray-50 flex items-center justify-center border-2 border-dashed border-gray-300">
+                                <div class="text-center">
+                                    <svg class="w-8 h-8 text-gray-400 mx-auto mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                                    </svg>
+                                    <span class="text-xs text-gray-400">No signature</span>
+                                </div>
+                            </div>
+                            @endif
+                        </div>
+                        <div class="flex-1">
+                            <form method="POST" action="{{ route('tenant.settings.company.update-signature', ['tenant' => $tenant->slug]) }}" enctype="multipart/form-data">
+                                @csrf
+                                @method('PUT')
+                                <label for="signature" class="block text-sm font-medium text-gray-700 mb-2">
+                                    Upload Signature Image
+                                </label>
+                                <input type="file"
+                                       id="signature"
+                                       name="signature"
+                                       accept="image/jpeg,image/png,image/jpg,image/gif"
+                                       required
+                                       class="block w-full text-sm text-gray-500
+                                              file:mr-4 file:py-2 file:px-4
+                                              file:rounded-lg file:border-0
+                                              file:text-sm file:font-semibold
+                                              file:bg-purple-50 file:text-purple-700
+                                              hover:file:bg-purple-100 cursor-pointer mb-3">
+                                <p class="text-xs text-gray-500 mb-4">JPG, PNG, or GIF (MAX. 2MB). Use a transparent background for best results.</p>
+                                <button type="submit"
+                                        class="px-6 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 transition-colors text-sm">
+                                    Upload Signature
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
             </div>
 
             <!-- Preferences Tab -->
@@ -650,6 +712,53 @@
                             @error('invoice_template')
                             <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
                             @enderror
+                        </div>
+
+                        <!-- Invoice Terms & Conditions -->
+                        <div class="mb-6 mt-6">
+                            <h3 class="text-lg font-semibold text-gray-900 mb-2">Invoice Terms & Conditions</h3>
+                            <p class="text-sm text-gray-600 mb-4">Customize the terms and conditions that appear on your invoices. Each line will be displayed as a bullet point.</p>
+
+                            <div>
+                                <label for="invoice_terms" class="block text-sm font-medium text-gray-700 mb-2">
+                                    Terms & Conditions
+                                </label>
+                                <textarea id="invoice_terms"
+                                          name="invoice_terms"
+                                          rows="6"
+                                          class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
+                                          placeholder="Enter each term on a new line. For example:&#10;Payment due within 30 days&#10;Late payments subject to 2% monthly charge&#10;Disputes reported within 7 days&#10;Goods sold not returnable unless defective">{{ old('invoice_terms', $tenant->settings['invoice_terms'] ?? '') }}</textarea>
+                                <p class="mt-1 text-xs text-gray-500">Enter each term on a new line. Leave blank to use the default terms.</p>
+                                @error('invoice_terms')
+                                <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                                @enderror
+                            </div>
+                        </div>
+
+                        <!-- Invoice Bank Account -->
+                        <div class="mb-6">
+                            <h3 class="text-lg font-semibold text-gray-900 mb-2">Invoice Bank Account</h3>
+                            <p class="text-sm text-gray-600 mb-4">Select a bank account to display on your invoices for payment collection</p>
+
+                            <div>
+                                <label for="invoice_bank_account_id" class="block text-sm font-medium text-gray-700 mb-2">
+                                    Bank Account
+                                </label>
+                                <select id="invoice_bank_account_id"
+                                        name="invoice_bank_account_id"
+                                        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all">
+                                    <option value="">-- None (Do not show bank details) --</option>
+                                    @foreach($bankAccounts as $bank)
+                                    <option value="{{ $bank->id }}" {{ old('invoice_bank_account_id', $tenant->settings['invoice_bank_account_id'] ?? '') == $bank->id ? 'selected' : '' }}>
+                                        {{ $bank->bank_name }} - {{ $bank->account_name }} ({{ $bank->account_number }})
+                                    </option>
+                                    @endforeach
+                                </select>
+                                <p class="mt-1 text-xs text-gray-500">If selected, bank details will appear on printed invoices. <a href="{{ route('tenant.banking.banks.index', ['tenant' => $tenant->slug]) }}" class="text-purple-600 hover:text-purple-800 underline">Manage bank accounts</a></p>
+                                @error('invoice_bank_account_id')
+                                <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                                @enderror
+                            </div>
                         </div>
 
                         <!-- Submit Button -->

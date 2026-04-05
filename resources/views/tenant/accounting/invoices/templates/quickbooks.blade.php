@@ -397,15 +397,42 @@
             <strong>Total (in words):</strong> {{ ucfirst(numberToWords((int)$totalAmount)) }} {{ $tenant->settings['currency'] ?? 'Naira' }} Only
         </div>
 
-        <!-- Terms -->
-        <div class="terms-section">
-            <strong>Terms and Conditions</strong>
-            <ul>
-                <li>Payment is due within {{ $customer->payment_terms ?? '30 days' }}</li>
-                <li>Please include the invoice number on your payment</li>
-                <li>Make checks payable to {{ $tenant->name }}</li>
-                <li>Goods sold are not returnable unless defective</li>
-            </ul>
+        <!-- Bank Details & Terms -->
+        <div style="display: table; width: 100%; margin-bottom: 15px;">
+            @if(isset($invoiceBank) && $invoiceBank)
+            <div style="display: table-cell; width: 50%; vertical-align: top; padding-right: 15px;">
+                <div style="background: #f5f5f5; padding: 12px 15px; border-radius: 6px; border-left: 4px solid #393;">
+                    <div style="font-size: 13px; font-weight: bold; color: #333; margin-bottom: 8px; text-transform: uppercase;">Bank Details</div>
+                    <div style="font-size: 12px; line-height: 1.6;">
+                        <strong>Bank:</strong> {{ $invoiceBank->bank_name }}<br>
+                        <strong>Account Name:</strong> {{ $invoiceBank->account_name }}<br>
+                        <strong>Account No:</strong> {{ $invoiceBank->account_number }}
+                        @if($invoiceBank->sort_code)<br><strong>Sort Code:</strong> {{ $invoiceBank->sort_code }}@endif
+                        @if($invoiceBank->swift_code)<br><strong>Swift Code:</strong> {{ $invoiceBank->swift_code }}@endif
+                        @if($invoiceBank->branch_name)<br><strong>Branch:</strong> {{ $invoiceBank->branch_name }}@endif
+                    </div>
+                </div>
+            </div>
+            @endif
+            <div style="display: table-cell; vertical-align: top;">
+                <div class="terms-section">
+                    <strong>Terms and Conditions</strong>
+                    <ul>
+                        @if(!empty($invoiceTerms))
+                            @foreach(explode("\n", $invoiceTerms) as $termLine)
+                                @if(trim($termLine))
+                                <li>{{ trim($termLine) }}</li>
+                                @endif
+                            @endforeach
+                        @else
+                            <li>Payment is due within {{ $customer->payment_terms ?? '30 days' }}</li>
+                            <li>Please include the invoice number on your payment</li>
+                            <li>Make checks payable to {{ $tenant->name }}</li>
+                            <li>Goods sold are not returnable unless defective</li>
+                        @endif
+                    </ul>
+                </div>
+            </div>
         </div>
 
         <!-- Signatures -->
@@ -414,6 +441,9 @@
                 <div class="sign-line">{{ $term->label('customer') }} Signature</div>
             </div>
             <div class="sign-col">
+                @if($tenant->signature)
+                    <img src="{{ storage_path('app/public/' . $tenant->signature) }}" alt="Authorized Signature" style="max-width: 150px; max-height: 60px; margin-bottom: 5px;">
+                @endif
                 <div class="sign-line">Authorized Signature</div>
             </div>
         </div>

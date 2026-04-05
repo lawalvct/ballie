@@ -1225,11 +1225,22 @@ class InvoiceController extends Controller
             $template = 'ballie';
         }
 
-        if ($template === 'ballie') {
-            return view('tenant.accounting.invoices.print', compact('tenant', 'invoice', 'inventoryItems', 'customer'));
+        // Get invoice bank account if configured
+        $invoiceBank = null;
+        if (!empty($tenant->settings['invoice_bank_account_id'])) {
+            $invoiceBank = \App\Models\Bank::where('id', $tenant->settings['invoice_bank_account_id'])
+                ->where('tenant_id', $tenant->id)
+                ->first();
         }
 
-        return view('tenant.accounting.invoices.templates.' . $template, compact('tenant', 'invoice', 'inventoryItems', 'customer'));
+        // Get custom invoice terms
+        $invoiceTerms = $tenant->settings['invoice_terms'] ?? null;
+
+        if ($template === 'ballie') {
+            return view('tenant.accounting.invoices.print', compact('tenant', 'invoice', 'inventoryItems', 'customer', 'invoiceBank', 'invoiceTerms'));
+        }
+
+        return view('tenant.accounting.invoices.templates.' . $template, compact('tenant', 'invoice', 'inventoryItems', 'customer', 'invoiceBank', 'invoiceTerms'));
     }
 
     public function searchCustomers(Request $request, Tenant $tenant)
@@ -1825,7 +1836,18 @@ class InvoiceController extends Controller
             ? 'tenant.accounting.invoices.pdf'
             : 'tenant.accounting.invoices.templates.' . $template;
 
-        $pdf = Pdf::loadView($view, compact('tenant', 'invoice', 'customer'));
+        // Get invoice bank account if configured
+        $invoiceBank = null;
+        if (!empty($tenant->settings['invoice_bank_account_id'])) {
+            $invoiceBank = \App\Models\Bank::where('id', $tenant->settings['invoice_bank_account_id'])
+                ->where('tenant_id', $tenant->id)
+                ->first();
+        }
+
+        // Get custom invoice terms
+        $invoiceTerms = $tenant->settings['invoice_terms'] ?? null;
+
+        $pdf = Pdf::loadView($view, compact('tenant', 'invoice', 'customer', 'invoiceBank', 'invoiceTerms'));
 
         $filename = $prefix . '-invoice-' . ($invoice->voucherType->prefix ?? '') . $invoice->voucher_number . '.pdf';
         return $pdf->download($filename);
@@ -1932,8 +1954,19 @@ class InvoiceController extends Controller
                 ? 'tenant.accounting.invoices.pdf'
                 : 'tenant.accounting.invoices.templates.' . $template;
 
+            // Get invoice bank account if configured
+            $invoiceBank = null;
+            if (!empty($tenant->settings['invoice_bank_account_id'])) {
+                $invoiceBank = \App\Models\Bank::where('id', $tenant->settings['invoice_bank_account_id'])
+                    ->where('tenant_id', $tenant->id)
+                    ->first();
+            }
+
+            // Get custom invoice terms
+            $invoiceTerms = $tenant->settings['invoice_terms'] ?? null;
+
             // Generate PDF
-            $pdf = Pdf::loadView($emailView, compact('tenant', 'invoice', 'customer', 'inventoryItems'));
+            $pdf = Pdf::loadView($emailView, compact('tenant', 'invoice', 'customer', 'inventoryItems', 'invoiceBank', 'invoiceTerms'));
 
             // Generate download URL for the PDF (using public route)
             $downloadUrl = route('tenant.public.invoices.pdf', [

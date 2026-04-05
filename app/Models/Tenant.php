@@ -29,6 +29,7 @@ class Tenant extends Model
         'business_registration_number',
         'tax_identification_number',
         'logo',
+        'signature',
         'website',
         'plan_id', // References plans table
         'subscription_status',
