@@ -406,7 +406,10 @@ class VoucherController extends Controller
     {
         $voucher->load(['voucherType', 'entries.ledgerAccount.accountGroup', 'createdBy', 'updatedBy', 'postedBy']);
 
-        return view('tenant.accounting.vouchers.show', compact('tenant', 'voucher'));
+        $receiptData = $this->getReceiptData($voucher);
+        $contextData = $this->getVoucherContextData($voucher);
+
+        return view('tenant.accounting.vouchers.show', compact('tenant', 'voucher') + $receiptData + $contextData);
     }
 
     /**
@@ -732,7 +735,12 @@ class VoucherController extends Controller
 
         $voucher->load(['voucherType', 'entries.ledgerAccount.accountGroup', 'createdBy', 'postedBy']);
 
-        $pdf = Pdf::loadView('tenant.accounting.vouchers.pdf', compact('tenant', 'voucher'));
+        $receiptData = $this->getReceiptData($voucher);
+        $contextData = $this->getVoucherContextData($voucher);
+        $isReceipt = in_array($voucher->voucherType->code, ['RV', 'PV']);
+        $viewName = $isReceipt ? 'tenant.accounting.vouchers.receipt-pdf' : 'tenant.accounting.vouchers.pdf';
+
+        $pdf = Pdf::loadView($viewName, compact('tenant', 'voucher') + $receiptData + $contextData);
 
         return $pdf->stream($voucher->voucherType->name . '_' . $voucher->voucher_number . '.pdf');
     }
@@ -749,7 +757,132 @@ class VoucherController extends Controller
 
         $voucher->load(['voucherType', 'entries.ledgerAccount.accountGroup', 'createdBy', 'postedBy']);
 
-        return view('tenant.accounting.vouchers.print', compact('tenant', 'voucher'));
+        $receiptData = $this->getReceiptData($voucher);
+        $contextData = $this->getVoucherContextData($voucher);
+        $isReceipt = in_array($voucher->voucherType->code, ['RV', 'PV']);
+        $viewName = $isReceipt ? 'tenant.accounting.vouchers.receipt-print' : 'tenant.accounting.vouchers.print';
+
+        return view($viewName, compact('tenant', 'voucher') + $receiptData + $contextData);
+    }
+
+    /**
+     * Extract receipt-specific data from a voucher (payer/payee, payment method, related invoice).
+     */
+    private function getReceiptData(Voucher $voucher): array
+    {
+        $code = $voucher->voucherType->code ?? '';
+        if (!in_array($code, ['RV', 'PV'])) {
+            return [];
+        }
+
+        $isReceipt = $code === 'RV';
+
+        // For Receipt: debit = bank/cash, credit = customer
+        // For Payment: debit = vendor/expense, credit = bank/cash
+        $bankEntry = $voucher->entries->first(function ($e) use ($isReceipt) {
+            return $isReceipt ? $e->debit_amount > 0 : $e->credit_amount > 0;
+        });
+        $partyEntry = $voucher->entries->first(function ($e) use ($isReceipt) {
+            return $isReceipt ? $e->credit_amount > 0 : $e->debit_amount > 0;
+        });
+
+        $paymentMethod = $bankEntry?->ledgerAccount?->name ?? 'N/A';
+        $partyName = $partyEntry?->ledgerAccount?->name ?? 'N/A';
+
+        // Try to find the related invoice from narration
+        $relatedInvoice = null;
+        $narration = $voucher->narration ?? '';
+        if (preg_match('/Invoice\s+([A-Z]{1,5}-?\d+)/i', $narration, $matches)) {
+            $invoiceRef = $matches[1];
+            // Try to find the invoice by prefix+number
+            $relatedInvoice = Voucher::where('tenant_id', $voucher->tenant_id)
+                ->whereHas('voucherType', fn($q) => $q->whereIn('code', ['SV', 'PUR']))
+                ->whereRaw("CONCAT(COALESCE((SELECT prefix FROM voucher_types WHERE id = voucher_type_id), ''), voucher_number) = ?", [$invoiceRef])
+                ->first();
+        }
+
+        return [
+            'paymentMethod' => $paymentMethod,
+            'partyName' => $partyName,
+            'relatedInvoice' => $relatedInvoice,
+            'isReceipt' => $isReceipt,
+        ];
+    }
+
+    /**
+     * Extract type-specific context data for voucher display (JV, CV, CN, DN).
+     */
+    private function getVoucherContextData(Voucher $voucher): array
+    {
+        $code = $voucher->voucherType->code ?? '';
+
+        $typeStyles = [
+            'JV' => [
+                'color' => '#7c3aed', 'colorDark' => '#5b21b6', 'bgColor' => '#f5f3ff',
+                'badge' => 'JOURNAL VOUCHER',
+                'twFrom' => 'from-purple-50', 'twTo' => 'to-violet-50',
+                'twBorder' => 'border-purple-200', 'twText' => 'text-purple-700',
+                'twBg' => 'bg-purple-100', 'twIcon' => 'text-purple-600',
+            ],
+            'CV' => [
+                'color' => '#0d9488', 'colorDark' => '#065f46', 'bgColor' => '#f0fdfa',
+                'badge' => 'CONTRA VOUCHER',
+                'twFrom' => 'from-teal-50', 'twTo' => 'to-cyan-50',
+                'twBorder' => 'border-teal-200', 'twText' => 'text-teal-700',
+                'twBg' => 'bg-teal-100', 'twIcon' => 'text-teal-600',
+            ],
+            'CN' => [
+                'color' => '#d97706', 'colorDark' => '#92400e', 'bgColor' => '#fffbeb',
+                'badge' => 'CREDIT NOTE',
+                'twFrom' => 'from-amber-50', 'twTo' => 'to-yellow-50',
+                'twBorder' => 'border-amber-200', 'twText' => 'text-amber-700',
+                'twBg' => 'bg-amber-100', 'twIcon' => 'text-amber-600',
+            ],
+            'DN' => [
+                'color' => '#ea580c', 'colorDark' => '#9a3412', 'bgColor' => '#fff7ed',
+                'badge' => 'DEBIT NOTE',
+                'twFrom' => 'from-orange-50', 'twTo' => 'to-red-50',
+                'twBorder' => 'border-orange-200', 'twText' => 'text-orange-700',
+                'twBg' => 'bg-orange-100', 'twIcon' => 'text-orange-600',
+            ],
+        ];
+
+        if (!isset($typeStyles[$code])) {
+            return [];
+        }
+
+        $contextData = [
+            'voucherStyle' => $typeStyles[$code],
+            'voucherTypeCode' => $code,
+        ];
+
+        switch ($code) {
+            case 'CV':
+                $debitEntry = $voucher->entries->first(fn($e) => $e->debit_amount > 0);
+                $creditEntry = $voucher->entries->first(fn($e) => $e->credit_amount > 0);
+                $contextData['toAccount'] = $debitEntry?->ledgerAccount?->name ?? 'N/A';
+                $contextData['fromAccount'] = $creditEntry?->ledgerAccount?->name ?? 'N/A';
+                break;
+            case 'CN':
+                $creditEntry = $voucher->entries->first(fn($e) => $e->credit_amount > 0);
+                $debitEntry = $voucher->entries->first(fn($e) => $e->debit_amount > 0);
+                $contextData['partyName'] = $creditEntry?->ledgerAccount?->name ?? 'N/A';
+                $contextData['adjustmentAccount'] = $debitEntry?->ledgerAccount?->name ?? 'N/A';
+                break;
+            case 'DN':
+                $debitEntry = $voucher->entries->first(fn($e) => $e->debit_amount > 0);
+                $creditEntry = $voucher->entries->first(fn($e) => $e->credit_amount > 0);
+                $contextData['partyName'] = $debitEntry?->ledgerAccount?->name ?? 'N/A';
+                $contextData['adjustmentAccount'] = $creditEntry?->ledgerAccount?->name ?? 'N/A';
+                break;
+            case 'JV':
+                $contextData['affectedAccounts'] = $voucher->entries
+                    ->map(fn($e) => $e->ledgerAccount->name)
+                    ->unique()->values()->toArray();
+                break;
+        }
+
+        return $contextData;
     }
 
     /**

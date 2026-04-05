@@ -1,176 +1,126 @@
+@php
+    $typeColor = $voucherStyle['color'] ?? '#2c5aa0';
+    $typeDark = $voucherStyle['colorDark'] ?? '#1e3d72';
+    $typeBg = $voucherStyle['bgColor'] ?? '#eef2ff';
+    $typeBadge = $voucherStyle['badge'] ?? strtoupper($voucher->voucherType->name);
+    $typeCode = $voucherTypeCode ?? $voucher->voucherType->code;
+
+    if (!function_exists('numberToWords')) {
+        function numberToWords($number) {
+            $ones = ['', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten', 'eleven', 'twelve', 'thirteen', 'fourteen', 'fifteen', 'sixteen', 'seventeen', 'eighteen', 'nineteen'];
+            $tens = ['', '', 'twenty', 'thirty', 'forty', 'fifty', 'sixty', 'seventy', 'eighty', 'ninety'];
+            $scales = ['', 'thousand', 'million', 'billion'];
+            if ($number == 0) return 'zero';
+            $number = number_format($number, 2, '.', '');
+            list($integer, $fraction) = explode('.', $number);
+            $words = '';
+            if ($integer > 0) $words .= convertIntegerToWords($integer, $ones, $tens, $scales);
+            if ($fraction > 0) $words .= ' and ' . convertIntegerToWords($fraction, $ones, $tens, $scales) . ' kobo';
+            return ucfirst(trim($words)) . ' Naira Only';
+        }
+    }
+    if (!function_exists('convertIntegerToWords')) {
+        function convertIntegerToWords($integer, $ones, $tens, $scales) {
+            $words = ''; $scaleIndex = 0;
+            while ($integer > 0) {
+                $chunk = $integer % 1000;
+                if ($chunk > 0) {
+                    $chunkWords = convertChunkToWords($chunk, $ones, $tens);
+                    if ($scaleIndex > 0) $chunkWords .= ' ' . $scales[$scaleIndex];
+                    $words = $chunkWords . ' ' . $words;
+                }
+                $integer = intval($integer / 1000); $scaleIndex++;
+            }
+            return trim($words);
+        }
+    }
+    if (!function_exists('convertChunkToWords')) {
+        function convertChunkToWords($chunk, $ones, $tens) {
+            $words = '';
+            $hundreds = intval($chunk / 100); $remainder = $chunk % 100;
+            if ($hundreds > 0) { $words .= $ones[$hundreds] . ' hundred'; if ($remainder > 0) $words .= ' '; }
+            if ($remainder >= 20) {
+                $tensDigit = intval($remainder / 10); $onesDigit = $remainder % 10;
+                $words .= $tens[$tensDigit]; if ($onesDigit > 0) $words .= '-' . $ones[$onesDigit];
+            } elseif ($remainder > 0) { $words .= $ones[$remainder]; }
+            return $words;
+        }
+    }
+@endphp
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Voucher {{ $voucher->voucher_number }} - {{ $tenant->name }}</title>
+    <title>{{ $typeBadge }} {{ ($voucher->voucherType->prefix ?? '') . $voucher->voucher_number }} - {{ $tenant->name }}</title>
     <style>
-        body {
-            font-family: 'DejaVu Sans', sans-serif;
-            font-size: 12px;
-            line-height: 1.4;
-            color: #333;
-            margin: 0;
-            padding: 20px;
-        }
+        body { font-family: 'DejaVu Sans', Arial, sans-serif; margin: 0; padding: 10px; color: #333; font-size: 11px; line-height: 1.3; }
 
-        .header {
-            text-align: center;
-            margin-bottom: 30px;
-            border-bottom: 2px solid #333;
-            padding-bottom: 20px;
-        }
+        /* Header */
+        .header { text-align: center; padding-bottom: 10px; border-bottom: 3px solid {{ $typeColor }}; margin-bottom: 15px; }
+        .logo { max-height: 40px; margin-bottom: 5px; }
+        .company-name { font-size: 18px; font-weight: bold; color: {{ $typeColor }}; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 2px; }
+        .company-details { font-size: 10px; color: #666; line-height: 1.3; }
+        .type-badge { display: inline-block; background: {{ $typeColor }}; color: white; font-size: 14px; font-weight: bold; padding: 4px 18px; letter-spacing: 2px; text-transform: uppercase; margin-top: 8px; }
 
-        .company-name {
-            font-size: 24px;
-            font-weight: bold;
-            margin-bottom: 5px;
-        }
+        /* Info Table */
+        .info-table { width: 100%; margin-bottom: 12px; border-collapse: collapse; }
+        .info-table td { padding: 5px 8px; background: #f8f9fa; border: 1px solid #e9ecef; }
+        .info-label { font-size: 9px; text-transform: uppercase; letter-spacing: 0.5px; color: #999; font-weight: bold; }
+        .info-value { font-size: 12px; font-weight: bold; color: #333; }
+        .info-value.number { font-size: 14px; color: {{ $typeColor }}; }
 
-        .company-details {
-            font-size: 10px;
-            color: #666;
-            margin-bottom: 15px;
-        }
+        /* Context Section */
+        .context-section { margin-bottom: 12px; padding: 8px 10px; background: {{ $typeBg }}; border-left: 4px solid {{ $typeColor }}; }
+        .context-title { font-size: 9px; text-transform: uppercase; letter-spacing: 1px; color: {{ $typeColor }}; font-weight: bold; margin-bottom: 5px; }
+        .context-table { width: 100%; border-collapse: collapse; }
+        .context-table td { padding: 4px 8px; border-bottom: 1px dashed #e0e0e0; vertical-align: top; }
+        .context-table tr:last-child td { border-bottom: none; }
+        .context-label-cell { width: 150px; font-size: 10px; font-weight: 600; color: #555; text-transform: uppercase; }
+        .context-value-cell { font-size: 12px; color: #333; }
+        .context-highlight { font-weight: bold; font-size: 13px; color: {{ $typeColor }}; }
+        .transfer-arrow { text-align: center; font-size: 16px; color: {{ $typeColor }}; padding: 2px 0; }
+        .account-tag { display: inline-block; padding: 2px 8px; background: white; border: 1px solid {{ $typeColor }}; font-size: 10px; color: #555; margin: 2px; }
 
-        .voucher-title {
-            font-size: 18px;
-            font-weight: bold;
-            text-transform: uppercase;
-            margin-bottom: 10px;
-        }
+        /* Status */
+        .status-posted { display: inline-block; padding: 2px 8px; background: #d4edda; color: #155724; font-size: 9px; font-weight: bold; text-transform: uppercase; }
+        .status-draft { display: inline-block; padding: 2px 8px; background: #fff3cd; color: #856404; font-size: 9px; font-weight: bold; text-transform: uppercase; }
 
-        .voucher-info {
-            display: table;
-            width: 100%;
-            margin-bottom: 30px;
-        }
+        /* Amount Box */
+        .amount-box { background: {{ $typeColor }}; color: white; padding: 10px 15px; margin: 10px 0; }
+        .amount-box table { width: 100%; }
+        .amount-box .label { font-size: 12px; text-transform: uppercase; letter-spacing: 1px; }
+        .amount-box .value { font-size: 20px; font-weight: bold; text-align: right; }
 
-        .voucher-info-left,
-        .voucher-info-right {
-            display: table-cell;
-            width: 50%;
-            vertical-align: top;
-        }
+        /* Amount Words */
+        .amount-words { background: #f0f7f0; padding: 6px 10px; border-left: 3px solid #27ae60; margin-bottom: 10px; font-size: 10px; }
+        .amount-words strong { color: #27ae60; text-transform: uppercase; font-size: 9px; }
+        .amount-words .words { font-style: italic; font-weight: bold; color: #333; margin-top: 2px; }
 
-        .voucher-info-right {
-            text-align: right;
-        }
+        /* Entries Table */
+        .entries-table { width: 100%; border-collapse: collapse; margin-bottom: 12px; }
+        .entries-table th { background: {{ $typeColor }}; color: white; padding: 6px 8px; text-align: center; font-size: 10px; text-transform: uppercase; letter-spacing: 0.3px; }
+        .entries-table th:first-child { text-align: left; }
+        .entries-table td { border: 1px solid #ddd; padding: 5px 8px; font-size: 11px; }
+        .entries-table .amount { text-align: right; font-family: 'DejaVu Sans Mono', monospace; }
+        .entries-table .total-row { background: #f0f0f0; font-weight: bold; }
 
-        .info-row {
-            margin-bottom: 8px;
-        }
+        /* Narration */
+        .narration-box { background: #fff8e1; padding: 6px 10px; border-left: 3px solid #f39c12; margin-bottom: 10px; }
+        .narration-label { font-size: 9px; text-transform: uppercase; color: #999; font-weight: bold; margin-bottom: 2px; }
+        .narration-text { font-size: 11px; color: #555; }
 
-        .info-label {
-            font-weight: bold;
-            display: inline-block;
-            width: 120px;
-        }
+        /* Signatures */
+        .signatures { display: table; width: 100%; margin-top: 25px; }
+        .signature-box { display: table-cell; width: 50%; text-align: center; padding: 5px 10px; }
+        .signature-line { border-top: 1px solid #333; margin-top: 25px; padding-top: 4px; font-size: 10px; font-weight: bold; color: #555; }
 
-        .entries-table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-bottom: 20px;
-        }
+        /* Footer */
+        .footer { text-align: center; font-size: 9px; color: #999; padding-top: 8px; border-top: 1px solid #eee; margin-top: 15px; }
 
-        .entries-table th,
-        .entries-table td {
-            border: 1px solid #ddd;
-            padding: 8px;
-            text-align: left;
-        }
+        /* Watermark */
+        .watermark { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%) rotate(-45deg); font-size: 72px; color: rgba(0,0,0,0.06); z-index: -1; font-weight: bold; }
 
-        .entries-table th {
-            background-color: #f5f5f5;
-            font-weight: bold;
-            text-align: center;
-        }
-
-        .entries-table .amount {
-            text-align: right;
-            font-family: 'Courier New', monospace;
-        }
-
-        .entries-table .total-row {
-            background-color: #f9f9f9;
-            font-weight: bold;
-        }
-
-        .narration {
-            margin-top: 20px;
-            padding: 15px;
-            background-color: #f9f9f9;
-            border-left: 4px solid #333;
-        }
-
-        .narration-label {
-            font-weight: bold;
-            margin-bottom: 5px;
-        }
-
-        .signatures {
-            margin-top: 50px;
-            display: table;
-            width: 100%;
-        }
-
-        .signature-box {
-            display: table-cell;
-            width: 33.33%;
-            text-align: center;
-            padding: 20px 10px;
-        }
-
-        .signature-line {
-            border-top: 1px solid #333;
-            margin-top: 40px;
-            padding-top: 5px;
-            font-size: 10px;
-        }
-
-        .footer {
-            position: fixed;
-            bottom: 20px;
-            left: 20px;
-            right: 20px;
-            text-align: center;
-            font-size: 10px;
-            color: #666;
-            border-top: 1px solid #ddd;
-            padding-top: 10px;
-        }
-
-        .status-badge {
-            display: inline-block;
-            padding: 4px 8px;
-            border-radius: 4px;
-            font-size: 10px;
-            font-weight: bold;
-            text-transform: uppercase;
-        }
-
-        .status-draft {
-            background-color: #fef3cd;
-            color: #856404;
-            border: 1px solid #ffeaa7;
-        }
-
-        .status-posted {
-            background-color: #d1ecf1;
-            color: #0c5460;
-            border: 1px solid #bee5eb;
-        }
-
-        .watermark {
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%) rotate(-45deg);
-            font-size: 72px;
-            color: rgba(0, 0, 0, 0.1);
-            z-index: -1;
-            font-weight: bold;
-        }
+        @page { margin: 15mm; size: A4; }
     </style>
 </head>
 <body>
@@ -180,122 +130,120 @@
 
     <!-- Header -->
     <div class="header">
+        @if($tenant->logo)
+            <img src="{{ storage_path('app/public/' . $tenant->logo) }}" alt="" class="logo"><br>
+        @endif
         <div class="company-name">{{ $tenant->name }}</div>
         <div class="company-details">
-            @if($tenant->address)
-                {{ $tenant->address }}<br>
-            @endif
-            @if($tenant->phone)
-                Phone: {{ $tenant->phone }}
-            @endif
-            @if($tenant->email)
-                | Email: {{ $tenant->email }}
-            @endif
+            @if($tenant->address) {{ $tenant->address }}<br> @endif
+            @if($tenant->phone) Phone: {{ $tenant->phone }} @endif
+            @if($tenant->email) | Email: {{ $tenant->email }} @endif
+            @if($tenant->tax_number ?? false) <br>Tax ID: {{ $tenant->tax_number }} @endif
         </div>
-        <div class="voucher-title">{{ $voucher->voucherType->name }}</div>
+        <div class="type-badge">{{ $typeBadge }}</div>
     </div>
 
-    <!-- Voucher Information -->
-    <div class="voucher-info">
-        <div class="voucher-info-left">
-            <div class="info-row">
-                <span class="info-label">Voucher No:</span>
-                <strong>{{ $voucher->voucher_number }}</strong>
-            </div>
-            <div class="info-row">
-                <span class="info-label">Voucher Type:</span>
-                {{ $voucher->voucherType->name }} ({{ $voucher->voucherType->code }})
-            </div>
-            <div class="info-row">
-                <span class="info-label">Reference:</span>
-                {{ $voucher->reference_number ?: 'N/A' }}
-            </div>
+    <!-- Voucher Info -->
+    <table class="info-table">
+        <tr>
+            <td>
+                <div class="info-label">Voucher No.</div>
+                <div class="info-value number">{{ ($voucher->voucherType->prefix ?? '') . $voucher->voucher_number }}</div>
+            </td>
+            <td>
+                <div class="info-label">Date</div>
+                <div class="info-value">{{ $voucher->voucher_date->format('d M Y') }}</div>
+            </td>
+            <td>
+                <div class="info-label">Status</div>
+                <div class="info-value"><span class="status-{{ $voucher->status }}">{{ ucfirst($voucher->status) }}</span></div>
+            </td>
+            @if($voucher->reference_number)
+            <td>
+                <div class="info-label">Reference</div>
+                <div class="info-value">{{ $voucher->reference_number }}</div>
+            </td>
+            @endif
+            <td>
+                <div class="info-label">Amount</div>
+                <div class="info-value number">₦{{ number_format($voucher->total_amount, 2) }}</div>
+            </td>
+        </tr>
+    </table>
+
+    <!-- Type-Specific Context -->
+    @if(isset($voucherTypeCode))
+        <div class="context-section">
+            @if($typeCode === 'CV')
+                <div class="context-title">Transfer Details</div>
+                <table class="context-table">
+                    <tr>
+                        <td class="context-label-cell">From Account</td>
+                        <td class="context-value-cell context-highlight">{{ $fromAccount }}</td>
+                    </tr>
+                    <tr>
+                        <td colspan="2" class="transfer-arrow">↓ Transfer ↓</td>
+                    </tr>
+                    <tr>
+                        <td class="context-label-cell">To Account</td>
+                        <td class="context-value-cell context-highlight">{{ $toAccount }}</td>
+                    </tr>
+                </table>
+            @elseif($typeCode === 'CN')
+                <div class="context-title">Credit Note Details</div>
+                <table class="context-table">
+                    <tr>
+                        <td class="context-label-cell">Issued To</td>
+                        <td class="context-value-cell context-highlight">{{ $partyName }}</td>
+                    </tr>
+                    <tr>
+                        <td class="context-label-cell">Adjustment Account</td>
+                        <td class="context-value-cell">{{ $adjustmentAccount }}</td>
+                    </tr>
+                </table>
+            @elseif($typeCode === 'DN')
+                <div class="context-title">Debit Note Details</div>
+                <table class="context-table">
+                    <tr>
+                        <td class="context-label-cell">Issued To</td>
+                        <td class="context-value-cell context-highlight">{{ $partyName }}</td>
+                    </tr>
+                    <tr>
+                        <td class="context-label-cell">Adjustment Account</td>
+                        <td class="context-value-cell">{{ $adjustmentAccount }}</td>
+                    </tr>
+                </table>
+            @elseif($typeCode === 'JV')
+                <div class="context-title">Accounts Affected</div>
+                @foreach($affectedAccounts as $account)
+                    <span class="account-tag">{{ $account }}</span>
+                @endforeach
+            @endif
         </div>
-        <div class="voucher-info-right">
-            <div class="info-row">
-                <span class="info-label">Date:</span>
-                <strong>{{ $voucher->voucher_date->format('d M Y') }}</strong>
-            </div>
-            <div class="info-row">
-                <span class="info-label">Status:</span>
-                <span class="status-badge status-{{ $voucher->status }}">
-                    {{ ucfirst($voucher->status) }}
-                </span>
-            </div>
-            <div class="info-row">
-                <span class="info-label">Amount:</span>
-                <strong>₦{{ number_format($voucher->total_amount, 2) }}</strong>
-            </div>
-        </div>
+    @endif
+
+    <!-- Amount Box -->
+    <div class="amount-box">
+        <table><tr>
+            <td class="label">Total Amount</td>
+            <td class="value">₦{{ number_format($voucher->total_amount, 2) }}</td>
+        </tr></table>
     </div>
-
-    @php
-        function convertChunkToWords($chunk, $ones, $tens) {
-            $words = '';
-            $hundreds = intval($chunk / 100);
-            $remainder = $chunk % 100;
-            if ($hundreds > 0) {
-                $words .= $ones[$hundreds] . ' hundred';
-                if ($remainder > 0) $words .= ' ';
-            }
-            if ($remainder >= 20) {
-                $tensDigit = intval($remainder / 10);
-                $onesDigit = $remainder % 10;
-                $words .= $tens[$tensDigit];
-                if ($onesDigit > 0) $words .= '-' . $ones[$onesDigit];
-            } elseif ($remainder > 0) {
-                $words .= $ones[$remainder];
-            }
-            return $words;
-        }
-
-        function convertIntegerToWords($integer, $ones, $tens, $scales) {
-            $words = '';
-            $scaleIndex = 0;
-            while ($integer > 0) {
-                $chunk = $integer % 1000;
-                if ($chunk > 0) {
-                    $chunkWords = convertChunkToWords($chunk, $ones, $tens);
-                    if ($scaleIndex > 0) $chunkWords .= ' ' . $scales[$scaleIndex];
-                    $words = $chunkWords . ' ' . $words;
-                }
-                $integer = intval($integer / 1000);
-                $scaleIndex++;
-            }
-            return trim($words);
-        }
-
-        function numberToWords($number) {
-            $ones = ['', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten', 'eleven', 'twelve', 'thirteen', 'fourteen', 'fifteen', 'sixteen', 'seventeen', 'eighteen', 'nineteen'];
-            $tens = ['', '', 'twenty', 'thirty', 'forty', 'fifty', 'sixty', 'seventy', 'eighty', 'ninety'];
-            $scales = ['', 'thousand', 'million', 'billion'];
-            if ($number == 0) return 'zero';
-            $number = number_format($number, 2, '.', '');
-            list($integer, $fraction) = explode('.', $number);
-            $words = '';
-            if ($integer > 0) {
-                $words .= convertIntegerToWords($integer, $ones, $tens, $scales);
-            }
-            if ($fraction > 0) {
-                $words .= ' and ' . convertIntegerToWords($fraction, $ones, $tens, $scales) . ' kobo';
-            }
-            return ucfirst(trim($words)) . ' Naira Only';
-        }
-    @endphp
 
     <!-- Amount in Words -->
-    <div style="margin-bottom: 20px; padding: 10px; background-color: #f0f0f0; border: 1px solid #ddd; border-radius: 4px;">
-        <strong>Amount in Words:</strong> {{ numberToWords($voucher->total_amount) }}
+    <div class="amount-words">
+        <strong>Amount in Words:</strong>
+        <div class="words">{{ numberToWords($voucher->total_amount) }}</div>
     </div>
 
-    <!-- Voucher Entries -->
+    <!-- Entries Table -->
     <table class="entries-table">
         <thead>
             <tr>
-                <th style="width: 40%;">Ledger Account</th>
-                <th style="width: 35%;">Particulars</th>
-                <th style="width: 12.5%;">Debit Amount</th>
-                <th style="width: 12.5%;">Credit Amount</th>
+                <th style="width: 38%; text-align: left;">Ledger Account</th>
+                <th style="width: 27%;">Particulars</th>
+                <th style="width: 17.5%;">Debit (₦)</th>
+                <th style="width: 17.5%;">Credit (₦)</th>
             </tr>
         </thead>
         <tbody>
@@ -303,9 +251,9 @@
                 <tr>
                     <td>
                         <strong>{{ $entry->ledgerAccount->name }}</strong><br>
-                        <small style="color: #666;">{{ $entry->ledgerAccount->accountGroup->name }}</small>
+                        <span style="font-size: 9px; color: #888;">{{ $entry->ledgerAccount->accountGroup->name }}</span>
                     </td>
-                    <td>{{ $entry->particulars ?: 'N/A' }}</td>
+                    <td style="font-size: 10px;">{{ $entry->particulars ?: '-' }}</td>
                     <td class="amount">
                         @if($entry->debit_amount > 0)
                             {{ number_format($entry->debit_amount, 2) }}
@@ -326,17 +274,17 @@
         <tfoot>
             <tr class="total-row">
                 <td colspan="2" style="text-align: center;"><strong>TOTAL</strong></td>
-                <td class="amount"><strong>#{{ number_format($voucher->entries->sum('debit_amount'), 2) }}</strong></td>
-                <td class="amount"><strong>#{{ number_format($voucher->entries->sum('credit_amount'), 2) }}</strong></td>
+                <td class="amount"><strong>₦{{ number_format($voucher->entries->sum('debit_amount'), 2) }}</strong></td>
+                <td class="amount"><strong>₦{{ number_format($voucher->entries->sum('credit_amount'), 2) }}</strong></td>
             </tr>
         </tfoot>
     </table>
 
     <!-- Narration -->
     @if($voucher->narration)
-        <div class="narration">
-            <div class="narration-label">Narration:</div>
-            <div>{{ $voucher->narration }}</div>
+        <div class="narration-box">
+            <div class="narration-label">Narration / Description</div>
+            <div class="narration-text">{{ $voucher->narration }}</div>
         </div>
     @endif
 
@@ -344,25 +292,21 @@
     <div class="signatures">
         <div class="signature-box">
             <div class="signature-line">
-                Signature<br>
-                Name: ___________________<br>
-                Date: ___________________
+                Prepared By<br>
+                <span style="font-weight: normal; font-size: 9px;">{{ $voucher->createdBy->name ?? '___________________' }}</span>
             </div>
         </div>
         <div class="signature-box">
-            <div class="signature-line">
-                Admin Signature<br>
-                Name: ___________________<br>
-                Date: ___________________
-            </div>
+            @if($tenant->signature)
+                <img src="{{ storage_path('app/public/' . $tenant->signature) }}" alt="Signature" style="max-width: 130px; max-height: 45px;">
+            @endif
+            <div class="signature-line">Authorized Signatory</div>
         </div>
     </div>
 
     <!-- Footer -->
     <div class="footer">
-        Generated on {{ now()->format('d M Y \a\t g:i A') }} |
-        {{ $tenant->name }} |
-        Powered by Ballie Accounting System
+        Generated on {{ now()->format('d M Y \a\t g:i A') }} | {{ $tenant->name }} | Powered by Ballie Accounting System
         @if($voucher->status === 'posted')
             | Posted on {{ $voucher->posted_at?->format('d M Y \a\t g:i A') ?? 'N/A' }}
         @endif

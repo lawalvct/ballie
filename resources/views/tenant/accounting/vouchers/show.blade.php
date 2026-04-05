@@ -2,9 +2,25 @@
 
 @section('title', 'Voucher ' . $voucher->voucher_number . ' - ' . $tenant->name)
 
-@section('page-title', 'Voucher Details')
+@section('page-title')
+    @if(isset($isReceipt))
+        {{ $isReceipt ? 'Receipt' : 'Payment Voucher' }} {{ ($voucher->voucherType->prefix ?? '') . $voucher->voucher_number }}
+    @elseif(isset($voucherTypeCode))
+        {{ $voucherStyle['badge'] }} {{ ($voucher->voucherType->prefix ?? '') . $voucher->voucher_number }}
+    @else
+        Voucher Details
+    @endif
+@endsection
 
-@section('page-description', 'View detailed information about this voucher including entries, audit trail, and related information.')
+@section('page-description')
+    @if(isset($isReceipt))
+        {{ $isReceipt ? 'Receipt' : 'Payment' }} details for {{ ($voucher->voucherType->prefix ?? '') . $voucher->voucher_number }}
+    @elseif(isset($voucherTypeCode))
+        {{ $voucherStyle['badge'] }} details — {{ ($voucher->voucherType->prefix ?? '') . $voucher->voucher_number }}
+    @else
+        View detailed information about this voucher including entries, audit trail, and related information.
+    @endif
+@endsection
 
 @section('content')
 <div class="space-y-6">
@@ -91,6 +107,138 @@
 
     </div>
 
+    <!-- Receipt/Payment Summary (for RV/PV vouchers) -->
+    @if(isset($isReceipt))
+    <div class="bg-gradient-to-r {{ $isReceipt ? 'from-green-50 to-emerald-50 border-green-200' : 'from-red-50 to-orange-50 border-red-200' }} rounded-xl border p-6">
+        <div class="flex flex-col lg:flex-row lg:items-start lg:justify-between space-y-4 lg:space-y-0">
+            <div class="flex-1">
+                <div class="flex items-center space-x-3 mb-4">
+                    <div class="w-12 h-12 {{ $isReceipt ? 'bg-green-100' : 'bg-red-100' }} rounded-lg flex items-center justify-center">
+                        <svg class="w-6 h-6 {{ $isReceipt ? 'text-green-600' : 'text-red-600' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-3a2 2 0 00-2-2H9a2 2 0 00-2 2v3a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"/>
+                        </svg>
+                    </div>
+                    <div>
+                        <h3 class="text-lg font-semibold text-gray-900">{{ $isReceipt ? 'Payment Received' : 'Payment Made' }}</h3>
+                        <p class="text-sm text-gray-600">{{ $voucher->voucher_date->format('M d, Y') }}</p>
+                    </div>
+                </div>
+                <div class="text-3xl font-bold {{ $isReceipt ? 'text-green-700' : 'text-red-700' }} mb-4">₦{{ number_format($voucher->total_amount, 2) }}</div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div class="bg-white bg-opacity-60 rounded-lg p-3">
+                        <p class="text-xs text-gray-500 uppercase tracking-wide">{{ $isReceipt ? 'Received From' : 'Paid To' }}</p>
+                        <p class="text-sm font-semibold text-gray-900">{{ $partyName }}</p>
+                    </div>
+                    <div class="bg-white bg-opacity-60 rounded-lg p-3">
+                        <p class="text-xs text-gray-500 uppercase tracking-wide">{{ $isReceipt ? 'Payment Method' : 'Paid Via' }}</p>
+                        <p class="text-sm font-semibold text-gray-900">{{ $paymentMethod }}</p>
+                    </div>
+                    @if($relatedInvoice)
+                    <div class="bg-white bg-opacity-60 rounded-lg p-3">
+                        <p class="text-xs text-gray-500 uppercase tracking-wide">Related Invoice</p>
+                        <p class="text-sm font-semibold text-gray-900">
+                            <a href="{{ route('tenant.accounting.invoices.show', ['tenant' => $tenant->slug, 'invoice' => $relatedInvoice->id]) }}" class="text-blue-600 hover:text-blue-800 hover:underline">
+                                {{ $relatedInvoice->voucherType->prefix ?? '' }}{{ $relatedInvoice->voucher_number }}
+                                <span class="text-gray-500 font-normal">(₦{{ number_format($relatedInvoice->total_amount, 2) }})</span>
+                            </a>
+                        </p>
+                    </div>
+                    @endif
+                    @if($voucher->reference_number)
+                    <div class="bg-white bg-opacity-60 rounded-lg p-3">
+                        <p class="text-xs text-gray-500 uppercase tracking-wide">Reference</p>
+                        <p class="text-sm font-semibold text-gray-900">{{ $voucher->reference_number }}</p>
+                    </div>
+                    @endif
+                </div>
+            </div>
+            <div class="lg:text-right lg:ml-6">
+                <p class="text-xs text-gray-500 uppercase tracking-wide">Receipt No.</p>
+                <p class="text-lg font-bold {{ $isReceipt ? 'text-green-700' : 'text-red-700' }}">{{ ($voucher->voucherType->prefix ?? '') . $voucher->voucher_number }}</p>
+            </div>
+        </div>
+        @if($voucher->narration)
+            <div class="mt-4 pt-4 {{ $isReceipt ? 'border-green-200' : 'border-red-200' }} border-t">
+                <p class="text-xs text-gray-500 uppercase tracking-wide mb-1">Purpose / Narration</p>
+                <p class="text-sm text-gray-700">{{ $voucher->narration }}</p>
+            </div>
+        @endif
+    </div>
+    @elseif(isset($voucherTypeCode))
+    <!-- Type-Specific Summary Card (JV/CV/CN/DN) -->
+    <div class="bg-gradient-to-r {{ $voucherStyle['twFrom'] }} {{ $voucherStyle['twTo'] }} rounded-xl border {{ $voucherStyle['twBorder'] }} p-6">
+        <div class="flex flex-col lg:flex-row lg:items-start lg:justify-between space-y-4 lg:space-y-0">
+            <div class="flex-1">
+                <div class="flex items-center space-x-3 mb-4">
+                    <div class="w-12 h-12 {{ $voucherStyle['twBg'] }} rounded-lg flex items-center justify-center">
+                        @if($voucherTypeCode === 'JV')
+                            <svg class="w-6 h-6 {{ $voucherStyle['twIcon'] }}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/></svg>
+                        @elseif($voucherTypeCode === 'CV')
+                            <svg class="w-6 h-6 {{ $voucherStyle['twIcon'] }}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/></svg>
+                        @elseif($voucherTypeCode === 'CN')
+                            <svg class="w-6 h-6 {{ $voucherStyle['twIcon'] }}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 14l6 0m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V17a2 2 0 01-2 2z"/></svg>
+                        @elseif($voucherTypeCode === 'DN')
+                            <svg class="w-6 h-6 {{ $voucherStyle['twIcon'] }}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 13h6m-3-3v6m5 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                        @endif
+                    </div>
+                    <div>
+                        <h3 class="text-lg font-semibold text-gray-900">{{ $voucherStyle['badge'] }}</h3>
+                        <p class="text-sm text-gray-600">{{ $voucher->voucher_date->format('M d, Y') }}</p>
+                    </div>
+                </div>
+                <div class="text-3xl font-bold {{ $voucherStyle['twText'] }} mb-4">₦{{ number_format($voucher->total_amount, 2) }}</div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    @if($voucherTypeCode === 'CV')
+                        <div class="bg-white bg-opacity-60 rounded-lg p-3">
+                            <p class="text-xs text-gray-500 uppercase tracking-wide">From Account</p>
+                            <p class="text-sm font-semibold text-gray-900">{{ $fromAccount }}</p>
+                        </div>
+                        <div class="bg-white bg-opacity-60 rounded-lg p-3">
+                            <p class="text-xs text-gray-500 uppercase tracking-wide">To Account</p>
+                            <p class="text-sm font-semibold text-gray-900">{{ $toAccount }}</p>
+                        </div>
+                    @elseif(in_array($voucherTypeCode, ['CN', 'DN']))
+                        <div class="bg-white bg-opacity-60 rounded-lg p-3">
+                            <p class="text-xs text-gray-500 uppercase tracking-wide">Issued To</p>
+                            <p class="text-sm font-semibold text-gray-900">{{ $partyName }}</p>
+                        </div>
+                        <div class="bg-white bg-opacity-60 rounded-lg p-3">
+                            <p class="text-xs text-gray-500 uppercase tracking-wide">Adjustment Account</p>
+                            <p class="text-sm font-semibold text-gray-900">{{ $adjustmentAccount }}</p>
+                        </div>
+                    @elseif($voucherTypeCode === 'JV')
+                        <div class="bg-white bg-opacity-60 rounded-lg p-3 sm:col-span-2">
+                            <p class="text-xs text-gray-500 uppercase tracking-wide mb-2">Accounts Affected</p>
+                            <div class="flex flex-wrap gap-2">
+                                @foreach($affectedAccounts as $account)
+                                    <span class="inline-block px-3 py-1 {{ $voucherStyle['twBg'] }} {{ $voucherStyle['twText'] }} rounded-full text-xs font-medium">{{ $account }}</span>
+                                @endforeach
+                            </div>
+                        </div>
+                    @endif
+                    @if($voucher->reference_number)
+                    <div class="bg-white bg-opacity-60 rounded-lg p-3">
+                        <p class="text-xs text-gray-500 uppercase tracking-wide">Reference</p>
+                        <p class="text-sm font-semibold text-gray-900">{{ $voucher->reference_number }}</p>
+                    </div>
+                    @endif
+                </div>
+            </div>
+            <div class="lg:text-right lg:ml-6">
+                <p class="text-xs text-gray-500 uppercase tracking-wide">Voucher No.</p>
+                <p class="text-lg font-bold {{ $voucherStyle['twText'] }}">{{ ($voucher->voucherType->prefix ?? '') . $voucher->voucher_number }}</p>
+            </div>
+        </div>
+        @if($voucher->narration)
+            <div class="mt-4 pt-4 border-t {{ $voucherStyle['twBorder'] }}">
+                <p class="text-xs text-gray-500 uppercase tracking-wide mb-1">Narration / Description</p>
+                <p class="text-sm text-gray-700">{{ $voucher->narration }}</p>
+            </div>
+        @endif
+    </div>
+    @else
     <!-- Voucher Summary Card -->
     <div class="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl border border-blue-200 p-6">
         <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between space-y-4 lg:space-y-0">
@@ -127,8 +275,10 @@
             </div>
         @endif
     </div>
+    @endif
 
     <!-- Voucher Entries -->
+    @if(!isset($isReceipt))
     <div class="bg-white shadow-sm rounded-lg border border-gray-200">
         <div class="px-4 sm:px-6 py-4 border-b border-gray-200">
             <div class="flex items-center justify-between">
@@ -315,6 +465,7 @@
             </table>
         </div>
     </div>
+    @endif
 
     <!-- Audit Trail -->
     <div class="bg-white shadow-sm rounded-lg border border-gray-200">
