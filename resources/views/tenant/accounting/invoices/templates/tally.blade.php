@@ -9,10 +9,10 @@
         body {
             font-family: 'DejaVu Sans', Arial, sans-serif;
             margin: 0;
-            padding: 10px;
+            padding: 8px;
             color: #000;
-            font-size: 12px;
-            line-height: 1.3;
+            font-size: 11px;
+            line-height: 1.2;
         }
         .invoice-container {
             max-width: 100%;
@@ -22,9 +22,9 @@
         /* Title */
         .invoice-title-row {
             text-align: center;
-            font-size: 16px;
+            font-size: 14px;
             font-weight: bold;
-            padding: 8px;
+            padding: 5px;
             border-bottom: 2px solid #000;
             text-decoration: underline;
         }
@@ -35,7 +35,7 @@
         }
         .top-section td {
             vertical-align: top;
-            padding: 6px 10px;
+            padding: 4px 8px;
             border-bottom: 1px solid #000;
         }
         .top-left {
@@ -46,15 +46,15 @@
             width: 45%;
         }
         .company-name {
-            font-size: 15px;
+            font-size: 13px;
             font-weight: bold;
             text-transform: uppercase;
-            margin-bottom: 3px;
+            margin-bottom: 1px;
         }
         .company-detail {
-            font-size: 11px;
+            font-size: 10px;
             color: #333;
-            line-height: 1.4;
+            line-height: 1.3;
         }
         /* Meta info rows */
         .meta-table {
@@ -62,8 +62,8 @@
             border-collapse: collapse;
         }
         .meta-table td {
-            padding: 3px 4px;
-            font-size: 11px;
+            padding: 2px 3px;
+            font-size: 10px;
             border: none;
         }
         .meta-label {
@@ -80,7 +80,7 @@
         }
         .buyer-section td {
             vertical-align: top;
-            padding: 6px 10px;
+            padding: 4px 8px;
             border-bottom: 1px solid #000;
         }
         .buyer-left {
@@ -91,19 +91,19 @@
             width: 45%;
         }
         .buyer-label {
-            font-size: 11px;
+            font-size: 10px;
             color: #555;
-            margin-bottom: 2px;
+            margin-bottom: 1px;
         }
         .buyer-name {
-            font-size: 13px;
+            font-size: 12px;
             font-weight: bold;
-            margin-bottom: 3px;
+            margin-bottom: 1px;
         }
         .buyer-detail {
-            font-size: 11px;
+            font-size: 10px;
             color: #333;
-            line-height: 1.4;
+            line-height: 1.3;
         }
         /* Items table */
         .items-table {
@@ -114,9 +114,9 @@
             background: #f5f5f5;
             border-bottom: 2px solid #000;
             border-right: 1px solid #000;
-            padding: 6px 4px;
+            padding: 4px 3px;
             text-align: center;
-            font-size: 11px;
+            font-size: 10px;
             font-weight: bold;
         }
         .items-table th:last-child {
@@ -125,8 +125,8 @@
         .items-table td {
             border-bottom: 1px solid #ccc;
             border-right: 1px solid #ccc;
-            padding: 5px 4px;
-            font-size: 11px;
+            padding: 3px 3px;
+            font-size: 10px;
             vertical-align: top;
         }
         .items-table td:last-child {
@@ -139,23 +139,23 @@
         .col-per { width: 8%; text-align: center; }
         .col-amount { width: 17%; text-align: right; padding-right: 8px !important; font-weight: bold; }
         .item-sub {
-            font-size: 10px;
+            font-size: 9px;
             color: #666;
             font-style: italic;
         }
         /* Charges rows */
         .charge-row td {
             border-bottom: 1px solid #ccc;
-            font-size: 11px;
+            font-size: 10px;
         }
         /* Total row */
         .total-row {
             border-top: 2px solid #000;
         }
         .total-row td {
-            padding: 8px 4px;
+            padding: 5px 3px;
             font-weight: bold;
-            font-size: 13px;
+            font-size: 12px;
             border-bottom: none;
             border-right: 1px solid #000;
         }
@@ -164,9 +164,9 @@
         }
         /* Amount in words */
         .amount-words {
-            padding: 8px 10px;
+            padding: 5px 8px;
             border-top: 2px solid #000;
-            font-size: 11px;
+            font-size: 10px;
         }
         .amount-words-label {
             font-weight: bold;
@@ -183,41 +183,41 @@
             border-top: 1px solid #000;
         }
         .footer-section td {
-            padding: 10px;
+            padding: 6px;
             vertical-align: top;
         }
         .footer-left {
             width: 55%;
             border-right: 1px solid #000;
-            font-size: 11px;
-            line-height: 1.5;
+            font-size: 10px;
+            line-height: 1.3;
         }
         .footer-right {
             width: 45%;
             text-align: right;
-            font-size: 11px;
+            font-size: 10px;
         }
         .auth-signatory {
-            margin-top: 40px;
+            margin-top: 25px;
             font-weight: bold;
             font-style: italic;
         }
         /* Bank details */
         .bank-details {
-            font-size: 10px;
-            padding: 5px 10px;
+            font-size: 9px;
+            padding: 3px 8px;
             border-top: 1px solid #ccc;
             color: #555;
         }
         .computer-generated {
             text-align: center;
-            font-size: 10px;
+            font-size: 9px;
             color: #999;
-            padding: 5px;
+            padding: 3px;
             border-top: 1px solid #000;
         }
         @page {
-            margin: 15mm;
+            margin: 12mm;
             size: A4;
         }
         .no-break { page-break-inside: avoid; }
@@ -406,16 +406,16 @@
 
         <!-- Bank Details -->
         @if(isset($invoiceBank) && $invoiceBank)
-        <table style="width: 100%; margin-bottom: 10px; border: 1px solid #000;">
+        <table style="width: 100%; margin-bottom: 5px; border: 1px solid #000;">
             <tr>
-                <td style="padding: 8px; font-weight: bold; background: #f5f5f5; border-bottom: 1px solid #000;" colspan="2">Bank Details for Payment</td>
+                <td style="padding: 4px 6px; font-weight: bold; background: #f5f5f5; border-bottom: 1px solid #000; font-size: 10px;" colspan="2">Bank Details for Payment</td>
             </tr>
             <tr>
-                <td style="padding: 5px 8px; width: 50%; border-right: 1px solid #ccc;">
+                <td style="padding: 3px 6px; width: 50%; border-right: 1px solid #ccc; font-size: 10px;">
                     <strong>Bank:</strong> {{ $invoiceBank->bank_name }}<br>
                     <strong>Account Name:</strong> {{ $invoiceBank->account_name }}
                 </td>
-                <td style="padding: 5px 8px;">
+                <td style="padding: 3px 6px; font-size: 10px;">
                     <strong>Account No:</strong> {{ $invoiceBank->account_number }}
                     @if($invoiceBank->branch_name)<br><strong>Branch:</strong> {{ $invoiceBank->branch_name }}@endif
                     @if($invoiceBank->sort_code)<br><strong>Sort Code:</strong> {{ $invoiceBank->sort_code }}@endif

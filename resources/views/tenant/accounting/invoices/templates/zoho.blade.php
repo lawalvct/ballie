@@ -9,10 +9,10 @@
         body {
             font-family: 'DejaVu Sans', Arial, sans-serif;
             margin: 0;
-            padding: 20px;
+            padding: 10px;
             color: #333;
-            font-size: 12px;
-            line-height: 1.5;
+            font-size: 11px;
+            line-height: 1.3;
         }
         .invoice-container {
             max-width: 100%;
@@ -20,15 +20,15 @@
         }
         /* Top accent bar */
         .accent-bar {
-            height: 6px;
+            height: 4px;
             background: #0077B5;
-            margin-bottom: 30px;
+            margin-bottom: 10px;
         }
         /* Header */
         .header {
             display: table;
             width: 100%;
-            margin-bottom: 30px;
+            margin-bottom: 10px;
         }
         .header-left {
             display: table-cell;
@@ -42,37 +42,37 @@
             text-align: right;
         }
         .company-name {
-            font-size: 22px;
+            font-size: 16px;
             font-weight: bold;
             color: #0077B5;
-            margin-bottom: 4px;
+            margin-bottom: 2px;
         }
         .company-details {
-            font-size: 11px;
+            font-size: 10px;
             color: #777;
-            line-height: 1.5;
+            line-height: 1.3;
         }
         .invoice-label {
-            font-size: 28px;
+            font-size: 20px;
             font-weight: bold;
             color: #0077B5;
             letter-spacing: 2px;
-            margin-bottom: 10px;
+            margin-bottom: 5px;
         }
         .invoice-meta {
-            font-size: 12px;
+            font-size: 10px;
             color: #555;
         }
         .invoice-meta strong {
             display: inline-block;
-            width: 100px;
+            width: 80px;
             color: #777;
         }
         /* Bill To / Ship To */
         .billing-row {
             display: table;
             width: 100%;
-            margin-bottom: 25px;
+            margin-bottom: 10px;
         }
         .billing-col {
             display: table-cell;
@@ -80,46 +80,46 @@
             vertical-align: top;
         }
         .billing-title {
-            font-size: 10px;
+            font-size: 9px;
             text-transform: uppercase;
-            letter-spacing: 1.5px;
+            letter-spacing: 1px;
             color: #0077B5;
             font-weight: bold;
-            margin-bottom: 8px;
-            padding-bottom: 4px;
+            margin-bottom: 4px;
+            padding-bottom: 2px;
             border-bottom: 1px solid #e0e0e0;
         }
         .billing-name {
-            font-size: 14px;
+            font-size: 12px;
             font-weight: bold;
             color: #333;
-            margin-bottom: 4px;
+            margin-bottom: 2px;
         }
         .billing-detail {
-            font-size: 11px;
+            font-size: 10px;
             color: #666;
         }
         /* Items table */
         .items-table {
             width: 100%;
             border-collapse: collapse;
-            margin-bottom: 20px;
+            margin-bottom: 8px;
         }
         .items-table th {
             background: #0077B5;
             color: #fff;
-            padding: 10px 8px;
+            padding: 5px 6px;
             text-align: left;
-            font-size: 10px;
+            font-size: 9px;
             text-transform: uppercase;
             letter-spacing: 0.5px;
         }
         .items-table th.text-right { text-align: right; }
         .items-table th.text-center { text-align: center; }
         .items-table td {
-            padding: 10px 8px;
+            padding: 4px 6px;
             border-bottom: 1px solid #eee;
-            font-size: 11px;
+            font-size: 10px;
         }
         .items-table tbody tr:nth-child(even) {
             background: #f9fbfd;
@@ -127,12 +127,12 @@
         .items-table .text-right { text-align: right; }
         .items-table .text-center { text-align: center; }
         .product-name { font-weight: bold; color: #333; }
-        .product-desc { font-size: 10px; color: #999; }
+        .product-desc { font-size: 9px; color: #999; }
         /* Summary */
         .summary-wrapper {
             display: table;
             width: 100%;
-            margin-bottom: 20px;
+            margin-bottom: 8px;
         }
         .summary-spacer {
             display: table-cell;
@@ -147,13 +147,13 @@
             border-collapse: collapse;
         }
         .summary-table td {
-            padding: 6px 10px;
-            font-size: 11px;
+            padding: 4px 8px;
+            font-size: 10px;
         }
         .summary-table .label {
             color: #777;
             text-align: right;
-            padding-right: 15px;
+            padding-right: 10px;
         }
         .summary-table .value {
             text-align: right;
@@ -164,22 +164,22 @@
             color: #fff;
         }
         .summary-table .total-row td {
-            padding: 10px;
-            font-size: 14px;
+            padding: 6px;
+            font-size: 12px;
             font-weight: bold;
         }
         /* Amount in words */
         .amount-words {
             background: #f0f7ff;
             border-left: 3px solid #0077B5;
-            padding: 10px 15px;
-            margin-bottom: 25px;
-            font-size: 11px;
+            padding: 5px 10px;
+            margin-bottom: 8px;
+            font-size: 10px;
         }
         .amount-words-label {
             color: #0077B5;
             font-weight: bold;
-            font-size: 10px;
+            font-size: 9px;
             text-transform: uppercase;
         }
         .amount-words-text {
@@ -189,64 +189,64 @@
         }
         /* Notes */
         .notes {
-            margin-bottom: 20px;
+            margin-bottom: 6px;
         }
         .notes-title {
-            font-size: 10px;
+            font-size: 9px;
             text-transform: uppercase;
             letter-spacing: 1px;
             color: #0077B5;
             font-weight: bold;
-            margin-bottom: 5px;
+            margin-bottom: 3px;
         }
         .notes-content {
-            font-size: 11px;
+            font-size: 10px;
             color: #666;
-            padding: 8px;
+            padding: 5px;
             background: #fafafa;
-            border-radius: 4px;
+            border-radius: 3px;
         }
         /* Terms */
         .terms {
-            font-size: 10px;
+            font-size: 9px;
             color: #999;
-            margin-bottom: 25px;
-            padding-top: 10px;
+            margin-bottom: 8px;
+            padding-top: 5px;
             border-top: 1px solid #eee;
         }
         .terms ul {
-            margin: 5px 0 0;
-            padding-left: 15px;
+            margin: 3px 0 0;
+            padding-left: 12px;
         }
-        .terms li { margin-bottom: 2px; }
+        .terms li { margin-bottom: 1px; }
         /* Signatures */
         .signatures {
             display: table;
             width: 100%;
-            margin-bottom: 20px;
+            margin-bottom: 8px;
         }
         .sign-box {
             display: table-cell;
             width: 50%;
             text-align: center;
-            padding: 10px;
+            padding: 5px;
         }
         .sign-line {
             border-top: 1px solid #333;
-            margin-top: 50px;
-            padding-top: 5px;
-            font-size: 11px;
+            margin-top: 25px;
+            padding-top: 4px;
+            font-size: 10px;
             color: #777;
         }
         /* Footer */
         .footer {
             text-align: center;
-            font-size: 10px;
+            font-size: 9px;
             color: #aaa;
-            padding-top: 10px;
+            padding-top: 5px;
             border-top: 1px solid #eee;
         }
-        @page { margin: 18mm; size: A4; }
+        @page { margin: 15mm; size: A4; }
         .no-break { page-break-inside: avoid; }
     </style>
 </head>
@@ -258,7 +258,7 @@
         <div class="header">
             <div class="header-left">
                 @if($tenant->logo)
-                    <img src="{{ storage_path('app/public/' . $tenant->logo) }}" alt="" style="max-height: 50px; margin-bottom: 8px;">
+                    <img src="{{ storage_path('app/public/' . $tenant->logo) }}" alt="" style="max-height: 40px; margin-bottom: 4px;">
                 @endif
                 <div class="company-name">{{ $tenant->name }}</div>
                 <div class="company-details">
@@ -303,7 +303,6 @@
                 <div class="billing-title">{{ $term->label('sales_invoice') }} Details</div>
                 <div class="billing-detail">
                     <strong>Payment Terms:</strong> {{ $customer->payment_terms ?? '30 Days' }}<br>
-                    <strong>Currency:</strong> {{ $tenant->settings['currency'] ?? 'NGN' }} ({{ $currencySymbol }})<br>
                     @if($invoice->createdBy)
                         <strong>Prepared By:</strong> {{ $invoice->createdBy->name ?? 'System' }}
                     @endif
@@ -396,12 +395,12 @@
         @endif
 
         <!-- Bank Details & Terms -->
-        <div style="display: table; width: 100%; margin-bottom: 15px;">
+        <div style="display: table; width: 100%; margin-bottom: 8px;">
             @if(isset($invoiceBank) && $invoiceBank)
-            <div style="display: table-cell; width: 50%; vertical-align: top; padding-right: 15px;">
-                <div style="background: #f0f7ff; padding: 12px 15px; border-radius: 6px; border-left: 4px solid #0078d4;">
-                    <div style="font-size: 13px; font-weight: bold; color: #0078d4; margin-bottom: 8px; text-transform: uppercase;">Bank Details</div>
-                    <div style="font-size: 12px; line-height: 1.6;">
+            <div style="display: table-cell; width: 50%; vertical-align: top; padding-right: 10px;">
+                <div style="background: #f0f7ff; padding: 6px 10px; border-radius: 4px; border-left: 3px solid #0078d4;">
+                    <div style="font-size: 10px; font-weight: bold; color: #0078d4; margin-bottom: 4px; text-transform: uppercase;">Bank Details</div>
+                    <div style="font-size: 10px; line-height: 1.4;">
                         <strong>Bank:</strong> {{ $invoiceBank->bank_name }}<br>
                         <strong>Account Name:</strong> {{ $invoiceBank->account_name }}<br>
                         <strong>Account No:</strong> {{ $invoiceBank->account_number }}

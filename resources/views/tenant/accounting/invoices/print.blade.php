@@ -99,7 +99,7 @@ if (!function_exists('convertChunkToWords')) {
 
         body {
             font-family: 'Arial', sans-serif;
-            line-height: 1.6;
+            line-height: 1.3;
             color: #333;
             background-color: #fff;
         }
@@ -107,7 +107,7 @@ if (!function_exists('convertChunkToWords')) {
         .invoice-container {
             max-width: 210mm;
             margin: 0 auto;
-            padding: 20px;
+            padding: 10px;
             background: white;
             box-shadow: 0 0 20px rgba(0,0,0,0.1);
         }
@@ -117,8 +117,8 @@ if (!function_exists('convertChunkToWords')) {
             display: flex;
             justify-content: space-between;
             align-items: start;
-            margin-bottom: 40px;
-            padding-bottom: 20px;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
             border-bottom: 3px solid #2c5aa0;
         }
 
@@ -127,49 +127,49 @@ if (!function_exists('convertChunkToWords')) {
         }
 
         .company-logo {
-            max-width: 120px;
-            max-height: 80px;
-            margin-bottom: 15px;
+            max-width: 80px;
+            max-height: 50px;
+            margin-bottom: 5px;
         }
 
         .company-name {
-            font-size: 28px;
+            font-size: 20px;
             font-weight: bold;
             color: #2c5aa0;
-            margin-bottom: 8px;
+            margin-bottom: 3px;
             text-transform: uppercase;
             letter-spacing: 1px;
         }
 
         .company-details {
-            font-size: 14px;
+            font-size: 12px;
             color: #666;
-            line-height: 1.5;
+            line-height: 1.3;
         }
 
         .invoice-meta {
             text-align: right;
-            flex: 0 0 300px;
+            flex: 0 0 250px;
         }
 
         .invoice-title {
-            font-size: 32px;
+            font-size: 22px;
             font-weight: bold;
             color: #2c5aa0;
-            margin-bottom: 15px;
+            margin-bottom: 5px;
             text-transform: uppercase;
             letter-spacing: 2px;
         }
 
         .invoice-number {
-            font-size: 20px;
+            font-size: 15px;
             font-weight: bold;
             color: #e74c3c;
-            margin-bottom: 10px;
+            margin-bottom: 3px;
         }
 
         .invoice-date {
-            font-size: 14px;
+            font-size: 12px;
             color: #666;
         }
 
@@ -177,15 +177,15 @@ if (!function_exists('convertChunkToWords')) {
         .billing-section {
             display: flex;
             justify-content: space-between;
-            margin-bottom: 40px;
+            margin-bottom: 15px;
         }
 
         .bill-to, .ship-to {
             flex: 1;
-            margin-right: 30px;
-            padding: 20px;
+            margin-right: 15px;
+            padding: 10px;
             background: #f8f9fa;
-            border-radius: 8px;
+            border-radius: 6px;
             border-left: 4px solid #2c5aa0;
         }
 
@@ -194,37 +194,37 @@ if (!function_exists('convertChunkToWords')) {
         }
 
         .section-title {
-            font-size: 16px;
+            font-size: 13px;
             font-weight: bold;
             color: #2c5aa0;
-            margin-bottom: 12px;
+            margin-bottom: 5px;
             text-transform: uppercase;
             letter-spacing: 0.5px;
         }
 
         .customer-name {
-            font-size: 18px;
+            font-size: 14px;
             font-weight: bold;
             color: #333;
-            margin-bottom: 8px;
+            margin-bottom: 3px;
         }
 
         .customer-details {
-            font-size: 14px;
+            font-size: 12px;
             color: #666;
-            line-height: 1.6;
+            line-height: 1.3;
         }
 
         /* Items Table */
         .items-section {
-            margin-bottom: 30px;
+            margin-bottom: 10px;
         }
 
         .items-table {
             width: 100%;
             border-collapse: collapse;
             background: white;
-            border-radius: 8px;
+            border-radius: 6px;
             overflow: hidden;
             box-shadow: 0 2px 8px rgba(0,0,0,0.1);
         }
@@ -235,16 +235,16 @@ if (!function_exists('convertChunkToWords')) {
         }
 
         .items-table th {
-            padding: 15px 12px;
+            padding: 8px;
             text-align: left;
             font-weight: bold;
-            font-size: 14px;
+            font-size: 11px;
             text-transform: uppercase;
             letter-spacing: 0.5px;
         }
 
         .items-table td {
-            padding: 12px;
+            padding: 5px 8px;
             border-bottom: 1px solid #eee;
             vertical-align: top;
         }
@@ -275,20 +275,20 @@ if (!function_exists('convertChunkToWords')) {
         .summary-section {
             display: flex;
             justify-content: flex-end;
-            margin-bottom: 30px;
+            margin-bottom: 10px;
         }
 
         .summary-table {
-            min-width: 350px;
+            min-width: 300px;
             border-collapse: collapse;
             background: white;
-            border-radius: 8px;
+            border-radius: 6px;
             overflow: hidden;
             box-shadow: 0 2px 8px rgba(0,0,0,0.1);
         }
 
         .summary-table td {
-            padding: 12px 15px;
+            padding: 6px 10px;
             border-bottom: 1px solid #eee;
         }
 
@@ -307,7 +307,7 @@ if (!function_exists('convertChunkToWords')) {
         .summary-table .total-row {
             background: linear-gradient(135deg, #2c5aa0 0%, #1e3d72 100%);
             color: white;
-            font-size: 16px;
+            font-size: 13px;
             font-weight: bold;
         }
 
@@ -318,22 +318,22 @@ if (!function_exists('convertChunkToWords')) {
         /* Amount in Words */
         .amount-words {
             background: #f8f9fa;
-            padding: 20px;
-            border-radius: 8px;
+            padding: 8px 12px;
+            border-radius: 4px;
             border-left: 4px solid #27ae60;
-            margin-bottom: 30px;
+            margin-bottom: 10px;
         }
 
         .amount-words-title {
-            font-size: 14px;
+            font-size: 11px;
             font-weight: bold;
             color: #27ae60;
-            margin-bottom: 8px;
+            margin-bottom: 3px;
             text-transform: uppercase;
         }
 
         .amount-words-text {
-            font-size: 16px;
+            font-size: 12px;
             font-weight: bold;
             color: #333;
             font-style: italic;
@@ -341,37 +341,37 @@ if (!function_exists('convertChunkToWords')) {
 
         /* Notes Section */
         .notes-section {
-            margin-bottom: 30px;
+            margin-bottom: 10px;
         }
 
         .notes-title {
-            font-size: 16px;
+            font-size: 13px;
             font-weight: bold;
             color: #2c5aa0;
-            margin-bottom: 10px;
+            margin-bottom: 4px;
             text-transform: uppercase;
         }
 
         .notes-content {
             background: #f8f9fa;
-            padding: 15px;
-            border-radius: 8px;
+            padding: 8px;
+            border-radius: 4px;
             border-left: 4px solid #f39c12;
-            font-size: 14px;
+            font-size: 12px;
             color: #555;
         }
 
         /* Footer */
         .invoice-footer {
-            margin-top: 50px;
-            padding-top: 30px;
+            margin-top: 20px;
+            padding-top: 10px;
             border-top: 2px solid #eee;
         }
 
         .signature-section {
             display: flex;
             justify-content: space-between;
-            margin-bottom: 30px;
+            margin-bottom: 10px;
         }
 
         .signature-box {
@@ -381,26 +381,26 @@ if (!function_exists('convertChunkToWords')) {
 
         .signature-line {
             border-top: 2px solid #333;
-            margin-top: 60px;
-            padding-top: 10px;
+            margin-top: 30px;
+            padding-top: 5px;
             font-weight: bold;
             color: #555;
         }
 
         .footer-info {
             text-align: center;
-            font-size: 12px;
+            font-size: 10px;
             color: #999;
-            padding-top: 20px;
+            padding-top: 8px;
             border-top: 1px solid #eee;
         }
 
         /* Status Badge */
         .status-badge {
             display: inline-block;
-            padding: 6px 12px;
+            padding: 4px 8px;
             border-radius: 20px;
-            font-size: 12px;
+            font-size: 10px;
             font-weight: bold;
             text-transform: uppercase;
             letter-spacing: 0.5px;
@@ -420,6 +420,12 @@ if (!function_exists('convertChunkToWords')) {
 
         /* Print Styles */
         @media print {
+            [contenteditable] {
+                outline: none !important;
+                border: none !important;
+                box-shadow: none !important;
+            }
+
             body {
                 margin: 0;
                 background: white;
@@ -429,7 +435,7 @@ if (!function_exists('convertChunkToWords')) {
                 box-shadow: none;
                 max-width: none;
                 margin: 0;
-                padding: 15px;
+                padding: 10px;
             }
 
             .no-print {
@@ -509,8 +515,8 @@ if (!function_exists('convertChunkToWords')) {
                 @if($tenant->logo)
                     <img src="{{ asset('storage/' . $tenant->logo) }}" alt="{{ $tenant->name }}" class="company-logo">
                 @endif
-                <div class="company-name">{{ $tenant->name }}</div>
-                <div class="company-details">
+                <div class="company-name" contenteditable="true">{{ $tenant->name }}</div>
+                <div class="company-details" contenteditable="true">
                     @if($tenant->address)
                         📍 {{ $tenant->address }}<br>
                     @endif
@@ -530,9 +536,9 @@ if (!function_exists('convertChunkToWords')) {
             </div>
 
             <div class="invoice-meta">
-                <div class="invoice-title">{{ $term->label('sales_invoice') }}</div>
-                <div class="invoice-number"># {{ $invoice->voucherType->prefix }}{{ str_pad($invoice->voucher_number, 4, '0', STR_PAD_LEFT) }}</div>
-                <div class="invoice-date">
+                <div class="invoice-title" contenteditable="true">{{ $term->label('sales_invoice') }}</div>
+                <div class="invoice-number" contenteditable="true"># {{ $invoice->voucherType->prefix }}{{ str_pad($invoice->voucher_number, 4, '0', STR_PAD_LEFT) }}</div>
+                <div class="invoice-date" contenteditable="true">
                     <strong>Date:</strong> {{ $invoice->voucher_date->format('M d, Y') }}<br>
                     @if($invoice->reference_number)
                         <strong>Ref:</strong> {{ $invoice->reference_number }}<br>
@@ -547,14 +553,14 @@ if (!function_exists('convertChunkToWords')) {
             <div class="bill-to">
                 <div class="section-title">📋 Bill To</div>
                 @if($customer)
-                    <div class="customer-name">
+                    <div class="customer-name" contenteditable="true">
                         @if($customer->customer_type === 'business' || !empty($customer->company_name))
                             {{ $customer->company_name ?? $customer->name }}
                         @else
                             {{ $customer->first_name ?? '' }} {{ $customer->last_name ?? '' }}
                         @endif
                     </div>
-                    <div class="customer-details">
+                    <div class="customer-details" contenteditable="true">
                         @if($customer->address || ($customer->address_line1 ?? false))
                             📍 {{ $customer->address ?? $customer->address_line1 }}<br>
                             @if($customer->address_line2 ?? false)
@@ -581,16 +587,15 @@ if (!function_exists('convertChunkToWords')) {
                         @endif
                     </div>
                 @else
-                    <div class="customer-name">Walk-in {{ $term->label('customer') }}</div>
-                    <div class="customer-details">Cash {{ $term->label('sales') }} / Counter {{ $term->label('sales') }}</div>
+                    <div class="customer-name" contenteditable="true">Walk-in {{ $term->label('customer') }}</div>
+                    <div class="customer-details" contenteditable="true">Cash {{ $term->label('sales') }} / Counter {{ $term->label('sales') }}</div>
                 @endif
             </div>
 
             <div class="ship-to">
                 <div class="section-title">📦 {{ $term->label('sales_invoice') }} Details</div>
-                <div class="customer-details">
+                <div class="customer-details" contenteditable="true">
                     <strong>Payment Terms:</strong> {{ $customer->payment_terms ?? 'Cash on Delivery' }}<br>
-                    <strong>Currency:</strong> {{ $customer->currency ?? 'NGN' }}<br>
                     @if($invoice->created_by)
                         <strong>Prepared By:</strong> {{ $invoice->createdBy->name ?? 'System' }}<br>
                     @endif
@@ -642,33 +647,33 @@ if (!function_exists('convertChunkToWords')) {
                         <tr>
                             <td class="text-center sn-column">{{ $index + 1 }}</td>
                             <td>
-                                <div style="font-weight: bold; color: #333; margin-bottom: 4px;">
+                                <div style="font-weight: bold; color: #333; margin-bottom: 2px;" contenteditable="true">
                                     {{ $productName }}
                                 </div>
                                 @if($sku)
-                                    <div style="font-size: 12px; color: #999;">
+                                    <div style="font-size: 10px; color: #999;">
                                         SKU: {{ $sku }}
                                     </div>
                                 @endif
                             </td>
                             <td>
-                                <div style="color: #666; font-size: 14px;">
+                                <div style="color: #666; font-size: 12px;" contenteditable="true">
                                     {{ $description ?: 'N/A' }}
                                 </div>
                             </td>
                             <td class="text-center">
-                                <span style="font-weight: bold; color: #2c5aa0;">
+                                <span style="font-weight: bold; color: #2c5aa0;" contenteditable="true">
                                     {{ number_format($quantity, 2) }}
                                 </span>
                                 @if($unit)
-                                    <div style="font-size: 12px; color: #999;">{{ $unit }}</div>
+                                    <div style="font-size: 10px; color: #999;">{{ $unit }}</div>
                                 @endif
                             </td>
                             <td class="text-right">
-                                <span style="font-weight: bold;">₦{{ number_format($rate, 2) }}</span>
+                                <span style="font-weight: bold;" contenteditable="true">₦{{ number_format($rate, 2) }}</span>
                             </td>
                             <td class="text-right">
-                                <span style="font-weight: bold; color: #27ae60;">₦{{ number_format($amount, 2) }}</span>
+                                <span style="font-weight: bold; color: #27ae60;" contenteditable="true">₦{{ number_format($amount, 2) }}</span>
                             </td>
                         </tr>
                     @endforeach
@@ -681,8 +686,8 @@ if (!function_exists('convertChunkToWords')) {
         <div class="summary-section">
             <table class="summary-table">
                 <tr>
-                    <td class="label">Subtotal:</td>
-                    <td class="amount">₦{{ number_format($subtotal ?? $inventoryItems->sum('amount'), 2) }}</td>
+                    <td class="label" contenteditable="true">Subtotal:</td>
+                    <td class="amount" contenteditable="true">₦{{ number_format($subtotal ?? $inventoryItems->sum('amount'), 2) }}</td>
                 </tr>
 
                 @php
@@ -754,7 +759,7 @@ if (!function_exists('convertChunkToWords')) {
                             $chargeAmount = $charge->credit_amount > 0 ? $charge->credit_amount : $charge->debit_amount;
                         @endphp
                         <tr>
-                            <td class="label">
+                            <td class="label" contenteditable="true">
                                 {{ $charge->ledgerAccount->name }}:
                                 @if($charge->narration && $charge->narration !== $charge->ledgerAccount->name)
                                     <div style="font-size: 11px; color: #999; font-weight: normal;">
@@ -762,7 +767,7 @@ if (!function_exists('convertChunkToWords')) {
                                     </div>
                                 @endif
                             </td>
-                            <td class="amount">₦{{ number_format($chargeAmount, 2) }}</td>
+                            <td class="amount" contenteditable="true">₦{{ number_format($chargeAmount, 2) }}</td>
                         </tr>
                         @php $totalAmount += $chargeAmount; @endphp
                     @endforeach
@@ -774,7 +779,7 @@ if (!function_exists('convertChunkToWords')) {
                             $vatAmount = $vatEntry->credit_amount > 0 ? $vatEntry->credit_amount : $vatEntry->debit_amount;
                         @endphp
                         <tr>
-                            <td class="label">
+                            <td class="label" contenteditable="true">
                                 {{ $vatEntry->ledgerAccount->name }}:
                                 @if($vatEntry->narration && $vatEntry->narration !== $vatEntry->ledgerAccount->name)
                                     <div style="font-size: 11px; color: #999; font-weight: normal;">
@@ -782,15 +787,15 @@ if (!function_exists('convertChunkToWords')) {
                                     </div>
                                 @endif
                             </td>
-                            <td class="amount">₦{{ number_format($vatAmount, 2) }}</td>
+                            <td class="amount" contenteditable="true">₦{{ number_format($vatAmount, 2) }}</td>
                         </tr>
                         @php $totalAmount += $vatAmount; @endphp
                     @endforeach
                 @endif
 
                 <tr class="total-row" style="border-top: 2px solid #2c5aa0;">
-                    <td>TOTAL AMOUNT:</td>
-                    <td>₦{{ number_format($totalAmount, 2) }}</td>
+                    <td contenteditable="true">TOTAL AMOUNT:</td>
+                    <td contenteditable="true">₦{{ number_format($totalAmount, 2) }}</td>
                 </tr>
             </table>
         </div>
@@ -798,7 +803,7 @@ if (!function_exists('convertChunkToWords')) {
         <!-- Amount in Words -->
         <div class="amount-words">
             <div class="amount-words-title">💰 Amount in Words:</div>
-            <div class="amount-words-text">
+            <div class="amount-words-text" contenteditable="true">
                 {{ ucfirst(trim(numberToWords($totalAmount))) }} Naira Only
             </div>
         </div>
@@ -807,26 +812,26 @@ if (!function_exists('convertChunkToWords')) {
         @if($invoice->narration)
         <div class="notes-section">
             <div class="notes-title">📝 Additional Notes</div>
-            <div class="notes-content">
+            <div class="notes-content" contenteditable="true">
                 {{ $invoice->narration }}
             </div>
         </div>
         @endif
 
         <!-- Bank Details & Terms -->
-        <div style="display: flex; gap: 20px; margin-bottom: 30px;">
+        <div style="display: flex; gap: 10px; margin-bottom: 10px;">
             @if(isset($invoiceBank) && $invoiceBank)
             <div style="flex: 1;">
                 <div class="notes-section">
                     <div class="notes-title">🏦 Bank Details</div>
                     <div class="notes-content">
-                        <table style="width: 100%; font-size: 14px;">
-                            <tr><td style="padding: 3px 0; font-weight: 600; width: 130px;">Bank:</td><td>{{ $invoiceBank->bank_name }}</td></tr>
-                            <tr><td style="padding: 3px 0; font-weight: 600;">Account Name:</td><td>{{ $invoiceBank->account_name }}</td></tr>
-                            <tr><td style="padding: 3px 0; font-weight: 600;">Account No:</td><td>{{ $invoiceBank->account_number }}</td></tr>
-                            @if($invoiceBank->sort_code)<tr><td style="padding: 3px 0; font-weight: 600;">Sort Code:</td><td>{{ $invoiceBank->sort_code }}</td></tr>@endif
-                            @if($invoiceBank->swift_code)<tr><td style="padding: 3px 0; font-weight: 600;">Swift Code:</td><td>{{ $invoiceBank->swift_code }}</td></tr>@endif
-                            @if($invoiceBank->branch_name)<tr><td style="padding: 3px 0; font-weight: 600;">Branch:</td><td>{{ $invoiceBank->branch_name }}</td></tr>@endif
+                        <table style="width: 100%; font-size: 12px;">
+                            <tr><td style="padding: 2px 0; font-weight: 600; width: 110px;">Bank:</td><td contenteditable="true">{{ $invoiceBank->bank_name }}</td></tr>
+                            <tr><td style="padding: 2px 0; font-weight: 600;">Account Name:</td><td contenteditable="true">{{ $invoiceBank->account_name }}</td></tr>
+                            <tr><td style="padding: 2px 0; font-weight: 600;">Account No:</td><td contenteditable="true">{{ $invoiceBank->account_number }}</td></tr>
+                            @if($invoiceBank->sort_code)<tr><td style="padding: 2px 0; font-weight: 600;">Sort Code:</td><td contenteditable="true">{{ $invoiceBank->sort_code }}</td></tr>@endif
+                            @if($invoiceBank->swift_code)<tr><td style="padding: 2px 0; font-weight: 600;">Swift Code:</td><td contenteditable="true">{{ $invoiceBank->swift_code }}</td></tr>@endif
+                            @if($invoiceBank->branch_name)<tr><td style="padding: 2px 0; font-weight: 600;">Branch:</td><td contenteditable="true">{{ $invoiceBank->branch_name }}</td></tr>@endif
                         </table>
                     </div>
                 </div>
@@ -836,7 +841,7 @@ if (!function_exists('convertChunkToWords')) {
                 <div class="notes-section">
                     <div class="notes-title">📋 Terms & Conditions</div>
                     <div class="notes-content">
-                        <ul style="margin: 0; padding-left: 20px; line-height: 1.8;">
+                        <ul style="margin: 0; padding-left: 15px; line-height: 1.4;" contenteditable="true">
                             @if(!empty($invoiceTerms))
                                 @foreach(explode("\n", $invoiceTerms) as $termLine)
                                     @if(trim($termLine))
@@ -859,18 +864,18 @@ if (!function_exists('convertChunkToWords')) {
         <!-- Signature Section -->
         <div class="signature-section">
             <div class="signature-box">
-                <div class="signature-line">{{ $term->label('customer') }} Signature</div>
+                <div class="signature-line" contenteditable="true">{{ $term->label('customer') }} Signature</div>
             </div>
             <div class="signature-box">
                 @if($tenant->signature)
-                    <img src="{{ asset('storage/' . $tenant->signature) }}" alt="Authorized Signature" style="max-width: 200px; max-height: 80px; margin-bottom: 10px;">
+                    <img src="{{ asset('storage/' . $tenant->signature) }}" alt="Authorized Signature" style="max-width: 180px; max-height: 60px; margin-bottom: 5px;">
                 @endif
-                <div class="signature-line">Authorized Signature</div>
+                <div class="signature-line" contenteditable="true">Authorized Signature</div>
             </div>
         </div>
 
         <!-- Footer -->
-        <div class="footer-info">
+        <div class="footer-info" contenteditable="true">
             <p><strong>{{ $tenant->name }}</strong> | Generated on {{ now()->format('l, M d, Y \a\t g:i A') }}</p>
             <p>Powered by Ballie Business Management System | Thank you for your business!</p>
         </div>

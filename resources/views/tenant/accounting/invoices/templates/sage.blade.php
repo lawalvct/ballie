@@ -9,10 +9,10 @@
         body {
             font-family: 'DejaVu Sans', Arial, sans-serif;
             margin: 0;
-            padding: 15px;
+            padding: 10px;
             color: #2d3436;
-            font-size: 12px;
-            line-height: 1.5;
+            font-size: 11px;
+            line-height: 1.3;
         }
         .invoice-container {
             max-width: 100%;
@@ -36,54 +36,54 @@
             text-align: right;
         }
         .logo {
-            max-height: 55px;
-            margin-bottom: 8px;
+            max-height: 40px;
+            margin-bottom: 4px;
         }
         .company-name {
-            font-size: 20px;
+            font-size: 16px;
             font-weight: bold;
             color: #00733B;
-            margin-bottom: 3px;
+            margin-bottom: 2px;
         }
         .company-details {
-            font-size: 11px;
+            font-size: 10px;
             color: #777;
-            line-height: 1.4;
+            line-height: 1.3;
         }
         .invoice-badge {
             display: inline-block;
             background: #00733B;
             color: #fff;
-            font-size: 20px;
+            font-size: 16px;
             font-weight: bold;
-            padding: 8px 20px;
-            letter-spacing: 3px;
-            margin-bottom: 10px;
+            padding: 5px 15px;
+            letter-spacing: 2px;
+            margin-bottom: 5px;
         }
         .meta-line {
-            font-size: 11px;
+            font-size: 10px;
             color: #555;
-            margin-bottom: 2px;
+            margin-bottom: 1px;
         }
         .meta-line strong {
             color: #333;
         }
         /* Green divider */
         .divider {
-            height: 3px;
+            height: 2px;
             background: #00733B;
-            margin: 15px 0;
+            margin: 8px 0;
         }
         .divider-thin {
             height: 1px;
             background: #ddd;
-            margin: 15px 0;
+            margin: 8px 0;
         }
         /* Billing */
         .billing-row {
             display: table;
             width: 100%;
-            margin-bottom: 20px;
+            margin-bottom: 10px;
         }
         .billing-col {
             display: table-cell;
@@ -91,25 +91,25 @@
             vertical-align: top;
         }
         .billing-label {
-            font-size: 11px;
+            font-size: 10px;
             font-weight: bold;
             color: #00733B;
             text-transform: uppercase;
             letter-spacing: 1px;
-            margin-bottom: 6px;
-            padding-bottom: 3px;
+            margin-bottom: 4px;
+            padding-bottom: 2px;
             border-bottom: 2px solid #00733B;
             display: inline-block;
         }
         .billing-name {
-            font-size: 14px;
+            font-size: 12px;
             font-weight: bold;
-            margin-bottom: 4px;
+            margin-bottom: 2px;
         }
         .billing-detail {
-            font-size: 11px;
+            font-size: 10px;
             color: #666;
-            line-height: 1.5;
+            line-height: 1.3;
         }
         /* Items table */
         .items-table {
@@ -120,9 +120,9 @@
         .items-table th {
             background: #f4f9f6;
             color: #00733B;
-            padding: 10px 8px;
+            padding: 5px 6px;
             text-align: left;
-            font-size: 10px;
+            font-size: 9px;
             text-transform: uppercase;
             letter-spacing: 0.5px;
             border-bottom: 2px solid #00733B;
@@ -131,25 +131,25 @@
         .items-table th.text-right { text-align: right; }
         .items-table th.text-center { text-align: center; }
         .items-table td {
-            padding: 8px;
+            padding: 4px 6px;
             border-bottom: 1px solid #eee;
-            font-size: 11px;
+            font-size: 10px;
         }
         .items-table .text-right { text-align: right; }
         .items-table .text-center { text-align: center; }
         .product-name { font-weight: bold; }
-        .product-desc { font-size: 10px; color: #999; }
+        .product-desc { font-size: 9px; color: #999; }
         /* Summary */
         .summary-wrapper {
             display: table;
             width: 100%;
-            margin-bottom: 20px;
+            margin-bottom: 8px;
         }
         .summary-notes {
             display: table-cell;
             width: 55%;
             vertical-align: top;
-            padding-right: 20px;
+            padding-right: 15px;
         }
         .summary-box {
             display: table-cell;
@@ -161,12 +161,12 @@
             border-collapse: collapse;
         }
         .summary-table td {
-            padding: 6px 10px;
-            font-size: 11px;
+            padding: 4px 8px;
+            font-size: 10px;
         }
         .summary-label {
             text-align: right;
-            padding-right: 15px;
+            padding-right: 10px;
             color: #777;
         }
         .summary-value {
@@ -178,22 +178,22 @@
             color: #fff;
         }
         .summary-total td {
-            padding: 10px;
-            font-size: 14px;
+            padding: 6px;
+            font-size: 12px;
             font-weight: bold;
         }
         /* Amount Words */
         .amount-words {
             background: #f4f9f6;
-            border-left: 4px solid #00733B;
-            padding: 10px 15px;
-            margin-bottom: 20px;
-            font-size: 11px;
+            border-left: 3px solid #00733B;
+            padding: 5px 10px;
+            margin-bottom: 8px;
+            font-size: 10px;
         }
         .amount-words-label {
             font-weight: bold;
             color: #00733B;
-            font-size: 10px;
+            font-size: 9px;
             text-transform: uppercase;
         }
         .amount-words-text {
@@ -202,60 +202,60 @@
         }
         /* Notes */
         .notes-title {
-            font-size: 11px;
+            font-size: 10px;
             font-weight: bold;
             color: #00733B;
             text-transform: uppercase;
-            margin-bottom: 4px;
+            margin-bottom: 2px;
         }
         .notes-content {
-            font-size: 11px;
+            font-size: 10px;
             color: #666;
             background: #fafafa;
-            padding: 8px;
+            padding: 5px;
             border-radius: 3px;
         }
         /* Terms */
         .terms {
-            font-size: 10px;
+            font-size: 9px;
             color: #999;
-            padding-top: 10px;
+            padding-top: 5px;
             border-top: 1px solid #eee;
-            margin-bottom: 25px;
+            margin-bottom: 8px;
         }
         .terms ul {
-            margin: 4px 0 0;
-            padding-left: 15px;
+            margin: 2px 0 0;
+            padding-left: 12px;
         }
-        .terms li { margin-bottom: 2px; }
+        .terms li { margin-bottom: 1px; }
         /* Signatures */
         .signatures {
             display: table;
             width: 100%;
-            margin-bottom: 15px;
+            margin-bottom: 8px;
         }
         .sign-box {
             display: table-cell;
             width: 50%;
             text-align: center;
-            padding: 10px;
+            padding: 5px;
         }
         .sign-line {
             border-top: 1px solid #666;
-            margin-top: 45px;
-            padding-top: 6px;
-            font-size: 11px;
+            margin-top: 25px;
+            padding-top: 4px;
+            font-size: 10px;
             color: #777;
         }
         /* Footer */
         .footer {
             text-align: center;
-            font-size: 10px;
+            font-size: 9px;
             color: #aaa;
-            padding-top: 10px;
+            padding-top: 5px;
             border-top: 2px solid #00733B;
         }
-        @page { margin: 18mm; size: A4; }
+        @page { margin: 15mm; size: A4; }
         .no-break { page-break-inside: avoid; }
     </style>
 </head>
@@ -309,7 +309,6 @@
                 <div class="billing-label">Payment Details</div>
                 <div class="billing-detail">
                     <strong>Terms:</strong> {{ $customer->payment_terms ?? 'Net 30' }}<br>
-                    <strong>Currency:</strong> {{ $tenant->settings['currency'] ?? 'NGN' }}<br>
                     @if($invoice->createdBy)
                         <strong>Prepared:</strong> {{ $invoice->createdBy->name ?? 'System' }}<br>
                     @endif
@@ -400,12 +399,12 @@
         </div>
 
         <!-- Bank Details & Terms -->
-        <div style="display: table; width: 100%; margin-bottom: 15px;">
+        <div style="display: table; width: 100%; margin-bottom: 8px;">
             @if(isset($invoiceBank) && $invoiceBank)
-            <div style="display: table-cell; width: 50%; vertical-align: top; padding-right: 15px;">
-                <div style="background: #f0faf0; padding: 12px 15px; border-radius: 6px; border-left: 4px solid #2e7d32;">
-                    <div style="font-size: 13px; font-weight: bold; color: #2e7d32; margin-bottom: 8px; text-transform: uppercase;">Bank Details</div>
-                    <div style="font-size: 12px; line-height: 1.6;">
+            <div style="display: table-cell; width: 50%; vertical-align: top; padding-right: 10px;">
+                <div style="background: #f0faf0; padding: 6px 10px; border-radius: 4px; border-left: 3px solid #2e7d32;">
+                    <div style="font-size: 10px; font-weight: bold; color: #2e7d32; margin-bottom: 4px; text-transform: uppercase;">Bank Details</div>
+                    <div style="font-size: 10px; line-height: 1.4;">
                         <strong>Bank:</strong> {{ $invoiceBank->bank_name }}<br>
                         <strong>Account Name:</strong> {{ $invoiceBank->account_name }}<br>
                         <strong>Account No:</strong> {{ $invoiceBank->account_number }}

@@ -37,10 +37,10 @@ if (!function_exists('numberToWords')) {
         body {
             font-family: 'DejaVu Sans', Arial, sans-serif;
             margin: 0;
-            padding: 15px;
+            padding: 10px;
             color: #333;
-            font-size: 13px;
-            line-height: 1.4;
+            font-size: 11px;
+            line-height: 1.3;
         }
 
         .invoice-container {
@@ -52,9 +52,9 @@ if (!function_exists('numberToWords')) {
         .header {
             display: table;
             width: 100%;
-            margin-bottom: 25px;
+            margin-bottom: 10px;
             border-bottom: 2px solid #2c5aa0;
-            padding-bottom: 15px;
+            padding-bottom: 8px;
         }
 
         .header-left {
@@ -71,45 +71,45 @@ if (!function_exists('numberToWords')) {
         }
 
         .logo {
-            width: 60px;
-            height: 60px;
-            border-radius: 8px;
-            margin-bottom: 10px;
+            width: 45px;
+            height: 45px;
+            border-radius: 6px;
+            margin-bottom: 5px;
             float: left;
-            margin-right: 15px;
+            margin-right: 10px;
         }
 
         .company-name {
-            font-size: 20px;
+            font-size: 16px;
             font-weight: bold;
             color: #2c5aa0;
-            margin-bottom: 5px;
+            margin-bottom: 2px;
             text-transform: uppercase;
         }
 
         .company-details {
-            font-size: 12px;
+            font-size: 10px;
             color: #666;
             line-height: 1.3;
             clear: both;
         }
 
         .invoice-title {
-            font-size: 24px;
+            font-size: 18px;
             font-weight: bold;
             color: #e74c3c;
-            margin-bottom: 8px;
+            margin-bottom: 4px;
         }
 
         .invoice-number {
-            font-size: 16px;
+            font-size: 13px;
             font-weight: bold;
             color: #333;
-            margin-bottom: 5px;
+            margin-bottom: 2px;
         }
 
         .invoice-date {
-            font-size: 12px;
+            font-size: 10px;
             color: #666;
         }
 
@@ -117,67 +117,67 @@ if (!function_exists('numberToWords')) {
         .billing-info {
             display: table;
             width: 100%;
-            margin-bottom: 20px;
+            margin-bottom: 10px;
         }
 
         .bill-to, .invoice-info {
             display: table-cell;
             width: 50%;
             vertical-align: top;
-            padding: 15px;
+            padding: 8px;
             background: #f8f9fa;
             border: 1px solid #e9ecef;
         }
 
         .bill-to {
             border-right: none;
-            border-radius: 8px 0 0 8px;
+            border-radius: 6px 0 0 6px;
         }
 
         .invoice-info {
-            border-radius: 0 8px 8px 0;
+            border-radius: 0 6px 6px 0;
         }
 
         .section-title {
-            font-size: 14px;
+            font-size: 11px;
             font-weight: bold;
             color: #2c5aa0;
-            margin-bottom: 8px;
+            margin-bottom: 4px;
             text-transform: uppercase;
         }
 
         .customer-name {
-            font-size: 15px;
+            font-size: 12px;
             font-weight: bold;
             color: #333;
-            margin-bottom: 6px;
+            margin-bottom: 3px;
         }
 
         .detail-line {
-            margin-bottom: 3px;
-            font-size: 12px;
+            margin-bottom: 1px;
+            font-size: 10px;
         }
 
         /* Compact Items Table */
         .items-table {
             width: 100%;
             border-collapse: collapse;
-            margin-bottom: 15px;
-            font-size: 12px;
+            margin-bottom: 8px;
+            font-size: 10px;
         }
 
         .items-table th {
             background: #2c5aa0;
             color: white;
-            padding: 10px 8px;
+            padding: 5px 6px;
             text-align: left;
             font-weight: bold;
-            font-size: 11px;
+            font-size: 9px;
             text-transform: uppercase;
         }
 
         .items-table td {
-            padding: 8px;
+            padding: 4px 6px;
             border-bottom: 1px solid #e9ecef;
             vertical-align: top;
         }
@@ -216,31 +216,30 @@ if (!function_exists('numberToWords')) {
         .product-name {
             font-weight: bold;
             color: #333;
-            margin-bottom: 2px;
         }
 
         .product-desc {
             color: #666;
-            font-size: 11px;
+            font-size: 9px;
         }
 
         /* Compact Summary */
         .summary-section {
             float: right;
-            width: 300px;
-            margin-bottom: 20px;
+            width: 280px;
+            margin-bottom: 8px;
         }
 
         .summary-table {
             width: 100%;
             border-collapse: collapse;
             border: 1px solid #e9ecef;
-            border-radius: 8px;
+            border-radius: 6px;
             overflow: hidden;
         }
 
         .summary-table td {
-            padding: 8px 12px;
+            padding: 4px 8px;
             border-bottom: 1px solid #e9ecef;
         }
 
@@ -259,33 +258,33 @@ if (!function_exists('numberToWords')) {
             background: #2c5aa0;
             color: white;
             font-weight: bold;
-            font-size: 14px;
+            font-size: 12px;
         }
 
         .total-row td {
             border-bottom: none;
-            padding: 12px;
+            padding: 6px 8px;
         }
 
         /* Amount in Words - Compact */
         .amount-words {
             clear: both;
             background: #e8f5e8;
-            padding: 12px 15px;
-            border-radius: 6px;
-            border-left: 4px solid #28a745;
-            margin-bottom: 20px;
+            padding: 6px 10px;
+            border-radius: 4px;
+            border-left: 3px solid #28a745;
+            margin-bottom: 8px;
         }
 
         .amount-words-label {
-            font-size: 12px;
+            font-size: 9px;
             font-weight: bold;
             color: #155724;
-            margin-bottom: 4px;
+            margin-bottom: 1px;
         }
 
         .amount-words-text {
-            font-size: 14px;
+            font-size: 10px;
             font-weight: bold;
             color: #333;
             font-style: italic;
@@ -293,42 +292,42 @@ if (!function_exists('numberToWords')) {
 
         /* Compact Notes */
         .notes {
-            margin-bottom: 15px;
+            margin-bottom: 6px;
         }
 
         .notes-title {
-            font-size: 13px;
+            font-size: 10px;
             font-weight: bold;
             color: #2c5aa0;
-            margin-bottom: 6px;
+            margin-bottom: 3px;
         }
 
         .notes-content {
             background: #fff3cd;
-            padding: 10px;
-            border-radius: 4px;
+            padding: 5px 8px;
+            border-radius: 3px;
             border-left: 3px solid #ffc107;
-            font-size: 12px;
+            font-size: 10px;
         }
 
         /* Compact Terms */
         .terms {
-            font-size: 11px;
+            font-size: 9px;
             color: #666;
             border-top: 1px solid #e9ecef;
-            padding-top: 10px;
-            margin-bottom: 15px;
+            padding-top: 5px;
+            margin-bottom: 6px;
         }
 
         .terms ul {
             margin: 0;
-            padding-left: 15px;
+            padding-left: 12px;
             columns: 2;
-            column-gap: 20px;
+            column-gap: 15px;
         }
 
         .terms li {
-            margin-bottom: 4px;
+            margin-bottom: 1px;
             break-inside: avoid;
         }
 
@@ -336,21 +335,21 @@ if (!function_exists('numberToWords')) {
         .signatures {
             display: table;
             width: 100%;
-            margin-bottom: 15px;
+            margin-bottom: 8px;
         }
 
         .signature-box {
             display: table-cell;
             width: 50%;
             text-align: center;
-            padding: 20px 10px;
+            padding: 5px 10px;
         }
 
         .signature-line {
             border-top: 1px solid #333;
-            margin-top: 40px;
-            padding-top: 5px;
-            font-size: 11px;
+            margin-top: 25px;
+            padding-top: 4px;
+            font-size: 10px;
             font-weight: bold;
             color: #666;
         }
@@ -358,10 +357,10 @@ if (!function_exists('numberToWords')) {
         /* Footer - Compact */
         .footer {
             text-align: center;
-            font-size: 10px;
+            font-size: 9px;
             color: #999;
             border-top: 1px solid #e9ecef;
-            padding-top: 10px;
+            padding-top: 5px;
         }
 
         /* Utility Classes */
@@ -372,7 +371,7 @@ if (!function_exists('numberToWords')) {
 
         /* Page optimization */
         @page {
-            margin: 20mm;
+            margin: 15mm;
             size: A4;
         }
 
@@ -463,7 +462,6 @@ if (!function_exists('numberToWords')) {
                 <div class="section-title">{{ $term->label('sales_invoice') }} Details</div>
                 <div class="detail-line"><strong>Payment Terms:</strong> {{ $customer->payment_terms ?? '30 Days' }}</div>
                 <div class="detail-line"><strong>Due Date:</strong> {{ $invoice->voucher_date->addDays(30)->format('d M, Y') }}</div>
-                <div class="detail-line"><strong>Currency:</strong> Nigerian Naira (₦)</div>
                 @if($invoice->created_by)
                     <div class="detail-line"><strong>Prepared By:</strong> {{ $invoice->createdBy->name ?? 'System' }}</div>
                 @endif
@@ -651,12 +649,12 @@ if (!function_exists('numberToWords')) {
         @endif
 
         <!-- Bank Details & Terms -->
-        <div style="display: table; width: 100%; margin-bottom: 15px;">
+        <div style="display: table; width: 100%; margin-bottom: 8px;">
             @if(isset($invoiceBank) && $invoiceBank)
-            <div style="display: table-cell; width: 50%; vertical-align: top; padding-right: 15px;">
-                <div style="background: #f0f4ff; padding: 12px 15px; border-radius: 6px; border-left: 4px solid #2c5aa0;">
-                    <div style="font-size: 13px; font-weight: bold; color: #2c5aa0; margin-bottom: 8px; text-transform: uppercase;">Bank Details</div>
-                    <div style="font-size: 12px; line-height: 1.6;">
+            <div style="display: table-cell; width: 50%; vertical-align: top; padding-right: 10px;">
+                <div style="background: #f0f4ff; padding: 6px 10px; border-radius: 4px; border-left: 3px solid #2c5aa0;">
+                    <div style="font-size: 10px; font-weight: bold; color: #2c5aa0; margin-bottom: 4px; text-transform: uppercase;">Bank Details</div>
+                    <div style="font-size: 10px; line-height: 1.4;">
                         <strong>Bank:</strong> {{ $invoiceBank->bank_name }}<br>
                         <strong>Account Name:</strong> {{ $invoiceBank->account_name }}<br>
                         <strong>Account No:</strong> {{ $invoiceBank->account_number }}
