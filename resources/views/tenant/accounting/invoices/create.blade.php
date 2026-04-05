@@ -2716,6 +2716,28 @@ document.addEventListener('DOMContentLoaded', function() {
                 console.error('❌ Voucher Date is missing!');
             }            // Don't prevent submission - let it go through normally
             console.log('✅ Form validation passed, submitting to server...');
+
+            // Disable all submit buttons to prevent double-submission
+            const submitButtons = invoiceForm.querySelectorAll('[data-invoice-submit="true"]');
+            submitButtons.forEach(btn => {
+                btn.disabled = true;
+                btn.classList.add('opacity-50', 'cursor-not-allowed');
+            });
+
+            // Show a prominent saving indicator
+            const savingBanner = document.createElement('div');
+            savingBanner.id = 'savingBanner';
+            savingBanner.className = 'fixed inset-0 z-[9999] flex items-center justify-center bg-black bg-opacity-40';
+            savingBanner.innerHTML = `
+                <div class="bg-white rounded-xl shadow-2xl px-8 py-6 flex items-center space-x-4">
+                    <svg class="animate-spin h-6 w-6 text-primary-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+                    </svg>
+                    <span class="text-lg font-semibold text-gray-800">Saving ${TERMS.sales_invoice}... Please wait</span>
+                </div>
+            `;
+            document.body.appendChild(savingBanner);
         });
 
         console.log('✅ Form submission logger initialized');

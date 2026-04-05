@@ -2256,6 +2256,7 @@ class InvoiceController extends Controller
 
             $paymentLinks = [];
             $invoiceReference = $voucher->voucherType->prefix . $voucher->voucher_number;
+            $uniqueRef = 'INV_' . $invoiceReference . '_' . $voucher->id . '_' . substr(md5(uniqid()), 0, 6);
             $callbackUrl = route('invoice.payment.callback', [
                 'invoice' => $voucher->id
             ]);
@@ -2271,7 +2272,7 @@ class InvoiceController extends Controller
                         'NGN',
                         $email,
                         $callbackUrl,
-                        'INV_' . $invoiceReference
+                        $uniqueRef
                     );
 
                     if ($nombaResult['status'] && isset($nombaResult['checkoutLink'])) {
@@ -2306,7 +2307,7 @@ class InvoiceController extends Controller
                         $voucher->total_amount,
                         $email,
                         $callbackUrl,
-                        'INV_' . $invoiceReference,
+                        $uniqueRef . '_PS',
                         [
                             'invoice_number' => $invoiceReference,
                             'voucher_id' => $voucher->id,
