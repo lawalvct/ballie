@@ -1,5 +1,6 @@
 @php
-    $docTitle = strtoupper($quotation->document_title ?: $term->label('quotation'));
+    $vendor = $purchaseOrder->vendor;
+    $vendorName = $vendor ? $vendor->getFullNameAttribute() : 'N/A';
 
     if (!function_exists('numberToWords')) {
         function numberToWords($number) {
@@ -40,49 +41,46 @@
     if (!empty($tenant->settings['invoice_bank_account_id'])) {
         $invoiceBank = \App\Models\Bank::find($tenant->settings['invoice_bank_account_id']);
     }
-    $invoiceTerms = $tenant->settings['invoice_terms'] ?? null;
 @endphp
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ $docTitle }} {{ $quotation->getQuotationNumber() }} - {{ $tenant->name }}</title>
+    <title>Purchase Order {{ $purchaseOrder->lpo_number }} - {{ $tenant->name }}</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: 'Segoe UI', Arial, sans-serif; font-size: 12px; line-height: 1.3; color: #333; background: #f0f0f0; }
         .page-container { max-width: 210mm; margin: 0 auto; padding: 15px 20px; background: white; box-shadow: 0 0 20px rgba(0,0,0,0.1); min-height: 100vh; }
 
         /* Header */
-        .header { display: flex; justify-content: space-between; align-items: flex-start; padding-bottom: 12px; border-bottom: 3px solid #2c5aa0; margin-bottom: 15px; }
+        .header { display: flex; justify-content: space-between; align-items: flex-start; padding-bottom: 12px; border-bottom: 3px solid #e67e22; margin-bottom: 15px; }
         .header-left { flex: 1; }
         .header-right { text-align: right; }
         .company-logo { max-width: 80px; max-height: 50px; margin-bottom: 6px; }
-        .company-name { font-size: 20px; font-weight: bold; color: #2c5aa0; text-transform: uppercase; letter-spacing: 0.5px; }
+        .company-name { font-size: 20px; font-weight: bold; color: #e67e22; text-transform: uppercase; letter-spacing: 0.5px; }
         .company-details { font-size: 10px; color: #666; line-height: 1.4; margin-top: 3px; }
-        .doc-title { font-size: 22px; font-weight: bold; color: #2c5aa0; letter-spacing: 2px; text-transform: uppercase; }
+        .doc-title { font-size: 22px; font-weight: bold; color: #e67e22; letter-spacing: 2px; text-transform: uppercase; }
         .doc-number { font-size: 13px; font-weight: bold; color: #555; margin-top: 4px; }
         .doc-status { display: inline-block; padding: 3px 10px; border-radius: 12px; font-size: 9px; font-weight: bold; text-transform: uppercase; letter-spacing: 0.5px; margin-top: 4px; }
         .status-draft { background: #fff3cd; color: #856404; }
         .status-sent { background: #d1ecf1; color: #0c5460; }
-        .status-accepted { background: #d4edda; color: #155724; }
-        .status-rejected { background: #f8d7da; color: #721c24; }
-        .status-expired { background: #ffeeba; color: #856404; }
-        .status-converted { background: #e8daef; color: #6c3483; }
+        .status-confirmed { background: #d4edda; color: #155724; }
+        .status-received { background: #e8daef; color: #6c3483; }
 
         /* Billing Section */
         .billing-section { display: flex; justify-content: space-between; margin-bottom: 15px; }
         .billing-left, .billing-right { width: 48%; }
         .billing-right { text-align: right; }
         .section-label { font-size: 9px; text-transform: uppercase; letter-spacing: 1px; color: #999; font-weight: bold; margin-bottom: 4px; }
-        .party-name { font-size: 14px; font-weight: bold; color: #2c5aa0; margin-bottom: 2px; }
+        .party-name { font-size: 14px; font-weight: bold; color: #e67e22; margin-bottom: 2px; }
         .party-details { font-size: 11px; color: #555; line-height: 1.4; }
         .info-line { font-size: 11px; color: #555; margin-bottom: 2px; }
         .info-line strong { color: #333; }
 
         /* Items Table */
         .items-table { width: 100%; border-collapse: collapse; margin-bottom: 10px; }
-        .items-table th { background: #2c5aa0; color: white; padding: 7px 8px; text-align: left; font-size: 10px; text-transform: uppercase; letter-spacing: 0.5px; }
+        .items-table th { background: #e67e22; color: white; padding: 7px 8px; text-align: left; font-size: 10px; text-transform: uppercase; letter-spacing: 0.5px; }
         .items-table th.text-right { text-align: right; }
         .items-table td { padding: 6px 8px; border-bottom: 1px solid #eee; font-size: 11px; }
         .items-table td.text-right { text-align: right; }
@@ -96,7 +94,7 @@
         .totals-table tr td { padding: 4px 8px; font-size: 11px; }
         .totals-table .label { text-align: right; color: #666; font-weight: 600; }
         .totals-table .value { text-align: right; color: #333; min-width: 100px; }
-        .totals-table .grand-total td { font-size: 14px; font-weight: bold; background: #2c5aa0; color: white; padding: 8px; }
+        .totals-table .grand-total td { font-size: 14px; font-weight: bold; background: #e67e22; color: white; padding: 8px; }
 
         /* Amount in Words */
         .amount-words { background: #f0f7f0; padding: 6px 10px; border-left: 3px solid #27ae60; margin-bottom: 12px; font-size: 10px; }
@@ -107,7 +105,7 @@
         .notes-terms { display: flex; gap: 15px; margin-bottom: 12px; }
         .notes-box, .terms-box { flex: 1; }
         .notes-box { background: #fff8e1; padding: 8px 10px; border-radius: 4px; border-left: 3px solid #f39c12; }
-        .terms-box { background: #f0f4ff; padding: 8px 10px; border-radius: 4px; border-left: 3px solid #2c5aa0; }
+        .terms-box { background: #fef5ec; padding: 8px 10px; border-radius: 4px; border-left: 3px solid #e67e22; }
         .box-label { font-size: 9px; text-transform: uppercase; letter-spacing: 0.5px; color: #999; font-weight: bold; margin-bottom: 3px; }
         .box-text { font-size: 10px; color: #555; line-height: 1.4; }
 
@@ -126,22 +124,18 @@
         /* Footer */
         .footer { text-align: center; font-size: 9px; color: #999; padding-top: 10px; border-top: 1px solid #eee; margin-top: 15px; }
 
-        /* Validity */
-        .validity-badge { display: inline-block; padding: 4px 12px; background: #e8f5e9; border: 1px solid #a5d6a7; border-radius: 4px; font-size: 10px; color: #2e7d32; font-weight: 600; margin-top: 2px; }
-        .validity-expired { background: #fce4ec; border-color: #ef9a9a; color: #c62828; }
-
         /* Print Controls */
         .print-controls { position: fixed; top: 15px; right: 15px; z-index: 1000; display: flex; gap: 8px; }
         .btn { padding: 10px 20px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; text-transform: uppercase; font-size: 12px; letter-spacing: 0.5px; color: white; text-decoration: none; display: inline-block; transition: all 0.3s ease; }
-        .btn-primary { background: linear-gradient(135deg, #2c5aa0 0%, #1e3d72 100%); }
-        .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(44,90,160,0.3); }
+        .btn-primary { background: linear-gradient(135deg, #e67e22 0%, #d35400 100%); }
+        .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(230,126,34,0.3); }
         .btn-secondary { background: #6c757d; }
         .btn-secondary:hover { background: #5a6268; }
 
         /* Contenteditable */
         [contenteditable="true"] { outline: none; }
-        [contenteditable="true"]:hover { background: rgba(44,90,160,0.04); }
-        [contenteditable="true"]:focus { background: rgba(44,90,160,0.08); border-radius: 2px; }
+        [contenteditable="true"]:hover { background: rgba(230,126,34,0.04); }
+        [contenteditable="true"]:focus { background: rgba(230,126,34,0.08); border-radius: 2px; }
 
         @media print {
             body { background: white; margin: 0; }
@@ -155,8 +149,8 @@
     <!-- Print Controls -->
     <div class="print-controls no-print">
         <button onclick="window.print()" class="btn btn-primary">🖨️ Print</button>
-        <a href="{{ route('tenant.accounting.quotations.pdf', [$tenant->slug, $quotation->id]) }}" class="btn btn-secondary">📄 PDF</a>
-        <a href="{{ route('tenant.accounting.quotations.show', [$tenant->slug, $quotation->id]) }}" class="btn btn-secondary">← Back</a>
+        <a href="{{ route('tenant.procurement.purchase-orders.pdf', [$tenant->slug, $purchaseOrder->id]) }}" class="btn btn-secondary">📄 PDF</a>
+        <a href="{{ route('tenant.procurement.purchase-orders.show', [$tenant->slug, $purchaseOrder->id]) }}" class="btn btn-secondary">← Back</a>
     </div>
 
     <div class="page-container">
@@ -175,10 +169,10 @@
                 </div>
             </div>
             <div class="header-right">
-                <div class="doc-title" contenteditable="true">{{ $docTitle }}</div>
-                <div class="doc-number" contenteditable="true">#{{ $quotation->getQuotationNumber() }}</div>
+                <div class="doc-title" contenteditable="true">PURCHASE ORDER</div>
+                <div class="doc-number" contenteditable="true">#{{ $purchaseOrder->lpo_number }}</div>
                 <div>
-                    <span class="doc-status status-{{ $quotation->status }}">{{ ucfirst($quotation->status) }}</span>
+                    <span class="doc-status status-{{ $purchaseOrder->status }}">{{ ucfirst($purchaseOrder->status) }}</span>
                 </div>
             </div>
         </div>
@@ -186,37 +180,24 @@
         <!-- Billing Section -->
         <div class="billing-section">
             <div class="billing-left">
-                <div class="section-label">{{ $docTitle === 'PROFORMA INVOICE' ? 'Bill To' : 'Prepared For' }}</div>
-                <div class="party-name" contenteditable="true">{{ $quotation->customer ? ($quotation->customer->company_name ?: trim($quotation->customer->first_name . ' ' . $quotation->customer->last_name)) : 'N/A' }}</div>
+                <div class="section-label">Vendor</div>
+                <div class="party-name" contenteditable="true">{{ $vendorName }}</div>
                 <div class="party-details" contenteditable="true">
-                    @if($quotation->customer && $quotation->customer->address){{ $quotation->customer->address }}<br>@endif
-                    @if($quotation->customer && $quotation->customer->email){{ $quotation->customer->email }}<br>@endif
-                    @if($quotation->customer && $quotation->customer->phone){{ $quotation->customer->phone }}@endif
+                    @if($vendor && $vendor->getFullAddressAttribute()){{ $vendor->getFullAddressAttribute() }}<br>@endif
+                    @if($vendor && $vendor->email){{ $vendor->email }}<br>@endif
+                    @if($vendor && $vendor->phone){{ $vendor->phone }}@endif
                 </div>
             </div>
             <div class="billing-right">
-                <div class="info-line"><strong>Date:</strong> <span contenteditable="true">{{ $quotation->quotation_date->format('M d, Y') }}</span></div>
-                @if($quotation->expiry_date)
-                    <div class="info-line"><strong>Valid Until:</strong> <span contenteditable="true">{{ $quotation->expiry_date->format('M d, Y') }}</span></div>
-                    @if($quotation->isExpired())
-                        <span class="validity-badge validity-expired">Expired</span>
-                    @else
-                        <span class="validity-badge">Valid</span>
-                    @endif
+                <div class="info-line"><strong>LPO Date:</strong> <span contenteditable="true">{{ $purchaseOrder->lpo_date->format('M d, Y') }}</span></div>
+                @if($purchaseOrder->expected_delivery_date)
+                    <div class="info-line"><strong>Delivery By:</strong> <span contenteditable="true">{{ $purchaseOrder->expected_delivery_date->format('M d, Y') }}</span></div>
                 @endif
-                @if($quotation->reference_number)
-                    <div class="info-line" style="margin-top: 4px;"><strong>Ref:</strong> <span contenteditable="true">{{ $quotation->reference_number }}</span></div>
+                @if($purchaseOrder->creator)
+                    <div class="info-line" style="margin-top: 4px;"><strong>Prepared By:</strong> <span contenteditable="true">{{ $purchaseOrder->creator->name }}</span></div>
                 @endif
             </div>
         </div>
-
-        <!-- Subject -->
-        @if($quotation->subject)
-            <div style="margin-bottom: 10px; padding: 6px 10px; background: #f0f4ff; border-radius: 4px; border-left: 3px solid #2c5aa0;">
-                <span class="box-label">Subject</span>
-                <div style="font-size: 12px; font-weight: 600; color: #333;" contenteditable="true">{{ $quotation->subject }}</div>
-            </div>
-        @endif
 
         <!-- Items Table -->
         <table class="items-table">
@@ -225,26 +206,26 @@
                     <th style="width: 5%;">#</th>
                     <th style="width: 35%;">Item & Description</th>
                     <th class="text-right" style="width: 10%;">Qty</th>
-                    <th class="text-right" style="width: 15%;">Rate (₦)</th>
+                    <th class="text-right" style="width: 15%;">Unit Price (₦)</th>
                     <th class="text-right" style="width: 12%;">Discount</th>
                     <th class="text-right" style="width: 8%;">Tax</th>
                     <th class="text-right" style="width: 15%;">Amount (₦)</th>
                 </tr>
             </thead>
             <tbody>
-                @foreach($quotation->items as $index => $item)
+                @foreach($purchaseOrder->items as $index => $item)
                 <tr>
                     <td contenteditable="true">{{ $index + 1 }}</td>
                     <td>
-                        <div class="item-name" contenteditable="true">{{ $item->product_name }}</div>
-                        @if($item->description)
+                        <div class="item-name" contenteditable="true">{{ $item->product->name ?? $item->description }}</div>
+                        @if($item->description && $item->description !== ($item->product->name ?? ''))
                             <div class="item-desc" contenteditable="true">{{ $item->description }}</div>
                         @endif
                     </td>
                     <td class="text-right" contenteditable="true">{{ rtrim(rtrim(number_format($item->quantity, 2), '0'), '.') }} {{ $item->unit }}</td>
-                    <td class="text-right" contenteditable="true">{{ number_format($item->rate, 2) }}</td>
+                    <td class="text-right" contenteditable="true">{{ number_format($item->unit_price, 2) }}</td>
                     <td class="text-right" contenteditable="true">{{ number_format($item->discount, 2) }}</td>
-                    <td class="text-right" contenteditable="true">{{ rtrim(rtrim(number_format($item->tax, 2), '0'), '.') }}%</td>
+                    <td class="text-right" contenteditable="true">{{ rtrim(rtrim(number_format($item->tax_rate, 2), '0'), '.') }}%</td>
                     <td class="text-right" contenteditable="true">{{ number_format($item->getTotal(), 2) }}</td>
                 </tr>
                 @endforeach
@@ -256,23 +237,23 @@
             <table class="totals-table">
                 <tr>
                     <td class="label">Subtotal:</td>
-                    <td class="value" contenteditable="true">₦{{ number_format($quotation->subtotal, 2) }}</td>
+                    <td class="value" contenteditable="true">₦{{ number_format($purchaseOrder->subtotal, 2) }}</td>
                 </tr>
-                @if($quotation->discount_amount > 0)
+                @if($purchaseOrder->discount_amount > 0)
                 <tr>
                     <td class="label">Discount:</td>
-                    <td class="value" style="color: #e74c3c;" contenteditable="true">-₦{{ number_format($quotation->discount_amount, 2) }}</td>
+                    <td class="value" style="color: #e74c3c;" contenteditable="true">-₦{{ number_format($purchaseOrder->discount_amount, 2) }}</td>
                 </tr>
                 @endif
-                @if($quotation->tax_amount > 0)
+                @if($purchaseOrder->tax_amount > 0)
                 <tr>
                     <td class="label">Tax:</td>
-                    <td class="value" contenteditable="true">₦{{ number_format($quotation->tax_amount, 2) }}</td>
+                    <td class="value" contenteditable="true">₦{{ number_format($purchaseOrder->tax_amount, 2) }}</td>
                 </tr>
                 @endif
                 <tr class="grand-total">
                     <td style="text-align: right;">TOTAL:</td>
-                    <td style="text-align: right;" contenteditable="true">₦{{ number_format($quotation->total_amount, 2) }}</td>
+                    <td style="text-align: right;" contenteditable="true">₦{{ number_format($purchaseOrder->total_amount, 2) }}</td>
                 </tr>
             </table>
         </div>
@@ -280,22 +261,22 @@
         <!-- Amount in Words -->
         <div class="amount-words">
             <strong>Amount in Words:</strong>
-            <div class="words" contenteditable="true">{{ numberToWords($quotation->total_amount) }}</div>
+            <div class="words" contenteditable="true">{{ numberToWords($purchaseOrder->total_amount) }}</div>
         </div>
 
         <!-- Notes & Terms -->
-        @if($quotation->notes || $quotation->terms_and_conditions || $invoiceTerms)
+        @if($purchaseOrder->notes || $purchaseOrder->terms_conditions)
         <div class="notes-terms">
-            @if($quotation->notes)
+            @if($purchaseOrder->notes)
             <div class="notes-box">
                 <div class="box-label">Notes</div>
-                <div class="box-text" contenteditable="true">{{ $quotation->notes }}</div>
+                <div class="box-text" contenteditable="true">{{ $purchaseOrder->notes }}</div>
             </div>
             @endif
-            @if($quotation->terms_and_conditions || $invoiceTerms)
+            @if($purchaseOrder->terms_conditions)
             <div class="terms-box">
                 <div class="box-label">Terms & Conditions</div>
-                <div class="box-text" contenteditable="true">{{ $quotation->terms_and_conditions ?: $invoiceTerms }}</div>
+                <div class="box-text" contenteditable="true">{{ $purchaseOrder->terms_conditions }}</div>
             </div>
             @endif
         </div>
@@ -323,13 +304,13 @@
                     <img src="{{ asset('storage/' . $tenant->signature) }}" alt="Signature" style="max-width: 150px; max-height: 50px;">
                 @endif
                 <div class="sig-line">
-                    Authorized Signatory<br>
+                    Authorized By<br>
                     <span style="font-weight: normal; font-size: 9px;" contenteditable="true">{{ $tenant->name }}</span>
                 </div>
             </div>
             <div class="sig-box">
                 <div class="sig-line">
-                    {{ $docTitle === 'PROFORMA INVOICE' ? 'Client' : 'Customer' }} Acceptance<br>
+                    Received By (Vendor)<br>
                     <span style="font-weight: normal; font-size: 9px;">Date: ___________________</span>
                 </div>
             </div>
@@ -338,7 +319,7 @@
         <!-- Footer -->
         <div class="footer" contenteditable="true">
             <p><strong>{{ $tenant->name }}</strong> | Generated on {{ now()->format('l, M d, Y') }}</p>
-            <p>Thank you for your business!</p>
+            <p>This is a computer-generated document.</p>
         </div>
     </div>
 </body>

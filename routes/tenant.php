@@ -668,6 +668,7 @@ Route::prefix('ledger-accounts')->name('ledger-accounts.')->group(function () {
                 Route::get('/create', [\App\Http\Controllers\Tenant\Procurement\PurchaseOrderController::class, 'create'])->name('create');
                 Route::post('/', [\App\Http\Controllers\Tenant\Procurement\PurchaseOrderController::class, 'store'])->name('store');
                 Route::get('/{purchaseOrder}', [\App\Http\Controllers\Tenant\Procurement\PurchaseOrderController::class, 'show'])->name('show');
+                Route::get('/{purchaseOrder}/print', [\App\Http\Controllers\Tenant\Procurement\PurchaseOrderController::class, 'print'])->name('print');
                 Route::get('/{purchaseOrder}/pdf', [\App\Http\Controllers\Tenant\Procurement\PurchaseOrderController::class, 'pdf'])->name('pdf');
                 Route::post('/{purchaseOrder}/email', [\App\Http\Controllers\Tenant\Procurement\PurchaseOrderController::class, 'email'])->name('email');
                 Route::get('/search/vendors', [\App\Http\Controllers\Tenant\Procurement\PurchaseOrderController::class, 'searchVendors'])->name('search.vendors');

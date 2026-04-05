@@ -24,6 +24,7 @@ class Quotation extends Model
         'customer_ledger_id',
         'reference_number',
         'subject',
+        'document_title',
         'terms_and_conditions',
         'notes',
         'subtotal',

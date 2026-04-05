@@ -131,15 +131,27 @@ class PurchaseOrderController extends Controller
         return view('tenant.procurement.purchase-orders.show', compact('tenant', 'purchaseOrder'));
     }
 
+    public function print(Tenant $tenant, PurchaseOrder $purchaseOrder)
+    {
+        if ($purchaseOrder->tenant_id !== $tenant->id) {
+            abort(404);
+        }
+
+        $purchaseOrder->load(['vendor', 'items.product', 'creator']);
+
+        return view('tenant.procurement.purchase-orders.print', compact('tenant', 'purchaseOrder'));
+    }
+
     public function pdf(Tenant $tenant, PurchaseOrder $purchaseOrder)
     {
         if ($purchaseOrder->tenant_id !== $tenant->id) {
             abort(404);
         }
 
-        $purchaseOrder->load(['vendor', 'items.product']);
+        $purchaseOrder->load(['vendor', 'items.product', 'creator']);
 
-        $pdf = Pdf::loadView('tenant.procurement.purchase-orders.pdf', compact('tenant', 'purchaseOrder'));
+        $pdf = Pdf::loadView('tenant.procurement.purchase-orders.pdf', compact('tenant', 'purchaseOrder'))
+            ->setPaper('a4', 'portrait');
 
         return $pdf->download($purchaseOrder->lpo_number . '.pdf');
     }

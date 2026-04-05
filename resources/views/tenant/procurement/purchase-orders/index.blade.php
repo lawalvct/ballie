@@ -1,6 +1,8 @@
 @extends('layouts.tenant')
 
 @section('title', 'Purchase Orders - ' . $tenant->name)
+@section('page-title', 'Purchase Orders (LPO)')
+@section('page-description', 'Manage local purchase orders for vendors')
 
 @section('content')
 <div class="space-y-6">
@@ -64,7 +66,7 @@
                 </tbody>
             </table>
         </div>
-        
+
         @if($purchaseOrders->hasPages())
             <div class="px-6 py-4 border-t border-gray-200">
                 {{ $purchaseOrders->links() }}

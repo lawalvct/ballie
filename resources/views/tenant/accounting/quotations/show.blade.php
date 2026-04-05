@@ -1,13 +1,15 @@
 @extends('layouts.tenant')
 
-@section('title', $term->label('quotation') . ' ' . $quotation->getQuotationNumber() . ' - ' . $tenant->name)
+@section('title', ($quotation->document_title ?: $term->label('quotation')) . ' ' . $quotation->getQuotationNumber() . ' - ' . $tenant->name)
+@section('page-title', ($quotation->document_title ?: $term->label('quotation')) . ' ' . $quotation->getQuotationNumber())
+@section('page-description', ($quotation->document_title ?: $term->label('quotation')) . ' details for ' . ($quotation->customer ? ($quotation->customer->company_name ?: trim($quotation->customer->first_name . ' ' . $quotation->customer->last_name)) : 'N/A'))
 
 @section('content')
 <div class="space-y-6">
     <!-- Header -->
     <div class="flex items-center justify-between">
         <div>
-            <h1 class="text-3xl font-bold text-gray-900">@term('quotation') {{ $quotation->getQuotationNumber() }}</h1>
+            <h1 class="text-3xl font-bold text-gray-900">{{ $quotation->document_title ?: $term->label('quotation') }} {{ $quotation->getQuotationNumber() }}</h1>
             <p class="mt-2 text-gray-600">{{ $quotation->subject }}</p>
         </div>
         <div class="flex items-center space-x-2">
@@ -59,7 +61,7 @@
                         </p>
                     </div>
                     <div>
-                        <h3 class="text-sm font-medium text-gray-500 mb-2">@term('quotation') Date</h3>
+                        <h3 class="text-sm font-medium text-gray-500 mb-2">{{ $quotation->document_title ?: $term->label('quotation') }} Date</h3>
                         <p class="text-base text-gray-900">{{ $quotation->quotation_date->format('M d, Y') }}</p>
                     </div>
                     <div>
@@ -109,14 +111,18 @@
                                     <td colspan="5" class="px-4 py-3 text-sm font-medium text-right text-gray-900">Subtotal:</td>
                                     <td class="px-4 py-3 text-sm font-medium text-right text-gray-900">₦{{ number_format($quotation->subtotal, 2) }}</td>
                                 </tr>
+                                @if($quotation->discount_amount > 0)
                                 <tr>
-                                    <td colspan="5" class="px-4 py-3 text-sm font-medium text-right text-gray-900">Total Discount:</td>
-                                    <td class="px-4 py-3 text-sm font-medium text-right text-red-600">₦{{ number_format($quotation->total_discount, 2) }}</td>
+                                    <td colspan="5" class="px-4 py-3 text-sm font-medium text-right text-gray-900">Discount:</td>
+                                    <td class="px-4 py-3 text-sm font-medium text-right text-red-600">-₦{{ number_format($quotation->discount_amount, 2) }}</td>
                                 </tr>
+                                @endif
+                                @if($quotation->tax_amount > 0)
                                 <tr>
-                                    <td colspan="5" class="px-4 py-3 text-sm font-medium text-right text-gray-900">Total Tax:</td>
-                                    <td class="px-4 py-3 text-sm font-medium text-right text-gray-900">₦{{ number_format($quotation->total_tax, 2) }}</td>
+                                    <td colspan="5" class="px-4 py-3 text-sm font-medium text-right text-gray-900">Tax:</td>
+                                    <td class="px-4 py-3 text-sm font-medium text-right text-gray-900">₦{{ number_format($quotation->tax_amount, 2) }}</td>
                                 </tr>
+                                @endif
                                 <tr class="border-t-2">
                                     <td colspan="5" class="px-4 py-3 text-base font-bold text-right text-gray-900">Total:</td>
                                     <td class="px-4 py-3 text-base font-bold text-right text-emerald-600">₦{{ number_format($quotation->total_amount, 2) }}</td>

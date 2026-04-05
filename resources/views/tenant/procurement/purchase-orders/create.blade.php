@@ -1,6 +1,8 @@
 @extends('layouts.tenant')
 
 @section('title', 'Create Purchase Order - ' . $tenant->name)
+@section('page-title', 'Create Purchase Order (LPO)')
+@section('page-description', 'Create a new local purchase order for vendor')
 
 @section('content')
 <div class="space-y-6" x-data="purchaseOrderForm()">
@@ -20,11 +22,11 @@
 
     <form action="{{ route('tenant.procurement.purchase-orders.store', $tenant->slug) }}" method="POST">
         @csrf
-        
+
         <div class="space-y-6">
             <div class="bg-white shadow-sm rounded-lg border border-gray-200 p-6">
                 <h3 class="text-lg font-semibold text-gray-900 mb-4">Basic Information</h3>
-                
+
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-2">LPO Number</label>
@@ -60,7 +62,17 @@
             <!-- Items Section -->
             <div class="bg-white shadow-sm rounded-lg border border-gray-200 p-6">
                 <h3 class="text-lg font-semibold text-gray-900 mb-4">Items</h3>
-                
+
+                <!-- Column Headers -->
+                <div class="grid grid-cols-12 gap-2 mb-2">
+                    <div class="col-span-3 text-xs font-semibold text-gray-500 uppercase">Product *</div>
+                    <div class="col-span-2 text-xs font-semibold text-gray-500 uppercase">Quantity *</div>
+                    <div class="col-span-2 text-xs font-semibold text-gray-500 uppercase">Unit Price *</div>
+                    <div class="col-span-2 text-xs font-semibold text-gray-500 uppercase">Discount</div>
+                    <div class="col-span-2 text-xs font-semibold text-gray-500 uppercase">Total</div>
+                    <div class="col-span-1"></div>
+                </div>
+
                 <div class="space-y-3">
                     <template x-for="(item, index) in items" :key="index">
                         <div class="grid grid-cols-12 gap-2 items-start border-b pb-3">
@@ -160,16 +172,16 @@ function purchaseOrderForm() {
         items: [{ product_id: '', quantity: 1, unit_price: 0, discount: 0, total: 0 }],
         subtotal: 0,
         total: 0,
-        
+
         addItem() {
             this.items.push({ product_id: '', quantity: 1, unit_price: 0, discount: 0, total: 0 });
         },
-        
+
         removeItem(index) {
             this.items.splice(index, 1);
             this.calculateTotals();
         },
-        
+
         selectProduct(index, productId) {
             const select = event.target;
             const option = select.options[select.selectedIndex];
@@ -178,13 +190,13 @@ function purchaseOrderForm() {
                 this.calculateItem(index);
             }
         },
-        
+
         calculateItem(index) {
             const item = this.items[index];
             item.total = (item.quantity * item.unit_price) - (item.discount || 0);
             this.calculateTotals();
         },
-        
+
         calculateTotals() {
             this.subtotal = this.items.reduce((sum, item) => sum + (parseFloat(item.total) || 0), 0);
             this.total = this.subtotal;

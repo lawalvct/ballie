@@ -133,6 +133,7 @@ class QuotationController extends Controller
             'expiry_date' => 'nullable|date|after:quotation_date',
             'customer_ledger_id' => 'required|exists:ledger_accounts,id',
             'subject' => 'nullable|string|max:255',
+            'document_title' => 'required|string|max:255',
             'reference_number' => 'nullable|string|max:255',
             'terms_and_conditions' => 'nullable|string',
             'notes' => 'nullable|string',
@@ -180,6 +181,7 @@ class QuotationController extends Controller
                 'customer_ledger_id' => $request->customer_ledger_id,
                 'reference_number' => $request->reference_number,
                 'subject' => $request->subject,
+                'document_title' => $request->document_title,
                 'terms_and_conditions' => $request->terms_and_conditions,
                 'notes' => $request->notes,
                 'status' => 'draft',
@@ -338,6 +340,7 @@ class QuotationController extends Controller
             'expiry_date' => 'nullable|date|after:quotation_date',
             'customer_ledger_id' => 'required|exists:ledger_accounts,id',
             'subject' => 'nullable|string|max:255',
+            'document_title' => 'required|string|max:255',
             'reference_number' => 'nullable|string|max:255',
             'terms_and_conditions' => 'nullable|string',
             'notes' => 'nullable|string',
@@ -373,6 +376,7 @@ class QuotationController extends Controller
                 'customer_ledger_id' => $request->customer_ledger_id,
                 'reference_number' => $request->reference_number,
                 'subject' => $request->subject,
+                'document_title' => $request->document_title,
                 'terms_and_conditions' => $request->terms_and_conditions,
                 'notes' => $request->notes,
                 'updated_by' => auth()->id(),
@@ -687,7 +691,8 @@ class QuotationController extends Controller
             'createdBy'
         ]);
 
-        $pdf = Pdf::loadView('tenant.accounting.quotations.pdf', compact('tenant', 'quotation'));
+        $pdf = Pdf::loadView('tenant.accounting.quotations.pdf', compact('tenant', 'quotation'))
+            ->setPaper('a4', 'portrait');
 
         return $pdf->download('quotation-' . $quotation->getQuotationNumber() . '.pdf');
     }

@@ -1,6 +1,8 @@
 @extends('layouts.tenant')
 
 @section('title', 'Edit ' . $term->label('quotation') . ' ' . $quotation->getQuotationNumber() . ' - ' . $tenant->name)
+@section('page-title', 'Edit ' . $term->label('quotation') . ' ' . $quotation->getQuotationNumber())
+@section('page-description', 'Update ' . strtolower($term->label('quotation')) . ' details')
 
 @section('content')
 <div class="space-y-6">
@@ -68,6 +70,19 @@
                             <label for="expiry_date" class="block text-sm font-medium text-gray-700 mb-2">Expiry Date</label>
                             <input type="date" name="expiry_date" id="expiry_date" value="{{ old('expiry_date', $quotation->expiry_date?->format('Y-m-d')) }}"
                                    class="block w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-emerald-500 focus:border-emerald-500">
+                        </div>
+
+                        <div class="md:col-span-2">
+                            <label for="document_title" class="block text-sm font-medium text-gray-700 mb-2">Document Title *</label>
+                            <select name="document_title" id="document_title" required
+                                    class="block w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-emerald-500 focus:border-emerald-500">
+                                <option value="QUOTATION" {{ old('document_title', $quotation->document_title) == 'QUOTATION' ? 'selected' : '' }}>QUOTATION</option>
+                                <option value="PROFORMA INVOICE" {{ old('document_title', $quotation->document_title) == 'PROFORMA INVOICE' ? 'selected' : '' }}>PROFORMA INVOICE</option>
+                                <option value="PROPOSAL" {{ old('document_title', $quotation->document_title) == 'PROPOSAL' ? 'selected' : '' }}>PROPOSAL</option>
+                                <option value="ESTIMATE" {{ old('document_title', $quotation->document_title) == 'ESTIMATE' ? 'selected' : '' }}>ESTIMATE</option>
+                                <option value="BID" {{ old('document_title', $quotation->document_title) == 'BID' ? 'selected' : '' }}>BID</option>
+                                <option value="OFFER" {{ old('document_title', $quotation->document_title) == 'OFFER' ? 'selected' : '' }}>OFFER</option>
+                            </select>
                         </div>
 
                         <div class="md:col-span-2">
