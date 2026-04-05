@@ -52,7 +52,6 @@ class SystemSettingController extends Controller
             'registration' => [
                 'tab' => 'required|string',
                 'default_trial_days' => 'required|integer|min:0|max:365',
-                'max_companies_per_user' => 'required|integer|min:1|max:50',
             ],
             'payment' => [
                 'tab' => 'required|string',

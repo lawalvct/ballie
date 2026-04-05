@@ -63,15 +63,6 @@
             @error('default_trial_days') <p class="mt-1 text-sm text-red-600">{{ $message }}</p> @enderror
         </div>
 
-        {{-- Max Companies Per User --}}
-        <div>
-            <label for="max_companies_per_user" class="block text-sm font-medium text-gray-700 mb-2">Max Companies Per User</label>
-            <input type="number" name="max_companies_per_user" id="max_companies_per_user"
-                   value="{{ old('max_companies_per_user', $settings['max_companies_per_user'] ?? 3) }}"
-                   min="1" max="50"
-                   class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all">
-            <p class="mt-1 text-xs text-gray-500">Maximum number of companies a single user can create.</p>
-            @error('max_companies_per_user') <p class="mt-1 text-sm text-red-600">{{ $message }}</p> @enderror
-        </div>
+        {{-- Max Companies Per User reserved for future implementation. --}}
     </div>
 </div>
