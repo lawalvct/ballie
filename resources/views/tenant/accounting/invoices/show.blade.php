@@ -272,7 +272,18 @@
 
                 @if(!empty($paymentLinks))
                     <div class="pt-3 border-t border-gray-200">
-                        <h4 class="text-sm font-medium text-gray-700 mb-3">Payment Links</h4>
+                        <div class="flex items-center justify-between mb-3">
+                            <h4 class="text-sm font-medium text-gray-700">Payment Links</h4>
+                            @if($invoice->status === 'posted' && $balanceDue > 0)
+                                <form method="POST" action="{{ route('tenant.accounting.invoices.regenerate-payment-links', ['tenant' => $tenant->slug, 'invoice' => $invoice->id]) }}">
+                                    @csrf
+                                    <button type="submit" class="text-xs text-primary-600 hover:text-primary-700 font-medium flex items-center" title="Regenerate payment links">
+                                        <svg class="w-3.5 h-3.5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+                                        Refresh
+                                    </button>
+                                </form>
+                            @endif
+                        </div>
                         <div class="space-y-2">
                             @if(isset($paymentLinks['nomba']))
                                 <div class="bg-green-50 border border-green-200 rounded-lg p-3">
@@ -311,6 +322,23 @@
                             @endif
                         </div>
                         <p class="text-xs text-gray-500 mt-2 italic">Share these links with your {{ strtolower($term->label('customer')) }} for easy payment</p>
+                    </div>
+                @elseif($invoice->status === 'posted' && $balanceDue > 0)
+                    <div class="pt-3 border-t border-gray-200">
+                        <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
+                            <div class="flex items-center mb-2">
+                                <svg class="w-4 h-4 text-yellow-600 mr-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z"/></svg>
+                                <span class="text-xs font-medium text-yellow-800">Payment links not available</span>
+                            </div>
+                            <p class="text-xs text-yellow-700 mb-2">Links may not have been generated due to a network issue or other technical difficulties.</p>
+                            <form method="POST" action="{{ route('tenant.accounting.invoices.regenerate-payment-links', ['tenant' => $tenant->slug, 'invoice' => $invoice->id]) }}">
+                                @csrf
+                                <button type="submit" class="w-full inline-flex items-center justify-center px-3 py-2 bg-yellow-600 text-white text-xs font-medium rounded hover:bg-yellow-700 transition-colors">
+                                    <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+                                    Generate Payment Links
+                                </button>
+                            </form>
+                        </div>
                     </div>
                 @endif
 

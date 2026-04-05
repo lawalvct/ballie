@@ -221,10 +221,10 @@ class PublicPaymentCallbackController extends Controller
             // Generate voucher number for receipt
             $lastReceipt = Voucher::where('tenant_id', $tenant->id)
                 ->where('voucher_type_id', $receiptVoucherType->id)
-                ->orderBy('voucher_number', 'desc')
+                ->orderByRaw('CAST(voucher_number AS UNSIGNED) DESC')
                 ->first();
 
-            $nextNumber = $lastReceipt ? $lastReceipt->voucher_number + 1 : 1;
+            $nextNumber = $lastReceipt ? (int) $lastReceipt->voucher_number + 1 : 1;
 
             // Create receipt voucher
             $receiptVoucher = Voucher::create([

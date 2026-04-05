@@ -2225,6 +2225,42 @@ class InvoiceController extends Controller
     }
 
     /**
+     * Regenerate payment links for an invoice (when initial generation failed)
+     */
+    public function regeneratePaymentLinks(Tenant $tenant, Voucher $invoice)
+    {
+        if ($invoice->tenant_id !== $tenant->id) {
+            abort(404);
+        }
+
+        if ($invoice->status !== 'posted') {
+            return redirect()->back()->with('error', 'Payment links can only be generated for posted invoices.');
+        }
+
+        // Find customer ledger from invoice entries
+        $invoice->load(['entries.ledgerAccount.accountGroup']);
+        $partyEntry = $invoice->entries->first(function ($entry) {
+            return in_array($entry->ledgerAccount->accountGroup->code ?? '', ['AR', 'AP']);
+        });
+
+        if (!$partyEntry) {
+            return redirect()->back()->with('error', 'Could not determine party ledger for this invoice.');
+        }
+
+        $this->generatePaymentLinks($invoice, $tenant, $partyEntry->ledger_account_id);
+
+        // Check if links were actually generated
+        $invoice->refresh();
+        $paymentLinks = $invoice->meta_data['payment_links'] ?? [];
+
+        if (!empty($paymentLinks)) {
+            return redirect()->back()->with('success', 'Payment links generated successfully!');
+        }
+
+        return redirect()->back()->with('error', 'Failed to generate payment links. Please check your Nomba/Paystack configuration.');
+    }
+
+    /**
      * Generate payment links (Nomba and Paystack) for the invoice
      */
     private function generatePaymentLinks(Voucher $voucher, Tenant $tenant, $customerLedgerId)
