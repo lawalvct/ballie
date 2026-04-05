@@ -2062,29 +2062,13 @@ class InvoiceController extends Controller
                 throw new \Exception('Customer account not found in invoice entries');
             }
 
-            // Generate voucher number for receipt
-            $lastReceipt = Voucher::where('tenant_id', $tenant->id)
+            // Generate voucher number for receipt (use MAX to avoid duplicates)
+            $maxNumber = Voucher::where('tenant_id', $tenant->id)
                 ->where('voucher_type_id', $receiptVoucherType->id)
-                ->latest('id')
-                ->first();
+                ->lockForUpdate()
+                ->max(\DB::raw("CAST(voucher_number AS UNSIGNED)"));
 
-            $nextNumber = 1;
-            if ($lastReceipt) {
-                $rawNumber = $lastReceipt->voucher_number;
-
-                if (is_numeric($rawNumber)) {
-                    $nextNumber = (int) $rawNumber + 1;
-                } elseif (preg_match('/(\d+)(?!.*\d)/', (string) $rawNumber, $matches)) {
-                    $nextNumber = (int) $matches[1] + 1;
-                } else {
-                    Log::warning('Unable to parse numeric portion of receipt voucher number', [
-                        'last_receipt_id' => $lastReceipt->id,
-                        'last_receipt_number' => $rawNumber,
-                    ]);
-
-                    $nextNumber = $lastReceipt->id + 1;
-                }
-            }
+            $nextNumber = ($maxNumber ?? 0) + 1;
 
             // Create receipt voucher
             $voucherData = [
