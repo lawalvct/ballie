@@ -3,7 +3,9 @@
 namespace App\Http\Controllers\Tenant;
 
 use App\Http\Controllers\Controller;
+use App\Models\AccountGroup;
 use App\Models\Bank;
+use App\Models\LedgerAccount;
 use App\Models\Tenant;
 use App\Services\ModuleRegistry;
 use Illuminate\Http\Request;
@@ -239,11 +241,68 @@ class CompanySettingsController extends Controller
             $validated['modules']
         )));
 
+        // Check if online_payments is being newly enabled
+        $previousModules = $tenant->enabled_modules ?? [];
+        $onlinePaymentsNewlyEnabled = in_array('online_payments', $enabledModules)
+            && !in_array('online_payments', $previousModules);
+
         $tenant->update(['enabled_modules' => $enabledModules]);
+
+        // Create Ballie Collections ledger account when online_payments is first enabled
+        if ($onlinePaymentsNewlyEnabled) {
+            $this->createBallieCollectionsAccount($tenant);
+        }
 
         return redirect()
             ->route('tenant.settings.company', ['tenant' => $tenant->slug])
             ->with('success', 'Module settings updated successfully!');
+    }
+
+    /**
+     * Create the Ballie Collections ledger account for online payment collection.
+     */
+    private function createBallieCollectionsAccount(Tenant $tenant): void
+    {
+        $settings = $tenant->settings ?? [];
+
+        // Skip if already created
+        if (!empty($settings['ballie_collections_account_id'])) {
+            $existing = LedgerAccount::find($settings['ballie_collections_account_id']);
+            if ($existing) {
+                return;
+            }
+        }
+
+        // Find Current Assets account group
+        $accountGroup = AccountGroup::where('tenant_id', $tenant->id)
+            ->where('name', 'Current Assets')
+            ->first();
+
+        if (!$accountGroup) {
+            $accountGroup = AccountGroup::where('tenant_id', $tenant->id)
+                ->where('nature', 'assets')
+                ->first();
+        }
+
+        if (!$accountGroup) {
+            return; // Can't create without an account group
+        }
+
+        $ledgerAccount = LedgerAccount::create([
+            'tenant_id' => $tenant->id,
+            'name' => 'Ballie Collections Account',
+            'code' => 'BALLIE-COL',
+            'account_group_id' => $accountGroup->id,
+            'account_type' => 'asset',
+            'opening_balance' => 0,
+            'current_balance' => 0,
+            'description' => 'Virtual wallet for online invoice payments collected via Ballie (Nomba/Paystack)',
+            'is_active' => 1,
+        ]);
+
+        // Store the ledger account ID in tenant settings
+        $settings['ballie_collections_account_id'] = $ledgerAccount->id;
+        $tenant->update(['settings' => $settings]);
     }
 
     /**

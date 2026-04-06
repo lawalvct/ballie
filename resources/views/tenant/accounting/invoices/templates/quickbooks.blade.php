@@ -435,6 +435,8 @@
             </div>
         </div>
 
+        @include('tenant.accounting.invoices.partials.pdf-payment-links', ['linkColor' => '#2CA01C'])
+
         <!-- Signatures -->
         <div class="signatures">
             <div class="sign-col">

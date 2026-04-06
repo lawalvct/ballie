@@ -26,6 +26,7 @@ use App\Exports\InvoicesExport;
 use Maatwebsite\Excel\Facades\Excel;
 use App\Helpers\PaymentHelper;
 use App\Helpers\PaystackPaymentHelper;
+use App\Services\ModuleRegistry;
 
 class InvoiceController extends Controller
 {
@@ -590,8 +591,10 @@ class InvoiceController extends Controller
             DB::commit();
             Log::info('Database Transaction Committed Successfully');
 
-            // Generate payment links for customer convenience
-            $this->generatePaymentLinks($voucher, $tenant, $request->customer_id);
+            // Generate payment links for customer convenience (only if Online Payments module is enabled)
+            if (ModuleRegistry::isModuleEnabled($tenant, 'online_payments')) {
+                $this->generatePaymentLinks($voucher, $tenant, $request->customer_id);
+            }
 
             $message = $shouldPost
                 ? 'Invoice created and posted successfully!'
@@ -1848,7 +1851,15 @@ class InvoiceController extends Controller
         // Get custom invoice terms
         $invoiceTerms = $tenant->settings['invoice_terms'] ?? null;
 
-        $pdf = Pdf::loadView($view, compact('tenant', 'invoice', 'customer', 'invoiceBank', 'invoiceTerms'));
+        // Get payment links for PDF if online payments module is enabled
+        $paymentLinks = [];
+        $onlinePaymentsEnabled = ModuleRegistry::isModuleEnabled($tenant, 'online_payments');
+        if ($onlinePaymentsEnabled) {
+            $metaDataForLinks = is_array($invoice->meta_data) ? $invoice->meta_data : (is_string($invoice->meta_data) ? json_decode($invoice->meta_data, true) : []);
+            $paymentLinks = $metaDataForLinks['payment_links'] ?? [];
+        }
+
+        $pdf = Pdf::loadView($view, compact('tenant', 'invoice', 'customer', 'invoiceBank', 'invoiceTerms', 'paymentLinks', 'onlinePaymentsEnabled'));
 
         $filename = $tenant->slug . '_' . Str::slug($invoice->voucherType->name ?? 'sales-invoice') . '_' . $invoice->voucher_number . '.pdf';
         return $pdf->download($filename);
@@ -1966,8 +1977,16 @@ class InvoiceController extends Controller
             // Get custom invoice terms
             $invoiceTerms = $tenant->settings['invoice_terms'] ?? null;
 
+            // Get payment links for PDF if online payments module is enabled
+            $paymentLinks = [];
+            $onlinePaymentsEnabled = ModuleRegistry::isModuleEnabled($tenant, 'online_payments');
+            if ($onlinePaymentsEnabled) {
+                $metaDataForLinks = is_array($invoice->meta_data) ? $invoice->meta_data : (is_string($invoice->meta_data) ? json_decode($invoice->meta_data, true) : []);
+                $paymentLinks = $metaDataForLinks['payment_links'] ?? [];
+            }
+
             // Generate PDF
-            $pdf = Pdf::loadView($emailView, compact('tenant', 'invoice', 'customer', 'inventoryItems', 'invoiceBank', 'invoiceTerms'));
+            $pdf = Pdf::loadView($emailView, compact('tenant', 'invoice', 'customer', 'inventoryItems', 'invoiceBank', 'invoiceTerms', 'paymentLinks', 'onlinePaymentsEnabled'));
 
             // Generate download URL for the PDF (using public route)
             $downloadUrl = route('tenant.public.invoices.pdf', [
@@ -2235,6 +2254,11 @@ class InvoiceController extends Controller
 
         if ($invoice->status !== 'posted') {
             return redirect()->back()->with('error', 'Payment links can only be generated for posted invoices.');
+        }
+
+        // Check if Online Payments module is enabled
+        if (!ModuleRegistry::isModuleEnabled($tenant, 'online_payments')) {
+            return redirect()->back()->with('error', 'Online Payments module is not enabled. Please enable it in Company Settings > Modules.');
         }
 
         // Find customer ledger from invoice entries

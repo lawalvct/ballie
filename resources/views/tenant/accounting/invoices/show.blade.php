@@ -268,9 +268,10 @@
 
                 @php
                     $paymentLinks = $invoice->meta_data['payment_links'] ?? [];
+                    $onlinePaymentsEnabled = \App\Services\ModuleRegistry::isModuleEnabled($tenant, 'online_payments');
                 @endphp
 
-                @if(!empty($paymentLinks))
+                @if($onlinePaymentsEnabled && !empty($paymentLinks))
                     <div class="pt-3 border-t border-gray-200">
                         <div class="flex items-center justify-between mb-3">
                             <h4 class="text-sm font-medium text-gray-700">Payment Links</h4>
@@ -323,7 +324,7 @@
                         </div>
                         <p class="text-xs text-gray-500 mt-2 italic">Share these links with your {{ strtolower($term->label('customer')) }} for easy payment</p>
                     </div>
-                @elseif($invoice->status === 'posted' && $balanceDue > 0)
+                @elseif($onlinePaymentsEnabled && $invoice->status === 'posted' && $balanceDue > 0)
                     <div class="pt-3 border-t border-gray-200">
                         <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
                             <div class="flex items-center mb-2">

@@ -13,6 +13,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use App\Helpers\PaymentHelper;
 use App\Helpers\PaystackPaymentHelper;
+use App\Services\ModuleRegistry;
 
 class PublicPaymentCallbackController extends Controller
 {
@@ -198,11 +199,27 @@ class PublicPaymentCallbackController extends Controller
             }
 
             // Get default bank account
-            $bankAccount = LedgerAccount::where('tenant_id', $tenant->id)
-                ->whereHas('accountGroup', function($q) {
-                    $q->where('code', 'BA');
-                })
-                ->first();
+            // If Online Payments module is enabled, use Ballie Collections Account
+            $bankAccount = null;
+
+            if (ModuleRegistry::isModuleEnabled($tenant, 'online_payments')) {
+                $ballieAccountId = $tenant->settings['ballie_collections_account_id'] ?? null;
+                if ($ballieAccountId) {
+                    $bankAccount = LedgerAccount::where('tenant_id', $tenant->id)
+                        ->where('id', $ballieAccountId)
+                        ->where('is_active', 1)
+                        ->first();
+                }
+            }
+
+            // Fallback to regular bank account
+            if (!$bankAccount) {
+                $bankAccount = LedgerAccount::where('tenant_id', $tenant->id)
+                    ->whereHas('accountGroup', function($q) {
+                        $q->where('code', 'BA');
+                    })
+                    ->first();
+            }
 
             if (!$bankAccount) {
                 // Fallback: get any cash/bank account

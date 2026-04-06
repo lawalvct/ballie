@@ -686,6 +686,8 @@ if (!function_exists('numberToWords')) {
             </div>
         </div>
 
+        @include('tenant.accounting.invoices.partials.pdf-payment-links', ['linkColor' => '#2c5aa0'])
+
         <!-- Signatures -->
         <div class="signatures">
             <div class="signature-box">

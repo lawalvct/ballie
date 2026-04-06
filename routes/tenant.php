@@ -226,6 +226,16 @@ Route::prefix('invoices')->name('invoices.')->group(function () {
             // Invoice API routes
             Route::get('/api/customers/search', [InvoiceController::class, 'searchCustomers'])->name('api.customers.search');
 
+            // Online Payment Withdrawals (Payouts)
+            Route::prefix('payouts')->name('payouts.')->middleware('module.access:online_payments')->group(function () {
+                Route::get('/', [\App\Http\Controllers\Tenant\Accounting\PayoutController::class, 'index'])->name('index');
+                Route::get('/create', [\App\Http\Controllers\Tenant\Accounting\PayoutController::class, 'create'])->name('create');
+                Route::post('/', [\App\Http\Controllers\Tenant\Accounting\PayoutController::class, 'store'])->name('store');
+                Route::get('/calculate-deduction', [\App\Http\Controllers\Tenant\Accounting\PayoutController::class, 'calculateDeduction'])->name('calculate-deduction');
+                Route::get('/{payout}', [\App\Http\Controllers\Tenant\Accounting\PayoutController::class, 'show'])->name('show');
+                Route::patch('/{payout}/cancel', [\App\Http\Controllers\Tenant\Accounting\PayoutController::class, 'cancel'])->name('cancel');
+            });
+
             // Quotations (Proforma Invoices)
             Route::prefix('quotations')->name('quotations.')->group(function () {
                 Route::get('/', [\App\Http\Controllers\Tenant\Accounting\QuotationController::class, 'index'])->name('index');

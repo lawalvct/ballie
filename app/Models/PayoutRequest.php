@@ -202,10 +202,30 @@ class PayoutRequest extends Model
 
     /**
      * Calculate available balance for a tenant.
+     * Uses the Ballie Collections Account ledger balance when available,
+     * falling back to ecommerce order totals.
      */
     public static function calculateAvailableBalance(int $tenantId): float
     {
-        // Get total revenue from completed/paid orders
+        $tenant = Tenant::find($tenantId);
+
+        // Try Ballie Collections Account (ledger-based balance)
+        $ballieAccountId = $tenant?->settings['ballie_collections_account_id'] ?? null;
+        if ($ballieAccountId) {
+            $ballieAccount = LedgerAccount::find($ballieAccountId);
+            if ($ballieAccount) {
+                $ledgerBalance = (float) $ballieAccount->current_balance;
+
+                // Subtract pending/approved/processing payouts
+                $reservedPayouts = self::where('tenant_id', $tenantId)
+                    ->whereIn('status', [self::STATUS_PENDING, self::STATUS_APPROVED, self::STATUS_PROCESSING])
+                    ->sum('requested_amount');
+
+                return max(0, $ledgerBalance - $reservedPayouts);
+            }
+        }
+
+        // Fallback: ecommerce order-based calculation
         $totalRevenue = Order::where('tenant_id', $tenantId)
             ->where('payment_status', 'paid')
             ->sum('total_amount');

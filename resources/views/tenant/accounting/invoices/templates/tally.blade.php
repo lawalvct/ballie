@@ -424,6 +424,8 @@
         </table>
         @endif
 
+        @include('tenant.accounting.invoices.partials.pdf-payment-links', ['linkColor' => '#333333'])
+
         <!-- Declaration & Signature -->
         <table class="footer-section">
             <tr>

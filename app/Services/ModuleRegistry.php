@@ -32,8 +32,9 @@ class ModuleRegistry
     const MODULE_AUDIT        = 'audit';
     const MODULE_ADMIN        = 'admin';
     const MODULE_SETTINGS     = 'settings';
-    const MODULE_SUPPORT      = 'support';
-    const MODULE_HELP         = 'help';
+    const MODULE_SUPPORT          = 'support';
+    const MODULE_HELP             = 'help';
+    const MODULE_ONLINE_PAYMENTS  = 'online_payments';
 
     /**
      * All known module keys.
@@ -56,6 +57,7 @@ class ModuleRegistry
         self::MODULE_SETTINGS,
         self::MODULE_SUPPORT,
         self::MODULE_HELP,
+        self::MODULE_ONLINE_PAYMENTS,
     ];
 
     /**
@@ -79,7 +81,7 @@ class ModuleRegistry
             'dashboard', 'accounting', 'inventory', 'crm', 'pos',
             'ecommerce', 'procurement', 'payroll', 'banking',
             'reports', 'statutory', 'audit', 'admin', 'settings',
-            'support', 'help',
+            'support', 'help', 'online_payments',
         ],
         'manufacturing' => [
             'dashboard', 'accounting', 'inventory', 'crm',
@@ -97,6 +99,7 @@ class ModuleRegistry
             'projects', 'pos', 'ecommerce', 'procurement',
             'payroll', 'banking', 'reports', 'statutory',
             'audit', 'admin', 'settings', 'support', 'help',
+            'online_payments',
         ],
     ];
 
@@ -120,7 +123,8 @@ class ModuleRegistry
         'admin'       => ['name' => 'Admin',        'description' => 'User & role management',                 'icon' => 'fas fa-user-shield'],
         'settings'    => ['name' => 'Settings',     'description' => 'Company & app configuration',            'icon' => 'fas fa-cog'],
         'support'     => ['name' => 'Support',      'description' => 'Help desk & support tickets',            'icon' => 'fas fa-headset'],
-        'help'        => ['name' => 'Help',         'description' => 'Documentation & guides',                 'icon' => 'fas fa-question-circle'],
+        'help'              => ['name' => 'Help',              'description' => 'Documentation & guides',                                       'icon' => 'fas fa-question-circle'],
+        'online_payments'   => ['name' => 'Online Payments',   'description' => 'Collect invoice payments online via Nomba/Paystack with payout management', 'icon' => 'fas fa-credit-card'],
     ];
 
     /**
