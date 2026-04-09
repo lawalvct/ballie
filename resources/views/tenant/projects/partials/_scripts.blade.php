@@ -341,7 +341,7 @@
             .replace(/'/g, '&#039;');
     }
 
-    function formatCurrency(amount) {
+    function formatProjectCurrency(amount) {
         const numericAmount = Number(amount || 0);
         return `₦${numericAmount.toLocaleString('en-NG', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
     }
@@ -416,7 +416,7 @@
                 <div class="flex-1 min-w-0">
                     <p class="text-sm font-medium text-gray-900">${escapeHtml(expense.title)}</p>
                     <div class="flex items-center space-x-3 mt-1">
-                        <span class="text-xs font-medium text-red-600">${formatCurrency(expense.amount)}</span>
+                        <span class="text-xs font-medium text-red-600">${formatProjectCurrency(expense.amount)}</span>
                         <span class="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-600">${escapeHtml(formatExpenseCategory(expense.category))}</span>
                         <span class="text-xs text-gray-500">${escapeHtml(formatExpenseDate(expense.expense_date))}</span>
                         ${creatorHtml}
@@ -443,7 +443,7 @@
         if (emptyState) emptyState.remove();
 
         const amountHtml = milestone.amount
-            ? `<span class="text-xs font-medium ${milestone.is_billable ? 'text-violet-600' : 'text-gray-500'}">${formatCurrency(milestone.amount)}${milestone.is_billable ? ' (Billable)' : ''}</span>`
+            ? `<span class="text-xs font-medium ${milestone.is_billable ? 'text-violet-600' : 'text-gray-500'}">${formatProjectCurrency(milestone.amount)}${milestone.is_billable ? ' (Billable)' : ''}</span>`
             : '';
         const dueDateHtml = milestone.due_date
             ? `<span class="text-xs text-gray-500">Due: ${escapeHtml(formatExpenseDate(milestone.due_date))}</span>`
