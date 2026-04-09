@@ -139,6 +139,32 @@ class CustomerController extends Controller
                 ->withInput();
         }
 
+        // Check for duplicate customer name within the same tenant
+        $duplicateQuery = Customer::where('tenant_id', $tenant->id);
+        if ($request->customer_type === 'business') {
+            $duplicateQuery->where('company_name', $request->company_name);
+        } else {
+            $duplicateQuery->where('first_name', $request->first_name)
+                           ->where('last_name', $request->last_name);
+        }
+
+        if ($duplicateQuery->exists()) {
+            $nameLabel = $request->customer_type === 'business'
+                ? $request->company_name
+                : trim($request->first_name . ' ' . $request->last_name);
+
+            if ($request->ajax() || $request->expectsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => "A customer with the name \"{$nameLabel}\" already exists in your account."
+                ], 422);
+            }
+
+            return redirect()->back()
+                ->withErrors(['company_name' => "A customer with the name \"{$nameLabel}\" already exists in your account."])
+                ->withInput();
+        }
+
         try {
             DB::beginTransaction();
 
@@ -404,6 +430,26 @@ class CustomerController extends Controller
         if ($validator->fails()) {
             return redirect()->back()
                 ->withErrors($validator)
+                ->withInput();
+        }
+
+        // Check for duplicate customer name within the same tenant (excluding current customer)
+        $duplicateQuery = Customer::where('tenant_id', $tenant->id)
+            ->where('id', '!=', $customer->id);
+        if ($request->customer_type === 'business') {
+            $duplicateQuery->where('company_name', $request->company_name);
+        } else {
+            $duplicateQuery->where('first_name', $request->first_name)
+                           ->where('last_name', $request->last_name);
+        }
+
+        if ($duplicateQuery->exists()) {
+            $nameLabel = $request->customer_type === 'business'
+                ? $request->company_name
+                : trim($request->first_name . ' ' . $request->last_name);
+
+            return redirect()->back()
+                ->withErrors(['company_name' => "A customer with the name \"{$nameLabel}\" already exists in your account."])
                 ->withInput();
         }
 

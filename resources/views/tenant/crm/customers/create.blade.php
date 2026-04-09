@@ -210,8 +210,12 @@
                 <div class="md:col-span-2">
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div class="form-group">
-                            <label for="email" class="block text-sm font-medium text-gray-700 mb-1">
-                                Email Address <span class="text-red-500">*</span>
+                            <label for="email" class="text-sm font-medium text-gray-700 mb-1 flex items-center">
+                                Email Address <span class="text-red-500 ml-0.5">*</span>
+                                <span id="email-auto-badge" class="hidden ml-2 inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-700 cursor-help" title="Auto-generated from customer name. Feel free to edit.">
+                                    <svg class="w-3 h-3 mr-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+                                    Auto
+                                </span>
                             </label>
                             <input type="email" name="email" id="email" required
                                 class="mt-1 focus:ring-blue-500 focus:border-blue-500 block w-full shadow-sm sm:text-sm rounded-md {{ $errors->has('email') ? 'border-red-300' : 'border-gray-300' }}"
@@ -226,9 +230,10 @@
                             <label for="phone" class="block text-sm font-medium text-gray-700 mb-1">
                                 Phone Number <span class="text-red-500">*</span>
                             </label>
-                            <input type="tel" name="phone" id="phone" required
+                            <input type="tel" name="phone" id="phone" required maxlength="11"
                                 class="mt-1 focus:ring-blue-500 focus:border-blue-500 block w-full shadow-sm sm:text-sm rounded-md {{ $errors->has('phone') ? 'border-red-300' : 'border-gray-300' }}"
-                                value="{{ old('phone') }}" placeholder="+1 (555) 123-4567">
+                                value="{{ old('phone') }}" placeholder="08012345678">
+                            <p class="mt-1 text-xs text-gray-400" id="phone-hint">11 digits starting with 080, 081, 090, 091, 070, 071</p>
                             @error('phone')
                                 <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                             @enderror
@@ -663,9 +668,117 @@ document.addEventListener('DOMContentLoaded', function() {
                 document.getElementById('first_name').value = '';
                 document.getElementById('last_name').value = '';
             }
+            generateEmail();
             updateProgress();
         });
     });
+
+    // Auto-generate email from customer name
+    let emailManuallyEdited = !!document.getElementById('email').value;
+    const emailField = document.getElementById('email');
+    const emailAutoBadge = document.getElementById('email-auto-badge');
+
+    function generateEmail() {
+        if (emailManuallyEdited) return;
+
+        const customerType = document.querySelector('input[name="customer_type"]:checked')?.value || 'individual';
+        let emailValue = '';
+
+        if (customerType === 'business') {
+            const companyName = document.getElementById('company_name').value.trim();
+            if (companyName) {
+                // "ABC Company Ltd" -> "abc.company.ltd"
+                const slug = companyName.toLowerCase().replace(/[^a-z0-9]+/g, '.').replace(/^\.+|\.+$/g, '');
+                emailValue = 'info@' + slug + '.com';
+            }
+        } else {
+            const firstName = document.getElementById('first_name').value.trim();
+            const lastName = document.getElementById('last_name').value.trim();
+            if (firstName && lastName) {
+                emailValue = (firstName + '.' + lastName).toLowerCase().replace(/[^a-z0-9.]+/g, '') + '@email.com';
+            } else if (firstName) {
+                emailValue = firstName.toLowerCase().replace(/[^a-z0-9]+/g, '') + '@email.com';
+            }
+        }
+
+        emailField.value = emailValue;
+        emailAutoBadge.classList.toggle('hidden', !emailValue);
+        updateProgress();
+    }
+
+    // Mark email as manually edited when user types in it
+    emailField.addEventListener('input', function() {
+        emailManuallyEdited = true;
+        emailAutoBadge.classList.add('hidden');
+    });
+
+    // Listen to name fields for auto-email generation
+    ['first_name', 'last_name', 'company_name'].forEach(function(fieldId) {
+        document.getElementById(fieldId).addEventListener('input', generateEmail);
+    });
+
+    // Phone number: allow only digits, max 11
+    const phoneField = document.getElementById('phone');
+    const phoneHint = document.getElementById('phone-hint');
+    let phoneManuallyEdited = !!phoneField.value;
+
+    // Auto-generate random Nigerian phone number when name is entered
+    function generatePhone() {
+        if (phoneManuallyEdited) return;
+        const customerType = document.querySelector('input[name="customer_type"]:checked')?.value || 'individual';
+        const hasName = customerType === 'business'
+            ? document.getElementById('company_name').value.trim().length > 0
+            : document.getElementById('first_name').value.trim().length > 0;
+
+        if (hasName) {
+            const prefixes = ['080', '081', '090', '091', '070', '071'];
+            const prefix = prefixes[Math.floor(Math.random() * prefixes.length)];
+            const rest = String(Math.floor(Math.random() * 100000000)).padStart(8, '0');
+            phoneField.value = prefix + rest;
+            validatePhone();
+            updateProgress();
+        }
+    }
+
+    // Listen to name fields for auto-phone generation
+    ['first_name', 'last_name', 'company_name'].forEach(function(fieldId) {
+        document.getElementById(fieldId).addEventListener('input', generatePhone);
+    });
+
+    phoneField.addEventListener('input', function() {
+        phoneManuallyEdited = true;
+        this.value = this.value.replace(/[^0-9]/g, '').slice(0, 11);
+        validatePhone();
+    });
+
+    function validatePhone() {
+        const val = phoneField.value;
+        const phoneError = document.getElementById('phone-error');
+        const validPrefixes = ['080', '081', '090', '091', '070', '071'];
+
+        if (val.length > 0 && val.length < 11) {
+            phoneHint.textContent = (11 - val.length) + ' digit(s) remaining';
+            phoneHint.classList.remove('text-gray-400', 'text-green-500');
+            phoneHint.classList.add('text-amber-500');
+        } else if (val.length === 11) {
+            const prefix = val.substring(0, 3);
+            if (validPrefixes.includes(prefix)) {
+                phoneHint.textContent = phoneManuallyEdited ? '' : 'Temporary phone number, please update now or later';
+                phoneHint.classList.remove('text-gray-400', 'text-amber-500');
+                phoneHint.classList.add('text-green-500');
+                phoneField.classList.remove('border-red-300');
+                if (phoneError) phoneError.classList.add('hidden');
+            } else {
+                phoneHint.textContent = 'Invalid prefix. Use 080, 081, 090, 091, 070, or 071';
+                phoneHint.classList.remove('text-gray-400', 'text-green-500');
+                phoneHint.classList.add('text-amber-500');
+            }
+        } else {
+            phoneHint.textContent = '11 digits starting with 080, 081, 090, 091, 070, 071';
+            phoneHint.classList.remove('text-amber-500', 'text-green-500');
+            phoneHint.classList.add('text-gray-400');
+        }
+    }
 
     // Progress tracking
     function updateProgress() {
@@ -717,14 +830,27 @@ document.addEventListener('DOMContentLoaded', function() {
         });
 
         // Email validation
-        const emailField = document.getElementById('email');
+        const emailFieldVal = document.getElementById('email');
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        if (emailField.value && !emailRegex.test(emailField.value)) {
-            emailField.classList.add('error');
+        if (emailFieldVal.value && !emailRegex.test(emailFieldVal.value)) {
+            emailFieldVal.classList.add('error');
             const errorDiv = document.getElementById('email-error');
             if (errorDiv) {
                 errorDiv.textContent = 'Please enter a valid email address';
                 errorDiv.classList.remove('hidden');
+            }
+            isValid = false;
+        }
+
+        // Phone validation - must be 11 digits with valid Nigerian prefix
+        const phoneVal = document.getElementById('phone').value;
+        const validPrefixes = ['080', '081', '090', '091', '070', '071'];
+        if (phoneVal && (phoneVal.length !== 11 || !validPrefixes.includes(phoneVal.substring(0, 3)))) {
+            document.getElementById('phone').classList.add('error');
+            const phoneErr = document.getElementById('phone-error');
+            if (phoneErr) {
+                phoneErr.textContent = 'Enter a valid 11-digit phone number (e.g. 08012345678)';
+                phoneErr.classList.remove('hidden');
             }
             isValid = false;
         }
@@ -736,6 +862,12 @@ document.addEventListener('DOMContentLoaded', function() {
             if (firstError) {
                 firstError.scrollIntoView({ behavior: 'smooth', block: 'center' });
             }
+        } else {
+            // Disable all submit buttons to prevent double submission
+            form.querySelectorAll('button[type="submit"], #save-draft-btn').forEach(btn => {
+                btn.disabled = true;
+                btn.classList.add('opacity-50', 'cursor-not-allowed');
+            });
         }
     });
 
@@ -746,7 +878,11 @@ document.addEventListener('DOMContentLoaded', function() {
         draftInput.type = 'hidden';
         draftInput.name = 'save_as_draft';
         draftInput.value = '1';
-        form.appendChild(draftInput);
+        // Disable all buttons to prevent double submission
+        form.querySelectorAll('button[type="submit"], #save-draft-btn').forEach(btn => {
+            btn.disabled = true;
+            btn.classList.add('opacity-50', 'cursor-not-allowed');
+        });
         form.submit();
     });
 
