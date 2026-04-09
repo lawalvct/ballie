@@ -230,11 +230,147 @@
                             </button>
                         </div>
 
+                        {{-- Prepaid Toggle --}}
+                        <div class="col-span-12 border-t border-blue-200 pt-3 mt-1">
+                            <label class="inline-flex items-center cursor-pointer">
+                                <input type="checkbox" x-model="entry.is_prepaid" @change="togglePrepaid(entry)" class="sr-only peer">
+                                <div class="relative w-9 h-5 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-amber-300 rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-amber-500"></div>
+                                <span class="ms-2 text-sm font-medium text-gray-700">Prepaid / Amortized Expense</span>
+                                <span class="ms-1 text-xs text-gray-400">(spread across multiple periods)</span>
+                            </label>
+                        </div>
+
+                        {{-- Prepaid Expanded Section --}}
+                        <template x-if="entry.is_prepaid">
+                            <div class="col-span-12 bg-amber-50 border-2 border-amber-200 rounded-xl p-5 space-y-4">
+                                <div class="flex items-center mb-2">
+                                    <svg class="w-5 h-5 text-amber-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                                    </svg>
+                                    <span class="text-sm font-bold text-amber-800">Prepaid Amortization Setup</span>
+                                </div>
+
+                                <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                                    {{-- Prepaid Account --}}
+                                    <div>
+                                        <label class="block text-xs font-medium text-gray-700 mb-1">
+                                            Prepaid Asset Account <span class="text-red-500">*</span>
+                                        </label>
+                                        <select x-model="entry.prepaid_data.prepaid_account_id"
+                                                class="w-full rounded-md border-gray-300 shadow-sm focus:border-amber-500 focus:ring-amber-500 sm:text-sm">
+                                            <option value="">Select Prepaid Account</option>
+                                            <template x-for="acct in getPrepaidAccounts()" :key="acct.id">
+                                                <option :value="acct.id" x-text="acct.display"></option>
+                                            </template>
+                                        </select>
+                                    </div>
+
+                                    {{-- Number of Installments --}}
+                                    <div>
+                                        <label class="block text-xs font-medium text-gray-700 mb-1">
+                                            Installments <span class="text-red-500">*</span>
+                                        </label>
+                                        <input type="number" min="2" max="60" x-model.number="entry.prepaid_data.installments"
+                                               @input="updatePrepaidPreview(entry)"
+                                               placeholder="e.g. 12"
+                                               class="w-full rounded-md border-gray-300 shadow-sm focus:border-amber-500 focus:ring-amber-500 sm:text-sm">
+                                    </div>
+
+                                    {{-- Frequency --}}
+                                    <div>
+                                        <label class="block text-xs font-medium text-gray-700 mb-1">
+                                            Frequency <span class="text-red-500">*</span>
+                                        </label>
+                                        <select x-model="entry.prepaid_data.frequency"
+                                                @change="updatePrepaidPreview(entry)"
+                                                class="w-full rounded-md border-gray-300 shadow-sm focus:border-amber-500 focus:ring-amber-500 sm:text-sm">
+                                            <option value="monthly">Monthly</option>
+                                            <option value="quarterly">Quarterly</option>
+                                            <option value="yearly">Yearly</option>
+                                        </select>
+                                    </div>
+
+                                    {{-- Start Date --}}
+                                    <div>
+                                        <label class="block text-xs font-medium text-gray-700 mb-1">
+                                            First Amortization Date <span class="text-red-500">*</span>
+                                        </label>
+                                        <input type="date" x-model="entry.prepaid_data.start_date"
+                                               @change="updatePrepaidPreview(entry)"
+                                               class="w-full rounded-md border-gray-300 shadow-sm focus:border-amber-500 focus:ring-amber-500 sm:text-sm">
+                                    </div>
+                                </div>
+
+                                {{-- Description --}}
+                                <div>
+                                    <label class="block text-xs font-medium text-gray-700 mb-1">Description</label>
+                                    <input type="text" x-model="entry.prepaid_data.description"
+                                           placeholder="e.g. Factory Rent Apr 2026 - Mar 2027"
+                                           class="w-full rounded-md border-gray-300 shadow-sm focus:border-amber-500 focus:ring-amber-500 sm:text-sm">
+                                </div>
+
+                                {{-- Amortization Preview --}}
+                                <div x-show="entry.prepaid_data.installments >= 2 && entry.debit_amount > 0 && entry.prepaid_data.start_date">
+                                    <div class="flex items-center justify-between mb-2">
+                                        <span class="text-xs font-bold text-amber-800">
+                                            <svg class="w-4 h-4 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                                            </svg>
+                                            Amortization Schedule Preview
+                                        </span>
+                                        <span class="text-xs text-gray-500">
+                                            ₦<span x-text="formatNumber(entry.debit_amount / entry.prepaid_data.installments)"></span>/installment
+                                        </span>
+                                    </div>
+                                    <div class="max-h-48 overflow-y-auto border border-amber-200 rounded-lg bg-white">
+                                        <table class="min-w-full divide-y divide-amber-100 text-xs">
+                                            <thead class="bg-amber-100 sticky top-0">
+                                                <tr>
+                                                    <th class="px-3 py-1.5 text-left font-medium text-amber-800">#</th>
+                                                    <th class="px-3 py-1.5 text-left font-medium text-amber-800">Date</th>
+                                                    <th class="px-3 py-1.5 text-right font-medium text-amber-800">Amount</th>
+                                                    <th class="px-3 py-1.5 text-right font-medium text-amber-800">Remaining</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody class="divide-y divide-amber-50">
+                                                <template x-for="(row, rIdx) in getAmortizationSchedule(entry)" :key="rIdx">
+                                                    <tr class="hover:bg-amber-50">
+                                                        <td class="px-3 py-1.5 text-gray-600" x-text="row.number"></td>
+                                                        <td class="px-3 py-1.5 text-gray-900" x-text="row.date"></td>
+                                                        <td class="px-3 py-1.5 text-right font-medium text-gray-900">₦<span x-text="formatNumber(row.amount)"></span></td>
+                                                        <td class="px-3 py-1.5 text-right text-gray-500">₦<span x-text="formatNumber(row.remaining)"></span></td>
+                                                    </tr>
+                                                </template>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                    <div class="mt-2 p-2 bg-amber-100 rounded-lg text-xs text-amber-800 flex items-center">
+                                        <svg class="w-4 h-4 mr-1.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                                            <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"/>
+                                        </svg>
+                                        Initial entry will debit <strong class="mx-1">Prepaid Expenses</strong> account. Each installment auto-posts a journal voucher debiting the expense account.
+                                    </div>
+                                </div>
+                            </div>
+                        </template>
+
                         {{-- Hidden inputs for payment entry submission --}}
-                        <input type="hidden" :name="`entries[${index + 1}][ledger_account_id]`" :value="entry.ledger_account_id">
+                        <input type="hidden" :name="`entries[${index + 1}][ledger_account_id]`" :value="entry.is_prepaid && entry.prepaid_data.prepaid_account_id ? entry.prepaid_data.prepaid_account_id : entry.ledger_account_id">
                         <input type="hidden" :name="`entries[${index + 1}][particulars]`" :value="entry.particulars">
                         <input type="hidden" :name="`entries[${index + 1}][debit_amount]`" :value="entry.debit_amount">
                         <input type="hidden" :name="`entries[${index + 1}][credit_amount]`" value="0">
+                        {{-- Prepaid hidden inputs --}}
+                        <input type="hidden" :name="`entries[${index + 1}][is_prepaid]`" :value="entry.is_prepaid ? '1' : '0'">
+                        <template x-if="entry.is_prepaid">
+                            <div>
+                                <input type="hidden" :name="`entries[${index + 1}][prepaid_data][expense_account_id]`" :value="entry.ledger_account_id">
+                                <input type="hidden" :name="`entries[${index + 1}][prepaid_data][prepaid_account_id]`" :value="entry.prepaid_data.prepaid_account_id">
+                                <input type="hidden" :name="`entries[${index + 1}][prepaid_data][installments]`" :value="entry.prepaid_data.installments">
+                                <input type="hidden" :name="`entries[${index + 1}][prepaid_data][frequency]`" :value="entry.prepaid_data.frequency">
+                                <input type="hidden" :name="`entries[${index + 1}][prepaid_data][start_date]`" :value="entry.prepaid_data.start_date">
+                                <input type="hidden" :name="`entries[${index + 1}][prepaid_data][description]`" :value="entry.prepaid_data.description">
+                            </div>
+                        </template>
                     </div>
                 </template>
             </div>
@@ -523,6 +659,7 @@
             'id' => $account->id,
             'name' => $account->name,
             'code' => $account->code,
+            'account_type' => $account->account_type,
             'display' => $account->name . ' (' . $account->code . ')',
         ];
     })->values();
@@ -545,7 +682,15 @@ function paymentVoucherEntries() {
                 particulars: '',
                 debit_amount: 0,
                 fileName: '',
-                search: ''
+                search: '',
+                is_prepaid: false,
+                prepaid_data: {
+                    prepaid_account_id: '',
+                    installments: 12,
+                    frequency: 'monthly',
+                    start_date: '',
+                    description: ''
+                }
             }
         ],
         totalPaymentAmount: 0,
@@ -602,6 +747,29 @@ function paymentVoucherEntries() {
                 return false;
             }
 
+            // Validate prepaid entries
+            for (let i = 0; i < this.paymentEntries.length; i++) {
+                const entry = this.paymentEntries[i];
+                if (entry.is_prepaid) {
+                    if (!entry.prepaid_data.prepaid_account_id) {
+                        alert(`Entry ${i + 1}: Please select a Prepaid Asset Account`);
+                        return false;
+                    }
+                    if (!entry.prepaid_data.installments || entry.prepaid_data.installments < 2) {
+                        alert(`Entry ${i + 1}: Installments must be at least 2`);
+                        return false;
+                    }
+                    if (!entry.prepaid_data.start_date) {
+                        alert(`Entry ${i + 1}: Please set the first amortization date`);
+                        return false;
+                    }
+                    if (!entry.ledger_account_id) {
+                        alert(`Entry ${i + 1}: Please select the expense account before enabling prepaid`);
+                        return false;
+                    }
+                }
+            }
+
             return true;
         },
 
@@ -613,7 +781,15 @@ function paymentVoucherEntries() {
                 particulars: this.bankEntry.particulars,
                 debit_amount: 0,
                 fileName: '',
-                search: ''
+                search: '',
+                is_prepaid: false,
+                prepaid_data: {
+                    prepaid_account_id: '',
+                    installments: 12,
+                    frequency: 'monthly',
+                    start_date: '',
+                    description: ''
+                }
             });
         },
 
@@ -789,6 +965,72 @@ function paymentVoucherEntries() {
             this.totalPaymentAmount = this.paymentEntries.reduce((sum, entry) => {
                 return sum + (parseFloat(entry.debit_amount) || 0);
             }, 0);
+        },
+
+        // ── Prepaid Expense Methods ──
+
+        togglePrepaid(entry) {
+            if (entry.is_prepaid) {
+                // Default start date to next month from voucher date
+                const voucherDate = document.querySelector('[name="voucher_date"]')?.value;
+                if (voucherDate && !entry.prepaid_data.start_date) {
+                    const d = new Date(voucherDate);
+                    d.setMonth(d.getMonth() + 1);
+                    entry.prepaid_data.start_date = d.toISOString().split('T')[0];
+                }
+                // Auto-select first prepaid account if available
+                const prepaidAccts = this.getPrepaidAccounts();
+                if (prepaidAccts.length > 0 && !entry.prepaid_data.prepaid_account_id) {
+                    entry.prepaid_data.prepaid_account_id = prepaidAccts[0].id;
+                }
+            }
+        },
+
+        getPrepaidAccounts() {
+            return this.ledgerAccounts.filter(a =>
+                a.code.toLowerCase().includes('prepaid') ||
+                a.name.toLowerCase().includes('prepaid')
+            );
+        },
+
+        updatePrepaidPreview(entry) {
+            // Reactivity trigger — Alpine handles this automatically
+        },
+
+        getAmortizationSchedule(entry) {
+            const total = parseFloat(entry.debit_amount) || 0;
+            const count = parseInt(entry.prepaid_data.installments) || 0;
+            const startStr = entry.prepaid_data.start_date;
+            const freq = entry.prepaid_data.frequency || 'monthly';
+
+            if (total <= 0 || count < 2 || !startStr) return [];
+
+            const perInstallment = Math.round((total / count) * 100) / 100;
+            let remaining = total;
+            const rows = [];
+            let date = new Date(startStr);
+
+            for (let i = 1; i <= count; i++) {
+                const amt = (i === count) ? Math.round(remaining * 100) / 100 : perInstallment;
+                remaining -= amt;
+
+                rows.push({
+                    number: i,
+                    date: date.toISOString().split('T')[0],
+                    amount: amt,
+                    remaining: Math.max(0, Math.round(remaining * 100) / 100)
+                });
+
+                // Advance date
+                if (freq === 'quarterly') {
+                    date = new Date(date.setMonth(date.getMonth() + 3));
+                } else if (freq === 'yearly') {
+                    date = new Date(date.setFullYear(date.getFullYear() + 1));
+                } else {
+                    date = new Date(date.setMonth(date.getMonth() + 1));
+                }
+            }
+            return rows;
         },
 
         formatNumber(value) {

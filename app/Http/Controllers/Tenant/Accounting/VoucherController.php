@@ -10,6 +10,7 @@ use App\Models\VoucherEntry;
 use App\Models\LedgerAccount;
 use App\Models\Product;
 use App\Models\Customer;
+use App\Models\PrepaidExpense;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
@@ -346,7 +347,7 @@ class VoucherController extends Controller
                         $documentPath = $file->storeAs('voucher_documents', $filename, 'public');
                     }
 
-                    VoucherEntry::create([
+                    $voucherEntry = VoucherEntry::create([
                         'voucher_id' => $voucher->id,
                         'ledger_account_id' => $entryData['ledger_account_id'],
                         'particulars' => $entryData['particulars'],
@@ -354,6 +355,38 @@ class VoucherController extends Controller
                         'credit_amount' => $creditAmount,
                         'document_path' => $documentPath,
                     ]);
+
+                    // Create PrepaidExpense record if this entry is marked as prepaid
+                    if (!empty($entryData['is_prepaid']) && $entryData['is_prepaid'] == '1' && !empty($entryData['prepaid_data'])) {
+                        $pd = $entryData['prepaid_data'];
+                        $totalAmount = $debitAmount;
+                        $installments = (int) $pd['installments'];
+                        $computed = PrepaidExpense::computeSchedule(
+                            $totalAmount,
+                            $installments,
+                            $pd['frequency'],
+                            $pd['start_date']
+                        );
+
+                        PrepaidExpense::create([
+                            'tenant_id' => $tenant->id,
+                            'voucher_id' => $voucher->id,
+                            'voucher_entry_id' => $voucherEntry->id,
+                            'prepaid_account_id' => $pd['prepaid_account_id'],
+                            'expense_account_id' => $pd['expense_account_id'],
+                            'total_amount' => $totalAmount,
+                            'installment_amount' => $computed['installment_amount'],
+                            'installments_count' => $installments,
+                            'installments_posted' => 0,
+                            'frequency' => $pd['frequency'],
+                            'start_date' => $pd['start_date'],
+                            'next_posting_date' => $computed['next_posting_date'],
+                            'end_date' => $computed['end_date'],
+                            'description' => $pd['description'] ?? null,
+                            'status' => 'active',
+                            'created_by' => Auth::id(),
+                        ]);
+                    }
                 }
             }
 
@@ -404,7 +437,7 @@ class VoucherController extends Controller
      */
     public function show(Tenant $tenant, Voucher $voucher)
     {
-        $voucher->load(['voucherType', 'entries.ledgerAccount.accountGroup', 'createdBy', 'updatedBy', 'postedBy']);
+        $voucher->load(['voucherType', 'entries.ledgerAccount.accountGroup', 'createdBy', 'updatedBy', 'postedBy', 'prepaidExpenses.expenseAccount']);
 
         $receiptData = $this->getReceiptData($voucher);
         $contextData = $this->getVoucherContextData($voucher);

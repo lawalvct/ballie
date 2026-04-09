@@ -629,5 +629,46 @@
         </div>
     @endif
 
+    {{-- Prepaid Expense Schedules --}}
+    @if($voucher->prepaidExpenses->count() > 0)
+        <div class="bg-white shadow-sm rounded-lg border border-amber-200 overflow-hidden">
+            <div class="px-6 py-4 border-b border-amber-200 bg-amber-50">
+                <div class="flex items-center">
+                    <svg class="w-5 h-5 text-amber-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                    </svg>
+                    <h3 class="text-lg font-medium text-amber-900">Prepaid Expense Amortization</h3>
+                </div>
+            </div>
+            <div class="p-6 space-y-4">
+                @foreach($voucher->prepaidExpenses as $pe)
+                    <div class="flex items-center justify-between p-4 bg-gray-50 rounded-lg border border-gray-200">
+                        <div>
+                            <p class="text-sm font-medium text-gray-900">{{ $pe->description ?: 'Prepaid Expense' }}</p>
+                            <p class="text-xs text-gray-500">
+                                {{ $pe->expenseAccount?->name }} &middot; {{ ucfirst($pe->frequency) }} &middot;
+                                ₦{{ number_format($pe->installment_amount, 2) }}/installment
+                            </p>
+                        </div>
+                        <div class="flex items-center space-x-4">
+                            <div class="text-right">
+                                <div class="flex items-center space-x-2">
+                                    <div class="w-16 bg-gray-200 rounded-full h-2">
+                                        <div class="bg-amber-500 h-2 rounded-full" style="width: {{ $pe->getProgressPercentage() }}%"></div>
+                                    </div>
+                                    <span class="text-xs text-gray-600">{{ $pe->installments_posted }}/{{ $pe->installments_count }}</span>
+                                </div>
+                            </div>
+                            <a href="{{ route('tenant.accounting.prepaid-expenses.show', [$tenant->slug, $pe->id]) }}"
+                               class="inline-flex items-center px-3 py-1.5 text-xs font-medium text-amber-700 bg-amber-100 rounded-lg hover:bg-amber-200">
+                                View Schedule
+                            </a>
+                        </div>
+                    </div>
+                @endforeach
+            </div>
+        </div>
+    @endif
+
 </div>
 @endsection

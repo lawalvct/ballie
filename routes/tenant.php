@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use App\Http\Controllers\Tenant\Accounting\VoucherController;
 use App\Http\Controllers\Tenant\Accounting\VoucherTypeController;
+use App\Http\Controllers\Tenant\Accounting\PrepaidExpenseController;
 use App\Http\Controllers\Tenant\Accounting\AccountGroupController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Tenant\AuthController;
@@ -343,6 +344,15 @@ Route::prefix('vouchers')->name('vouchers.')->group(function () {
     Route::get('/{voucher}/duplicate', [VoucherController::class, 'duplicate'])->name('duplicate');
     Route::get('/{voucher}/pdf', [VoucherController::class, 'pdf'])->name('pdf');
     Route::get('/{voucher}/print', [VoucherController::class, 'print'])->name('print');
+});
+
+// Prepaid Expenses
+Route::prefix('prepaid-expenses')->name('prepaid-expenses.')->group(function () {
+    Route::get('/', [PrepaidExpenseController::class, 'index'])->name('index');
+    Route::get('/{prepaidExpense}', [PrepaidExpenseController::class, 'show'])->name('show');
+    Route::post('/{prepaidExpense}/pause', [PrepaidExpenseController::class, 'pause'])->name('pause');
+    Route::post('/{prepaidExpense}/resume', [PrepaidExpenseController::class, 'resume'])->name('resume');
+    Route::post('/{prepaidExpense}/cancel', [PrepaidExpenseController::class, 'cancel'])->name('cancel');
 });
 // Ledger Accounts
 Route::prefix('ledger-accounts')->name('ledger-accounts.')->group(function () {

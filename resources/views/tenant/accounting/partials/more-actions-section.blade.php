@@ -284,6 +284,23 @@
                  </div>
                  <p class="text-xs text-violet-200">Reconcile bank statements with your records.</p>
             </a>
+
+            <!-- Prepaid Expenses Card -->
+            <a href="{{ route('tenant.accounting.prepaid-expenses.index', ['tenant' => $tenant->slug]) }}"
+               class="action-card bg-gradient-to-br from-amber-600 to-amber-800 hover:from-amber-500 hover:to-amber-700 border border-amber-500 rounded-xl p-4 transition-all duration-300 hover:shadow-lg hover:scale-105 group">
+                <div class="flex items-center mb-3">
+                    <div class="w-10 h-10 bg-amber-500 bg-opacity-30 rounded-lg flex items-center justify-center mr-3 group-hover:scale-110 transition-transform duration-300">
+                        <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                    </div>
+                    <div>
+                        <h5 class="font-semibold text-white group-hover:text-amber-200 transition-colors duration-300">Prepaid Expenses</h5>
+                        <p class="text-xs text-amber-200">Amortization schedules</p>
+                    </div>
+                </div>
+                <p class="text-xs text-amber-200">View and manage prepaid expense amortization schedules.</p>
+            </a>
         </div>
     </div>
 

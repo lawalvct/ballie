@@ -56,6 +56,11 @@ class Voucher extends Model
         return $this->hasMany(VoucherEntry::class);
     }
 
+    public function prepaidExpenses()
+    {
+        return $this->hasMany(PrepaidExpense::class);
+    }
+
     public function createdBy()
     {
         return $this->belongsTo(User::class, 'created_by');

@@ -17,6 +17,9 @@ class Kernel extends ConsoleKernel
 
         // Send email verification reminders daily at 10 AM
         $schedule->command('email:send-verification-reminders')->dailyAt('10:00');
+
+        // Post due prepaid expense amortization installments daily at 6 AM
+        $schedule->command('prepaid:post-installments')->dailyAt('06:00');
     }
 
     /**
