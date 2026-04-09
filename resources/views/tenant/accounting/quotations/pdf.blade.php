@@ -426,18 +426,24 @@
                 <thead>
                     <tr>
                         <th class="sn-col">S/N</th>
-                        <th style="width: 35%;">Description</th>
-                        <th class="text-center" style="width: 10%;">Qty</th>
-                        <th class="text-right" style="width: 14%;">Unit Price</th>
-                        <th class="text-right" style="width: 11%;">Discount</th>
-                        <th class="text-right" style="width: 8%;">Tax</th>
-                        <th class="text-right" style="width: 17%;">Amount</th>
+                        <th style="width: 8%;">Type</th>
+                        <th style="width: 37%;">Description</th>
+                        <th class="text-center" style="width: 12%;">Qty</th>
+                        <th class="text-right" style="width: 18%;">Unit Price</th>
+                        <th class="text-right" style="width: 20%;">Amount</th>
                     </tr>
                 </thead>
                 <tbody>
                     @foreach($quotation->items as $index => $item)
                         <tr>
                             <td class="sn-col">{{ $index + 1 }}</td>
+                            <td style="text-align: center;">
+                                @if(($item->item_type ?? 'product') === 'product')
+                                    <span style="background: #dbeafe; color: #1e40af; padding: 1px 4px; border-radius: 3px; font-size: 8px;">Product</span>
+                                @else
+                                    <span style="background: #dcfce7; color: #166534; padding: 1px 4px; border-radius: 3px; font-size: 8px;">Service</span>
+                                @endif
+                            </td>
                             <td>
                                 <div class="product-name">{{ $item->product_name }}</div>
                                 @if($item->description)
@@ -446,9 +452,7 @@
                             </td>
                             <td class="text-center">{{ rtrim(rtrim(number_format($item->quantity, 2), '0'), '.') }} {{ $item->unit }}</td>
                             <td class="text-right">&#8358;{{ number_format($item->rate, 2) }}</td>
-                            <td class="text-right">&#8358;{{ number_format($item->discount, 2) }}</td>
-                            <td class="text-right">{{ rtrim(rtrim(number_format($item->tax, 2), '0'), '.') }}%</td>
-                            <td class="text-right">&#8358;{{ number_format($item->getTotal(), 2) }}</td>
+                            <td class="text-right">&#8358;{{ number_format($item->quantity * $item->rate, 2) }}</td>
                         </tr>
                     @endforeach
                 </tbody>
@@ -459,19 +463,21 @@
         <div class="summary-section no-break">
             <table class="summary-table">
                 <tr>
-                    <td class="summary-label">Subtotal:</td>
+                    <td class="summary-label">Items Subtotal:</td>
                     <td class="summary-amount">&#8358;{{ number_format($quotation->subtotal, 2) }}</td>
                 </tr>
-                @if($quotation->discount_amount > 0)
-                <tr>
-                    <td class="summary-label">Discount:</td>
-                    <td class="summary-amount" style="color: #dc3545;">-&#8358;{{ number_format($quotation->discount_amount, 2) }}</td>
-                </tr>
+                @if(!empty($quotation->additional_charges) && is_array($quotation->additional_charges))
+                    @foreach($quotation->additional_charges as $charge)
+                    <tr>
+                        <td class="summary-label">{{ $charge['name'] ?? 'Additional Charge' }}:</td>
+                        <td class="summary-amount">&#8358;{{ number_format($charge['amount'] ?? 0, 2) }}</td>
+                    </tr>
+                    @endforeach
                 @endif
-                @if($quotation->tax_amount > 0)
+                @if($quotation->vat_enabled && $quotation->vat_amount > 0)
                 <tr>
-                    <td class="summary-label">Tax:</td>
-                    <td class="summary-amount">&#8358;{{ number_format($quotation->tax_amount, 2) }}</td>
+                    <td class="summary-label">VAT (7.5%):</td>
+                    <td class="summary-amount">&#8358;{{ number_format($quotation->vat_amount, 2) }}</td>
                 </tr>
                 @endif
                 <tr class="total-row">

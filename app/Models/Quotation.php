@@ -31,6 +31,10 @@ class Quotation extends Model
         'discount_amount',
         'tax_amount',
         'total_amount',
+        'vat_enabled',
+        'vat_amount',
+        'vat_applies_to',
+        'additional_charges',
         'status',
         'converted_to_invoice_id',
         'converted_at',
@@ -49,6 +53,9 @@ class Quotation extends Model
         'discount_amount' => 'decimal:2',
         'tax_amount' => 'decimal:2',
         'total_amount' => 'decimal:2',
+        'vat_enabled' => 'boolean',
+        'vat_amount' => 'decimal:2',
+        'additional_charges' => 'array',
         'converted_at' => 'datetime',
         'sent_at' => 'datetime',
         'accepted_at' => 'datetime',
@@ -231,19 +238,34 @@ class Quotation extends Model
     public function calculateTotals(): void
     {
         $subtotal = 0;
-        $taxAmount = 0;
-        $discountAmount = 0;
 
         foreach ($this->items as $item) {
-            $subtotal += $item->amount;
-            $taxAmount += $item->tax;
-            $discountAmount += $item->discount;
+            $subtotal += ($item->quantity * $item->rate);
+        }
+
+        // Additional charges total
+        $chargesTotal = 0;
+        if (!empty($this->additional_charges) && is_array($this->additional_charges)) {
+            foreach ($this->additional_charges as $charge) {
+                $chargesTotal += (float) ($charge['amount'] ?? 0);
+            }
+        }
+
+        // VAT calculation
+        $vatAmount = 0;
+        if ($this->vat_enabled) {
+            $vatBase = $subtotal;
+            if ($this->vat_applies_to === 'items_and_charges') {
+                $vatBase += $chargesTotal;
+            }
+            $vatAmount = $vatBase * 0.075;
         }
 
         $this->subtotal = $subtotal;
-        $this->tax_amount = $taxAmount;
-        $this->discount_amount = $discountAmount;
-        $this->total_amount = $subtotal + $taxAmount - $discountAmount;
+        $this->tax_amount = $vatAmount;
+        $this->vat_amount = $vatAmount;
+        $this->discount_amount = 0;
+        $this->total_amount = $subtotal + $chargesTotal + $vatAmount;
     }
 
     public function convertToInvoice(): ?Voucher

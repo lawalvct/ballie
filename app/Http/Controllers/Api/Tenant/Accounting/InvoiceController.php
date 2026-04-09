@@ -1136,10 +1136,11 @@ class InvoiceController extends Controller
                 }
             }
 
-            // Sanitize filename
-            $prefix = strtolower($partyNameForFile);
-            $prefix = preg_replace('/[^a-z0-9]+/i', '-', $prefix);
-            $prefix = trim($prefix, '-') ?: 'party';
+            $companyNameSegment = Str::slug($tenant->name ?: ($tenant->slug ?? 'company')) ?: 'company';
+            $partyNameSegment = Str::slug($ledger->name ?? $partyNameForFile) ?: 'party';
+            $documentTypeSegment = (($invoice->voucherType->inventory_effect ?? null) === 'increase')
+                ? 'purchase-invoice'
+                : 'sales-invoice';
 
             // Determine invoice template from tenant settings
             $template = $tenant->settings['invoice_template'] ?? 'ballie';
@@ -1153,7 +1154,7 @@ class InvoiceController extends Controller
 
             $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView($pdfView, compact('tenant', 'invoice', 'party', 'customer'));
 
-            $filename = $tenant->slug . '_' . Str::slug($invoice->voucherType->name ?? 'sales-invoice') . '_' . $invoice->voucher_number . '.pdf';
+            $filename = $companyNameSegment . '_' . $partyNameSegment . '_' . $documentTypeSegment . '_' . $invoice->voucher_number . '.pdf';
 
             return $pdf->download($filename);
 

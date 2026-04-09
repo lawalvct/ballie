@@ -1824,11 +1824,12 @@ class InvoiceController extends Controller
             $customerNameForFile = 'walk-in-customer';
         }
 
-        // Sanitize and slugify the customer name for filename safety
-        $prefix = strtolower($customerNameForFile);
-        $prefix = preg_replace('/[^a-z0-9]+/i', '-', $prefix);
-        $prefix = trim($prefix, '-');
-        $prefix = $prefix === '' ? 'customer' : $prefix;
+        // Build a predictable download filename using company and party ledger names.
+        $companyNameSegment = Str::slug($tenant->name ?: ($tenant->slug ?? 'company')) ?: 'company';
+        $partyNameSegment = Str::slug($customerLedgerEntry?->ledgerAccount?->name ?? $customerNameForFile) ?: 'customer';
+        $documentTypeSegment = (($invoice->voucherType->inventory_effect ?? null) === 'increase')
+            ? 'purchase-invoice'
+            : 'sales-invoice';
 
         // Determine invoice template from tenant settings
         $template = $tenant->settings['invoice_template'] ?? 'ballie';
@@ -1861,7 +1862,7 @@ class InvoiceController extends Controller
 
         $pdf = Pdf::loadView($view, compact('tenant', 'invoice', 'customer', 'invoiceBank', 'invoiceTerms', 'paymentLinks', 'onlinePaymentsEnabled'));
 
-        $filename = $tenant->slug . '_' . Str::slug($invoice->voucherType->name ?? 'sales-invoice') . '_' . $invoice->voucher_number . '.pdf';
+        $filename = $companyNameSegment . '_' . $partyNameSegment . '_' . $documentTypeSegment . '_' . $invoice->voucher_number . '.pdf';
         return $pdf->download($filename);
     }
 

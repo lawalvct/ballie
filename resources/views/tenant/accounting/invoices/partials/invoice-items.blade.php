@@ -135,8 +135,7 @@
                                                :name="`inventory_items[${index}][description]`"
                                                x-model="item.description"
                                                class="block w-full px-2 md:px-3 py-1.5 md:py-2 text-xs md:text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-green-500 focus:border-green-500"
-                                               placeholder="Service description (e.g. Consulting, Installation)"
-                                               required>
+                                            placeholder="Service description (e.g. Consulting, Installation)">
                                         <input type="hidden"
                                                :name="item.item_type === 'service' ? `inventory_items[${index}][product_id]` : ''"
                                                value="">

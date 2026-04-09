@@ -81,17 +81,23 @@
                         <table class="min-w-full divide-y divide-gray-200">
                             <thead class="bg-gray-50">
                                 <tr>
-                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">@term('product')</th>
+                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase" style="width: 60px;">Type</th>
+                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">@term('product') / Description</th>
                                     <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Qty</th>
                                     <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Rate</th>
-                                    <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Discount</th>
-                                    <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Tax</th>
                                     <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Amount</th>
                                 </tr>
                             </thead>
                             <tbody class="bg-white divide-y divide-gray-200">
                                 @foreach($quotation->items as $item)
                                 <tr>
+                                    <td class="px-4 py-3 text-sm">
+                                        @if(($item->item_type ?? 'product') === 'product')
+                                            <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800">@term('product')</span>
+                                        @else
+                                            <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800">Service</span>
+                                        @endif
+                                    </td>
                                     <td class="px-4 py-3 text-sm text-gray-900">
                                         <div class="font-medium">{{ $item->product_name }}</div>
                                         @if($item->description)
@@ -100,31 +106,41 @@
                                     </td>
                                     <td class="px-4 py-3 text-sm text-right text-gray-900">{{ $item->quantity }} {{ $item->unit }}</td>
                                     <td class="px-4 py-3 text-sm text-right text-gray-900">₦{{ number_format($item->rate, 2) }}</td>
-                                    <td class="px-4 py-3 text-sm text-right text-gray-900">₦{{ number_format($item->discount, 2) }}</td>
-                                    <td class="px-4 py-3 text-sm text-right text-gray-900">{{ $item->tax }}%</td>
-                                    <td class="px-4 py-3 text-sm text-right font-medium text-gray-900">₦{{ number_format($item->getTotal(), 2) }}</td>
+                                    <td class="px-4 py-3 text-sm text-right font-medium text-gray-900">₦{{ number_format($item->quantity * $item->rate, 2) }}</td>
                                 </tr>
                                 @endforeach
                             </tbody>
                             <tfoot class="bg-gray-50">
                                 <tr>
-                                    <td colspan="5" class="px-4 py-3 text-sm font-medium text-right text-gray-900">Subtotal:</td>
+                                    <td colspan="4" class="px-4 py-3 text-sm font-medium text-right text-gray-900">Items Subtotal:</td>
                                     <td class="px-4 py-3 text-sm font-medium text-right text-gray-900">₦{{ number_format($quotation->subtotal, 2) }}</td>
                                 </tr>
-                                @if($quotation->discount_amount > 0)
-                                <tr>
-                                    <td colspan="5" class="px-4 py-3 text-sm font-medium text-right text-gray-900">Discount:</td>
-                                    <td class="px-4 py-3 text-sm font-medium text-right text-red-600">-₦{{ number_format($quotation->discount_amount, 2) }}</td>
-                                </tr>
+                                @if(!empty($quotation->additional_charges) && is_array($quotation->additional_charges))
+                                    @php $chargesTotal = collect($quotation->additional_charges)->sum('amount'); @endphp
+                                    @foreach($quotation->additional_charges as $charge)
+                                    <tr>
+                                        <td colspan="4" class="px-4 py-2 text-sm text-right text-gray-700">{{ $charge['name'] ?? 'Additional Charge' }}:</td>
+                                        <td class="px-4 py-2 text-sm text-right text-gray-900">₦{{ number_format($charge['amount'] ?? 0, 2) }}</td>
+                                    </tr>
+                                    @endforeach
+                                    <tr>
+                                        <td colspan="4" class="px-4 py-2 text-sm font-medium text-right text-gray-900">Additional Charges Total:</td>
+                                        <td class="px-4 py-2 text-sm font-medium text-right text-gray-900">₦{{ number_format($chargesTotal, 2) }}</td>
+                                    </tr>
                                 @endif
-                                @if($quotation->tax_amount > 0)
+                                @if($quotation->vat_enabled && $quotation->vat_amount > 0)
                                 <tr>
-                                    <td colspan="5" class="px-4 py-3 text-sm font-medium text-right text-gray-900">Tax:</td>
-                                    <td class="px-4 py-3 text-sm font-medium text-right text-gray-900">₦{{ number_format($quotation->tax_amount, 2) }}</td>
+                                    <td colspan="4" class="px-4 py-3 text-sm font-medium text-right text-gray-900">
+                                        VAT (7.5%)
+                                        <span class="text-xs text-gray-500 font-normal">
+                                            — on {{ $quotation->vat_applies_to === 'items_and_charges' ? 'items + charges' : 'items only' }}
+                                        </span>:
+                                    </td>
+                                    <td class="px-4 py-3 text-sm font-medium text-right text-gray-900">₦{{ number_format($quotation->vat_amount, 2) }}</td>
                                 </tr>
                                 @endif
                                 <tr class="border-t-2">
-                                    <td colspan="5" class="px-4 py-3 text-base font-bold text-right text-gray-900">Total:</td>
+                                    <td colspan="4" class="px-4 py-3 text-base font-bold text-right text-gray-900">Grand Total:</td>
                                     <td class="px-4 py-3 text-base font-bold text-right text-emerald-600">₦{{ number_format($quotation->total_amount, 2) }}</td>
                                 </tr>
                             </tfoot>

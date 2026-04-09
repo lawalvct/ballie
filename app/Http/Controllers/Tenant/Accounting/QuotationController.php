@@ -139,12 +139,18 @@ class QuotationController extends Controller
             'terms_and_conditions' => 'nullable|string',
             'notes' => 'nullable|string',
             'items' => 'required|array|min:1',
-            'items.*.product_id' => 'required|exists:products,id',
+            'items.*.item_type' => 'nullable|string|in:product,service',
+            'items.*.product_id' => 'nullable|exists:products,id',
             'items.*.quantity' => 'required|numeric|min:0.01',
             'items.*.rate' => 'required|numeric|min:0',
-            'items.*.discount' => 'nullable|numeric|min:0',
-            'items.*.tax' => 'nullable|numeric|min:0',
             'items.*.description' => 'nullable|string',
+            'vat_enabled' => 'nullable',
+            'vat_amount' => 'nullable|numeric|min:0',
+            'vat_applies_to' => 'nullable|string|in:items_only,items_and_charges',
+            'additional_charges' => 'nullable|array',
+            'additional_charges.*.name' => 'nullable|string|max:255',
+            'additional_charges.*.amount' => 'nullable|numeric|min:0',
+            'additional_charges.*.narration' => 'nullable|string|max:255',
         ], [
             'customer_ledger_id.required' => 'Please select a customer before saving the quotation.',
         ]);
@@ -186,6 +192,10 @@ class QuotationController extends Controller
                 'terms_and_conditions' => $request->terms_and_conditions,
                 'notes' => $request->notes,
                 'status' => 'draft',
+                'vat_enabled' => $request->boolean('vat_enabled'),
+                'vat_amount' => $request->input('vat_amount', 0),
+                'vat_applies_to' => $request->input('vat_applies_to', 'items_only'),
+                'additional_charges' => $request->input('additional_charges'),
                 'created_by' => auth()->id(),
             ]);
 
@@ -193,20 +203,37 @@ class QuotationController extends Controller
 
             // Create quotation items
             foreach ($request->items as $index => $item) {
-                $product = Product::findOrFail($item['product_id']);
+                $itemType = $item['item_type'] ?? 'product';
 
-                $quotation->items()->create([
-                    'product_id' => $product->id,
-                    'product_name' => $product->name,
-                    'description' => $item['description'] ?? $product->description,
-                    'quantity' => $item['quantity'],
-                    'unit' => $product->primaryUnit->symbol ?? 'Pcs',
-                    'rate' => $item['rate'],
-                    'discount' => $item['discount'] ?? 0,
-                    'tax' => $item['tax'] ?? 0,
-                    'is_tax_inclusive' => $item['is_tax_inclusive'] ?? false,
-                    'sort_order' => $index,
-                ]);
+                if ($itemType === 'product' && !empty($item['product_id'])) {
+                    $product = Product::findOrFail($item['product_id']);
+                    $quotation->items()->create([
+                        'item_type' => 'product',
+                        'product_id' => $product->id,
+                        'product_name' => $product->name,
+                        'description' => $item['description'] ?? $product->description,
+                        'quantity' => $item['quantity'],
+                        'unit' => $product->primaryUnit->symbol ?? 'Pcs',
+                        'rate' => $item['rate'],
+                        'discount' => 0,
+                        'tax' => 0,
+                        'sort_order' => $index,
+                    ]);
+                } else {
+                    // Service / line item (no product)
+                    $quotation->items()->create([
+                        'item_type' => 'service',
+                        'product_id' => null,
+                        'product_name' => $item['description'] ?? 'Service',
+                        'description' => $item['description'] ?? '',
+                        'quantity' => $item['quantity'],
+                        'unit' => 'Pcs',
+                        'rate' => $item['rate'],
+                        'discount' => 0,
+                        'tax' => 0,
+                        'sort_order' => $index,
+                    ]);
+                }
             }
 
             // Calculate totals
@@ -346,12 +373,18 @@ class QuotationController extends Controller
             'terms_and_conditions' => 'nullable|string',
             'notes' => 'nullable|string',
             'items' => 'required|array|min:1',
-            'items.*.product_id' => 'required|exists:products,id',
+            'items.*.item_type' => 'nullable|string|in:product,service',
+            'items.*.product_id' => 'nullable|exists:products,id',
             'items.*.quantity' => 'required|numeric|min:0.01',
             'items.*.rate' => 'required|numeric|min:0',
-            'items.*.discount' => 'nullable|numeric|min:0',
-            'items.*.tax' => 'nullable|numeric|min:0',
             'items.*.description' => 'nullable|string',
+            'vat_enabled' => 'nullable',
+            'vat_amount' => 'nullable|numeric|min:0',
+            'vat_applies_to' => 'nullable|string|in:items_only,items_and_charges',
+            'additional_charges' => 'nullable|array',
+            'additional_charges.*.name' => 'nullable|string|max:255',
+            'additional_charges.*.amount' => 'nullable|numeric|min:0',
+            'additional_charges.*.narration' => 'nullable|string|max:255',
         ]);
 
         if ($validator->fails()) {
@@ -380,6 +413,10 @@ class QuotationController extends Controller
                 'document_title' => $request->document_title,
                 'terms_and_conditions' => $request->terms_and_conditions,
                 'notes' => $request->notes,
+                'vat_enabled' => $request->boolean('vat_enabled'),
+                'vat_amount' => $request->input('vat_amount', 0),
+                'vat_applies_to' => $request->input('vat_applies_to', 'items_only'),
+                'additional_charges' => $request->input('additional_charges'),
                 'updated_by' => auth()->id(),
             ]);
 
@@ -387,20 +424,37 @@ class QuotationController extends Controller
             $quotation->items()->delete();
 
             foreach ($request->items as $index => $item) {
-                $product = Product::findOrFail($item['product_id']);
+                $itemType = $item['item_type'] ?? 'product';
 
-                $quotation->items()->create([
-                    'product_id' => $product->id,
-                    'product_name' => $product->name,
-                    'description' => $item['description'] ?? $product->description,
-                    'quantity' => $item['quantity'],
-                    'unit' => $product->primaryUnit->symbol ?? 'Pcs',
-                    'rate' => $item['rate'],
-                    'discount' => $item['discount'] ?? 0,
-                    'tax' => $item['tax'] ?? 0,
-                    'is_tax_inclusive' => $item['is_tax_inclusive'] ?? false,
-                    'sort_order' => $index,
-                ]);
+                if ($itemType === 'product' && !empty($item['product_id'])) {
+                    $product = Product::findOrFail($item['product_id']);
+                    $quotation->items()->create([
+                        'item_type' => 'product',
+                        'product_id' => $product->id,
+                        'product_name' => $product->name,
+                        'description' => $item['description'] ?? $product->description,
+                        'quantity' => $item['quantity'],
+                        'unit' => $product->primaryUnit->symbol ?? 'Pcs',
+                        'rate' => $item['rate'],
+                        'discount' => 0,
+                        'tax' => 0,
+                        'sort_order' => $index,
+                    ]);
+                } else {
+                    // Service / line item (no product)
+                    $quotation->items()->create([
+                        'item_type' => 'service',
+                        'product_id' => null,
+                        'product_name' => $item['description'] ?? 'Service',
+                        'description' => $item['description'] ?? '',
+                        'quantity' => $item['quantity'],
+                        'unit' => 'Pcs',
+                        'rate' => $item['rate'],
+                        'discount' => 0,
+                        'tax' => 0,
+                        'sort_order' => $index,
+                    ]);
+                }
             }
 
             // Recalculate totals

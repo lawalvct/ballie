@@ -223,18 +223,24 @@
             <thead>
                 <tr>
                     <th style="width: 5%;">#</th>
-                    <th style="width: 35%;">Item & Description</th>
-                    <th class="text-right" style="width: 10%;">Qty</th>
-                    <th class="text-right" style="width: 15%;">Rate (₦)</th>
-                    <th class="text-right" style="width: 12%;">Discount</th>
-                    <th class="text-right" style="width: 8%;">Tax</th>
-                    <th class="text-right" style="width: 15%;">Amount (₦)</th>
+                    <th style="width: 8%;">Type</th>
+                    <th style="width: 37%;">Item & Description</th>
+                    <th class="text-right" style="width: 12%;">Qty</th>
+                    <th class="text-right" style="width: 18%;">Rate (₦)</th>
+                    <th class="text-right" style="width: 20%;">Amount (₦)</th>
                 </tr>
             </thead>
             <tbody>
                 @foreach($quotation->items as $index => $item)
                 <tr>
                     <td contenteditable="true">{{ $index + 1 }}</td>
+                    <td style="text-align: center;">
+                        @if(($item->item_type ?? 'product') === 'product')
+                            <span style="background: #dbeafe; color: #1e40af; padding: 2px 6px; border-radius: 4px; font-size: 9px; font-weight: 600;">Product</span>
+                        @else
+                            <span style="background: #dcfce7; color: #166534; padding: 2px 6px; border-radius: 4px; font-size: 9px; font-weight: 600;">Service</span>
+                        @endif
+                    </td>
                     <td>
                         <div class="item-name" contenteditable="true">{{ $item->product_name }}</div>
                         @if($item->description)
@@ -243,9 +249,7 @@
                     </td>
                     <td class="text-right" contenteditable="true">{{ rtrim(rtrim(number_format($item->quantity, 2), '0'), '.') }} {{ $item->unit }}</td>
                     <td class="text-right" contenteditable="true">{{ number_format($item->rate, 2) }}</td>
-                    <td class="text-right" contenteditable="true">{{ number_format($item->discount, 2) }}</td>
-                    <td class="text-right" contenteditable="true">{{ rtrim(rtrim(number_format($item->tax, 2), '0'), '.') }}%</td>
-                    <td class="text-right" contenteditable="true">{{ number_format($item->getTotal(), 2) }}</td>
+                    <td class="text-right" contenteditable="true">{{ number_format($item->quantity * $item->rate, 2) }}</td>
                 </tr>
                 @endforeach
             </tbody>
@@ -255,19 +259,21 @@
         <div class="totals-section">
             <table class="totals-table">
                 <tr>
-                    <td class="label">Subtotal:</td>
+                    <td class="label">Items Subtotal:</td>
                     <td class="value" contenteditable="true">₦{{ number_format($quotation->subtotal, 2) }}</td>
                 </tr>
-                @if($quotation->discount_amount > 0)
-                <tr>
-                    <td class="label">Discount:</td>
-                    <td class="value" style="color: #e74c3c;" contenteditable="true">-₦{{ number_format($quotation->discount_amount, 2) }}</td>
-                </tr>
+                @if(!empty($quotation->additional_charges) && is_array($quotation->additional_charges))
+                    @foreach($quotation->additional_charges as $charge)
+                    <tr>
+                        <td class="label">{{ $charge['name'] ?? 'Additional Charge' }}:</td>
+                        <td class="value" contenteditable="true">₦{{ number_format($charge['amount'] ?? 0, 2) }}</td>
+                    </tr>
+                    @endforeach
                 @endif
-                @if($quotation->tax_amount > 0)
+                @if($quotation->vat_enabled && $quotation->vat_amount > 0)
                 <tr>
-                    <td class="label">Tax:</td>
-                    <td class="value" contenteditable="true">₦{{ number_format($quotation->tax_amount, 2) }}</td>
+                    <td class="label">VAT (7.5%):</td>
+                    <td class="value" contenteditable="true">₦{{ number_format($quotation->vat_amount, 2) }}</td>
                 </tr>
                 @endif
                 <tr class="grand-total">
