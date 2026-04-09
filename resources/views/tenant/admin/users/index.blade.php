@@ -268,7 +268,7 @@
             // Create a form and submit it for deletion
             const form = document.createElement('form');
             form.method = 'POST';
-            form.action = `/admin/users/${userId}`;
+            form.action = `{{ route('tenant.admin.users.destroy', [tenant()->slug, '__ID__']) }}`.replace('__ID__', userId);
 
             const csrfInput = document.createElement('input');
             csrfInput.type = 'hidden';

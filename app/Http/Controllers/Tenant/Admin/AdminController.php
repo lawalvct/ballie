@@ -305,8 +305,9 @@ class AdminController extends Controller
 
             // Update roles
             if ($request->filled('roles')) {
-                $user->roles()->sync($request->roles);
-                $selectedRole = Role::find(is_array($request->roles) ? reset($request->roles) : $request->roles);
+                $roles = $request->input('roles');
+                $user->roles()->sync($roles);
+                $selectedRole = Role::find(is_array($roles) ? reset($roles) : $roles);
                 $roleKey = $selectedRole ? Str::of($selectedRole->slug ?? $selectedRole->name)->lower()->replace(['-', ' '], '_')->value() : null;
                 $roleMap = [
                     'super_admin' => User::ROLE_OWNER,
@@ -348,6 +349,16 @@ class AdminController extends Controller
         try {
             if ($user->id === auth()->id()) {
                 return back()->with('error', 'You cannot delete your own account!');
+            }
+
+            // Check if user has any records
+            $hasRecords = \App\Models\Voucher::where('created_by', $user->id)->exists()
+                || \App\Models\Quotation::where('created_by', $user->id)->exists()
+                || \App\Models\Sale::where('created_by', $user->id)->exists()
+                || \App\Models\JournalEntry::where('created_by', $user->id)->exists();
+
+            if ($hasRecords) {
+                return back()->with('error', 'This user cannot be deleted because they have associated records. You can deactivate the user instead.');
             }
 
             $user->delete();
