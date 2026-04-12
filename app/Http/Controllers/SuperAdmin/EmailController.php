@@ -29,30 +29,33 @@ class EmailController extends Controller
         // Get emails for ballie.co domain
         $result = $this->emailService->listEmails($domain);
 
-        \Log::info('aaPanel listEmails raw result', ['result' => $result]);
-
         if ($result['success']) {
             $data = $result['data'];
 
-            // The API may return data in different structures
-            // Try common aaPanel response formats
             if (isset($data['data']) && is_array($data['data'])) {
                 $emails = $data['data'];
-            } elseif (isset($data['list']) && is_array($data['list'])) {
-                $emails = $data['list'];
             } elseif (is_array($data) && !isset($data['status'])) {
                 $emails = $data;
             }
 
-            // Normalize field names for the view
+            // Normalize and strip sensitive data
             $emails = collect($emails)->map(function ($item) {
+                $quotaBytes = $item['quota'] ?? 0;
+                if ($quotaBytes >= 1073741824) {
+                    $quotaDisplay = round($quotaBytes / 1073741824, 1) . ' GB';
+                } elseif ($quotaBytes >= 1048576) {
+                    $quotaDisplay = round($quotaBytes / 1048576) . ' MB';
+                } else {
+                    $quotaDisplay = $quotaBytes . ' B';
+                }
+
                 return [
-                    'email' => $item['username'] ?? $item['email'] ?? '',
-                    'DiskUsage' => $item['used_quota'] ?? $item['disk_usage'] ?? $item['DiskUsage'] ?? 'N/A',
-                    'numberofEmails' => $item['messages'] ?? $item['msg_count'] ?? $item['numberofEmails'] ?? 0,
-                    'quota' => $item['quota'] ?? 0,
-                    'active' => $item['active'] ?? 1,
+                    'email' => $item['username'] ?? '',
                     'full_name' => $item['full_name'] ?? '',
+                    'quota' => $quotaDisplay,
+                    'active' => $item['active'] ?? 1,
+                    'is_admin' => $item['is_admin'] ?? 0,
+                    'created' => $item['created'] ?? '',
                 ];
             })->toArray();
         }
