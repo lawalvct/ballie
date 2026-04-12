@@ -4,7 +4,6 @@ namespace App\Http\Controllers\SuperAdmin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Backup;
-use App\Services\CyberPanelEmailService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\File;
@@ -14,13 +13,6 @@ use ZipArchive;
 
 class BackupController extends Controller
 {
-    protected $cyberPanelService;
-
-    public function __construct(CyberPanelEmailService $cyberPanelService)
-    {
-        $this->cyberPanelService = $cyberPanelService;
-    }
-
     /**
      * Display backup management page
      */
@@ -56,27 +48,14 @@ class BackupController extends Controller
         ]);
 
         try {
-            $result = $this->cyberPanelService->createBackup($website);
-
-            if ($result['success']) {
-                $backup->update([
-                    'status' => 'completed',
-                    'completed_at' => now(),
-                    'metadata' => array_merge($backup->metadata ?? [], [
-                        'website' => $website,
-                        'response' => $result['data'] ?? [],
-                    ]),
-                ]);
-
-                return back()->with('success', $result['message'] ?? 'Server backup created successfully');
-            }
-
+            // Server backup via panel API is not yet configured for aaPanel.
+            // Use local backup instead, or integrate aaPanel's backup API later.
             $backup->update([
                 'status' => 'failed',
-                'error_message' => $result['error'] ?? 'Unknown error',
+                'error_message' => 'Server backup via aaPanel API is not yet configured. Use local backup instead.',
             ]);
 
-            return back()->with('error', $result['error'] ?? 'Failed to create server backup');
+            return back()->with('error', 'Server backup via aaPanel API is not yet configured. Please use local backup.');
         } catch (\Exception $e) {
             $backup->update([
                 'status' => 'failed',

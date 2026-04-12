@@ -86,7 +86,7 @@ Route::prefix('super-admin')->name('super-admin.')->group(function () {
             Route::post('/{payout}/process', [\App\Http\Controllers\SuperAdmin\AffiliateController::class, 'processPayout'])->name('process');
         });
 
-        // Email Management (CyberPanel Integration)
+        // Email Management (aaPanel Integration)
         Route::prefix('emails')->name('emails.')->group(function () {
             Route::get('/', [\App\Http\Controllers\SuperAdmin\EmailController::class, 'index'])->name('index');
             Route::get('/create', [\App\Http\Controllers\SuperAdmin\EmailController::class, 'create'])->name('create');

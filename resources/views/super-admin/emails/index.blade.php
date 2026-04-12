@@ -11,7 +11,7 @@
             <div class="flex items-center justify-between">
                 <div>
                     <h1 class="text-2xl font-bold text-gray-900">Email Accounts - ballie.co</h1>
-                    <p class="text-sm text-gray-600 mt-1">Manage email accounts via CyberPanel</p>
+                    <p class="text-sm text-gray-600 mt-1">Manage email accounts via aaPanel</p>
                 </div>
                 <a href="{{ route('super-admin.emails.create') }}"
                    class="inline-flex items-center px-4 py-2 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-lg text-sm font-medium hover:from-blue-600 hover:to-blue-700 transition-all duration-200 shadow-md hover:shadow-lg">

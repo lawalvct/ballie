@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\SuperAdmin;
 
 use App\Http\Controllers\Controller;
-use App\Services\CyberPanelEmailService;
+use App\Services\AaPanelMailService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
@@ -12,7 +12,7 @@ class EmailController extends Controller
 {
     protected $emailService;
 
-    public function __construct(CyberPanelEmailService $emailService)
+    public function __construct(AaPanelMailService $emailService)
     {
         $this->emailService = $emailService;
     }
@@ -29,7 +29,7 @@ class EmailController extends Controller
         // Get emails for ballie.co domain
         $result = $this->emailService->listEmails($domain);
         if ($result['success']) {
-            $data = $result['data']['data'] ?? [];
+            $data = $result['data']['data'] ?? $result['data'] ?? [];
             // Parse JSON string if it's a string
             if (is_string($data)) {
                 $emails = json_decode($data, true) ?? [];
@@ -100,10 +100,8 @@ class EmailController extends Controller
             return back()->with('error', 'Invalid request parameters');
         }
 
-        // Construct full email address
-        $email = $request->username . '@' . $request->domain;
-
-        $result = $this->emailService->deleteEmail($email);
+        // Delete via aaPanel (domain + username)
+        $result = $this->emailService->deleteEmail($request->domain, $request->username);
 
         if ($result['success']) {
             return back()->with('success', 'Email account deleted successfully');
@@ -176,36 +174,23 @@ class EmailController extends Controller
     }
 
     /**
-     * Test CyberPanel API connection and token
+     * Test aaPanel API connection
      */
     public function testConnection()
     {
         $testResults = [
             'config' => [
-                'api_url' => config('services.cyberpanel.api_url'),
-                'username' => config('services.cyberpanel.username'),
-                'password_set' => !empty(config('services.cyberpanel.password')),
+                'api_url' => config('services.aapanel.url'),
+                'token_set' => !empty(config('services.aapanel.token')),
             ],
-            'token' => null,
-            'domains_test' => null,
+            'mail_test' => null,
         ];
 
-        // Test token generation
         try {
-            $credentials = config('services.cyberpanel.username') . ':' . config('services.cyberpanel.password');
-            $token = "Basic " . base64_encode($credentials);
-            $testResults['token'] = $token;
-            $testResults['token_decoded'] = base64_decode(str_replace('Basic ', '', $token));
+            $result = $this->emailService->testConnection();
+            $testResults['mail_test'] = $result;
         } catch (\Exception $e) {
-            $testResults['token_error'] = $e->getMessage();
-        }
-
-        // Test API call to fetch domains
-        try {
-            $result = $this->emailService->listDomains();
-            $testResults['domains_test'] = $result;
-        } catch (\Exception $e) {
-            $testResults['domains_test_error'] = $e->getMessage();
+            $testResults['mail_test_error'] = $e->getMessage();
         }
 
         return response()->json($testResults, 200, [], JSON_PRETTY_PRINT);
