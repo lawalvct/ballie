@@ -28,14 +28,33 @@ class EmailController extends Controller
 
         // Get emails for ballie.co domain
         $result = $this->emailService->listEmails($domain);
+
+        \Log::info('aaPanel listEmails raw result', ['result' => $result]);
+
         if ($result['success']) {
-            $data = $result['data']['data'] ?? $result['data'] ?? [];
-            // Parse JSON string if it's a string
-            if (is_string($data)) {
-                $emails = json_decode($data, true) ?? [];
-            } else {
-                $emails = is_array($data) ? $data : [];
+            $data = $result['data'];
+
+            // The API may return data in different structures
+            // Try common aaPanel response formats
+            if (isset($data['data']) && is_array($data['data'])) {
+                $emails = $data['data'];
+            } elseif (isset($data['list']) && is_array($data['list'])) {
+                $emails = $data['list'];
+            } elseif (is_array($data) && !isset($data['status'])) {
+                $emails = $data;
             }
+
+            // Normalize field names for the view
+            $emails = collect($emails)->map(function ($item) {
+                return [
+                    'email' => $item['username'] ?? $item['email'] ?? '',
+                    'DiskUsage' => $item['used_quota'] ?? $item['disk_usage'] ?? $item['DiskUsage'] ?? 'N/A',
+                    'numberofEmails' => $item['messages'] ?? $item['msg_count'] ?? $item['numberofEmails'] ?? 0,
+                    'quota' => $item['quota'] ?? 0,
+                    'active' => $item['active'] ?? 1,
+                    'full_name' => $item['full_name'] ?? '',
+                ];
+            })->toArray();
         }
 
         return view('super-admin.emails.index', compact('emails', 'domain'));
