@@ -175,13 +175,39 @@ class AaPanelMailService
     /**
      * Change an email account password.
      * Plugin method: update_mailbox (line 2755 of mail_sys_main.py).
+     * Requires: username, password, quota (e.g. "1024 MB"), full_name, active, is_admin.
      */
     public function changeEmailPassword(string $domain, string $username, string $newPassword): array
     {
+        $fullEmail = "{$username}@{$domain}";
+
+        // Fetch current mailbox info to preserve existing values
+        $current = $this->listEmails($domain);
+        $mailbox = null;
+        if ($current['success'] && isset($current['data']['data'])) {
+            foreach ($current['data']['data'] as $item) {
+                if (($item['username'] ?? '') === $fullEmail) {
+                    $mailbox = $item;
+                    break;
+                }
+            }
+        }
+
+        // Convert quota bytes back to "X MB" format for the API
+        $quotaBytes = $mailbox['quota'] ?? 1073741824;
+        if ($quotaBytes >= 1073741824 && $quotaBytes % 1073741824 === 0) {
+            $quotaStr = intval($quotaBytes / 1073741824) . ' GB';
+        } else {
+            $quotaStr = intval($quotaBytes / 1048576) . ' MB';
+        }
+
         $result = $this->request('update_mailbox', [
-            'domain' => $domain,
-            'username' => "{$username}@{$domain}",
+            'username' => $fullEmail,
             'password' => $newPassword,
+            'quota' => $quotaStr,
+            'full_name' => $mailbox['full_name'] ?? $username,
+            'active' => $mailbox['active'] ?? 1,
+            'is_admin' => $mailbox['is_admin'] ?? 0,
         ]);
 
         if ($result['success']) {
