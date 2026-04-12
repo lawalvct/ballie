@@ -298,7 +298,20 @@
                     </div>
                 @endif
                 <div class="hidden md:block text-left">
-                    <div class="text-sm font-medium text-gray-700">{{ explode(' ', auth()->user()->name ?? 'User')[0] }}</div>
+                    <div class="text-sm font-medium text-gray-700">
+                        @php
+                            $nameParts = explode(' ', auth()->user()->name ?? 'User');
+                            $firstName = $nameParts[0] ?? 'User';
+                            $firstNameLength = strlen($firstName);
+                            
+                            // If first word is 2-4 characters and there's a second word, show both
+                            if (($firstNameLength >= 2 && $firstNameLength <= 4) && isset($nameParts[1])) {
+                                echo $firstName . ' ' . $nameParts[1];
+                            } else {
+                                echo $firstName;
+                            }
+                        @endphp
+                    </div>
                     <div class="text-xs text-gray-500">{{ auth()->user()->roles->first()->name ?? 'Admin' }}</div>
                 </div>
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-gray-400 transition-transform duration-200" :class="{'rotate-180': open}" fill="none" viewBox="0 0 24 24" stroke="currentColor">

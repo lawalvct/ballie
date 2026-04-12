@@ -10,6 +10,8 @@ use App\Http\Controllers\SuperAdmin\AuthController as SuperAdminAuthController;
     use App\Http\Controllers\Storefront\CartController;
     use App\Http\Controllers\Storefront\CheckoutController;
     use App\Http\Controllers\Storefront\CustomerAuthController;
+    use Illuminate\Support\Facades\Mail;
+    use App\Mail\TestEmail;
 
 // Firebase Service Worker - Return 404 to prevent auth redirection
 Route::get('/firebase-messaging-sw.js', function () {
@@ -41,6 +43,13 @@ Route::get('/debugbar-test', function () {
 
     return view('debugbar-test');
 })->name('debugbar.test');
+
+// Simple test email route (sends to configured MAIL_FROM_ADDRESS)
+Route::get('/test-email', function () {
+    $to = config('mail.from.address') ?? 'admin@ballie.co';
+    Mail::to($to)->send(new TestEmail());
+    return 'Test email sent to ' . $to;
+})->name('test.email');
 
 // Include authentication routes
 require __DIR__.'/auth.php';
