@@ -12,45 +12,58 @@ class AaPanelMailService
 
     public function __construct()
     {
-        $this->baseUrl = rtrim(config('services.aapanel.url', 'https://102.68.84.38:8888'), '/');
+        $this->baseUrl = rtrim(config('services.aapanel.url', 'https://127.0.0.1:31947'), '/');
         $this->token = config('services.aapanel.token', '');
     }
 
     /**
-     * Build request headers with timestamp and signature.
+     * Build auth fields for POST body (aaPanel API format).
      */
-    protected function buildHeaders(): array
+    protected function authFields(): array
     {
         $requestTime = (string) time();
 
         return [
-            'Content-Type' => 'application/json',
-            'Request-Time' => $requestTime,
-            'Signature' => md5($requestTime . $this->token),
+            'request_time' => $requestTime,
+            'request_token' => md5($requestTime . md5($this->token)),
         ];
     }
 
     /**
      * Send a request to the aaPanel mail server plugin.
+     *
+     * @param string $method  Plugin method name (maps to s= URL param)
+     * @param array  $params  Additional form fields
      */
-    protected function request(array $params): array
+    protected function request(string $method, array $params = []): array
     {
+        $url = "{$this->baseUrl}/plugin?action=a&name=mail_sys&s={$method}";
+        $postData = array_merge($this->authFields(), $params);
+
         try {
-            $response = Http::withHeaders($this->buildHeaders())
+            $response = Http::asForm()
                 ->withoutVerifying()
                 ->timeout(30)
-                ->post("{$this->baseUrl}/plugin?action=a&s=mail_sys&name=mail_sys", $params);
+                ->post($url, $postData);
 
             Log::info('aaPanel Mail API Request', [
+                'url' => $url,
+                'method' => $method,
                 'params' => array_diff_key($params, array_flip(['password'])),
                 'status' => $response->status(),
-                'response' => $response->json(),
+                'body' => substr($response->body(), 0, 500),
             ]);
 
             if ($response->successful()) {
                 $data = $response->json();
 
-                // aaPanel typically returns status true/false
+                if (is_null($data)) {
+                    return [
+                        'success' => false,
+                        'error' => 'Non-JSON response: ' . substr($response->body(), 0, 300),
+                    ];
+                }
+
                 if (isset($data['status']) && $data['status'] === false) {
                     return [
                         'success' => false,
@@ -67,12 +80,13 @@ class AaPanelMailService
 
             return [
                 'success' => false,
-                'error' => $response->json()['msg'] ?? 'Request failed with status ' . $response->status(),
+                'error' => 'HTTP ' . $response->status() . ': ' . substr($response->body(), 0, 300),
                 'status' => $response->status(),
             ];
         } catch (\Exception $e) {
             Log::error('aaPanel Mail API Error', [
-                'params' => array_diff_key($params, array_flip(['password'])),
+                'url' => $url,
+                'method' => $method,
                 'error' => $e->getMessage(),
             ]);
 
@@ -84,12 +98,36 @@ class AaPanelMailService
     }
 
     /**
+     * Send a request to a core aaPanel endpoint (not plugin).
+     */
+    protected function systemRequest(string $path): array
+    {
+        $url = "{$this->baseUrl}/{$path}";
+        $postData = $this->authFields();
+
+        try {
+            $response = Http::asForm()
+                ->withoutVerifying()
+                ->timeout(15)
+                ->post($url, $postData);
+
+            return [
+                'status' => $response->status(),
+                'connected' => $response->successful(),
+                'body' => substr($response->body(), 0, 500),
+            ];
+        } catch (\Exception $e) {
+            return ['connected' => false, 'error' => $e->getMessage()];
+        }
+    }
+
+    /**
      * Create a new email account.
+     * Plugin method: add_mailbox (assumed — verify with: grep 'add_mailbox\|add_mail\|create_mail' mail_sys_main.py)
      */
     public function createEmail(string $domain, string $username, string $password, int $quota = 1024): array
     {
-        $result = $this->request([
-            'action' => 'add_mailbox',
+        $result = $this->request('add_mailbox', [
             'domain' => $domain,
             'username' => $username,
             'password' => $password,
@@ -105,22 +143,22 @@ class AaPanelMailService
 
     /**
      * List all email accounts for a domain.
+     * Plugin method: get_mailboxs (line 2204 of mail_sys_main.py — note the typo is intentional).
      */
     public function listEmails(string $domain): array
     {
-        return $this->request([
-            'action' => 'get_mailbox_list',
+        return $this->request('get_mailboxs', [
             'domain' => $domain,
         ]);
     }
 
     /**
      * Delete an email account.
+     * Plugin method: delete_mailbox (line 2822 of mail_sys_main.py).
      */
     public function deleteEmail(string $domain, string $username): array
     {
-        $result = $this->request([
-            'action' => 'del_mailbox',
+        $result = $this->request('delete_mailbox', [
             'domain' => $domain,
             'username' => $username,
         ]);
@@ -134,11 +172,11 @@ class AaPanelMailService
 
     /**
      * Change an email account password.
+     * Plugin method: update_mailbox (line 2755 of mail_sys_main.py).
      */
     public function changeEmailPassword(string $domain, string $username, string $newPassword): array
     {
-        $result = $this->request([
-            'action' => 'reset_password',
+        $result = $this->request('update_mailbox', [
             'domain' => $domain,
             'username' => $username,
             'password' => $newPassword,
@@ -153,12 +191,24 @@ class AaPanelMailService
 
     /**
      * Test API connection.
+     * Tests both the core panel API and the mail plugin.
      */
     public function testConnection(): array
     {
-        return $this->request([
-            'action' => 'get_mailbox_list',
+        // 1. Test core panel API
+        $systemResult = $this->systemRequest('system?action=GetSystemTotal');
+
+        // 2. Test mail plugin — get_mailboxs at line 2204
+        $mailResult = $this->request('get_mailboxs', [
             'domain' => 'ballie.co',
         ]);
+
+        return [
+            'success' => $systemResult['connected'] ?? false,
+            'data' => [
+                'system_test' => $systemResult,
+                'mail_test' => $mailResult,
+            ],
+        ];
     }
 }
