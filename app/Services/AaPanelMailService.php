@@ -145,10 +145,12 @@ class AaPanelMailService
      * List all email accounts for a domain.
      * Plugin method: get_mailboxs (line 2204 of mail_sys_main.py — note the typo is intentional).
      */
-    public function listEmails(string $domain): array
+    public function listEmails(string $domain, int $page = 1, int $size = 100): array
     {
         return $this->request('get_mailboxs', [
             'domain' => $domain,
+            'p' => $page,
+            'size' => $size,
         ]);
     }
 

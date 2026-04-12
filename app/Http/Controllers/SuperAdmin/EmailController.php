@@ -57,10 +57,11 @@ class EmailController extends Controller
     {
         $validator = Validator::make($request->all(), [
             'domain' => 'required|string',
-            'username' => 'required|string|min:3|max:50|regex:/^[a-zA-Z0-9._-]+$/',
-            'password' => 'required|string|min:8|confirmed',
+            'username' => 'required|string|min:3|max:50|regex:/^[a-z][a-z0-9._-]*$/i',
+            'password' => 'required|string|min:8|confirmed|regex:/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).+$/',
         ], [
             'username.regex' => 'Username can only contain letters, numbers, dots, underscores, and hyphens',
+            'password.regex' => 'Password must include at least one uppercase letter, one lowercase letter, and one number',
         ]);
 
         if ($validator->fails()) {
@@ -71,7 +72,7 @@ class EmailController extends Controller
 
         $result = $this->emailService->createEmail(
             $request->domain,
-            $request->username,
+            strtolower($request->username),
             $request->password
         );
 
