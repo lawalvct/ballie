@@ -161,7 +161,9 @@ class EmailController extends Controller
         $validator = Validator::make($request->all(), [
             'domain' => 'required|string',
             'username' => 'required|string',
-            'password' => 'required|string|min:8|confirmed',
+            'new_password' => 'required|string|min:8|confirmed|regex:/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).+$/',
+        ], [
+            'new_password.regex' => 'Password must include at least one uppercase letter, one lowercase letter, and one number',
         ]);
 
         if ($validator->fails()) {
@@ -173,7 +175,7 @@ class EmailController extends Controller
         $result = $this->emailService->changeEmailPassword(
             $request->domain,
             $request->username,
-            $request->password
+            $request->new_password
         );
 
         if ($result['success']) {
@@ -192,7 +194,13 @@ class EmailController extends Controller
      */
     public function generatePassword()
     {
-        $password = Str::random(16);
+        // Generate password meeting aaPanel requirements: uppercase + lowercase + numbers + 8+ chars
+        $upper = collect(range('A', 'Z'))->random(2)->implode('');
+        $lower = collect(range('a', 'z'))->random(4)->implode('');
+        $numbers = collect(range(0, 9))->random(2)->implode('');
+        $special = collect(['!', '@', '#', '$', '%'])->random(1)->implode('');
+        $password = str_shuffle($upper . $lower . $numbers . $special);
+
         return response()->json(['password' => $password]);
     }
 

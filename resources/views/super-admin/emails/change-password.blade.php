@@ -77,7 +77,7 @@
                 @error('new_password')
                     <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                 @enderror
-                <p class="mt-1 text-xs text-gray-500">Minimum 8 characters. Click the refresh icon to generate a strong password.</p>
+                <p class="mt-1 text-xs text-gray-500">Minimum 8 characters. Must include uppercase, lowercase, and numbers. Click the refresh icon to generate a strong password.</p>
             </div>
 
             <!-- Password Confirmation -->
