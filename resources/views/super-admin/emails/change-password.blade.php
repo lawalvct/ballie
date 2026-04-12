@@ -12,7 +12,7 @@
                     <h1 class="text-2xl font-bold text-gray-900">Change Email Password</h1>
                     <p class="text-sm text-gray-600 mt-1">Update the password for this email account</p>
                 </div>
-                <a href="{{ route('super-admin.emails.index', ['domain' => request('domain')]) }}"
+                <a href="{{ route('super-admin.emails.index', ['domain' => $domain]) }}"
                    class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 transition-colors">
                     <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
@@ -31,22 +31,22 @@
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                         <label class="block text-xs font-medium text-gray-500 mb-1">Domain</label>
-                        <input type="text" value="{{ request('domain') }}" disabled
+                        <input type="text" value="{{ $domain }}" disabled
                                class="w-full px-3 py-2 bg-white border border-gray-300 rounded-lg text-sm text-gray-700">
-                        <input type="hidden" name="domain" value="{{ request('domain') }}">
+                        <input type="hidden" name="domain" value="{{ $domain }}">
                     </div>
                     <div>
                         <label class="block text-xs font-medium text-gray-500 mb-1">Username</label>
-                        <input type="text" value="{{ request('username') }}" disabled
+                        <input type="text" value="{{ $username }}" disabled
                                class="w-full px-3 py-2 bg-white border border-gray-300 rounded-lg text-sm text-gray-700">
-                        <input type="hidden" name="username" value="{{ request('username') }}">
+                        <input type="hidden" name="username" value="{{ $username }}">
                     </div>
                 </div>
                 <div class="mt-3 flex items-center text-sm text-gray-600">
                     <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
                     </svg>
-                    <span class="font-medium">{{ request('username') }}@{{ request('domain') }}</span>
+                    <span class="font-medium">{{ $username }}@{{ $domain }}</span>
                 </div>
             </div>
 
@@ -109,7 +109,7 @@
 
             <!-- Submit Buttons -->
             <div class="flex items-center justify-end space-x-3 pt-4 border-t border-gray-200">
-                <a href="{{ route('super-admin.emails.index', ['domain' => request('domain')]) }}"
+                <a href="{{ route('super-admin.emails.index', ['domain' => $domain]) }}"
                    class="px-6 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 transition-colors">
                     Cancel
                 </a>
