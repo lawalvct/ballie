@@ -128,10 +128,10 @@ class AaPanelMailService
     public function createEmail(string $domain, string $username, string $password, int $quota = 1024): array
     {
         $result = $this->request('add_mailbox', [
-            'domain' => $domain,
             'username' => "{$username}@{$domain}",
             'password' => $password,
-            'quota' => $quota,
+            'quota' => "{$quota} MB",
+            'full_name' => $username,
         ]);
 
         if ($result['success']) {
