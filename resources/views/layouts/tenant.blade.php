@@ -358,6 +358,48 @@
             <!-- Header -->
             @include('layouts.tenant.header')
 
+            <!-- Email Verification Warning Banner (dashboard only, once per session) -->
+            @auth
+                @if(request()->routeIs('tenant.dashboard') && is_null(auth()->user()->email_verified_at))
+                    <div x-data="{ dismissed: sessionStorage.getItem('email_verify_dismissed') === '1' }"
+                         x-show="!dismissed" x-cloak
+                         class="bg-amber-50 border-b border-amber-200">
+                        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3">
+                            <div class="flex items-center justify-between flex-wrap gap-2">
+                                <div class="flex items-center min-w-0">
+                                    <span class="flex-shrink-0 inline-flex items-center justify-center w-8 h-8 rounded-full bg-amber-100 mr-3">
+                                        <svg class="w-5 h-5 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4.5c-.77-.833-2.694-.833-3.464 0L3.34 16.5c-.77.833.192 2.5 1.732 2.5z"/>
+                                        </svg>
+                                    </span>
+                                    <p class="text-sm font-medium text-amber-800">
+                                        Your email address <strong>{{ auth()->user()->email }}</strong> is not verified.
+                                        Please verify your email to avoid account suspension.
+                                    </p>
+                                </div>
+                                <div class="flex items-center space-x-3 flex-shrink-0">
+                                    <form method="POST" action="{{ route('tenant.profile.verification.resend', ['tenant' => tenant()->slug]) }}">
+                                        @csrf
+                                        <button type="submit"
+                                                class="inline-flex items-center px-3 py-1.5 bg-amber-600 text-white text-xs font-semibold rounded-lg hover:bg-amber-700 transition-colors">
+                                            <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+                                            </svg>
+                                            Resend Verification Email
+                                        </button>
+                                    </form>
+                                    <button @click="dismissed = true; sessionStorage.setItem('email_verify_dismissed', '1')" class="text-amber-600 hover:text-amber-800 transition-colors" title="Dismiss">
+                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                                        </svg>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                @endif
+            @endauth
+
             <!-- Page Content -->
             <main class="flex-1 overflow-y-auto p-6 custom-scrollbar">
                 <!-- Breadcrumbs -->
