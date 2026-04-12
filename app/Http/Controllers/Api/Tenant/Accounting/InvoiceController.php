@@ -340,10 +340,46 @@ class InvoiceController extends Controller
 
             $additionalLedgerAccounts = $request->additional_ledger_accounts ?? [];
 
-            // Calculate total
+            // Process VAT if enabled — look up the correct VAT ledger account automatically
+            if ($request->boolean('vat_enabled') && ($request->vat_amount ?? 0) > 0) {
+                $vatAmount = (float) $request->vat_amount;
+                $vatAppliesTo = $request->input('vat_applies_to', 'items_only');
+
+                $isSales = $voucherType->inventory_effect === 'decrease';
+                $vatAccountCode = $isSales ? 'VAT-OUT-001' : 'VAT-IN-001';
+
+                $vatAccount = LedgerAccount::where('tenant_id', $tenant->id)
+                    ->where('code', $vatAccountCode)
+                    ->first();
+
+                if ($vatAccount) {
+                    $narration = $vatAppliesTo === 'items_only'
+                        ? 'VAT @ 7.5% (on items)'
+                        : 'VAT @ 7.5% (on items + charges)';
+
+                    $additionalLedgerAccounts[] = [
+                        'ledger_account_id' => $vatAccount->id,
+                        'amount' => $vatAmount,
+                        'narration' => $narration,
+                    ];
+
+                    Log::info('API VAT Added', [
+                        'vat_account_id' => $vatAccount->id,
+                        'vat_account_code' => $vatAccountCode,
+                        'vat_amount' => $vatAmount,
+                        'vat_applies_to' => $vatAppliesTo,
+                    ]);
+                } else {
+                    Log::warning('API VAT Account Not Found', [
+                        'vat_account_code' => $vatAccountCode,
+                        'tenant_id' => $tenant->id,
+                    ]);
+                }
+            }
+
+            // Calculate total (VAT is now inside additionalLedgerAccounts, no need to add separately)
             $totalAmount = collect($inventoryItems)->sum('amount')
-                + collect($additionalLedgerAccounts)->sum('amount')
-                + ($request->vat_amount ?? 0);
+                + collect($additionalLedgerAccounts)->sum('amount');
 
             // Generate voucher number
             $voucherNumber = $voucherType->getNextVoucherNumber();
@@ -637,9 +673,39 @@ class InvoiceController extends Controller
 
             $additionalLedgerAccounts = $request->additional_ledger_accounts ?? [];
 
+            // Process VAT if enabled — look up the correct VAT ledger account automatically
+            if ($request->boolean('vat_enabled') && ($request->vat_amount ?? 0) > 0) {
+                $vatAmount = (float) $request->vat_amount;
+                $vatAppliesTo = $request->input('vat_applies_to', 'items_only');
+
+                $isSales = $invoice->voucherType->inventory_effect === 'decrease';
+                $vatAccountCode = $isSales ? 'VAT-OUT-001' : 'VAT-IN-001';
+
+                $vatAccount = LedgerAccount::where('tenant_id', $tenant->id)
+                    ->where('code', $vatAccountCode)
+                    ->first();
+
+                if ($vatAccount) {
+                    $narration = $vatAppliesTo === 'items_only'
+                        ? 'VAT @ 7.5% (on items)'
+                        : 'VAT @ 7.5% (on items + charges)';
+
+                    $additionalLedgerAccounts[] = [
+                        'ledger_account_id' => $vatAccount->id,
+                        'amount' => $vatAmount,
+                        'narration' => $narration,
+                    ];
+                } else {
+                    Log::warning('API Update VAT Account Not Found', [
+                        'vat_account_code' => $vatAccountCode,
+                        'tenant_id' => $tenant->id,
+                    ]);
+                }
+            }
+
+            // Calculate total (VAT is now inside additionalLedgerAccounts, no need to add separately)
             $totalAmount = collect($inventoryItems)->sum('amount')
-                + collect($additionalLedgerAccounts)->sum('amount')
-                + ($request->vat_amount ?? 0);
+                + collect($additionalLedgerAccounts)->sum('amount');
 
             // Update voucher
             $invoice->update([
