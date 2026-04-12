@@ -129,7 +129,7 @@ class AaPanelMailService
     {
         $result = $this->request('add_mailbox', [
             'domain' => $domain,
-            'username' => $username,
+            'username' => "{$username}@{$domain}",
             'password' => $password,
             'quota' => $quota,
         ]);
@@ -160,7 +160,7 @@ class AaPanelMailService
     {
         $result = $this->request('delete_mailbox', [
             'domain' => $domain,
-            'username' => $username,
+            'username' => "{$username}@{$domain}",
         ]);
 
         if ($result['success']) {
@@ -178,7 +178,7 @@ class AaPanelMailService
     {
         $result = $this->request('update_mailbox', [
             'domain' => $domain,
-            'username' => $username,
+            'username' => "{$username}@{$domain}",
             'password' => $newPassword,
         ]);
 
