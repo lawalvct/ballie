@@ -4,6 +4,7 @@ namespace App\Http\Controllers\SuperAdmin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Backup;
+use App\Services\AaPanelDatabaseService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\File;
@@ -13,6 +14,12 @@ use ZipArchive;
 
 class BackupController extends Controller
 {
+    protected $dbService;
+
+    public function __construct(AaPanelDatabaseService $dbService)
+    {
+        $this->dbService = $dbService;
+    }
     /**
      * Display backup management page
      */
@@ -23,39 +30,97 @@ class BackupController extends Controller
         $isOverdue = Backup::isBackupOverdue();
         $recentBackups = Backup::orderBy('created_at', 'desc')->take(10)->get();
 
+        // Fetch databases from aaPanel
+        $serverDatabases = [];
+        $serverBackups = [];
+        $serverError = null;
+
+        try {
+            $dbResult = $this->dbService->listDatabases();
+            if ($dbResult['success'] && isset($dbResult['databases'])) {
+                $serverDatabases = $dbResult['databases'];
+
+                // Fetch backups for each database
+                foreach ($serverDatabases as $db) {
+                    $backupResult = $this->dbService->listBackups($db['id'] ?? 0);
+                    if ($backupResult['success'] && isset($backupResult['backups'])) {
+                        foreach ($backupResult['backups'] as $bk) {
+                            $bk['db_name'] = $db['name'] ?? 'unknown';
+                            $serverBackups[] = $bk;
+                        }
+                    }
+                }
+            }
+        } catch (\Exception $e) {
+            $serverError = $e->getMessage();
+            Log::warning('Failed to fetch server databases', ['error' => $e->getMessage()]);
+        }
+
         return view('super-admin.backups.index', compact(
             'lastBackup',
             'daysSinceLastBackup',
             'isOverdue',
-            'recentBackups'
+            'recentBackups',
+            'serverDatabases',
+            'serverBackups',
+            'serverError'
         ));
     }
 
     /**
-     * Create a server backup
+     * Create a server backup via aaPanel API
      */
     public function createServerBackup(Request $request)
     {
-        $website = 'ballie.co';
+        $request->validate([
+            'database_id' => 'required|integer',
+            'database_name' => 'required|string',
+        ]);
 
-        // Create backup record
         $backup = Backup::create([
             'type' => 'server',
             'status' => 'in_progress',
             'metadata' => [
-                'website' => $website,
+                'database_id' => $request->database_id,
+                'database_name' => $request->database_name,
             ],
         ]);
 
         try {
-            // Server backup via panel API is not yet configured for aaPanel.
-            // Use local backup instead, or integrate aaPanel's backup API later.
+            // Clear telescope tables before backup to reduce size
+            try {
+                if (DB::getSchemaBuilder()->hasTable('telescope_entries')) {
+                    DB::table('telescope_entries')->truncate();
+                }
+                if (DB::getSchemaBuilder()->hasTable('telescope_entries_tags')) {
+                    DB::table('telescope_entries_tags')->truncate();
+                }
+                if (DB::getSchemaBuilder()->hasTable('telescope_monitoring')) {
+                    DB::table('telescope_monitoring')->truncate();
+                }
+            } catch (\Exception $e) {
+                Log::warning('Failed to clear telescope tables before server backup', ['error' => $e->getMessage()]);
+            }
+
+            $result = $this->dbService->createBackup((int) $request->database_id);
+
+            if ($result['success']) {
+                $backup->update([
+                    'status' => 'completed',
+                    'filename' => $request->database_name . '_' . now()->format('Y-m-d_His') . '.sql.gz',
+                    'databases_count' => 1,
+                    'completed_at' => now(),
+                ]);
+
+                return back()->with('success', "Server backup created for database: {$request->database_name}");
+            }
+
             $backup->update([
                 'status' => 'failed',
-                'error_message' => 'Server backup via aaPanel API is not yet configured. Use local backup instead.',
+                'error_message' => $result['error'] ?? 'Backup failed',
             ]);
 
-            return back()->with('error', 'Server backup via aaPanel API is not yet configured. Please use local backup.');
+            return back()->with('error', 'Backup failed: ' . ($result['error'] ?? 'Unknown error'));
         } catch (\Exception $e) {
             $backup->update([
                 'status' => 'failed',
@@ -63,6 +128,28 @@ class BackupController extends Controller
             ]);
 
             return back()->with('error', 'Failed to create server backup: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Delete a server backup via aaPanel API
+     */
+    public function deleteServerBackup(Request $request)
+    {
+        $request->validate([
+            'backup_id' => 'required|integer',
+        ]);
+
+        try {
+            $result = $this->dbService->deleteBackup((int) $request->backup_id);
+
+            if ($result['success']) {
+                return back()->with('success', 'Server backup deleted successfully');
+            }
+
+            return back()->with('error', 'Delete failed: ' . ($result['error'] ?? 'Unknown error'));
+        } catch (\Exception $e) {
+            return back()->with('error', 'Failed to delete backup: ' . $e->getMessage());
         }
     }
 
@@ -90,6 +177,9 @@ class BackupController extends Controller
                 if (DB::getSchemaBuilder()->hasTable('telescope_entries_tags')) {
                     DB::table('telescope_entries_tags')->truncate();
                     Log::info('Telescope entries tags table cleared before backup');
+                }
+                if (DB::getSchemaBuilder()->hasTable('telescope_monitoring')) {
+                    DB::table('telescope_monitoring')->truncate();
                 }
             } catch (\Exception $e) {
                 Log::warning('Failed to clear telescope tables', ['error' => $e->getMessage()]);

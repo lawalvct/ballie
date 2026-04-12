@@ -105,6 +105,7 @@ Route::prefix('super-admin')->name('super-admin.')->group(function () {
             Route::get('/', [\App\Http\Controllers\SuperAdmin\BackupController::class, 'index'])->name('index');
             Route::post('/server', [\App\Http\Controllers\SuperAdmin\BackupController::class, 'createServerBackup'])->name('create-server');
             Route::post('/local', [\App\Http\Controllers\SuperAdmin\BackupController::class, 'createLocalBackup'])->name('create-local');
+            Route::delete('/server-backup', [\App\Http\Controllers\SuperAdmin\BackupController::class, 'deleteServerBackup'])->name('delete-server-backup');
         });
 
         // Support Center

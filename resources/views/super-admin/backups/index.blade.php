@@ -101,7 +101,7 @@
                     </div>
                     <div class="ml-4">
                         <h2 class="text-lg font-semibold text-gray-900">Server Backup</h2>
-                        <p class="text-sm text-gray-600">CyberPanel Server</p>
+                        <p class="text-sm text-gray-600">aaPanel Server</p>
                     </div>
                 </div>
             </div>
@@ -112,8 +112,8 @@
                             <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
                         </svg>
                         <div>
-                            <p class="text-sm font-medium text-gray-900">Full Website Backup</p>
-                            <p class="text-xs text-gray-500">Files, databases, configurations</p>
+                            <p class="text-sm font-medium text-gray-900">Database Backup</p>
+                            <p class="text-xs text-gray-500">Backed up on the server via aaPanel</p>
                         </div>
                     </div>
                     <div class="flex items-start">
@@ -122,7 +122,7 @@
                         </svg>
                         <div>
                             <p class="text-sm font-medium text-gray-900">Stored on Server</p>
-                            <p class="text-xs text-gray-500">Managed by CyberPanel</p>
+                            <p class="text-xs text-gray-500">Managed by aaPanel</p>
                         </div>
                     </div>
                     <div class="flex items-start">
@@ -131,26 +131,49 @@
                         </svg>
                         <div>
                             <p class="text-sm font-medium text-gray-900">Quick Restore</p>
-                            <p class="text-xs text-gray-500">One-click restoration</p>
+                            <p class="text-xs text-gray-500">Restore from aaPanel panel</p>
                         </div>
                     </div>
                 </div>
 
                 <div class="mt-6 pt-6 border-t border-gray-200">
-                    <div class="bg-amber-50 border border-amber-200 rounded-lg p-3 mb-4">
-                        <p class="text-xs text-amber-800">
-                            <strong>Website:</strong> ballie.co
-                        </p>
-                    </div>
-                    <form method="POST" action="{{ route('super-admin.backups.create-server') }}" onsubmit="return confirm('Are you sure you want to create a server backup? This may take several minutes.');">
-                        @csrf
-                        <button type="submit" class="w-full px-4 py-3 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-lg font-medium hover:from-purple-600 hover:to-pink-600 transition-all duration-200 shadow-md hover:shadow-lg">
-                            <svg class="w-5 h-5 inline-block mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/>
-                            </svg>
+                    @if($serverError)
+                        <div class="bg-red-50 border border-red-200 rounded-lg p-3 mb-4">
+                            <p class="text-xs text-red-800"><strong>Error:</strong> {{ $serverError }}</p>
+                        </div>
+                    @endif
+
+                    @if(count($serverDatabases) > 0)
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Select Database</label>
+                        <form method="POST" action="{{ route('super-admin.backups.create-server') }}" onsubmit="return confirm('Create server backup for the selected database?');">
+                            @csrf
+                            <select name="database_id" id="server_db_select" class="w-full mb-2 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-purple-500">
+                                @foreach($serverDatabases as $db)
+                                    <option value="{{ $db['id'] ?? '' }}" data-name="{{ $db['name'] ?? '' }}">{{ $db['name'] ?? 'Unknown' }}</option>
+                                @endforeach
+                            </select>
+                            <input type="hidden" name="database_name" id="server_db_name" value="{{ $serverDatabases[0]['name'] ?? '' }}">
+                            <button type="submit" class="w-full px-4 py-3 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-lg font-medium hover:from-purple-600 hover:to-pink-600 transition-all duration-200 shadow-md hover:shadow-lg">
+                                <svg class="w-5 h-5 inline-block mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/>
+                                </svg>
+                                Create Server Backup
+                            </button>
+                        </form>
+                    @else
+                        <div class="bg-amber-50 border border-amber-200 rounded-lg p-3 mb-4">
+                            <p class="text-xs text-amber-800">
+                                @if($serverError)
+                                    Could not connect to aaPanel. Check your API settings.
+                                @else
+                                    No databases found on the server.
+                                @endif
+                            </p>
+                        </div>
+                        <button disabled class="w-full px-4 py-3 bg-gray-300 text-gray-500 rounded-lg font-medium cursor-not-allowed">
                             Create Server Backup
                         </button>
-                    </form>
+                    @endif
                 </div>
             </div>
         </div>
@@ -269,6 +292,72 @@
         </div>
     </div>
 
+    <!-- Server Backups on aaPanel -->
+    @if(count($serverBackups) > 0)
+    <div class="bg-white rounded-xl shadow-md border border-gray-100 overflow-hidden">
+        <div class="px-6 py-4 border-b border-gray-200 bg-gradient-to-r from-purple-50 to-pink-50">
+            <h3 class="text-lg font-semibold text-gray-900">Server Backups (aaPanel)</h3>
+            <p class="text-sm text-gray-600 mt-1">Database backups stored on the server</p>
+        </div>
+        <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Database</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Filename</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Size</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Created</th>
+                        <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                    </tr>
+                </thead>
+                <tbody class="bg-white divide-y divide-gray-200">
+                    @foreach($serverBackups as $sbk)
+                    <tr class="hover:bg-gray-50">
+                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                            {{ $sbk['db_name'] ?? $sbk['name'] ?? 'N/A' }}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            {{ basename($sbk['filename'] ?? '') }}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            @php
+                                $sizeBytes = $sbk['size'] ?? 0;
+                                if ($sizeBytes >= 1073741824) {
+                                    $sizeStr = round($sizeBytes / 1073741824, 2) . ' GB';
+                                } elseif ($sizeBytes >= 1048576) {
+                                    $sizeStr = round($sizeBytes / 1048576, 2) . ' MB';
+                                } elseif ($sizeBytes >= 1024) {
+                                    $sizeStr = round($sizeBytes / 1024, 2) . ' KB';
+                                } else {
+                                    $sizeStr = $sizeBytes . ' B';
+                                }
+                            @endphp
+                            {{ $sizeStr }}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            {{ $sbk['addtime'] ?? $sbk['created_at'] ?? '' }}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                            <form method="POST" action="{{ route('super-admin.backups.delete-server-backup') }}"
+                                  onsubmit="return confirm('Delete this server backup?');" class="inline">
+                                @csrf
+                                @method('DELETE')
+                                <input type="hidden" name="backup_id" value="{{ $sbk['id'] ?? '' }}">
+                                <button type="submit" class="text-red-600 hover:text-red-900" title="Delete">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                                    </svg>
+                                </button>
+                            </form>
+                        </td>
+                    </tr>
+                    @endforeach
+                </tbody>
+            </table>
+        </div>
+    </div>
+    @endif
+
     <!-- Backup History -->
     @if($recentBackups->count() > 0)
     <div class="bg-white rounded-xl shadow-md border border-gray-100 overflow-hidden">
@@ -357,4 +446,18 @@
     </div>
     @endif
 </div>
+
+@push('scripts')
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const dbSelect = document.getElementById('server_db_select');
+        const dbName = document.getElementById('server_db_name');
+        if (dbSelect && dbName) {
+            dbSelect.addEventListener('change', function() {
+                dbName.value = this.options[this.selectedIndex].dataset.name;
+            });
+        }
+    });
+</script>
+@endpush
 @endsection
