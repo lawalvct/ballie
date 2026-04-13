@@ -165,12 +165,12 @@ class QuotationController extends Controller
         try {
             DB::beginTransaction();
 
-            // Generate quotation number
-            $lastQuotation = Quotation::where('tenant_id', $tenant->id)
-                ->latest('id')
-                ->first();
+            // Generate quotation number (use MAX to avoid duplicates)
+            $maxNumber = Quotation::where('tenant_id', $tenant->id)
+                ->lockForUpdate()
+                ->max(\DB::raw("CAST(quotation_number AS UNSIGNED)"));
 
-            $nextNumber = $lastQuotation ? $lastQuotation->quotation_number + 1 : 1;
+            $nextNumber = ($maxNumber ?? 0) + 1;
 
             // Get customer from ledger account
             $customerLedger = LedgerAccount::findOrFail($request->customer_ledger_id);
@@ -527,12 +527,12 @@ class QuotationController extends Controller
         try {
             DB::beginTransaction();
 
-            // Generate new quotation number
-            $lastQuotation = Quotation::where('tenant_id', $tenant->id)
-                ->latest('id')
-                ->first();
+            // Generate new quotation number (use MAX to avoid duplicates)
+            $maxNumber = Quotation::where('tenant_id', $tenant->id)
+                ->lockForUpdate()
+                ->max(\DB::raw("CAST(quotation_number AS UNSIGNED)"));
 
-            $nextNumber = $lastQuotation ? $lastQuotation->quotation_number + 1 : 1;
+            $nextNumber = ($maxNumber ?? 0) + 1;
 
             // Create duplicate quotation
             $newQuotation = Quotation::create([

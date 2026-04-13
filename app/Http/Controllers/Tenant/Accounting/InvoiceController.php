@@ -472,33 +472,16 @@ class InvoiceController extends Controller
                 'ledger_accounts_count' => count($additionalLedgerAccounts)
             ]);
 
-            // Generate voucher number
-            $lastVoucher = Voucher::where('tenant_id', $tenant->id)
+            // Generate voucher number (use MAX to avoid duplicates)
+            $maxNumber = Voucher::where('tenant_id', $tenant->id)
                 ->where('voucher_type_id', $voucherType->id)
-                ->latest('id')
-                ->first();
+                ->lockForUpdate()
+                ->max(\DB::raw("CAST(voucher_number AS UNSIGNED)"));
 
-            $nextNumber = 1;
-            if ($lastVoucher) {
-                $rawNumber = $lastVoucher->voucher_number;
-
-                if (is_numeric($rawNumber)) {
-                    $nextNumber = (int) $rawNumber + 1;
-                } elseif (preg_match('/(\d+)(?!.*\d)/', (string) $rawNumber, $matches)) {
-                    // Handles values such as "SV-2024-0012" by taking the last numeric block
-                    $nextNumber = (int) $matches[1] + 1;
-                } else {
-                    Log::warning('Unable to parse numeric portion of voucher number', [
-                        'last_voucher_id' => $lastVoucher->id,
-                        'last_voucher_number' => $rawNumber,
-                    ]);
-                    $nextNumber = $lastVoucher->id + 1; // Fall back to monotonic id-based value
-                }
-            }
+            $nextNumber = ($maxNumber ?? 0) + 1;
 
             Log::info('Voucher Number Generated', [
-                'last_voucher_id' => $lastVoucher?->id,
-                'last_voucher_number' => $lastVoucher?->voucher_number,
+                'max_voucher_number' => $maxNumber,
                 'next_number' => $nextNumber
             ]);
 
