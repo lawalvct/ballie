@@ -164,22 +164,29 @@
                 <h3 class="text-lg font-medium text-gray-900">Payment History</h3>
             </div>
             <div class="p-6 space-y-4">
+                @php
+                    $isPurchase = ($invoice->voucherType->inventory_effect ?? '') === 'increase';
+                @endphp
                 @foreach($payments as $payment)
                     <div class="border rounded-lg p-4 hover:shadow-md transition-shadow bg-gray-50">
                         <div class="flex justify-between items-start">
                             <div class="flex-1">
                                 <div class="flex items-center space-x-3">
-                                    <div class="bg-green-100 p-2 rounded-full">
-                                        <svg class="w-5 h-5 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-3a2 2 0 00-2-2H9a2 2 0 00-2 2v3a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
+                                    <div class="{{ $isPurchase ? 'bg-red-100' : 'bg-green-100' }} p-2 rounded-full">
+                                        <svg class="w-5 h-5 {{ $isPurchase ? 'text-red-600' : 'text-green-600' }}" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-3a2 2 0 00-2-2H9a2 2 0 00-2 2v3a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
                                     </div>
                                     <div>
                                         <h4 class="font-medium text-gray-900">Payment of ₦{{ number_format($payment->total_amount, 2) }}</h4>
-                                        <p class="text-sm text-gray-600">Received on {{ $payment->voucher_date->format('M d, Y') }} via {{ $payment->entries->where('debit_amount', '>', 0)->first()?->ledgerAccount->name ?? 'N/A' }}</p>
+                                        @if($isPurchase)
+                                            <p class="text-sm text-gray-600">Paid on {{ $payment->voucher_date->format('M d, Y') }} via {{ $payment->entries->where('credit_amount', '>', 0)->first()?->ledgerAccount->name ?? 'N/A' }}</p>
+                                        @else
+                                            <p class="text-sm text-gray-600">Received on {{ $payment->voucher_date->format('M d, Y') }} via {{ $payment->entries->where('debit_amount', '>', 0)->first()?->ledgerAccount->name ?? 'N/A' }}</p>
+                                        @endif
                                     </div>
                                 </div>
                             </div>
                             <div class="text-right ml-4">
-                                <a href="{{ route('tenant.accounting.vouchers.show', ['tenant' => $tenant->slug, 'voucher' => $payment->id]) }}" class="text-blue-600 hover:text-blue-800 text-sm font-medium">View Receipt</a>
+                                <a href="{{ route('tenant.accounting.vouchers.show', ['tenant' => $tenant->slug, 'voucher' => $payment->id]) }}" class="text-blue-600 hover:text-blue-800 text-sm font-medium">View {{ $isPurchase ? 'Payment' : 'Receipt' }}</a>
                             </div>
                         </div>
                     </div>
@@ -248,7 +255,7 @@
         </div>
 
         @if(($invoice->voucherType->inventory_effect ?? '') === 'decrease')
-        <!-- Actions Card -->
+        <!-- Actions Card (Sales Invoice) -->
         <div class="bg-white rounded-lg shadow-sm border border-gray-200">
             <div class="px-6 py-4 border-b border-gray-200">
                 <h3 class="text-lg font-medium text-gray-900">Actions</h3>
@@ -257,7 +264,7 @@
                 @if($invoice->status === 'posted')
                     <button @click="openReceiptModal()" class="w-full inline-flex items-center justify-center px-4 py-2 bg-primary-600 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500">
                         <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-3a2 2 0 00-2-2H9a2 2 0 00-2 2v3a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
-                        Record Payment
+                        Record Receipt
                     </button>
                 @endif
 
@@ -381,6 +388,49 @@
         </div>
         @endif
 
+        @if(($invoice->voucherType->inventory_effect ?? '') === 'increase')
+        <!-- Actions Card (Purchase Invoice) -->
+        <div class="bg-white rounded-lg shadow-sm border border-gray-200">
+            <div class="px-6 py-4 border-b border-gray-200">
+                <h3 class="text-lg font-medium text-gray-900">Actions</h3>
+            </div>
+            <div class="p-6 space-y-3">
+                @if($invoice->status === 'posted')
+                    <button @click="openPaymentModal()" class="w-full inline-flex items-center justify-center px-4 py-2 bg-red-600 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500">
+                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-3a2 2 0 00-2-2H9a2 2 0 00-2 2v3a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
+                        Record Payment
+                    </button>
+                @endif
+
+                <div class="flex space-x-3">
+                    <a href="{{ route('tenant.accounting.invoices.print', ['tenant' => $tenant->slug, 'invoice' => $invoice->id]) }}" target="_blank" class="flex-1 inline-flex items-center justify-center px-4 py-2 bg-gray-600 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500">
+                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>
+                        Print
+                    </a>
+                    <button @click="downloadPDF()" class="flex-1 inline-flex items-center justify-center px-4 py-2 bg-green-600 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
+                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-4-4m4 4l4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                        PDF
+                    </button>
+                </div>
+
+                <div class="pt-3 border-t border-gray-200">
+                    @if ($invoice->status === 'draft')
+                        <form action="{{ route('tenant.accounting.invoices.post', ['tenant' => $tenant->slug, 'invoice' => $invoice->id]) }}" method="POST" class="w-full">
+                            @csrf
+                            <button type="submit" class="w-full inline-flex items-center justify-center px-4 py-2 bg-green-500 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white hover:bg-green-600">Post @term('sales_invoice')</button>
+                        </form>
+                        <a href="{{ route('tenant.accounting.invoices.edit', ['tenant' => $tenant->slug, 'invoice' => $invoice->id]) }}" class="mt-2 w-full text-center inline-block text-sm text-gray-600 hover:text-gray-900">Edit @term('sales_invoice')</a>
+                    @elseif ($invoice->status === 'posted')
+                        <form action="{{ route('tenant.accounting.invoices.unpost', ['tenant' => $tenant->slug, 'invoice' => $invoice->id]) }}" method="POST" class="w-full">
+                            @csrf
+                            <button type="submit" class="w-full inline-flex items-center justify-center px-4 py-2 bg-yellow-500 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white hover:bg-yellow-600">Unpost @term('sales_invoice')</button>
+                        </form>
+                    @endif
+                </div>
+            </div>
+        </div>
+        @endif
+
         <!-- Invoice Summary Card -->
         <div class="bg-white rounded-lg shadow-sm border border-gray-200">
             <div class="px-6 py-4 border-b border-gray-200">
@@ -430,6 +480,7 @@
     <!-- Modals -->
     @include('tenant.accounting.invoices.partials.email-modal')
     @include('tenant.accounting.invoices.partials.receipt-modal')
+    @include('tenant.accounting.invoices.partials.payment-modal')
 </div>
 
 @endsection
@@ -440,7 +491,9 @@ function invoiceShow() {
     return {
         showEmailModal: false,
         showReceiptModal: false,
+        showPaymentModal: false,
         isRecordingPayment: false,
+        isMakingPayment: false,
         invoiceAmount: {{ $invoice->total_amount }},
         balanceDue: {{ $balanceDue }},
 
@@ -463,11 +516,20 @@ Best regards,
             reference: '',
             notes: 'Payment for invoice {{ ($invoice->voucherType->prefix ?? '') . $invoice->voucher_number }}'
         },
+        paymentForm: {
+            date: '{{ date("Y-m-d") }}',
+            amount: '{{ $balanceDue > 0 ? $balanceDue : "" }}',
+            bank_account_id: '',
+            reference: '',
+            notes: 'Payment for purchase {{ ($invoice->voucherType->prefix ?? '') . $invoice->voucher_number }}'
+        },
 
         openEmailModal() { this.showEmailModal = true; },
         closeEmailModal() { this.showEmailModal = false; },
         openReceiptModal() { this.showReceiptModal = true; },
         closeReceiptModal() { this.showReceiptModal = false; },
+        openPaymentModal() { this.showPaymentModal = true; },
+        closePaymentModal() { this.showPaymentModal = false; },
 
         async sendEmail() {
             try {
@@ -522,6 +584,38 @@ Best regards,
                 this.isRecordingPayment = false;
             }
         },
+
+        async submitVendorPayment() {
+            if (this.isMakingPayment) {
+                return;
+            }
+
+            this.isMakingPayment = true;
+
+            try {
+                const response = await fetch('{{ route("tenant.accounting.invoices.record-vendor-payment", ["tenant" => $tenant->slug, "invoice" => $invoice->id]) }}', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                    },
+                    body: JSON.stringify(this.paymentForm)
+                });
+
+                if (response.ok) {
+                    this.closePaymentModal();
+                    location.reload();
+                } else {
+                    const error = await response.json();
+                    alert('Error recording payment: ' + (error.message || 'Unknown error'));
+                }
+            } catch (error) {
+                alert('Error recording payment: ' + error.message);
+            } finally {
+                this.isMakingPayment = false;
+            }
+        },
+
         downloadPDF() {
             window.open('{{ route("tenant.accounting.invoices.pdf", ["tenant" => $tenant->slug, "invoice" => $invoice->id]) }}', '_blank');
         },

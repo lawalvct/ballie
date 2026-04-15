@@ -221,6 +221,7 @@ Route::prefix('invoices')->name('invoices.')->group(function () {
     Route::get('/{invoice}/delivery-note', [InvoiceController::class, 'deliveryNote'])->name('delivery-note');
     Route::post('/{invoice}/email', [InvoiceController::class, 'email'])->name('email');
     Route::post('/{invoice}/record-payment', [InvoiceController::class, 'recordPayment'])->name('record-payment');
+    Route::post('/{invoice}/record-vendor-payment', [InvoiceController::class, 'recordVendorPayment'])->name('record-vendor-payment');
     Route::post('/{invoice}/regenerate-payment-links', [InvoiceController::class, 'regeneratePaymentLinks'])->name('regenerate-payment-links');
 });
 

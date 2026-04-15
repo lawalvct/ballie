@@ -476,7 +476,7 @@ class InvoiceController extends Controller
             $maxNumber = Voucher::where('tenant_id', $tenant->id)
                 ->where('voucher_type_id', $voucherType->id)
                 ->lockForUpdate()
-                ->max(\DB::raw("CAST(voucher_number AS UNSIGNED)"));
+                ->max(DB::raw("CAST(voucher_number AS UNSIGNED)"));
 
             $nextNumber = ($maxNumber ?? 0) + 1;
 
@@ -644,9 +644,12 @@ class InvoiceController extends Controller
 
         // Get payment vouchers related to this invoice
         $invoiceReference = $invoice->voucherType->prefix . $invoice->voucher_number;
+        $isPurchaseInvoice = ($invoice->voucherType->inventory_effect ?? '') === 'increase';
+        $paymentVoucherCode = $isPurchaseInvoice ? 'PV' : 'RV';
+
         $payments = Voucher::where('tenant_id', $tenant->id)
-            ->whereHas('voucherType', function($q) {
-                $q->where('code', 'RV'); // Receipt Voucher
+            ->whereHas('voucherType', function($q) use ($paymentVoucherCode) {
+                $q->where('code', $paymentVoucherCode);
             })
             ->where(function($q) use ($invoiceReference) {
                 $q->where('narration', 'LIKE', '%' . $invoiceReference . '%')
@@ -2070,7 +2073,7 @@ class InvoiceController extends Controller
             $maxNumber = Voucher::where('tenant_id', $tenant->id)
                 ->where('voucher_type_id', $receiptVoucherType->id)
                 ->lockForUpdate()
-                ->max(\DB::raw("CAST(voucher_number AS UNSIGNED)"));
+                ->max(DB::raw("CAST(voucher_number AS UNSIGNED)"));
 
             $nextNumber = ($maxNumber ?? 0) + 1;
 
@@ -2223,6 +2226,163 @@ class InvoiceController extends Controller
         } catch (\Exception $e) {
             DB::rollBack();
             Log::error('Error recording payment: ' . $e->getMessage());
+            return response()->json(['message' => 'Failed to record payment: ' . $e->getMessage()], 500);
+        }
+    }
+
+    /**
+     * Record a vendor payment against a purchase invoice (Payment Voucher)
+     */
+    public function recordVendorPayment(Request $request, Tenant $tenant, Voucher $invoice)
+    {
+        Log::info('recordVendorPayment method called', [
+            'tenant_id' => $tenant->id,
+            'invoice_id' => $invoice->id,
+            'request_all' => $request->all()
+        ]);
+
+        if ($invoice->tenant_id !== $tenant->id) {
+            abort(404);
+        }
+
+        if ($invoice->status !== 'posted') {
+            return response()->json(['message' => 'Only posted invoices can receive payments'], 422);
+        }
+
+        $validator = Validator::make($request->all(), [
+            'date' => 'required|date',
+            'amount' => 'required|numeric|min:0.01|max:' . $invoice->total_amount,
+            'bank_account_id' => 'required|exists:ledger_accounts,id',
+            'reference' => 'nullable|string|max:255',
+            'notes' => 'nullable|string',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json(['message' => 'Validation failed', 'errors' => $validator->errors()], 422);
+        }
+
+        try {
+            DB::beginTransaction();
+
+            // Get payment voucher type (PV)
+            $paymentVoucherType = VoucherType::where('tenant_id', $tenant->id)
+                ->where('code', 'PV')
+                ->first();
+
+            if (!$paymentVoucherType) {
+                throw new \Exception('Payment voucher type not found. Please create it first.');
+            }
+
+            // Get bank account
+            $bankAccount = LedgerAccount::findOrFail($request->bank_account_id);
+
+            // Get vendor account from the original purchase invoice (credit entry = AP)
+            $vendorAccount = $invoice->entries->where('credit_amount', '>', 0)
+                ->first(function ($entry) {
+                    return in_array($entry->ledgerAccount->accountGroup->code ?? '', ['AP', 'AR']);
+                })?->ledgerAccount;
+
+            if (!$vendorAccount) {
+                throw new \Exception('Vendor account not found in invoice entries');
+            }
+
+            // Generate voucher number (use MAX to avoid duplicates)
+            $maxNumber = Voucher::where('tenant_id', $tenant->id)
+                ->where('voucher_type_id', $paymentVoucherType->id)
+                ->lockForUpdate()
+                ->max(DB::raw("CAST(voucher_number AS UNSIGNED)"));
+
+            $nextNumber = ($maxNumber ?? 0) + 1;
+
+            // Create payment voucher
+            $voucherData = [
+                'tenant_id' => $tenant->id,
+                'voucher_type_id' => $paymentVoucherType->id,
+                'voucher_number' => $nextNumber,
+                'voucher_date' => $request->date,
+                'reference_number' => $request->reference,
+                'narration' => $request->notes ?? 'Payment made for Purchase ' . $invoice->voucherType->prefix . $invoice->voucher_number,
+                'total_amount' => $request->amount,
+                'status' => 'posted',
+                'created_by' => auth()->id(),
+                'posted_at' => now(),
+                'posted_by' => auth()->id(),
+            ];
+
+            $paymentVoucher = Voucher::create($voucherData);
+
+            Log::info('Payment voucher created', ['voucher_id' => $paymentVoucher->id]);
+
+            // Create accounting entries for payment
+            // Debit: Vendor Account (reducing AP / what we owe them)
+            VoucherEntry::create([
+                'voucher_id' => $paymentVoucher->id,
+                'ledger_account_id' => $vendorAccount->id,
+                'debit_amount' => $request->amount,
+                'credit_amount' => 0,
+                'particulars' => 'Payment made against Purchase ' . $invoice->voucherType->prefix . $invoice->voucher_number,
+            ]);
+
+            // Credit: Bank/Cash Account (money going out)
+            VoucherEntry::create([
+                'voucher_id' => $paymentVoucher->id,
+                'ledger_account_id' => $bankAccount->id,
+                'debit_amount' => 0,
+                'credit_amount' => $request->amount,
+                'particulars' => 'Payment to ' . $vendorAccount->name,
+            ]);
+
+            // Update ledger account balances
+            try {
+                // Bank account balance (asset: opening + debits - credits)
+                $bankTotalDebits = $bankAccount->voucherEntries()
+                    ->whereHas('voucher', fn($q) => $q->where('status', 'posted'))
+                    ->sum('debit_amount');
+                $bankTotalCredits = $bankAccount->voucherEntries()
+                    ->whereHas('voucher', fn($q) => $q->where('status', 'posted'))
+                    ->sum('credit_amount');
+                $bankBalance = $bankAccount->opening_balance + $bankTotalDebits - $bankTotalCredits;
+                $bankAccount->update([
+                    'current_balance' => $bankBalance,
+                    'last_transaction_date' => $request->date
+                ]);
+
+                // Vendor account balance (liability: opening + credits - debits)
+                $vendorTotalDebits = $vendorAccount->voucherEntries()
+                    ->whereHas('voucher', fn($q) => $q->where('status', 'posted'))
+                    ->sum('debit_amount');
+                $vendorTotalCredits = $vendorAccount->voucherEntries()
+                    ->whereHas('voucher', fn($q) => $q->where('status', 'posted'))
+                    ->sum('credit_amount');
+                $vendorBalance = $vendorAccount->opening_balance + $vendorTotalDebits - $vendorTotalCredits;
+                $vendorAccount->update([
+                    'current_balance' => $vendorBalance,
+                    'last_transaction_date' => $request->date
+                ]);
+
+                // Update vendor outstanding balance
+                $vendor = Vendor::where('ledger_account_id', $vendorAccount->id)->first();
+                if ($vendor) {
+                    $outstandingBalance = max(0, abs($vendorBalance));
+                    $vendor->update(['outstanding_balance' => $outstandingBalance]);
+
+                    Log::info('Updated vendor outstanding balance', [
+                        'vendor_id' => $vendor->id,
+                        'outstanding_balance' => $outstandingBalance,
+                    ]);
+                }
+            } catch (\Exception $e) {
+                Log::error('Error updating account balances: ' . $e->getMessage());
+            }
+
+            DB::commit();
+            Log::info('Vendor payment recording completed successfully');
+
+            return response()->json(['message' => 'Payment recorded successfully']);
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('Error recording vendor payment: ' . $e->getMessage());
             return response()->json(['message' => 'Failed to record payment: ' . $e->getMessage()], 500);
         }
     }

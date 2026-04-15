@@ -168,7 +168,7 @@ class QuotationController extends Controller
             // Generate quotation number (use MAX to avoid duplicates)
             $maxNumber = Quotation::where('tenant_id', $tenant->id)
                 ->lockForUpdate()
-                ->max(\DB::raw("CAST(quotation_number AS UNSIGNED)"));
+                ->max(DB::raw("CAST(quotation_number AS UNSIGNED)"));
 
             $nextNumber = ($maxNumber ?? 0) + 1;
 
@@ -530,7 +530,7 @@ class QuotationController extends Controller
             // Generate new quotation number (use MAX to avoid duplicates)
             $maxNumber = Quotation::where('tenant_id', $tenant->id)
                 ->lockForUpdate()
-                ->max(\DB::raw("CAST(quotation_number AS UNSIGNED)"));
+                ->max(DB::raw("CAST(quotation_number AS UNSIGNED)"));
 
             $nextNumber = ($maxNumber ?? 0) + 1;
 
