@@ -34,6 +34,13 @@ class Authenticate extends Middleware
             return route('super-admin.login');
         }
 
+        // If on a tenant route, redirect to the tenant-specific login page
+        $tenant = $request->route('tenant');
+        if ($tenant) {
+            $tenantSlug = is_object($tenant) ? $tenant->slug : $tenant;
+            return route('tenant.login', ['tenant' => $tenantSlug]);
+        }
+
         // Default redirection for regular users
         return route('login');
     }

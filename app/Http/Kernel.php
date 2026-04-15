@@ -52,6 +52,7 @@ class Kernel extends HttpKernel
             'web',
             \App\Http\Middleware\SuperAdminImpersonation::class,
             \App\Http\Middleware\TenantContext::class,
+            \App\Http\Middleware\ValidateTenantUser::class,
         ],
 
         // Super admin middleware group

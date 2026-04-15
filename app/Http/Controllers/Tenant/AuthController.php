@@ -47,8 +47,29 @@ class AuthController extends Controller
         $remember = $request->boolean('remember');
 
         if (Auth::attempt($credentials, $remember)) {
+            $user = Auth::user();
+            $tenant = $request->route('tenant');
+            $tenantId = is_object($tenant) ? $tenant->id : optional(\App\Models\Tenant::where('slug', $tenant)->first())->id;
+
+            // Validate user belongs to this tenant
+            if ($tenantId && (int) $user->tenant_id !== (int) $tenantId) {
+                Auth::logout();
+                $request->session()->invalidate();
+                $request->session()->regenerateToken();
+
+                return back()->withErrors([
+                    'email' => 'This account does not belong to this company. Please use the correct login page.',
+                ])->onlyInput('email');
+            }
+
             RateLimiter::clear($throttleKey);
             $request->session()->regenerate();
+
+            // Always redirect to the user's own tenant dashboard
+            $userTenantSlug = $user->tenant ? $user->tenant->slug : null;
+            if ($userTenantSlug) {
+                return redirect()->intended(route('tenant.dashboard', ['tenant' => $userTenantSlug]));
+            }
 
             return redirect()->intended(route('tenant.dashboard'));
         }
