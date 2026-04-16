@@ -51,6 +51,11 @@ class HomeController extends Controller
         return view('demo');
     }
 
+    public function download()
+    {
+        return view('download');
+    }
+
     public function terms()
     {
         return view('legal.terms');

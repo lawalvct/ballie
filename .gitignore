@@ -6,6 +6,7 @@
 /public/demos
 /public/employees
 /public/employee_documents
+/public/mobile
 /storage/*.key
 /vendor
 .env

@@ -61,6 +61,7 @@ Route::get('/pricing', [HomeController::class, 'pricing'])->name('pricing');
 Route::get('/about', [HomeController::class, 'about'])->name('about');
 Route::get('/contact', [HomeController::class, 'contact'])->name('contact');
 Route::get('/demo', [HomeController::class, 'demo'])->name('demo');
+Route::get('/download', [HomeController::class, 'download'])->name('download');
 Route::get('/terms', [HomeController::class, 'terms'])->name('terms');
 Route::get('/privacy', [HomeController::class, 'privacy'])->name('privacy');
 Route::get('/cookies', [HomeController::class, 'cookies'])->name('cookies');

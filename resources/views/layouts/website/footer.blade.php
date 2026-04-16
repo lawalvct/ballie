@@ -68,6 +68,7 @@
                             </li>
                             @endif
                             <li><a href="{{ route('about') }}" class="text-gray-300 hover:text-brand-gold transition-colors">About Us</a></li>
+                            <li><a href="{{ route('download') }}" class="text-gray-300 hover:text-brand-gold transition-colors">Download App</a></li>
                         </ul>
                     </div>
                 </div>

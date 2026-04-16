@@ -129,6 +129,7 @@
                             @endif
                             <a href="{{ route('about') }}" class="text-gray-600 hover:text-brand-blue font-medium transition-colors">About</a>
                             <a href="{{ route('contact') }}" class="text-gray-600 hover:text-brand-blue font-medium transition-colors">Contact</a>
+                            <a href="{{ route('download') }}" class="text-gray-600 hover:text-brand-blue font-medium transition-colors">Download App</a>
                         @endif
 
                         @auth
@@ -201,6 +202,7 @@
                             @endif
                             <a href="{{ route('about') }}" class="block text-gray-600 hover:text-brand-blue font-medium py-2">About</a>
                             <a href="{{ route('contact') }}" class="block text-gray-600 hover:text-brand-blue font-medium py-2">Contact</a>
+                            <a href="{{ route('download') }}" class="block text-gray-600 hover:text-brand-blue font-medium py-2">Download App</a>
                         @endif
 
                         @auth
