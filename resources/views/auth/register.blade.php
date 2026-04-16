@@ -505,8 +505,12 @@
                         <button type="button" id="back-step-3" class="px-6 py-3 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50">
                             Back
                         </button>
-                        <button type="submit" class="px-8 py-3 rounded-lg font-semibold text-white transition-all duration-300" style="background-color: var(--color-gold);">
-                            Start Free Trial
+                        <button type="submit" id="submit-btn" class="px-8 py-3 rounded-lg font-semibold text-white transition-all duration-300 flex items-center justify-center" style="background-color: var(--color-gold);">
+                            <span id="submit-text">Start Free Trial</span>
+                            <svg id="submit-spinner" class="hidden animate-spin h-5 w-5 ml-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                            </svg>
                         </button>
                     </div>
                 </div>
@@ -913,6 +917,36 @@ document.addEventListener('DOMContentLoaded', function() {
             e.preventDefault();
             suggestions[selectedIndex].click();
         }
+    });
+
+    // Prevent double submission
+    const form = document.getElementById('registration-form');
+    const submitBtn = document.getElementById('submit-btn');
+    const submitText = document.getElementById('submit-text');
+    const submitSpinner = document.getElementById('submit-spinner');
+    let isSubmitting = false;
+
+    form.addEventListener('submit', function(e) {
+        if (isSubmitting) {
+            e.preventDefault();
+            return false;
+        }
+
+        // Check if terms checkbox is checked
+        const termsCheckbox = document.querySelector('input[name="terms"]');
+        if (!termsCheckbox.checked) {
+            e.preventDefault();
+            alert('Please agree to the Terms of Service and Privacy Policy');
+            return false;
+        }
+
+        // Disable button and show spinner
+        isSubmitting = true;
+        submitBtn.disabled = true;
+        submitBtn.style.opacity = '0.7';
+        submitBtn.style.cursor = 'not-allowed';
+        submitText.textContent = 'Processing...';
+        submitSpinner.classList.remove('hidden');
     });
 });
 </script>

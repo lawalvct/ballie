@@ -4,402 +4,267 @@
 
 @section('content')
 <!-- Progress Steps -->
-<div class="mb-8">
+<div class="mb-10">
     <div class="flex items-center justify-center">
-        <div class="flex items-center space-x-4 md:space-x-8 overflow-x-auto pb-2">
-            <!-- Step 1 - Completed -->
+        <div class="flex items-center space-x-3 md:space-x-6 overflow-x-auto pb-2">
+            @foreach (['Company Info', 'Preferences', 'Accounts', 'Complete'] as $i => $label)
+            @if ($i > 0)
+            <div class="w-6 md:w-12 h-0.5 bg-green-400 rounded hidden sm:block"></div>
+            @endif
             <div class="flex items-center flex-shrink-0">
-                <div class="w-10 h-10 bg-green-500 text-white rounded-full flex items-center justify-center shadow-lg">
-                    <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                        <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
+                <div class="w-8 h-8 {{ $i < 3 ? 'bg-green-500' : 'bg-brand-blue' }} text-white rounded-full flex items-center justify-center shadow-sm">
+                    <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
                     </svg>
                 </div>
-                <span class="ml-3 text-sm font-medium text-green-600 whitespace-nowrap">Company Info</span>
+                <span class="ml-2 text-xs font-medium {{ $i < 3 ? 'text-green-600' : 'text-brand-blue' }} whitespace-nowrap hidden sm:inline">{{ $label }}</span>
             </div>
-
-            <!-- Connector -->
-            <div class="w-8 md:w-16 h-1 bg-green-400 rounded hidden sm:block"></div>
-
-            <!-- Step 2 - Completed -->
-            <div class="flex items-center flex-shrink-0">
-                <div class="w-10 h-10 bg-green-500 text-white rounded-full flex items-center justify-center shadow-lg">
-                    <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                        <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
-                    </svg>
-                </div>
-                <span class="ml-3 text-sm font-medium text-green-600 whitespace-nowrap">Preferences</span>
-            </div>
-
-            <!-- Connector -->
-            <div class="w-8 md:w-16 h-1 bg-green-400 rounded hidden sm:block"></div>
-
-            <!-- Step 3 - Completed -->
-            <div class="flex items-center flex-shrink-0">
-                <div class="w-10 h-10 bg-green-500 text-white rounded-full flex items-center justify-center shadow-lg">
-                    <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                        <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
-                    </svg>
-                </div>
-                <span class="ml-3 text-sm font-medium text-green-600 whitespace-nowrap">Accounts</span>
-            </div>
-
-            <!-- Connector -->
-            <div class="w-8 md:w-16 h-1 bg-brand-blue rounded hidden sm:block"></div>
-
-            <!-- Step 4 - Active -->
-            <div class="flex items-center flex-shrink-0">
-                <div class="w-10 h-10 bg-brand-blue text-white rounded-full flex items-center justify-center font-semibold shadow-lg">
-                    <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                        <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
-                    </svg>
-                </div>
-                <span class="ml-3 text-sm font-medium text-brand-blue whitespace-nowrap">Complete</span>
-            </div>
+            @endforeach
         </div>
     </div>
 </div>
 
-<div class="text-center ">
-    <div class="inline-block p-4 bg-green-100 rounded-full mb-6">
-        <svg class="w-16 h-16 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+<!-- Hero Illustration + Message -->
+<div class="flex flex-col items-center text-center mb-8">
+    <!-- Animated Accounting Illustration -->
+    <div class="complete-hero relative w-56 h-56 md:w-64 md:h-64 mb-8">
+        <svg viewBox="0 0 240 240" fill="none" xmlns="http://www.w3.org/2000/svg" class="w-full h-full">
+            <!-- Background circle -->
+            <circle cx="120" cy="120" r="110" fill="#EEF2FF" class="hero-bg"/>
+            <circle cx="120" cy="120" r="96" fill="#E0E7FF" opacity="0.5"/>
+
+            <!-- Ledger / Book -->
+            <rect x="60" y="65" width="90" height="115" rx="6" fill="white" stroke="#2b6399" stroke-width="2.5" class="hero-book"/>
+            <rect x="60" y="65" width="16" height="115" rx="3" fill="#2b6399" class="hero-spine"/>
+            <line x1="84" y1="90" x2="140" y2="90" stroke="#CBD5E1" stroke-width="2" stroke-linecap="round" class="hero-line hero-line-1"/>
+            <line x1="84" y1="104" x2="135" y2="104" stroke="#CBD5E1" stroke-width="2" stroke-linecap="round" class="hero-line hero-line-2"/>
+            <line x1="84" y1="118" x2="130" y2="118" stroke="#CBD5E1" stroke-width="2" stroke-linecap="round" class="hero-line hero-line-3"/>
+            <line x1="84" y1="132" x2="138" y2="132" stroke="#CBD5E1" stroke-width="2" stroke-linecap="round" class="hero-line hero-line-4"/>
+            <line x1="84" y1="146" x2="126" y2="146" stroke="#CBD5E1" stroke-width="2" stroke-linecap="round" class="hero-line hero-line-5"/>
+
+            <!-- Chart bars on page -->
+            <rect x="90" y="152" width="8" height="18" rx="2" fill="#69a2a4" opacity="0.7" class="hero-bar hero-bar-1"/>
+            <rect x="102" y="145" width="8" height="25" rx="2" fill="#2b6399" opacity="0.8" class="hero-bar hero-bar-2"/>
+            <rect x="114" y="150" width="8" height="20" rx="2" fill="#85729d" opacity="0.7" class="hero-bar hero-bar-3"/>
+            <rect x="126" y="142" width="8" height="28" rx="2" fill="#249484" opacity="0.8" class="hero-bar hero-bar-4"/>
+
+            <!-- Calculator floating element -->
+            <g class="hero-calc" transform="translate(155, 50)">
+                <rect width="42" height="54" rx="5" fill="white" stroke="#3c2c64" stroke-width="1.5" filter="url(#shadow1)"/>
+                <rect x="6" y="6" width="30" height="12" rx="2" fill="#E0E7FF"/>
+                <text x="28" y="15" font-size="8" font-weight="600" fill="#2b6399" text-anchor="end">1,250</text>
+                <rect x="6" y="22" width="8" height="7" rx="1.5" fill="#CBD5E1"/>
+                <rect x="17" y="22" width="8" height="7" rx="1.5" fill="#CBD5E1"/>
+                <rect x="28" y="22" width="8" height="7" rx="1.5" fill="#CBD5E1"/>
+                <rect x="6" y="32" width="8" height="7" rx="1.5" fill="#CBD5E1"/>
+                <rect x="17" y="32" width="8" height="7" rx="1.5" fill="#CBD5E1"/>
+                <rect x="28" y="32" width="8" height="7" rx="1.5" fill="#2b6399"/>
+                <rect x="6" y="42" width="8" height="7" rx="1.5" fill="#CBD5E1"/>
+                <rect x="17" y="42" width="19" height="7" rx="1.5" fill="#249484"/>
+            </g>
+
+            <!-- Coin floating element -->
+            <g class="hero-coin" transform="translate(35, 45)">
+                <circle cx="16" cy="16" r="16" fill="#d1b05e" filter="url(#shadow1)"/>
+                <circle cx="16" cy="16" r="12" fill="none" stroke="#c9a84e" stroke-width="1.5"/>
+                <text x="16" y="20" font-size="13" font-weight="700" fill="white" text-anchor="middle">₦</text>
+            </g>
+
+            <!-- Pie chart floating element -->
+            <g class="hero-pie" transform="translate(160, 130)">
+                <circle cx="22" cy="22" r="22" fill="white" filter="url(#shadow1)"/>
+                <circle cx="22" cy="22" r="18" fill="none" stroke="#E0E7FF" stroke-width="6"/>
+                <circle cx="22" cy="22" r="18" fill="none" stroke="#2b6399" stroke-width="6" stroke-dasharray="40 73.13" stroke-dashoffset="0" stroke-linecap="round"/>
+                <circle cx="22" cy="22" r="18" fill="none" stroke="#249484" stroke-width="6" stroke-dasharray="25 88.13" stroke-dashoffset="-40" stroke-linecap="round"/>
+                <circle cx="22" cy="22" r="18" fill="none" stroke="#d1b05e" stroke-width="6" stroke-dasharray="20 93.13" stroke-dashoffset="-65" stroke-linecap="round"/>
+            </g>
+
+            <!-- Success checkmark badge -->
+            <g class="hero-badge" transform="translate(118, 35)">
+                <circle cx="18" cy="18" r="18" fill="#10B981" filter="url(#shadow1)"/>
+                <circle cx="18" cy="18" r="14" fill="none" stroke="white" stroke-width="1.5" opacity="0.4"/>
+                <path d="M11 18l4 4 8-8" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" fill="none" class="hero-check"/>
+            </g>
+
+            <!-- Sparkle decorations -->
+            <g class="hero-sparkle sparkle-1">
+                <path d="M44 100l2-6 2 6 6 2-6 2-2 6-2-6-6-2z" fill="#d1b05e" opacity="0.7"/>
+            </g>
+            <g class="hero-sparkle sparkle-2">
+                <path d="M185 95l1.5-4.5 1.5 4.5 4.5 1.5-4.5 1.5-1.5 4.5-1.5-4.5-4.5-1.5z" fill="#85729d" opacity="0.6"/>
+            </g>
+            <g class="hero-sparkle sparkle-3">
+                <path d="M50 165l1.5-4.5 1.5 4.5 4.5 1.5-4.5 1.5-1.5 4.5-1.5-4.5-4.5-1.5z" fill="#249484" opacity="0.6"/>
+            </g>
+
+            <defs>
+                <filter id="shadow1" x="-4" y="-2" width="calc(100% + 8px)" height="calc(100% + 10px)">
+                    <feDropShadow dx="0" dy="2" stdDeviation="3" flood-opacity="0.1"/>
+                </filter>
+            </defs>
         </svg>
     </div>
-    <h1 class="text-3xl md:text-4xl font-bold text-gray-900 mb-4">Setup Complete!</h1>
-    <p class="text-xl text-gray-600 max-w-2xl mx-auto">
-        Congratulations! Your business is now set up and ready to go. You can now start using Ballie to manage your business.
+
+    <h1 class="text-3xl md:text-4xl font-bold text-gray-900 mb-3">You're All Set!</h1>
+    <p class="text-lg text-gray-500 max-w-lg mx-auto leading-relaxed">
+        Your accounts are configured and ready. Start managing invoices, tracking expenses, and running reports.
     </p>
 </div>
 
-<!-- Celebration Animation -->
-<div class="relative h-64 mb-12">
-    <div class="absolute inset-0 flex items-center justify-center">
-        <!-- Immediate CSS Animation as fallback -->
-        <div id="css-celebration" class="celebration-fallback">
-            <div class="confetti-piece confetti-1"></div>
-            <div class="confetti-piece confetti-2"></div>
-            <div class="confetti-piece confetti-3"></div>
-            <div class="confetti-piece confetti-4"></div>
-            <div class="confetti-piece confetti-5"></div>
-            <div class="confetti-piece confetti-6"></div>
-            <div class="celebration-star">
-                <svg class="w-12 h-12 text-yellow-400 animate-pulse" fill="currentColor" viewBox="0 0 24 24">
-                    <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
-                </svg>
+<!-- What's Ready Summary -->
+<div class="max-w-2xl mx-auto mb-10">
+    <div class="bg-white rounded-xl border border-gray-200 divide-y divide-gray-100 shadow-sm">
+        <div class="px-6 py-4 flex items-center gap-4">
+            <div class="w-9 h-9 rounded-lg bg-blue-50 flex items-center justify-center flex-shrink-0">
+                <svg class="w-5 h-5 text-brand-blue" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>
             </div>
+            <div class="flex-1 min-w-0">
+                <p class="text-sm font-semibold text-gray-900">Chart of Accounts</p>
+                <p class="text-xs text-gray-500">Ledger accounts and account groups configured</p>
+            </div>
+            <svg class="w-5 h-5 text-green-500 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
         </div>
-        <!-- Lottie Animation Container -->
-        <div id="celebration-animation" class="w-full h-full" style="display: none;"></div>
+        <div class="px-6 py-4 flex items-center gap-4">
+            <div class="w-9 h-9 rounded-lg bg-green-50 flex items-center justify-center flex-shrink-0">
+                <svg class="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+            </div>
+            <div class="flex-1 min-w-0">
+                <p class="text-sm font-semibold text-gray-900">Financial Year & Currency</p>
+                <p class="text-xs text-gray-500">Reporting period and currency preferences set</p>
+            </div>
+            <svg class="w-5 h-5 text-green-500 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
+        </div>
+        <div class="px-6 py-4 flex items-center gap-4">
+            <div class="w-9 h-9 rounded-lg bg-purple-50 flex items-center justify-center flex-shrink-0">
+                <svg class="w-5 h-5 text-brand-purple" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+            </div>
+            <div class="flex-1 min-w-0">
+                <p class="text-sm font-semibold text-gray-900">Invoicing & Vouchers</p>
+                <p class="text-xs text-gray-500">Invoice templates and voucher types ready</p>
+            </div>
+            <svg class="w-5 h-5 text-green-500 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
+        </div>
+        <div class="px-6 py-4 flex items-center gap-4">
+            <div class="w-9 h-9 rounded-lg bg-amber-50 flex items-center justify-center flex-shrink-0">
+                <svg class="w-5 h-5 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
+            </div>
+            <div class="flex-1 min-w-0">
+                <p class="text-sm font-semibold text-gray-900">Reports & Dashboard</p>
+                <p class="text-xs text-gray-500">P&L, Balance Sheet, Trial Balance available</p>
+            </div>
+            <svg class="w-5 h-5 text-green-500 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
+        </div>
     </div>
 </div>
 
-<!-- Quick Start Cards -->
-{{-- <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden mb-8">
-    <div class="p-6 md:p-8">
-        <h2 class="text-xl font-bold text-gray-900 mb-6">Quick Start Actions</h2>
-
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <!-- Add Products Card -->
-            <div class="bg-gray-50 rounded-lg p-6 border border-gray-200">
-                <div class="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center mb-4">
-                    <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path>
-                    </svg>
-                </div>
-                <h3 class="text-lg font-semibold text-gray-900 mb-2">Add Your Products</h3>
-                <p class="text-gray-600 mb-4">Start by adding your products or services to your inventory.</p>
-                <a href="#" class="inline-block bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors">
-                    Add Products
-                </a>
-            </div>
-
-            <!-- Add Customers Card -->
-            <div class="bg-gray-50 rounded-lg p-6 border border-gray-200">
-                <div class="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center mb-4">
-                    <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
-                    </svg>
-                </div>
-                <h3 class="text-lg font-semibold text-gray-900 mb-2">Add Your Customers</h3>
-                <p class="text-gray-600 mb-4">Add your customers to start creating invoices and tracking sales.</p>
-                <a href="{{ route('tenant.crm.customers.create', ['tenant' => tenant()->slug]) }}" class="inline-block bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors">
-                    Add Customers
-                </a>
-            </div>
-
-            <!-- Create Invoice Card -->
-            <div class="bg-gray-50 rounded-lg p-6 border border-gray-200">
-                <div class="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center mb-4">
-                    <svg class="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-                    </svg>
-                </div>
-                <h3 class="text-lg font-semibold text-gray-900 mb-2">Create Your First Invoice</h3>
-                <p class="text-gray-600 mb-4">Start generating professional invoices for your customers.</p>
-                <a href="#" class="inline-block bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition-colors">
-                    Create Invoice
-                </a>
-            </div>
-        </div>
-    </div>
-</div> --}}
-
-<!-- Additional Resources -->
-{{-- <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden mb-8">
-    <div class="p-6 md:p-8">
-        <h2 class="text-xl font-bold text-gray-900 mb-6">Additional Resources</h2>
-
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <!-- Video Tutorials -->
-            <div class="flex">
-                <div class="w-12 h-12 bg-red-100 rounded-lg flex items-center justify-center mr-4 flex-shrink-0">
-                    <svg class="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"></path>
-                    </svg>
-                </div>
-                <div>
-                    <h3 class="text-lg font-semibold text-gray-900 mb-2">Video Tutorials</h3>
-                    <p class="text-gray-600 mb-3">Watch our video tutorials to learn how to use Ballie effectively.</p>
-                    <a href="#" class="text-blue-600 hover:text-blue-800 font-medium">
-                        Watch Tutorials →
-                    </a>
-                </div>
-            </div>
-
-            <!-- Help Center -->
-            <div class="flex">
-                <div class="w-12 h-12 bg-yellow-100 rounded-lg flex items-center justify-center mr-4 flex-shrink-0">
-                    <svg class="w-6 h-6 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                    </svg>
-                </div>
-                <div>
-                    <h3 class="text-lg font-semibold text-gray-900 mb-2">Help Center</h3>
-                    <p class="text-gray-600 mb-3">Browse our knowledge base for answers to common questions.</p>
-                    <a href="#" class="text-blue-600 hover:text-blue-800 font-medium">
-                        Visit Help Center →
-                    </a>
-                </div>
-            </div>
-
-            <!-- Contact Support -->
-            <div class="flex">
-                <div class="w-12 h-12 bg-indigo-100 rounded-lg flex items-center justify-center mr-4 flex-shrink-0">
-                    <svg class="w-6 h-6 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
-                    </svg>
-                </div>
-                <div>
-                    <h3 class="text-lg font-semibold text-gray-900 mb-2">Contact Support</h3>
-                    <p class="text-gray-600 mb-3">Need help? Our support team is ready to assist you.</p>
-                    <a href="#" class="text-blue-600 hover:text-blue-800 font-medium">
-                        Contact Support →
-                    </a>
-                </div>
-            </div>
-
-            <!-- Community Forum -->
-            <div class="flex">
-                <div class="w-12 h-12 bg-teal-100 rounded-lg flex items-center justify-center mr-4 flex-shrink-0">
-                    <svg class="w-6 h-6 text-teal-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8h2a2 2 0 012 2v6a2 2 0 01-2 2h-2v4l-4-4H9a1.994 1.994 0 01-1.414-.586m0 0L11 14h4a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2v4l.586-.586z"></path>
-                    </svg>
-                </div>
-                <div>
-                    <h3 class="text-lg font-semibold text-gray-900 mb-2">Community Forum</h3>
-                    <p class="text-gray-600 mb-3">Connect with other Ballie users to share tips and best practices.</p>
-                    <a href=:#" class="text-blue-600 hover:text-blue-800 font-medium">
-                        Join Community →
-                    </a>
-                </div>
-            </div>
-        </div>
-    </div>
-</div> --}}
-
 <!-- Go to Dashboard Button -->
-<div class="text-center mt-12">
+<div class="text-center mb-4">
     <form method="POST" action="{{ route('tenant.onboarding.complete', ['tenant' => $currentTenant->slug]) }}" x-data="{ loading: false }" @submit="loading = true">
         @csrf
         <button type="submit"
                 :disabled="loading"
-                :class="loading ? 'opacity-75 cursor-not-allowed' : 'hover:bg-brand-dark-purple'"
-                class="inline-flex items-center px-8 py-4 bg-brand-blue text-white rounded-lg transition-colors font-semibold text-lg">
+                :class="loading ? 'opacity-75 cursor-not-allowed' : 'hover:bg-brand-dark-purple hover:shadow-lg'"
+                class="inline-flex items-center px-10 py-4 bg-brand-blue text-white rounded-xl transition-all font-semibold text-lg shadow-md">
             <svg x-show="loading" class="animate-spin w-5 h-5 mr-2" fill="none" viewBox="0 0 24 24">
                 <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                 <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
             </svg>
-            <svg x-show="!loading" class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+            <span x-text="loading ? 'Preparing your dashboard...' : 'Open Dashboard'"></span>
+            <svg x-show="!loading" class="w-5 h-5 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"/>
             </svg>
-            <span x-text="loading ? 'Loading dashboard...' : 'Go to Dashboard'"></span>
         </button>
     </form>
 </div>
 @endsection
 
 @push('scripts')
-<script src="https://cdn.jsdelivr.net/npm/lottie-web@5.7.8/build/player/lottie.min.js"></script>
-<script>
-    document.addEventListener('DOMContentLoaded', function() {
-        const animationContainer = document.getElementById('celebration-animation');
-        const cssBackup = document.getElementById('css-celebration');
-
-        // Show CSS animation immediately
-        cssBackup.style.display = 'block';
-
-        // Preload and replace with Lottie animation
-        try {
-            const anim = lottie.loadAnimation({
-                container: animationContainer,
-                renderer: 'svg',
-                loop: true,
-                autoplay: true,
-                path: 'https://assets10.lottiefiles.com/packages/lf20_touohxv0.json',
-                rendererSettings: {
-                    preserveAspectRatio: 'xMidYMid slice'
-                }
-            });
-
-            // When Lottie animation is ready, hide CSS backup and show Lottie
-            anim.addEventListener('DOMLoaded', function() {
-                setTimeout(() => {
-                    cssBackup.style.display = 'none';
-                    animationContainer.style.display = 'block';
-                }, 100);
-            });
-
-            // Fallback: if Lottie fails to load after 3 seconds, keep CSS animation
-            setTimeout(() => {
-                if (animationContainer.style.display === 'none') {
-                    console.log('Lottie animation timeout, using CSS fallback');
-                }
-            }, 3000);
-
-        } catch (error) {
-            console.log('Lottie animation failed, using CSS fallback');
-            // Keep CSS animation visible
-        }
-
-        // Track completion in analytics
-        if (typeof gtag !== 'undefined') {
-            gtag('event', 'onboarding_complete', {
-                'event_category': 'onboarding',
-                'event_label': 'completed'
-            });
-        }
-    });
-</script>
-
 <style>
-/* Immediate CSS Celebration Animation */
-.celebration-fallback {
-    position: relative;
-    width: 100%;
-    height: 100%;
-    display: none;
-    overflow: hidden;
+/* Hero entrance animations */
+.complete-hero { animation: heroFadeUp 0.6s ease-out both; }
+@keyframes heroFadeUp {
+    from { opacity: 0; transform: translateY(20px) scale(0.95); }
+    to   { opacity: 1; transform: translateY(0) scale(1); }
 }
 
-.celebration-star {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    z-index: 10;
+/* Floating animations for accounting elements */
+.hero-calc {
+    animation: floatCalc 4s ease-in-out infinite;
+    transform-origin: center;
+}
+@keyframes floatCalc {
+    0%, 100% { transform: translate(155px, 50px); }
+    50%      { transform: translate(155px, 42px); }
 }
 
-.confetti-piece {
-    position: absolute;
-    width: 10px;
-    height: 10px;
-    background: linear-gradient(45deg, #ff6b6b, #4ecdc4, #45b7d1, #96ceb4, #feca57);
-    border-radius: 50%;
-    animation: confetti-fall 3s infinite linear;
+.hero-coin {
+    animation: floatCoin 3.5s ease-in-out infinite 0.5s;
+    transform-origin: center;
+}
+@keyframes floatCoin {
+    0%, 100% { transform: translate(35px, 45px); }
+    50%      { transform: translate(35px, 38px); }
 }
 
-.confetti-1 {
-    left: 10%;
-    animation-delay: 0s;
-    background: #ff6b6b;
+.hero-pie {
+    animation: floatPie 4.5s ease-in-out infinite 1s;
+    transform-origin: center;
+}
+@keyframes floatPie {
+    0%, 100% { transform: translate(160px, 130px); }
+    50%      { transform: translate(160px, 123px); }
 }
 
-.confetti-2 {
-    left: 20%;
-    animation-delay: 0.5s;
-    background: #4ecdc4;
+/* Badge pop-in */
+.hero-badge {
+    animation: badgePop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) 0.4s both;
+}
+@keyframes badgePop {
+    from { transform: translate(118px, 35px) scale(0); opacity: 0; }
+    to   { transform: translate(118px, 35px) scale(1); opacity: 1; }
 }
 
-.confetti-3 {
-    left: 40%;
-    animation-delay: 1s;
-    background: #45b7d1;
+/* Checkmark draw */
+.hero-check {
+    stroke-dasharray: 24;
+    stroke-dashoffset: 24;
+    animation: drawCheck 0.4s ease-out 0.8s forwards;
+}
+@keyframes drawCheck {
+    to { stroke-dashoffset: 0; }
 }
 
-.confetti-4 {
-    left: 60%;
-    animation-delay: 1.5s;
-    background: #96ceb4;
+/* Ledger lines slide in */
+.hero-line { opacity: 0; animation: lineSlide 0.3s ease-out forwards; }
+.hero-line-1 { animation-delay: 0.3s; }
+.hero-line-2 { animation-delay: 0.4s; }
+.hero-line-3 { animation-delay: 0.5s; }
+.hero-line-4 { animation-delay: 0.6s; }
+.hero-line-5 { animation-delay: 0.7s; }
+@keyframes lineSlide {
+    from { opacity: 0; transform: translateX(-8px); }
+    to   { opacity: 1; transform: translateX(0); }
 }
 
-.confetti-5 {
-    left: 80%;
-    animation-delay: 2s;
-    background: #feca57;
+/* Bar chart grow */
+.hero-bar { transform-origin: bottom; animation: barGrow 0.4s ease-out forwards; opacity: 0; }
+.hero-bar-1 { animation-delay: 0.6s; }
+.hero-bar-2 { animation-delay: 0.7s; }
+.hero-bar-3 { animation-delay: 0.8s; }
+.hero-bar-4 { animation-delay: 0.9s; }
+@keyframes barGrow {
+    from { transform: scaleY(0); opacity: 0; }
+    to   { transform: scaleY(1); opacity: 1; }
 }
 
-.confetti-6 {
-    left: 90%;
-    animation-delay: 2.5s;
-    background: #ff9ff3;
-}
-
-@keyframes confetti-fall {
-    0% {
-        top: -10%;
-        transform: rotate(0deg);
-        opacity: 1;
-    }
-    100% {
-        top: 110%;
-        transform: rotate(720deg);
-        opacity: 0;
-    }
-}
-
-/* Enhance existing animations */
-@keyframes pulse {
-    0%, 100% {
-        transform: scale(1);
-        opacity: 1;
-    }
-    50% {
-        transform: scale(1.1);
-        opacity: 0.8;
-    }
-}
-
-.animate-pulse {
-    animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
-}
-
-/* Celebration bounce animation for the star */
-@keyframes celebration-bounce {
-    0%, 20%, 53%, 80%, 100% {
-        transform: translate(-50%, -50%) scale(1);
-    }
-    40%, 43% {
-        transform: translate(-50%, -50%) scale(1.2);
-    }
-}
-
-.celebration-star svg {
-    animation: celebration-bounce 2s infinite;
-}
-
-/* Rainbow glow effect */
-.celebration-star svg {
-    filter: drop-shadow(0 0 20px rgba(255, 215, 0, 0.6));
+/* Sparkle twinkle */
+.hero-sparkle { animation: twinkle 2s ease-in-out infinite; }
+.sparkle-1 { animation-delay: 0s; }
+.sparkle-2 { animation-delay: 0.7s; }
+.sparkle-3 { animation-delay: 1.4s; }
+@keyframes twinkle {
+    0%, 100% { opacity: 0.3; transform: scale(0.8); }
+    50%      { opacity: 0.8; transform: scale(1.1); }
 }
 </style>
 @endpush

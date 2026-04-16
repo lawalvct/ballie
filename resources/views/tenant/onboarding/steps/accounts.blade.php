@@ -4,53 +4,32 @@
 
 @section('content')
 <!-- Progress Steps -->
-<div class="mb-8">
+<div class="mb-10">
     <div class="flex items-center justify-center">
-        <div class="flex items-center space-x-4 md:space-x-8 overflow-x-auto pb-2">
-            <!-- Step 1 - Completed -->
+        <div class="flex items-center space-x-3 md:space-x-6 overflow-x-auto pb-2">
+            @foreach (['Company Info', 'Preferences', 'Accounts', 'Complete'] as $i => $label)
+            @if ($i > 0)
+            <div class="w-6 md:w-12 h-0.5 {{ $i <= 1 ? 'bg-green-400' : ($i == 2 ? 'bg-brand-blue' : 'bg-gray-200') }} rounded hidden sm:block"></div>
+            @endif
             <div class="flex items-center flex-shrink-0">
-                <div class="w-10 h-10 bg-green-500 text-white rounded-full flex items-center justify-center shadow-lg">
-                    <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                        <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
+                @if ($i < 2)
+                <div class="w-8 h-8 bg-green-500 text-white rounded-full flex items-center justify-center shadow-sm">
+                    <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
                     </svg>
                 </div>
-                <span class="ml-3 text-sm font-medium text-green-600 whitespace-nowrap">Company Info</span>
-            </div>
-
-            <!-- Connector -->
-            <div class="w-8 md:w-16 h-1 bg-green-400 rounded hidden sm:block"></div>
-
-            <!-- Step 2 - Completed -->
-            <div class="flex items-center flex-shrink-0">
-                <div class="w-10 h-10 bg-green-500 text-white rounded-full flex items-center justify-center shadow-lg">
-                    <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                        <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
-                    </svg>
-                </div>
-                <span class="ml-3 text-sm font-medium text-green-600 whitespace-nowrap">Preferences</span>
-            </div>
-
-            <!-- Connector -->
-            <div class="w-8 md:w-16 h-1 bg-brand-blue rounded hidden sm:block"></div>
-
-            <!-- Step 3 - Active -->
-            <div class="flex items-center flex-shrink-0">
-                <div class="w-10 h-10 bg-brand-blue text-white rounded-full flex items-center justify-center font-semibold shadow-lg">
+                @elseif ($i == 2)
+                <div class="w-8 h-8 bg-brand-blue text-white rounded-full flex items-center justify-center font-semibold shadow-sm">
                     3
                 </div>
-                <span class="ml-3 text-sm font-medium text-brand-blue whitespace-nowrap">Accounts</span>
-            </div>
-
-            <!-- Connector -->
-            <div class="w-8 md:w-16 h-1 bg-gray-200 rounded hidden sm:block"></div>
-
-            <!-- Step 4 -->
-            <div class="flex items-center flex-shrink-0">
-                <div class="w-10 h-10 bg-gray-200 text-gray-500 rounded-full flex items-center justify-center font-semibold">
+                @else
+                <div class="w-8 h-8 bg-gray-200 text-gray-400 rounded-full flex items-center justify-center font-semibold">
                     4
                 </div>
-                <span class="ml-3 text-sm font-medium text-gray-500 whitespace-nowrap">Complete</span>
+                @endif
+                <span class="ml-2 text-xs font-medium {{ $i < 2 ? 'text-green-600' : ($i == 2 ? 'text-brand-blue' : 'text-gray-400') }} whitespace-nowrap hidden sm:inline">{{ $label }}</span>
             </div>
+            @endforeach
         </div>
     </div>
 </div>
@@ -58,15 +37,15 @@
 <!-- Main Card -->
 <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden" x-data="accountSelector()">
     <!-- Header -->
-    <div class="bg-gradient-to-r from-brand-teal to-brand-blue text-white p-6 md:p-8">
+    <div class="bg-gradient-to-br from-brand-teal to-brand-blue text-white p-6 md:p-8">
         <div class="text-center">
-            <div class="w-16 h-16 bg-white bg-opacity-20 rounded-lg flex items-center justify-center mx-auto mb-4">
+            <div class="w-14 h-14 bg-white bg-opacity-20 rounded-xl flex items-center justify-center mx-auto mb-4">
                 <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path>
                 </svg>
             </div>
             <h2 class="text-2xl md:text-3xl font-bold mb-2">Chart of Accounts</h2>
-            <p class="text-blue-100">Select the ledger accounts for your business. Core accounts are required and pre-selected.</p>
+            <p class="text-blue-100 max-w-lg mx-auto">Select the ledger accounts for your business. Core accounts are required and pre-selected.</p>
 
             <!-- Category Badge -->
             <div class="mt-3">
@@ -113,7 +92,7 @@
 
     <!-- Form Content -->
     <div class="p-6 md:p-8">
-        <form method="POST" action="{{ route('tenant.onboarding.save-step', ['tenant' => $currentTenant->slug, 'step' => 'accounts']) }}" @submit="loading = true">
+        <form method="POST" action="{{ route('tenant.onboarding.save-step', ['tenant' => $currentTenant->slug, 'step' => 'accounts']) }}" id="accounts-form-main" @submit="loading = true">
             @csrf
 
             @if(session('error'))
@@ -257,26 +236,29 @@
 
             <!-- Form Actions -->
             <div class="flex flex-col sm:flex-row items-center justify-between pt-6 mt-6 border-t border-gray-200 space-y-4 sm:space-y-0">
-                <div class="text-sm text-gray-500">
-                    Step 3 of 4 - Chart of Accounts
+                <div class="text-sm text-gray-400">
+                    Step 3 of 4
                 </div>
 
-                <div class="flex space-x-4">
+                <div class="flex items-center space-x-3">
                     <a href="{{ route('tenant.onboarding.step', ['tenant' => $currentTenant->slug, 'step' => 'preferences']) }}"
-                       class="px-6 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium">
+                       class="inline-flex items-center px-6 py-3 border border-gray-300 text-gray-600 rounded-xl hover:bg-gray-50 transition-all font-medium">
+                        <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 17l-5-5m0 0l5-5m-5 5h12"/>
+                        </svg>
                         Back
                     </a>
                     <button type="submit"
                             :disabled="loading"
-                            :class="loading ? 'opacity-75 cursor-not-allowed' : 'hover:bg-brand-dark-purple'"
-                            class="px-8 py-3 bg-brand-blue text-white rounded-lg transition-colors font-medium flex items-center">
+                            :class="loading ? 'opacity-75 cursor-not-allowed' : 'hover:bg-brand-dark-purple hover:shadow-lg'"
+                            class="inline-flex items-center px-8 py-3 bg-brand-blue text-white rounded-xl transition-all font-semibold shadow-md">
                         <svg x-show="loading" class="animate-spin w-4 h-4 mr-2" fill="none" viewBox="0 0 24 24">
                             <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                             <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
                         </svg>
                         <span x-text="loading ? 'Setting up...' : 'Complete Setup'"></span>
                         <svg x-show="!loading" class="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"/>
                         </svg>
                     </button>
                 </div>

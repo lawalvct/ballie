@@ -4,49 +4,26 @@
 
 @section('content')
 <!-- Progress Steps -->
-<div class="mb-8">
+<div class="mb-10">
     <div class="flex items-center justify-center">
-        <div class="flex items-center space-x-4 md:space-x-8 overflow-x-auto pb-2">
-            <!-- Step 1 - Active -->
+        <div class="flex items-center space-x-3 md:space-x-6 overflow-x-auto pb-2">
+            @foreach (['Company Info', 'Preferences', 'Accounts', 'Complete'] as $i => $label)
+            @if ($i > 0)
+            <div class="w-6 md:w-12 h-0.5 {{ $i == 0 ? 'bg-brand-blue' : 'bg-gray-200' }} rounded hidden sm:block"></div>
+            @endif
             <div class="flex items-center flex-shrink-0">
-                <div class="w-10 h-10 bg-brand-blue text-white rounded-full flex items-center justify-center font-semibold shadow-lg">
+                @if ($i == 0)
+                <div class="w-8 h-8 bg-brand-blue text-white rounded-full flex items-center justify-center font-semibold shadow-sm">
                     1
                 </div>
-                <span class="ml-3 text-sm font-medium text-brand-blue whitespace-nowrap">Company Info</span>
-            </div>
-
-            <!-- Connector -->
-            <div class="w-8 md:w-16 h-1 bg-gray-200 rounded hidden sm:block"></div>
-
-            <!-- Step 2 -->
-            <div class="flex items-center flex-shrink-0">
-                <div class="w-10 h-10 bg-gray-200 text-gray-500 rounded-full flex items-center justify-center font-semibold">
-                    2
+                @else
+                <div class="w-8 h-8 bg-gray-200 text-gray-400 rounded-full flex items-center justify-center font-semibold">
+                    {{ $i + 1 }}
                 </div>
-                <span class="ml-3 text-sm font-medium text-gray-500 whitespace-nowrap">Preferences</span>
+                @endif
+                <span class="ml-2 text-xs font-medium {{ $i == 0 ? 'text-brand-blue' : 'text-gray-400' }} whitespace-nowrap hidden sm:inline">{{ $label }}</span>
             </div>
-
-            <!-- Connector -->
-            <div class="w-8 md:w-16 h-1 bg-gray-200 rounded hidden sm:block"></div>
-
-            <!-- Step 3 -->
-            <div class="flex items-center flex-shrink-0">
-                <div class="w-10 h-10 bg-gray-200 text-gray-500 rounded-full flex items-center justify-center font-semibold">
-                    3
-                </div>
-                <span class="ml-3 text-sm font-medium text-gray-500 whitespace-nowrap">Accounts</span>
-            </div>
-
-            <!-- Connector -->
-            <div class="w-8 md:w-16 h-1 bg-gray-200 rounded hidden sm:block"></div>
-
-            <!-- Step 4 -->
-            <div class="flex items-center flex-shrink-0">
-                <div class="w-10 h-10 bg-gray-200 text-gray-500 rounded-full flex items-center justify-center font-semibold">
-                    4
-                </div>
-                <span class="ml-3 text-sm font-medium text-gray-500 whitespace-nowrap">Complete</span>
-            </div>
+            @endforeach
         </div>
     </div>
 </div>
@@ -54,15 +31,15 @@
 <!-- Main Form Card -->
 <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
     <!-- Header -->
-    <div class="bg-gradient-to-r from-brand-blue to-brand-dark-purple text-white p-6 md:p-8">
+    <div class="bg-gradient-to-br from-brand-blue to-brand-dark-purple text-white p-6 md:p-8">
         <div class="text-center">
-            <div class="w-16 h-16 bg-white bg-opacity-20 rounded-lg flex items-center justify-center mx-auto mb-4">
+            <div class="w-14 h-14 bg-white bg-opacity-20 rounded-xl flex items-center justify-center mx-auto mb-4">
                 <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-4m-5 0H9m0 0H5m0 0h2M7 7h10M7 11h10M7 15h10"></path>
                 </svg>
             </div>
             <h2 class="text-2xl md:text-3xl font-bold mb-2">Tell us about your business</h2>
-            <p class="text-brand-light-blue">This information will be used on your invoices and official documents.</p>
+            <p class="text-brand-light-blue max-w-lg mx-auto">This information will be used on your invoices and official documents.</p>
         </div>
     </div>
 
@@ -118,7 +95,7 @@
                     <select id="business_structure" name="business_structure"
                             class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-blue focus:border-transparent transition-colors @error('business_structure') border-red-500 @enderror" required>
                         <option value="">Select business Structure</option>
-                        <option value="sole_proprietorship" {{ old('business_structure', $currentTenant->business_structure) == 'sole_proprietorship' ? 'selected' : '' }}>Sole Proprietorship</option>
+                        <option selected value="sole_proprietorship" {{ old('business_structure', $currentTenant->business_structure) == 'sole_proprietorship' ? 'selected' : '' }}>Sole Proprietorship</option>
                         <option value="partnership" {{ old('business_structure', $currentTenant->business_structure) == 'partnership' ? 'selected' : '' }}>Partnership</option>
                         <option value="limited_liability" {{ old('business_structure', $currentTenant->business_structure) == 'limited_liability' ? 'selected' : '' }}>Limited Liability Company</option>
                         <option value="corporation" {{ old('business_structure', $currentTenant->business_structure) == 'corporation' ? 'selected' : '' }}>Corporation</option>
@@ -176,7 +153,7 @@
             <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div>
                     <label for="city" class="block text-sm font-medium text-gray-700 mb-2">
-                        City <span class="text-red-500">*</span>
+                        City/ LGA <span class="text-red-500">*</span>
                     </label>
                     <input type="text" id="city" name="city"
                            value="{{ old('city', $currentTenant->city) }}"
@@ -290,7 +267,7 @@
                 <label for="website" class="block text-sm font-medium text-gray-700 mb-2">
                     Website (Optional)
                 </label>
-                <input type="url" id="website" name="website"
+                <input  id="website" name="website"
                        value="{{ old('website', $currentTenant->website) }}"
                        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-blue focus:border-transparent transition-colors @error('website') border-red-500 @enderror"
                        placeholder="https://www.yourcompany.com">
@@ -301,26 +278,29 @@
 
             <!-- Form Actions -->
             <div class="flex flex-col sm:flex-row items-center justify-between pt-6 border-t border-gray-200 space-y-4 sm:space-y-0">
-                <div class="text-sm text-gray-500">
-                    Step 1 of 4 - Company Information
+                <div class="text-sm text-gray-400">
+                    Step 1 of 4
                 </div>
 
-                <div class="flex space-x-4">
+                <div class="flex items-center space-x-3">
                     <button type="button" onclick="window.history.back()"
-                            class="px-6 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium">
+                            class="inline-flex items-center px-6 py-3 border border-gray-300 text-gray-600 rounded-xl hover:bg-gray-50 transition-all font-medium">
+                        <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 17l-5-5m0 0l5-5m-5 5h12"/>
+                        </svg>
                         Back
                     </button>
                     <button type="submit"
                             :disabled="loading"
-                            :class="loading ? 'opacity-75 cursor-not-allowed' : 'hover:bg-brand-dark-purple'"
-                            class="px-8 py-3 bg-brand-blue text-white rounded-lg transition-colors font-medium flex items-center">
+                            :class="loading ? 'opacity-75 cursor-not-allowed' : 'hover:bg-brand-dark-purple hover:shadow-lg'"
+                            class="inline-flex items-center px-8 py-3 bg-brand-blue text-white rounded-xl transition-all font-semibold shadow-md">
                         <svg x-show="loading" class="animate-spin w-4 h-4 mr-2" fill="none" viewBox="0 0 24 24">
                             <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                             <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
                         </svg>
                         <span x-text="loading ? 'Saving...' : 'Continue'"></span>
                         <svg x-show="!loading" class="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"/>
                         </svg>
                     </button>
                 </div>
@@ -328,35 +308,6 @@
         </form>
     </div>
 </div>
-
-<!-- Help Section -->
-{{-- <div class="mt-8 bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-    <div class="flex items-start">
-        <div class="w-10 h-10 bg-brand-teal bg-opacity-10 rounded-lg flex items-center justify-center mr-4 flex-shrink-0">
-            <svg class="w-5 h-5 text-brand-teal" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-            </svg>
-        </div>
-        <div>
-            <h3 class="text-lg font-semibold text-gray-900 mb-2">Need Help?</h3>
-            <p class="text-gray-600 mb-4">
-                This information will appear on your invoices, receipts, and other business documents.
-                Make sure all details are accurate as they represent your business officially.
-            </p>
-            <div class="flex flex-wrap gap-4">
-                <a href="#" class="text-brand-blue hover:text-brand-dark-purple font-medium text-sm">
-                    📞 Contact Support
-                </a>
-                <a href="#" class="text-brand-blue hover:text-brand-dark-purple font-medium text-sm">
-                    📖 Setup Guide
-                </a>
-                <a href="#" class="text-brand-blue hover:text-brand-dark-purple font-medium text-sm">
-                    💬 Live Chat
-                </a>
-            </div>
-        </div>
-    </div>
-</div> --}}
 @endsection
 
 @push('scripts')

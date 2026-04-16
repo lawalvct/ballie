@@ -208,13 +208,16 @@
 
                             <div>
                                 <label for="state" class="block text-sm font-medium text-gray-700 mb-2">
-                                    State/Province
+                                    State
                                 </label>
-                                <input type="text"
-                                       id="state"
-                                       name="state"
-                                       value="{{ old('state', $tenant->state) }}"
-                                       class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all">
+                                <select id="state"
+                                        name="state"
+                                        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all">
+                                    <option value="">Select state</option>
+                                    @foreach (['Abia','Adamawa','Akwa Ibom','Anambra','Bauchi','Bayelsa','Benue','Borno','Cross River','Delta','Ebonyi','Edo','Ekiti','Enugu','FCT','Gombe','Imo','Jigawa','Kaduna','Kano','Katsina','Kebbi','Kogi','Kwara','Lagos','Nasarawa','Niger','Ogun','Ondo','Osun','Oyo','Plateau','Rivers','Sokoto','Taraba','Yobe','Zamfara'] as $st)
+                                    <option value="{{ $st }}" {{ old('state', $tenant->state) == $st ? 'selected' : '' }}>{{ $st }}</option>
+                                    @endforeach
+                                </select>
                                 @error('state')
                                 <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                                 @enderror

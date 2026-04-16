@@ -154,12 +154,16 @@
                 Customize anytime in settings
             </li>
         </ul>
-        <form method="POST" action="{{ route('tenant.onboarding.complete', ['tenant' => $tenant->slug]) }}">
+        <form method="POST" action="{{ route('tenant.onboarding.complete', ['tenant' => $tenant->slug]) }}" id="skip-setup-form">
             @csrf
             <input type="hidden" name="skip_setup" value="1">
-            <button type="submit"
-                    class="w-full bg-brand-teal text-white px-6 py-3 rounded-lg hover:bg-brand-green transition-colors font-medium">
-                Skip Setup & Go to Dashboard
+            <button type="submit" id="skip-setup-btn"
+                    class="w-full bg-brand-teal text-white px-6 py-3 rounded-lg hover:bg-brand-green transition-colors font-medium flex items-center justify-center">
+                <span id="skip-setup-text">Skip Setup & Go to Dashboard</span>
+                <svg id="skip-setup-spinner" class="hidden animate-spin h-5 w-5 ml-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
             </button>
         </form>
     </div>
@@ -175,4 +179,32 @@
         <a href="#" class="text-sm sm:text-base text-brand-blue hover:text-brand-dark-purple font-medium">📧 Email Support</a>
     </div>
 </div> --}}
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Prevent double submission for skip setup form
+    const skipSetupForm = document.getElementById('skip-setup-form');
+    const skipSetupBtn = document.getElementById('skip-setup-btn');
+    const skipSetupText = document.getElementById('skip-setup-text');
+    const skipSetupSpinner = document.getElementById('skip-setup-spinner');
+    let isSubmitting = false;
+
+    if (skipSetupForm) {
+        skipSetupForm.addEventListener('submit', function(e) {
+            if (isSubmitting) {
+                e.preventDefault();
+                return false;
+            }
+
+            // Disable button and show spinner
+            isSubmitting = true;
+            skipSetupBtn.disabled = true;
+            skipSetupBtn.style.opacity = '0.7';
+            skipSetupBtn.style.cursor = 'not-allowed';
+            skipSetupText.textContent = 'Loading Dashboard...';
+            skipSetupSpinner.classList.remove('hidden');
+        });
+    }
+});
+</script>
 @endsection

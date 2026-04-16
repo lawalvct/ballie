@@ -4,51 +4,32 @@
 
 @section('content')
 <!-- Progress Steps -->
-<div class="mb-8">
+<div class="mb-10">
     <div class="flex items-center justify-center">
-        <div class="flex items-center space-x-4 md:space-x-8 overflow-x-auto pb-2">
-            <!-- Step 1 - Completed -->
+        <div class="flex items-center space-x-3 md:space-x-6 overflow-x-auto pb-2">
+            @foreach (['Company Info', 'Preferences', 'Accounts', 'Complete'] as $i => $label)
+            @if ($i > 0)
+            <div class="w-6 md:w-12 h-0.5 {{ $i == 0 ? 'bg-brand-blue' : ($i == 1 ? 'bg-brand-blue' : 'bg-gray-200') }} rounded hidden sm:block"></div>
+            @endif
             <div class="flex items-center flex-shrink-0">
-                <div class="w-10 h-10 bg-green-500 text-white rounded-full flex items-center justify-center shadow-lg">
-                    <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                        <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
+                @if ($i < 1)
+                <div class="w-8 h-8 bg-green-500 text-white rounded-full flex items-center justify-center shadow-sm">
+                    <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
                     </svg>
                 </div>
-                <span class="ml-3 text-sm font-medium text-green-600 whitespace-nowrap">Company Info</span>
-            </div>
-
-            <!-- Connector -->
-            <div class="w-8 md:w-16 h-1 bg-brand-blue rounded hidden sm:block"></div>
-
-            <!-- Step 2 - Active -->
-            <div class="flex items-center flex-shrink-0">
-                <div class="w-10 h-10 bg-brand-blue text-white rounded-full flex items-center justify-center font-semibold shadow-lg">
+                @elseif ($i == 1)
+                <div class="w-8 h-8 bg-brand-blue text-white rounded-full flex items-center justify-center font-semibold shadow-sm">
                     2
                 </div>
-                <span class="ml-3 text-sm font-medium text-brand-blue whitespace-nowrap">Preferences</span>
-            </div>
-
-            <!-- Connector -->
-            <div class="w-8 md:w-16 h-1 bg-gray-200 rounded hidden sm:block"></div>
-
-            <!-- Step 3 -->
-            <div class="flex items-center flex-shrink-0">
-                <div class="w-10 h-10 bg-gray-200 text-gray-500 rounded-full flex items-center justify-center font-semibold">
-                    3
+                @else
+                <div class="w-8 h-8 bg-gray-200 text-gray-400 rounded-full flex items-center justify-center font-semibold">
+                    {{ $i + 1 }}
                 </div>
-                <span class="ml-3 text-sm font-medium text-gray-500 whitespace-nowrap">Accounts</span>
+                @endif
+                <span class="ml-2 text-xs font-medium {{ $i < 1 ? 'text-green-600' : ($i == 1 ? 'text-brand-blue' : 'text-gray-400') }} whitespace-nowrap hidden sm:inline">{{ $label }}</span>
             </div>
-
-            <!-- Connector -->
-            <div class="w-8 md:w-16 h-1 bg-gray-200 rounded hidden sm:block"></div>
-
-            <!-- Step 4 -->
-            <div class="flex items-center flex-shrink-0">
-                <div class="w-10 h-10 bg-gray-200 text-gray-500 rounded-full flex items-center justify-center font-semibold">
-                    4
-                </div>
-                <span class="ml-3 text-sm font-medium text-gray-500 whitespace-nowrap">Complete</span>
-            </div>
+            @endforeach
         </div>
     </div>
 </div>
@@ -56,16 +37,16 @@
 <!-- Main Form Card -->
 <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
     <!-- Header -->
-    <div class="bg-gradient-to-r from-brand-teal to-brand-blue text-white p-6 md:p-8">
+    <div class="bg-gradient-to-br from-brand-teal to-brand-blue text-white p-6 md:p-8">
         <div class="text-center">
-            <div class="w-16 h-16 bg-white bg-opacity-20 rounded-lg flex items-center justify-center mx-auto mb-4">
+            <div class="w-14 h-14 bg-white bg-opacity-20 rounded-xl flex items-center justify-center mx-auto mb-4">
                 <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path>
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
                 </svg>
             </div>
             <h2 class="text-2xl md:text-3xl font-bold mb-2">Configure your preferences</h2>
-            <p class="text-blue-100">Set up your business settings and preferences.</p>
+            <p class="text-blue-100 max-w-lg mx-auto">Set up your currency, financial year, and business modules.</p>
         </div>
     </div>
 
@@ -116,9 +97,9 @@
                         </label>
                         <select id="date_format" name="date_format"
                                 class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-blue focus:border-transparent transition-colors" required>
-                            <option value="d/m/Y" {{ old('date_format', $currentTenant->settings['date_format'] ?? 'd/m/Y') == 'd/m/Y' ? 'selected' : '' }}>DD/MM/YYYY (31/12/2025)</option>
-                            <option value="m/d/Y" {{ old('date_format', $currentTenant->settings['date_format'] ?? '') == 'm/d/Y' ? 'selected' : '' }}>MM/DD/YYYY (12/31/2024)</option>
-                            <option value="Y-m-d" {{ old('date_format', $currentTenant->settings['date_format'] ?? '') == 'Y-m-d' ? 'selected' : '' }}>YYYY-MM-DD (2024-12-31)</option>
+                            <option value="d/m/Y" {{ old('date_format', $currentTenant->settings['date_format'] ?? 'd/m/Y') == 'd/m/Y' ? 'selected' : '' }}>DD/MM/YYYY (31/12/{{ date('Y') }})</option>
+                            <option value="m/d/Y" {{ old('date_format', $currentTenant->settings['date_format'] ?? '') == 'm/d/Y' ? 'selected' : '' }}>MM/DD/YYYY (12/31/{{ date('Y') }})</option>
+                            <option value="Y-m-d" {{ old('date_format', $currentTenant->settings['date_format'] ?? '') == 'Y-m-d' ? 'selected' : '' }}>YYYY-MM-DD ({{ date('Y') }}-12-31)</option>
                         </select>
                     </div>
 
@@ -171,23 +152,8 @@
                 </div>
 
                 <div class="mt-6">
-                    <label class="block text-sm font-medium text-gray-700 mb-2">
-                        Tax Inclusive Pricing <span class="text-red-500">*</span>
-                    </label>
-                    <div class="space-y-2">
-                        <label class="flex items-center">
-                            <input type="radio" name="tax_inclusive" value="1"
-                                   {{ old('tax_inclusive', $currentTenant->settings['tax_inclusive'] ?? '0') == '1' ? 'checked' : '' }}
-                                   class="text-brand-blue focus:ring-brand-blue">
-                            <span class="ml-2 text-sm text-gray-700">Prices include tax</span>
-                        </label>
-                        <label class="flex items-center">
-                            <input type="radio" name="tax_inclusive" value="0"
-                                   {{ old('tax_inclusive', $currentTenant->settings['tax_inclusive'] ?? '0') == '0' ? 'checked' : '' }}
-                                   class="text-brand-blue focus:ring-brand-blue">
-                            <span class="ml-2 text-sm text-gray-700">Prices exclude tax</span>
-                        </label>
-                    </div>
+                    <!-- Hidden field - always set to 1 (tax inclusive) -->
+                    <input type="hidden" name="tax_inclusive" value="1">
                 </div>
             </div>
 
@@ -274,26 +240,29 @@
 
             <!-- Form Actions -->
             <div class="flex flex-col sm:flex-row items-center justify-between pt-6 border-t border-gray-200 space-y-4 sm:space-y-0">
-                <div class="text-sm text-gray-500">
-                    Step 2 of 4 - Business Preferences
+                <div class="text-sm text-gray-400">
+                    Step 2 of 4
                 </div>
 
-                <div class="flex space-x-4">
+                <div class="flex items-center space-x-3">
                     <a href="{{ route('tenant.onboarding.step', ['tenant' => $currentTenant->slug, 'step' => 'company']) }}"
-                       class="px-6 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium">
+                       class="inline-flex items-center px-6 py-3 border border-gray-300 text-gray-600 rounded-xl hover:bg-gray-50 transition-all font-medium">
+                        <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 17l-5-5m0 0l5-5m-5 5h12"/>
+                        </svg>
                         Back
                     </a>
                     <button type="submit"
                             :disabled="loading"
-                            :class="loading ? 'opacity-75 cursor-not-allowed' : 'hover:bg-brand-dark-purple'"
-                            class="px-8 py-3 bg-brand-blue text-white rounded-lg transition-colors font-medium flex items-center">
+                            :class="loading ? 'opacity-75 cursor-not-allowed' : 'hover:bg-brand-dark-purple hover:shadow-lg'"
+                            class="inline-flex items-center px-8 py-3 bg-brand-blue text-white rounded-xl transition-all font-semibold shadow-md">
                         <svg x-show="loading" class="animate-spin w-4 h-4 mr-2" fill="none" viewBox="0 0 24 24">
                             <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                             <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
                         </svg>
                         <span x-text="loading ? 'Saving...' : 'Next: Chart of Accounts'"></span>
                         <svg x-show="!loading" class="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"/>
                         </svg>
                     </button>
                 </div>
