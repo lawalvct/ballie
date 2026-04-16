@@ -250,7 +250,7 @@
             <div class="team-card bg-white rounded-2xl shadow-lg p-8 text-center border border-gray-100">
                 <img src="{{ asset('images/team/moshood.png') }}" alt="Moshood Sadiq" class="w-32 h-32 rounded-full mx-auto mb-6 object-cover">
                 <h3 class="text-xl font-semibold text-gray-900 mb-2"> Moshood Sadiq </h3>
-                <p class="text-brand-blue mb-4 font-medium">Co-Founder & CFO </p>
+                <p class="text-brand-blue mb-4 font-medium">Executive Director</p>
                 <p class="text-gray-600 text-sm mb-6">ACA, ACTI, CPFA-certified accountant focused on precision, transparency, and innovative financial solutions.</p>
                 {{-- <div class="flex justify-center space-x-4">
                     <a href="#" class="text-brand-blue hover:text-brand-teal transition-colors">
@@ -269,7 +269,7 @@
             <div class="team-card bg-white rounded-2xl shadow-lg p-8 text-center border border-gray-100">
                 <img src="{{ asset('images/team/victor.jpg') }}" alt="Lawal Victor" class="w-32 h-32 rounded-full mx-auto mb-6 object-cover">
                 <h3 class="text-xl font-semibold text-gray-900 mb-2">Lawal Victor</h3>
-                <p class="text-brand-teal mb-4 font-medium">Founder & CEO</p>
+                <p class="text-brand-teal mb-4 font-medium">Managing Director</p>
                 <p class="text-gray-600 text-sm mb-6">Software architect with experience at Talosmart Technology and OgiTech, passionate about African tech innovation and scalable systems.</p>
                 {{-- <div class="flex justify-center space-x-4">
                     <a href="#" class="text-brand-teal hover:text-brand-blue transition-colors">
@@ -288,7 +288,7 @@
             <div class="team-card bg-white rounded-2xl shadow-lg p-8 text-center border border-gray-100">
                 <img src="{{ asset('images/team/jubril.jpg') }}" alt="Jubril Lawal" class="w-32 h-32 rounded-full mx-auto mb-6 object-cover">
                 <h3 class="text-xl font-semibold text-gray-900 mb-2">FCA ~ Jubril Lawal</h3>
-                <p class="text-brand-purple mb-4 font-medium">Co-Founder & CBO</p>
+                <p class="text-brand-purple mb-4 font-medium">Chairman</p>
                 <p class="text-gray-600 text-sm mb-6">FCA-certified accounting professional ensuring financial accuracy, structured reporting, and corporate accountability.</p>
                 {{-- <div class="flex justify-center space-x-4">
                     <a href="#" class="text-brand-purple hover:text-brand-blue transition-colors">
