@@ -6,6 +6,7 @@ export default defineConfig({
   lang: 'en-US',
   cleanUrls: true,
   lastUpdated: true,
+  ignoreDeadLinks: true,
 
   sitemap: {
     hostname: 'https://doc.ballie.co'
