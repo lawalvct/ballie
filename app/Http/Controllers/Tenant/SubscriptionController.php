@@ -784,6 +784,104 @@ class SubscriptionController extends Controller
     }
 
     /**
+     * Re-verify a pending/failed payment with the payment gateway
+     */
+    public function reconfirmPayment($tenant, SubscriptionPayment $payment)
+    {
+        $tenant = tenant();
+
+        if ($payment->tenant_id !== $tenant->id) {
+            abort(403, 'Unauthorized access to payment record');
+        }
+
+        // Only allow reconfirm for non-successful payments
+        if ($payment->status === 'successful') {
+            return redirect()->route('tenant.subscription.index', $tenant->slug)
+                ->with('info', 'This payment has already been confirmed.');
+        }
+
+        Log::info('Reconfirm payment initiated', [
+            'payment_id' => $payment->id,
+            'payment_method' => $payment->payment_method,
+            'reference' => $payment->gateway_reference ?? $payment->payment_reference,
+            'current_status' => $payment->status,
+        ]);
+
+        try {
+            // Re-verify with the payment gateway
+            $verificationResult = $this->verifyPaymentByMethod($payment);
+
+            Log::info('Reconfirm verification result', [
+                'payment_id' => $payment->id,
+                'result' => $verificationResult,
+            ]);
+
+            if ($verificationResult['status'] && $verificationResult['payment_status'] === 'successful') {
+                DB::beginTransaction();
+
+                $payment->update([
+                    'status' => 'successful',
+                    'paid_at' => now(),
+                    'gateway_response' => $verificationResult,
+                ]);
+
+                $subscription = $payment->subscription;
+                $subscription->update(['status' => 'active']);
+
+                $plan = Plan::findOrFail($subscription->plan_id);
+
+                $isRenewal = (
+                    isset($subscription->metadata['renewal']) && $subscription->metadata['renewal']
+                ) || str_starts_with($payment->payment_reference, 'REN_');
+
+                if ($isRenewal) {
+                    $tenant->update([
+                        'subscription_status' => 'active',
+                        'subscription_starts_at' => now(),
+                        'subscription_ends_at' => $subscription->ends_at->format('Y-m-d H:i:s'),
+                        'billing_cycle' => $subscription->billing_cycle,
+                    ]);
+                } else {
+                    $tenant->upgradeToPaid($plan, $subscription->billing_cycle);
+                }
+
+                $this->processAffiliateCommission($tenant, $payment, $isRenewal);
+
+                DB::commit();
+
+                Log::info('Reconfirm payment successful - subscription activated', [
+                    'payment_id' => $payment->id,
+                    'plan' => $plan->name,
+                    'tenant_id' => $tenant->id,
+                ]);
+
+                return redirect()->route('tenant.subscription.index', $tenant->slug)
+                    ->with('success', 'Payment confirmed! Your ' . $plan->name . ' subscription is now active.');
+            } else {
+                // Update gateway response even if still not successful
+                $payment->update([
+                    'gateway_response' => $verificationResult,
+                ]);
+
+                $gatewayStatus = $verificationResult['payment_status'] ?? 'unknown';
+
+                return redirect()->route('tenant.subscription.index', $tenant->slug)
+                    ->with('error', 'Payment not yet confirmed by the gateway (status: ' . $gatewayStatus . '). If you have completed payment, please wait a few minutes and try again, or contact support.');
+            }
+        } catch (\Exception $e) {
+            DB::rollBack();
+
+            Log::error('Reconfirm payment failed', [
+                'payment_id' => $payment->id,
+                'error' => $e->getMessage(),
+            ]);
+
+            return redirect()->route('tenant.subscription.index', $tenant->slug)
+                ->with('error', 'An error occurred while verifying the payment. Please try again or contact support.');
+        }
+    }
+
+    /**
      * Show renewal form for current plan
      */
     public function renew()

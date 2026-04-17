@@ -226,6 +226,7 @@
                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Amount</th>
                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Gateway</th>
                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Reference</th>
                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
                     </tr>
@@ -242,6 +243,11 @@
                         <td class="px-6 py-4 whitespace-nowrap">
                             {!! $payment->status_badge !!}
                         </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {{ $payment->payment_method === 'paystack' ? 'bg-blue-100 text-blue-800' : 'bg-purple-100 text-purple-800' }}">
+                                {{ ucfirst($payment->payment_method ?? 'N/A') }}
+                            </span>
+                        </td>
                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                             {{ $payment->payment_reference }}
                         </td>
@@ -250,6 +256,17 @@
                                class="text-blue-600 hover:text-blue-900">
                                 View Invoice
                             </a>
+                            @if(in_array($payment->status, ['pending', 'failed']))
+                            <form action="{{ route('tenant.subscription.payment.reconfirm', ['tenant' => tenant()->slug, 'payment' => $payment->id]) }}"
+                                  method="POST" class="inline ml-2">
+                                @csrf
+                                <button type="submit"
+                                        class="text-orange-600 hover:text-orange-900 font-medium"
+                                        onclick="return confirm('This will re-verify your payment with the payment gateway. Continue?')">
+                                    Reconfirm Payment
+                                </button>
+                            </form>
+                            @endif
                         </td>
                     </tr>
                     @endforeach

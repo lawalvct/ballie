@@ -1280,6 +1280,7 @@ Route::prefix('ledger-accounts')->name('ledger-accounts.')->group(function () {
             Route::get('/invoices', [SubscriptionController::class, 'history'])->name('invoices');
             Route::get('/invoice/{payment}', [SubscriptionController::class, 'invoice'])->name('invoice');
             Route::get('/invoice/{payment}/download', [SubscriptionController::class, 'downloadInvoice'])->name('invoice.download');
+            Route::post('/payment/{payment}/reconfirm', [SubscriptionController::class, 'reconfirmPayment'])->name('payment.reconfirm');
 
             // Payment callbacks
             Route::get('/payment/success', [SubscriptionController::class, 'paymentSuccess'])->name('payment.success');

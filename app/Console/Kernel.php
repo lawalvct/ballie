@@ -20,6 +20,9 @@ class Kernel extends ConsoleKernel
 
         // Post due prepaid expense amortization installments daily at 6 AM
         $schedule->command('prepaid:post-installments')->dailyAt('06:00');
+
+        // Re-verify pending subscription payments every 15 minutes
+        $schedule->command('subscriptions:reconfirm-pending')->everyFifteenMinutes();
     }
 
     /**
