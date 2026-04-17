@@ -1,0 +1,104 @@
+# Ballie Documentation
+
+> Ballie is an all-in-one multi-tenant business management platform for Nigerian businesses. It includes accounting, inventory, CRM, POS, payroll & HR, banking, project management, e-commerce, procurement, and reporting modules. This documentation covers how to use every feature.
+
+## Documentation URL
+https://doc.ballie.co
+
+## Key Sections
+
+### Getting Started
+- /getting-started/: Overview of what Ballie is and who it's for
+- /getting-started/registration: How to sign up, create a business, and choose a plan
+- /getting-started/onboarding: The 4-step onboarding wizard (company info, preferences, chart of accounts, completion)
+- /getting-started/navigation: Dashboard layout, sidebar navigation, global search
+
+### Accounting
+- /accounting/: Accounting module overview and how double-entry bookkeeping works in Ballie
+- /accounting/chart-of-accounts: Account groups, ledger accounts, default chart setup
+- /accounting/invoices: Creating, editing, sending, tracking invoices, and recording payments
+- /accounting/quotations: Creating proforma invoices and converting to invoices
+- /accounting/vouchers: Journal vouchers, voucher types, posting and unposting
+- /accounting/expenses: Recording expenses, categorization
+- /accounting/payments: Payment methods and recording payments received/made
+- /accounting/prepaid-expenses: Setting up prepaid expenses with amortization schedules
+
+### Inventory
+- /inventory/: Inventory module overview
+- /inventory/products: Adding products, images, pricing, SKU management
+- /inventory/categories: Product categories and units of measurement
+- /inventory/stock-management: Stock journals, stock movements, transfers between locations
+- /inventory/physical-stock: Physical stock audit process and count vouchers
+
+### CRM
+- /crm/: CRM module overview
+- /crm/customers: Customer management, bulk import, opening balances, activity tracking
+- /crm/vendors: Vendor management and import
+- /crm/reports: Customer and vendor reports, aging analysis
+
+### Point of Sale
+- /pos/: POS module overview
+- /pos/cash-register: Setting up cash registers, opening and closing sessions
+- /pos/making-sales: POS checkout process, split payments, receipt printing
+
+### Payroll & HR
+- /payroll/: Payroll module overview
+- /payroll/employees: Employee profiles, documents, onboarding
+- /payroll/departments-positions: Organizational structure
+- /payroll/salary-components: Earnings, deductions, allowances, tax brackets
+- /payroll/attendance: QR code check-in/out, shift schedules, overtime tracking
+- /payroll/leave-management: Leave types, requests, approvals, balance tracking
+- /payroll/loans-advances: Employee loan management and repayment
+- /payroll/payroll-processing: Running payroll, generating payslips, pay periods
+- /payroll/statutory: PAYE tax, pension (PFA), NHF, statutory compliance
+
+### Banking
+- /banking/: Banking module overview
+- /banking/bank-accounts: Adding bank accounts, setting opening balances
+- /banking/reconciliation: Bank reconciliation workflow
+
+### Projects
+- /projects/: Projects module overview
+- /projects/managing-projects: Tasks, milestones, team assignment, attachments
+- /projects/project-expenses: Tracking project-specific expenses
+
+### E-Commerce
+- /ecommerce/: E-Commerce module overview
+- /ecommerce/store-setup: Storefront configuration, branding, custom domain
+- /ecommerce/orders: Order management and fulfillment
+- /ecommerce/coupons: Discount coupon creation and management
+- /ecommerce/shipping: Shipping methods and rate configuration
+
+### Procurement
+- /procurement/: Procurement module overview
+- /procurement/purchase-orders: Creating, approving, and receiving purchase orders
+
+### Reports
+- /reports/: Reports overview
+- /reports/financial-reports: Profit & loss, balance sheet, trial balance, cash flow
+- /reports/sales-reports: Sales analytics by period, customer, product
+- /reports/purchase-reports: Purchase analytics and vendor spend analysis
+- /reports/inventory-reports: Stock valuation and movement reports
+
+### Settings & Administration
+- /settings/: Settings overview
+- /settings/company-settings: Company information, branding, logo, preferences
+- /settings/users-roles: User management, roles, permissions, teams
+- /settings/modules: Enabling and disabling business modules
+- /settings/subscription: Subscription plans, upgrades, billing
+
+### Mobile App
+- /mobile-app/: Mobile app overview
+- /mobile-app/installation: Download and install for Android/iOS
+- /mobile-app/features: Offline mode, push notifications, mobile POS
+
+### Audit Trail
+- /audit-trail/: Audit system overview
+- /audit-trail/viewing-audits: Search, filter, and export audit logs
+
+### Support
+- /support/: Support overview
+- /support/tickets: Creating and tracking support tickets
+
+### FAQ
+- /faq: Frequently asked questions about Ballie
