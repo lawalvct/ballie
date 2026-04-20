@@ -10,10 +10,11 @@ use App\Models\AccountGroup;
 use App\Models\Voucher;
 use App\Models\VoucherEntry;
 use App\Traits\HasAudit;
+use App\Traits\NormalizesNameCase;
 
 class Customer extends Model
 {
-    use HasFactory, SoftDeletes, HasAudit;
+    use HasFactory, SoftDeletes, HasAudit, NormalizesNameCase;
 
     /**
      * The attributes that are mass assignable.
@@ -203,6 +204,21 @@ class Customer extends Model
             return trim($this->first_name . ' ' . $this->last_name);
         }
         return $this->company_name;
+    }
+
+    public function setFirstNameAttribute($value)
+    {
+        $this->attributes['first_name'] = $this->normalizeNameCase($value);
+    }
+
+    public function setLastNameAttribute($value)
+    {
+        $this->attributes['last_name'] = $this->normalizeNameCase($value);
+    }
+
+    public function setCompanyNameAttribute($value)
+    {
+        $this->attributes['company_name'] = $this->normalizeNameCase($value);
     }
 
     /**

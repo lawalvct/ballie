@@ -5,10 +5,11 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use App\Traits\HasAudit;
+use App\Traits\NormalizesNameCase;
 
 class LedgerAccount extends Model
 {
-    use HasFactory, HasAudit;
+    use HasFactory, HasAudit, NormalizesNameCase;
 
     protected $fillable = [
         'tenant_id',
@@ -115,6 +116,11 @@ class LedgerAccount extends Model
             return $this->parent->name . ' → ' . $this->name;
         }
         return $this->name;
+    }
+
+    public function setNameAttribute($value)
+    {
+        $this->attributes['name'] = $this->normalizeNameCase($value);
     }
 
     public function hasChildren()
