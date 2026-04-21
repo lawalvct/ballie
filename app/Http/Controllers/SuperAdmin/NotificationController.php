@@ -33,8 +33,12 @@ class NotificationController extends Controller
     /**
      * Get unread notification count
      */
-    public function getUnreadCount()
+    public function getUnreadCount(Request $request)
     {
+        if (!$request->expectsJson()) {
+            return redirect()->route('dashboard');
+        }
+
         $count = auth('super_admin')->user()->unreadNotifications->count();
 
         return response()->json(['count' => $count]);

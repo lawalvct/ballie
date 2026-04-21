@@ -53,8 +53,13 @@ class NotificationController extends Controller
     /**
      * Get unread notification count
      */
-    public function getUnreadCount()
+    public function getUnreadCount(Request $request)
     {
+        if (!$request->expectsJson()) {
+            $tenant = $request->route('tenant');
+            return redirect()->route('tenant.dashboard', ['tenant' => $tenant]);
+        }
+
         $count = Auth::user()->unreadNotifications->count();
 
         return response()->json(['count' => $count]);
