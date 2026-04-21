@@ -407,9 +407,9 @@ class CustomerController extends Controller
 
         $validator = Validator::make($request->all(), [
             'customer_type' => 'required|in:individual,business',
-            'first_name' => 'required_if:customer_type,individual|string|max:255',
-            'last_name' => 'required_if:customer_type,individual|string|max:255',
-            'company_name' => 'required_if:customer_type,business|string|max:255',
+            'first_name' => 'nullable|required_if:customer_type,individual|string|max:255',
+            'last_name' => 'nullable|required_if:customer_type,individual|string|max:255',
+            'company_name' => 'nullable|required_if:customer_type,business|string|max:255',
             'email' => 'required|email|max:255|unique:customers,email,' . $customer->id . ',id,tenant_id,' . $tenant->id,
             'phone' => 'nullable|string|max:20',
             'mobile' => 'nullable|string|max:20',

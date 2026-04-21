@@ -156,7 +156,7 @@
                             </label>
                             <input type="text" name="first_name" id="first_name" required
                                 class="mt-1 focus:ring-blue-500 focus:border-blue-500 block w-full shadow-sm sm:text-sm rounded-md {{ $errors->has('first_name') ? 'border-red-300' : 'border-gray-300' }}"
-                                value="{{ old('first_name') }}" placeholder="John">
+                                value="{{ old('first_name') }}" placeholder="Chinenye">
                             @error('first_name')
                                 <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                             @enderror
@@ -169,7 +169,7 @@
                             </label>
                             <input type="text" name="last_name" id="last_name" required
                                 class="mt-1 focus:ring-blue-500 focus:border-blue-500 block w-full shadow-sm sm:text-sm rounded-md {{ $errors->has('last_name') ? 'border-red-300' : 'border-gray-300' }}"
-                                value="{{ old('last_name') }}" placeholder="Doe">
+                                value="{{ old('last_name') }}" placeholder="Akinde">
                             @error('last_name')
                                 <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                             @enderror
@@ -186,7 +186,7 @@
                         </label>
                         <input type="text" name="company_name" id="company_name"
                             class="mt-1 focus:ring-blue-500 focus:border-blue-500 block w-full shadow-sm sm:text-sm rounded-md {{ $errors->has('company_name') ? 'border-red-300' : 'border-gray-300' }}"
-                            value="{{ old('company_name') }}" placeholder="Acme Corporation">
+                            value="{{ old('company_name') }}" placeholder="Ballie Corporation">
                         @error('company_name')
                             <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                         @enderror

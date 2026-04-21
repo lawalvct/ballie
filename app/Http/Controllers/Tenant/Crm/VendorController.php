@@ -130,6 +130,11 @@ class VendorController extends Controller
                 ]);
             }
 
+            if ($request->input('action') === 'save_and_new') {
+                return redirect()->route('tenant.crm.vendors.create', ['tenant' => tenant()->slug])
+                    ->with('success', 'Vendor created successfully. Add another vendor.');
+            }
+
             return redirect()->route('tenant.crm.vendors.index', ['tenant' => tenant()->slug])
                 ->with('success', 'Vendor created successfully with ledger account.');
         } catch (\Exception $e) {

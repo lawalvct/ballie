@@ -186,7 +186,7 @@
                         </label>
                         <input type="text" name="company_name" id="company_name"
                             class="mt-1 focus:ring-purple-500 focus:border-purple-500 block w-full shadow-sm sm:text-sm rounded-md {{ $errors->has('company_name') ? 'border-red-300' : 'border-gray-300' }}"
-                            value="{{ old('company_name') }}" placeholder="Acme Corporation">
+                            value="{{ old('company_name') }}" placeholder="Aishat Ventures Ltd.">
                         @error('company_name')
                             <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                         @enderror
@@ -231,6 +231,7 @@
                         <input type="email" name="email" id="email"
                             class="mt-1 focus:ring-purple-500 focus:border-purple-500 block w-full shadow-sm sm:text-sm rounded-md {{ $errors->has('email') ? 'border-red-300' : 'border-gray-300' }}"
                             value="{{ old('email') }}" placeholder="vendor@example.com">
+                        <span id="email-auto-badge" class="hidden text-xs text-purple-600 mt-1 inline-block">Auto-generated</span>
                         @error('email')
                             <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                         @enderror
@@ -244,6 +245,7 @@
                         <input type="tel" name="phone" id="phone"
                             class="mt-1 focus:ring-purple-500 focus:border-purple-500 block w-full shadow-sm sm:text-sm rounded-md {{ $errors->has('phone') ? 'border-red-300' : 'border-gray-300' }}"
                             value="{{ old('phone') }}" placeholder="08132712715">
+                        <p id="phone-hint" class="text-xs text-gray-400 mt-1">11 digits starting with 080, 081, 090, 091, 070, 071</p>
                         @error('phone')
                             <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                         @enderror
@@ -839,9 +841,116 @@ vendorTypeRadios.forEach(radio => {
             document.getElementById('first_name').value = '';
             document.getElementById('last_name').value = '';
         }
+        generateEmail();
+        generatePhone();
         updateProgress();
     });
 });
+
+// Auto-generate email from vendor name
+let emailManuallyEdited = !!document.getElementById('email').value;
+const emailField = document.getElementById('email');
+const emailAutoBadge = document.getElementById('email-auto-badge');
+
+function generateEmail() {
+    if (emailManuallyEdited) return;
+
+    const vendorType = document.querySelector('input[name="vendor_type"]:checked')?.value || 'business';
+    let emailValue = '';
+
+    if (vendorType === 'business') {
+        const companyName = document.getElementById('company_name').value.trim();
+        if (companyName) {
+            const slug = companyName.toLowerCase().replace(/[^a-z0-9]+/g, '.').replace(/^\.+|\.+$/g, '');
+            emailValue = 'info@' + slug + '.com';
+        }
+    } else {
+        const firstName = document.getElementById('first_name').value.trim();
+        const lastName = document.getElementById('last_name').value.trim();
+        if (firstName && lastName) {
+            emailValue = (firstName + '.' + lastName).toLowerCase().replace(/[^a-z0-9.]+/g, '') + '@email.com';
+        } else if (firstName) {
+            emailValue = firstName.toLowerCase().replace(/[^a-z0-9]+/g, '') + '@email.com';
+        }
+    }
+
+    emailField.value = emailValue;
+    emailAutoBadge.classList.toggle('hidden', !emailValue);
+    updateProgress();
+}
+
+// Mark email as manually edited when user types in it
+emailField.addEventListener('input', function() {
+    emailManuallyEdited = true;
+    emailAutoBadge.classList.add('hidden');
+});
+
+// Listen to name fields for auto-email generation
+['first_name', 'last_name', 'company_name'].forEach(function(fieldId) {
+    document.getElementById(fieldId).addEventListener('input', generateEmail);
+});
+
+// Phone number: allow only digits, max 11
+const phoneField = document.getElementById('phone');
+const phoneHint = document.getElementById('phone-hint');
+let phoneManuallyEdited = !!phoneField.value;
+
+function generatePhone() {
+    if (phoneManuallyEdited) return;
+    const vendorType = document.querySelector('input[name="vendor_type"]:checked')?.value || 'business';
+    const hasName = vendorType === 'business'
+        ? document.getElementById('company_name').value.trim().length > 0
+        : document.getElementById('first_name').value.trim().length > 0;
+
+    if (hasName) {
+        const prefixes = ['080', '081', '090', '091', '070', '071'];
+        const prefix = prefixes[Math.floor(Math.random() * prefixes.length)];
+        const rest = String(Math.floor(Math.random() * 100000000)).padStart(8, '0');
+        phoneField.value = prefix + rest;
+        validatePhone();
+        updateProgress();
+    }
+}
+
+// Listen to name fields for auto-phone generation
+['first_name', 'last_name', 'company_name'].forEach(function(fieldId) {
+    document.getElementById(fieldId).addEventListener('input', generatePhone);
+});
+
+phoneField.addEventListener('input', function() {
+    phoneManuallyEdited = true;
+    this.value = this.value.replace(/[^0-9]/g, '').slice(0, 11);
+    validatePhone();
+});
+
+function validatePhone() {
+    const val = phoneField.value;
+    const phoneError = document.getElementById('phone-error');
+    const validPrefixes = ['080', '081', '090', '091', '070', '071'];
+
+    if (val.length > 0 && val.length < 11) {
+        phoneHint.textContent = (11 - val.length) + ' digit(s) remaining';
+        phoneHint.classList.remove('text-gray-400', 'text-green-500');
+        phoneHint.classList.add('text-amber-500');
+    } else if (val.length === 11) {
+        const prefix = val.substring(0, 3);
+        if (validPrefixes.includes(prefix)) {
+            phoneHint.textContent = phoneManuallyEdited ? '' : 'Temporary phone number, please update now or later';
+            phoneHint.classList.remove('text-gray-400', 'text-amber-500');
+            phoneHint.classList.add('text-green-500');
+            phoneField.classList.remove('border-red-300');
+            if (phoneError) phoneError.classList.add('hidden');
+        } else {
+            phoneHint.textContent = 'Invalid prefix. Use 080, 081, 090, 091, 070, or 071';
+            phoneHint.classList.remove('text-gray-400', 'text-green-500');
+            phoneHint.classList.add('text-amber-500');
+        }
+    } else {
+        phoneHint.textContent = '11 digits starting with 080, 081, 090, 091, 070, 071';
+        phoneHint.classList.remove('text-amber-500', 'text-green-500');
+        phoneHint.classList.add('text-gray-400');
+    }
+}
 
 // Progress tracking
 function updateProgress() {
