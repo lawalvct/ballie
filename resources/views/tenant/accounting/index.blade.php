@@ -58,6 +58,15 @@
                 <span class="sm:hidden">Vouchers</span>
             </a>
 
+            <a href="{{ route('tenant.accounting.ledger-accounts.index', ['tenant' => $tenant->slug]) }}"
+               class="inline-flex items-center justify-center px-3 sm:px-4 py-2 bg-white border border-gray-300 rounded-lg font-semibold text-xs text-gray-700 uppercase tracking-widest shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 transition ease-in-out duration-150">
+                <svg class="w-4 h-4 sm:mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16"></path>
+                </svg>
+                <span class="hidden sm:inline ml-2">View Ledgers</span>
+                <span class="sm:hidden">Ledgers</span>
+            </a>
+
             <!-- More Actions Button -->
             <button @click="toggleMoreActions()"
                     class="col-span-2 sm:col-span-1 inline-flex items-center justify-center px-3 sm:px-4 py-2 bg-gray-800 border border-transparent rounded-lg font-semibold text-xs text-white uppercase tracking-widest hover:bg-gray-700 focus:bg-gray-700 active:bg-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 transition ease-in-out duration-150">

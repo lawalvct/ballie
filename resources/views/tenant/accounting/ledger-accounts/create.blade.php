@@ -43,6 +43,7 @@
           x-data="accountForm()"
           @submit="validateForm">
         @csrf
+                <input type="hidden" name="submit_action" x-model="submitAction">
 
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <!-- Main Form - 2 columns -->
@@ -347,6 +348,7 @@
                 <!-- Actions -->
                 <div class="space-y-3">
                     <button type="submit"
+                            @click="submitAction = 'default'"
                             class="w-full inline-flex justify-center items-center px-4 py-2.5 border border-transparent text-sm font-medium rounded-lg shadow-sm text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 disabled:opacity-50 disabled:cursor-not-allowed"
                             :disabled="isSubmitting">
                         <template x-if="!isSubmitting">
@@ -363,13 +365,22 @@
                         <span x-text="isSubmitting ? 'Creating...' : 'Create Account'"></span>
                     </button>
 
-                    <button type="button"
-                            onclick="saveAndContinue()"
-                            class="w-full inline-flex justify-center items-center px-4 py-2 border border-green-300 text-sm font-medium rounded-lg text-green-700 bg-green-50 hover:bg-green-100">
-                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
-                        </svg>
-                        Save & Create Another
+                    <button type="submit"
+                            @click="submitAction = 'continue'"
+                            class="w-full inline-flex justify-center items-center px-4 py-2 border border-green-300 text-sm font-medium rounded-lg text-green-700 bg-green-50 hover:bg-green-100 disabled:opacity-50 disabled:cursor-not-allowed"
+                            :disabled="isSubmitting">
+                        <template x-if="!(isSubmitting && submitAction === 'continue')">
+                            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+                            </svg>
+                        </template>
+                        <template x-if="isSubmitting && submitAction === 'continue'">
+                            <svg class="animate-spin w-4 h-4 mr-2" fill="none" viewBox="0 0 24 24">
+                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                            </svg>
+                        </template>
+                        <span x-text="isSubmitting && submitAction === 'continue' ? 'Saving...' : 'Save & Create Another'"></span>
                     </button>
 
                     <a href="{{ route('tenant.accounting.ledger-accounts.index', $tenant) }}"
@@ -566,6 +577,7 @@
 function accountForm() {
     return {
         isSubmitting: false,
+        submitAction: 'default',
         selectedType: '{{ old("account_type", "") }}',
         balanceType: '{{ old("balance_type", "dr") }}',
         currentCode: '{{ old("code", "") }}',
@@ -578,6 +590,11 @@ function accountForm() {
         },
 
         validateForm(event) {
+            if (this.isSubmitting) {
+                event.preventDefault();
+                return false;
+            }
+
             const requiredFields = ['code', 'name', 'account_type', 'account_group_id'];
             let isValid = true;
             let firstErrorField = null;
@@ -595,6 +612,8 @@ function accountForm() {
 
             if (!isValid) {
                 event.preventDefault();
+                this.isSubmitting = false;
+                this.submitAction = 'default';
                 firstErrorField?.focus();
                 showToast('Please fill in all required fields.', 'error');
                 return false;
@@ -700,17 +719,6 @@ document.addEventListener('DOMContentLoaded', function() {
         field.addEventListener('change', () => field.classList.remove('border-red-300'));
     });
 });
-
-// ── Save Actions ──
-function saveAndContinue() {
-    const form = document.getElementById('accountForm');
-    const input = document.createElement('input');
-    input.type = 'hidden';
-    input.name = 'save_and_continue';
-    input.value = '1';
-    form.appendChild(input);
-    form.submit();
-}
 
 // ── Toast Notification ──
 function showToast(message, type = 'info') {

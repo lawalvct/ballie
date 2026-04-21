@@ -263,6 +263,12 @@ class LedgerAccountController extends Controller
                 ]);
             }
 
+            if ($request->input('submit_action') === 'continue' || $request->boolean('save_and_continue')) {
+                return redirect()
+                    ->route('tenant.accounting.ledger-accounts.create', ['tenant' => $tenant->slug])
+                    ->with('success', 'Ledger account created successfully. You can add another account now.');
+            }
+
             return redirect()
                 ->route('tenant.accounting.ledger-accounts.index', ['tenant' => $tenant->slug])
                 ->with('success', 'Ledger account created successfully.');
