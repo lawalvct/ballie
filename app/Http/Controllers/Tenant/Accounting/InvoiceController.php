@@ -128,7 +128,14 @@ class InvoiceController extends Controller
         $format = strtolower($request->get('format', 'excel'));
 
         if ($format === 'pdf') {
-            $pdf = Pdf::loadView('tenant.accounting.invoices.export-pdf', compact('tenant', 'invoices'));
+            $filters = [
+                'type'      => $request->input('type', 'all'),
+                'status'    => $request->input('status'),
+                'date_from' => $request->input('date_from'),
+                'date_to'   => $request->input('date_to'),
+                'search'    => $request->input('search'),
+            ];
+            $pdf = Pdf::loadView('tenant.accounting.invoices.export-pdf', compact('tenant', 'invoices', 'filters'));
             $filename = $tenant->slug . '_invoices_' . now()->format('Y-m-d') . '.pdf';
 
             return $pdf->download($filename);
