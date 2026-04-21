@@ -16,6 +16,7 @@ use App\Imports\LedgerAccountsImport;
 use App\Exports\LedgerAccountsTemplateExport;
 use App\Exports\AccountGroupsReferenceExport;
 use App\Exports\ChartOfAccountsExport;
+use Barryvdh\DomPDF\Facade\Pdf;
 
 class LedgerAccountController extends Controller
 {
@@ -1158,6 +1159,52 @@ public function show(Request $request, Tenant $tenant, LedgerAccount $ledgerAcco
             'totalCredits',
             'currentBalance'
         ));
+    }
+
+    /**
+     * Download ledger account statement as PDF
+     */
+    public function pdfLedger(Tenant $tenant, LedgerAccount $ledgerAccount)
+    {
+        $ledgerAccount->load(['accountGroup', 'parent']);
+
+        $transactions = $ledgerAccount->voucherEntries()
+            ->with(['voucher'])
+            ->whereHas('voucher', function ($query) {
+                $query->where('status', 'posted');
+            })
+            ->orderBy('created_at')
+            ->get();
+
+        $runningBalance = $ledgerAccount->opening_balance;
+        $transactionsWithBalance = [];
+        foreach ($transactions as $transaction) {
+            $runningBalance += ($transaction->debit_amount - $transaction->credit_amount);
+            $transactionsWithBalance[] = [
+                'transaction' => $transaction,
+                'running_balance' => $runningBalance,
+            ];
+        }
+
+        $totalDebits = $transactions->sum('debit_amount');
+        $totalCredits = $transactions->sum('credit_amount');
+        $currentBalance = $ledgerAccount->getCurrentBalance();
+
+        $pdf = Pdf::loadView('tenant.accounting.ledger-accounts.print-ledger', compact(
+            'tenant',
+            'ledgerAccount',
+            'transactions',
+            'transactionsWithBalance',
+            'totalDebits',
+            'totalCredits',
+            'currentBalance'
+        ))->setPaper('a4', 'portrait');
+
+        $filename = 'ledger-statement-'
+            . \Illuminate\Support\Str::slug($ledgerAccount->code . '-' . $ledgerAccount->name)
+            . '-' . now()->format('Ymd-His') . '.pdf';
+
+        return $pdf->download($filename);
     }
 
     /**

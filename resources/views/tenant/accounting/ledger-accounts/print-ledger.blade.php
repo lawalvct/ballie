@@ -5,121 +5,181 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{ $ledgerAccount->name }} - Ledger Account Statement</title>
     <style>
+        @page {
+            margin: 10mm 9mm 9mm;
+            size: A4 portrait;
+        }
+
         * {
-            margin: 0;
-            padding: 0;
             box-sizing: border-box;
         }
 
         body {
-            font-family: Arial, sans-serif;
-            font-size: 12px;
-            line-height: 1.4;
-            color: #333;
-            background: white;
+            margin: 0;
+            font-family: DejaVu Sans, Arial, sans-serif;
+            font-size: 10.5px;
+            line-height: 1.35;
+            color: #1f2937;
+            background: #ffffff;
         }
 
-        .container {
-            max-width: 210mm;
-            margin: 0 auto;
-            padding: 20px;
+        .page {
+            width: 100%;
         }
 
         .header {
-            text-align: center;
-            margin-bottom: 30px;
-            border-bottom: 2px solid #333;
-            padding-bottom: 20px;
-        }
-
-        .company-name {
-            font-size: 24px;
-            font-weight: bold;
-            color: #2563eb;
-            margin-bottom: 5px;
-        }
-
-        .company-details {
-            font-size: 14px;
-            color: #666;
-            margin-bottom: 15px;
-        }
-
-        .report-title {
-            font-size: 18px;
-            font-weight: bold;
+            border-bottom: 2px solid #1d4ed8;
+            padding-bottom: 8px;
             margin-bottom: 10px;
         }
 
-        .account-info {
-            display: flex;
-            justify-content: space-between;
-            margin-bottom: 20px;
-            background: #f8f9fa;
-            padding: 15px;
-            border-radius: 5px;
+        .header-table,
+        .info-table,
+        .transactions-table,
+        .footer-table,
+        .kv-table {
+            width: 100%;
+            border-collapse: collapse;
         }
 
-        .account-details h3 {
-            font-size: 16px;
-            margin-bottom: 5px;
-            color: #1f2937;
+        .header-table td,
+        .info-table td,
+        .footer-table td {
+            vertical-align: top;
         }
 
-        .account-details p {
-            margin: 2px 0;
-            font-size: 13px;
+        .company-name {
+            font-size: 20px;
+            font-weight: 700;
+            color: #2563eb;
+            margin-bottom: 2px;
         }
 
-        .balance-summary {
-            display: flex;
-            justify-content: space-around;
-            margin: 20px 0;
-            background: #e5e7eb;
-            padding: 15px;
-            border-radius: 5px;
-        }
-
-        .balance-item {
-            text-align: center;
-        }
-
-        .balance-item .label {
-            font-size: 11px;
+        .company-meta {
             color: #6b7280;
-            text-transform: uppercase;
-            font-weight: bold;
+            font-size: 10px;
+            line-height: 1.45;
         }
 
-        .balance-item .amount {
-            font-size: 16px;
-            font-weight: bold;
-            margin-top: 5px;
+        .report-title {
+            font-size: 15px;
+            font-weight: 700;
+            color: #111827;
+            margin-bottom: 2px;
+        }
+
+        .report-subtitle {
+            color: #6b7280;
+            font-size: 10px;
+            line-height: 1.4;
+        }
+
+        .info-card {
+            width: 50%;
+        }
+
+        .info-card-left {
+            padding-right: 8px;
+        }
+
+        .info-card-right {
+            padding-left: 8px;
+        }
+
+        .box {
+            border: 1px solid #d1d5db;
+            background: #f8fafc;
+            padding: 8px 10px;
+        }
+
+        .box-title {
+            font-size: 9px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.6px;
+            color: #6b7280;
+            margin-bottom: 5px;
+        }
+
+        .account-name {
+            font-size: 14px;
+            font-weight: 700;
+            color: #111827;
+            margin-bottom: 5px;
+        }
+
+        .kv-table td {
+            padding: 1px 0;
+            font-size: 10.5px;
+        }
+
+        .kv-table tr.kv-divider td {
+            border-top: 1px dashed #d1d5db;
+            padding-top: 4px;
+        }
+
+        .kv-label {
+            width: 48%;
+            color: #6b7280;
+        }
+
+        .kv-value {
+            font-weight: 600;
+            color: #111827;
         }
 
         .transactions-table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 20px;
-            font-size: 11px;
+            margin-top: 10px;
+        }
+
+        .transactions-table thead {
+            display: table-header-group;
+        }
+
+        .transactions-table tr {
+            page-break-inside: avoid;
         }
 
         .transactions-table th {
-            background: #374151;
-            color: white;
-            padding: 8px 6px;
+            background: #1f2937;
+            color: #ffffff;
+            border: 1px solid #374151;
+            padding: 5px 6px;
+            font-size: 9.5px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.4px;
             text-align: left;
-            font-weight: bold;
-            font-size: 10px;
         }
 
         .transactions-table td {
-            padding: 6px;
-            border-bottom: 1px solid #e5e7eb;
+            border: 1px solid #e5e7eb;
+            padding: 4px 6px;
+            font-size: 10px;
+            vertical-align: top;
         }
 
-        .transactions-table tr:nth-child(even) {
-            background: #f9fafb;
+        .row-opening td {
+            background: #eff6ff;
+            font-weight: 700;
+        }
+
+        .row-alt td {
+            background: #fafafa;
+        }
+
+        .row-total td {
+            background: #e0f2fe;
+            font-weight: 700;
+            border-top: 2px solid #0284c7;
+        }
+
+        .description {
+            word-break: break-word;
+        }
+
+        .nowrap {
+            white-space: nowrap;
         }
 
         .text-right {
@@ -142,155 +202,168 @@
             color: #2563eb;
         }
 
-        .font-bold {
-            font-weight: bold;
-        }
-
-        .footer {
-            margin-top: 30px;
-            padding-top: 20px;
-            border-top: 1px solid #e5e7eb;
-            text-align: center;
-            font-size: 10px;
-            color: #6b7280;
-        }
-
-        .print-date {
-            margin-top: 10px;
-            font-size: 10px;
+        .muted {
             color: #9ca3af;
         }
 
-        .no-transactions {
-            text-align: center;
-            padding: 40px;
+        .footer {
+            margin-top: 10px;
+            padding-top: 6px;
+            border-top: 1px solid #d1d5db;
             color: #6b7280;
-            font-style: italic;
+            font-size: 9.5px;
         }
 
-        @media print {
-            body {
-                margin: 0;
-                background: white;
-            }
-
-            .container {
-                margin: 0;
-                padding: 15px;
-                max-width: none;
-            }
-
-            .header {
-                margin-bottom: 20px;
-                padding-bottom: 15px;
-            }
-
-            .transactions-table {
-                font-size: 10px;
-            }
-
-            .transactions-table th,
-            .transactions-table td {
-                padding: 4px;
-            }
+        .small {
+            font-size: 9px;
         }
 
-        @page {
-            margin: 1cm;
-            size: A4;
+        .no-transactions {
+            margin-top: 10px;
+            border: 1px solid #d1d5db;
+            background: #f9fafb;
+            padding: 18px;
+            text-align: center;
+            color: #6b7280;
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <!-- Header -->
+    @php
+        $netMovement = $totalDebits - $totalCredits;
+    @endphp
+
+    <div class="page">
         <div class="header">
-            <div class="company-name">{{ $tenant->name ?? 'Ballie Business Management' }}</div>
-            <div class="company-details">
-                @if($tenant->address)
-                    {{ $tenant->address }}<br>
-                @endif
-                @if($tenant->phone)
-                    Phone: {{ $tenant->phone }} |
-                @endif
-                @if($tenant->email)
-                    Email: {{ $tenant->email }}
-                @endif
-            </div>
-            <div class="report-title">Ledger Account Statement</div>
+            <table class="header-table">
+                <tr>
+                    <td style="width: 58%;">
+                        <div class="company-name">{{ $tenant->name ?? 'Ballie Business Management' }}</div>
+                        <div class="company-meta">
+                            @if($tenant->address)
+                                {{ $tenant->address }}<br>
+                            @endif
+                            @if($tenant->phone)
+                                Phone: {{ $tenant->phone }}
+                            @endif
+                            @if($tenant->phone && $tenant->email)
+                                |
+                            @endif
+                            @if($tenant->email)
+                                Email: {{ $tenant->email }}
+                            @endif
+                        </div>
+                    </td>
+                    <td style="width: 42%;" class="text-right">
+                        <div class="report-title">Ledger Account Statement</div>
+                        <div class="report-subtitle">Generated on {{ now()->format('d M Y, g:i A') }}</div>
+                        <div class="report-subtitle">Currency: NGN</div>
+                    </td>
+                </tr>
+            </table>
         </div>
 
-        <!-- Account Information -->
-        <div class="account-info">
-            <div class="account-details">
-                <h3>{{ $ledgerAccount->name }}</h3>
-                <p><strong>Account Code:</strong> {{ $ledgerAccount->code }}</p>
-                <p><strong>Account Type:</strong> {{ ucfirst($ledgerAccount->account_type) }}</p>
-                <p><strong>Account Group:</strong> {{ $ledgerAccount->accountGroup->name ?? 'N/A' }}</p>
-                @if($ledgerAccount->parent)
-                    <p><strong>Parent Account:</strong> {{ $ledgerAccount->parent->name }}</p>
-                @endif
-            </div>
-            <div class="account-details">
-                <p><strong>Opening Balance:</strong> ₦{{ number_format($ledgerAccount->opening_balance, 2) }}</p>
-                <p><strong>Current Balance:</strong>
-                    <span class="{{ $currentBalance >= 0 ? 'text-green' : 'text-red' }}">
-                        ₦{{ number_format(abs($currentBalance), 2) }} {{ $currentBalance >= 0 ? 'Dr' : 'Cr' }}
-                    </span>
-                </p>
-                <p><strong>Total Transactions:</strong> {{ $transactions->count() }}</p>
-                <p><strong>Status:</strong>
-                    <span class="{{ $ledgerAccount->is_active ? 'text-green' : 'text-red' }}">
-                        {{ $ledgerAccount->is_active ? 'Active' : 'Inactive' }}
-                    </span>
-                </p>
-            </div>
-        </div>
+        <table class="info-table">
+            <tr>
+                <td class="info-card info-card-left">
+                    <div class="box">
+                        <div class="box-title">Account Details</div>
+                        <div class="account-name">{{ $ledgerAccount->name }}</div>
+                        <table class="kv-table">
+                            <tr>
+                                <td class="kv-label">Account Code</td>
+                                <td class="kv-value">{{ $ledgerAccount->code }}</td>
+                            </tr>
+                            <tr>
+                                <td class="kv-label">Account Type</td>
+                                <td class="kv-value">{{ ucfirst($ledgerAccount->account_type) }}</td>
+                            </tr>
+                            <tr>
+                                <td class="kv-label">Account Group</td>
+                                <td class="kv-value">{{ $ledgerAccount->accountGroup->name ?? 'N/A' }}</td>
+                            </tr>
+                            @if($ledgerAccount->parent)
+                                <tr>
+                                    <td class="kv-label">Parent Account</td>
+                                    <td class="kv-value">{{ $ledgerAccount->parent->name }}</td>
+                                </tr>
+                            @endif
+                            <tr>
+                                <td class="kv-label">Status</td>
+                                <td class="kv-value {{ $ledgerAccount->is_active ? 'text-green' : 'text-red' }}">
+                                    {{ $ledgerAccount->is_active ? 'Active' : 'Inactive' }}
+                                </td>
+                            </tr>
+                        </table>
+                    </div>
+                </td>
+                <td class="info-card info-card-right">
+                    <div class="box">
+                        <div class="box-title">Statement Snapshot</div>
+                        <table class="kv-table">
+                            <tr>
+                                <td class="kv-label">Opening Balance</td>
+                                <td class="kv-value text-right">
+                                    NGN {{ number_format(abs($ledgerAccount->opening_balance), 2) }}
+                                    {{ $ledgerAccount->opening_balance >= 0 ? 'Dr' : 'Cr' }}
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="kv-label">Total Debits</td>
+                                <td class="kv-value text-right text-green">
+                                    NGN {{ number_format($totalDebits, 2) }}
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="kv-label">Total Credits</td>
+                                <td class="kv-value text-right text-red">
+                                    NGN {{ number_format($totalCredits, 2) }}
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="kv-label">Net Movement</td>
+                                <td class="kv-value text-right {{ $netMovement >= 0 ? 'text-green' : 'text-red' }}">
+                                    NGN {{ number_format(abs($netMovement), 2) }} {{ $netMovement >= 0 ? 'Dr' : 'Cr' }}
+                                </td>
+                            </tr>
+                            <tr class="kv-divider">
+                                <td class="kv-label">Closing Balance</td>
+                                <td class="kv-value text-right {{ $currentBalance >= 0 ? 'text-green' : 'text-red' }}">
+                                    NGN {{ number_format(abs($currentBalance), 2) }}
+                                    {{ $currentBalance >= 0 ? 'Dr' : 'Cr' }}
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="kv-label">Transactions</td>
+                                <td class="kv-value text-right">{{ $transactions->count() }}</td>
+                            </tr>
+                            <tr>
+                                <td class="kv-label">Statement Date</td>
+                                <td class="kv-value text-right">{{ now()->format('d M Y') }}</td>
+                            </tr>
+                        </table>
+                    </div>
+                </td>
+            </tr>
+        </table>
 
-        <!-- Balance Summary -->
-        <div class="balance-summary">
-            <div class="balance-item">
-                <div class="label">Total Debits</div>
-                <div class="amount text-green">₦{{ number_format($totalDebits, 2) }}</div>
-            </div>
-            <div class="balance-item">
-                <div class="label">Total Credits</div>
-                <div class="amount text-red">₦{{ number_format($totalCredits, 2) }}</div>
-            </div>
-            <div class="balance-item">
-                <div class="label">Net Movement</div>
-                @php $netMovement = $totalDebits - $totalCredits; @endphp
-                <div class="amount {{ $netMovement >= 0 ? 'text-green' : 'text-red' }}">
-                    ₦{{ number_format(abs($netMovement), 2) }} {{ $netMovement >= 0 ? 'Dr' : 'Cr' }}
-                </div>
-            </div>
-            <div class="balance-item">
-                <div class="label">Closing Balance</div>
-                <div class="amount text-blue">
-                    ₦{{ number_format(abs($currentBalance), 2) }} {{ $currentBalance >= 0 ? 'Dr' : 'Cr' }}
-                </div>
-            </div>
-        </div>
-
-        <!-- Transactions Table -->
         @if($transactions->count() > 0)
             <table class="transactions-table">
                 <thead>
                     <tr>
-                        <th style="width: 10%;">Date</th>
-                        <th style="width: 12%;">Voucher #</th>
-                        <th style="width: 30%;">Description</th>
-                        <th style="width: 12%;" class="text-right">Debit (₦)</th>
-                        <th style="width: 12%;" class="text-right">Credit (₦)</th>
-                        <th style="width: 12%;" class="text-right">Balance (₦)</th>
-                        <th style="width: 12%;" class="text-center">Dr/Cr</th>
+                        <th style="width: 11%;">Date</th>
+                        <th style="width: 14%;">Voucher #</th>
+                        <th style="width: 31%;">Description</th>
+                        <th style="width: 14%;" class="text-right">Debit (NGN)</th>
+                        <th style="width: 14%;" class="text-right">Credit (NGN)</th>
+                        <th style="width: 10%;" class="text-right">Balance (NGN)</th>
+                        <th style="width: 6%;" class="text-center">Dr/Cr</th>
                     </tr>
                 </thead>
                 <tbody>
-                    <!-- Opening Balance Row -->
-                    <tr style="background: #f3f4f6; font-weight: bold;">
-                        <td>-</td>
-                        <td>-</td>
+                    <tr class="row-opening">
+                        <td class="nowrap">-</td>
+                        <td class="nowrap">-</td>
                         <td>Opening Balance</td>
                         <td class="text-right">-</td>
                         <td class="text-right">-</td>
@@ -298,79 +371,67 @@
                         <td class="text-center">{{ $ledgerAccount->opening_balance >= 0 ? 'Dr' : 'Cr' }}</td>
                     </tr>
 
-                    <!-- Transaction Rows -->
                     @foreach($transactionsWithBalance as $item)
                         @php
                             $transaction = $item['transaction'];
                             $runningBalance = $item['running_balance'];
                         @endphp
-                        <tr>
-                            <td>{{ $transaction->voucher->voucher_date->format('d/m/Y') }}</td>
-                            <td>
-                                <strong>{{ $transaction->voucher->voucher_number }}</strong>
-                            </td>
-                            <td>{{ $transaction->particulars ?? 'Transaction' }}</td>
+                        <tr class="{{ $loop->even ? 'row-alt' : '' }}">
+                            <td class="nowrap">{{ $transaction->voucher->voucher_date->format('d/m/Y') }}</td>
+                            <td class="nowrap"><strong>{{ $transaction->voucher->voucher_number }}</strong></td>
+                            <td class="description">{{ $transaction->particulars ?? $transaction->voucher->narration ?? 'Transaction' }}</td>
                             <td class="text-right">
                                 @if($transaction->debit_amount > 0)
-                                    <span class="text-green font-bold">{{ number_format($transaction->debit_amount, 2) }}</span>
+                                    <span class="text-green"><strong>{{ number_format($transaction->debit_amount, 2) }}</strong></span>
                                 @else
-                                    <span style="color: #9ca3af;">-</span>
+                                    <span class="muted">-</span>
                                 @endif
                             </td>
                             <td class="text-right">
                                 @if($transaction->credit_amount > 0)
-                                    <span class="text-red font-bold">{{ number_format($transaction->credit_amount, 2) }}</span>
+                                    <span class="text-red"><strong>{{ number_format($transaction->credit_amount, 2) }}</strong></span>
                                 @else
-                                    <span style="color: #9ca3af;">-</span>
+                                    <span class="muted">-</span>
                                 @endif
                             </td>
-                            <td class="text-right font-bold">{{ number_format(abs($runningBalance), 2) }}</td>
-                            <td class="text-center font-bold">{{ $runningBalance >= 0 ? 'Dr' : 'Cr' }}</td>
+                            <td class="text-right"><strong>{{ number_format(abs($runningBalance), 2) }}</strong></td>
+                            <td class="text-center {{ $runningBalance >= 0 ? 'text-green' : 'text-red' }}"><strong>{{ $runningBalance >= 0 ? 'Dr' : 'Cr' }}</strong></td>
                         </tr>
                     @endforeach
 
-                    <!-- Closing Balance Summary Row -->
-                    <tr style="background: #e5e7eb; font-weight: bold; border-top: 2px solid #374151;">
+                    <tr class="row-total">
                         <td colspan="3" class="text-right"><strong>TOTALS:</strong></td>
-                        <td class="text-right text-green">{{ number_format($totalDebits, 2) }}</td>
-                        <td class="text-right text-red">{{ number_format($totalCredits, 2) }}</td>
-                        <td class="text-right text-blue">{{ number_format(abs($currentBalance), 2) }}</td>
-                        <td class="text-center text-blue">{{ $currentBalance >= 0 ? 'Dr' : 'Cr' }}</td>
+                        <td class="text-right text-green"><strong>{{ number_format($totalDebits, 2) }}</strong></td>
+                        <td class="text-right text-red"><strong>{{ number_format($totalCredits, 2) }}</strong></td>
+                        <td class="text-right text-blue"><strong>{{ number_format(abs($currentBalance), 2) }}</strong></td>
+                        <td class="text-center text-blue"><strong>{{ $currentBalance >= 0 ? 'Dr' : 'Cr' }}</strong></td>
                     </tr>
                 </tbody>
             </table>
         @else
             <div class="no-transactions">
-                <h3>No Transactions Found</h3>
-                <p>This account has no transaction history to display.</p>
+                <strong>No Transactions Found</strong><br>
+                This account has no transaction history to display.
             </div>
         @endif
 
-        <!-- Footer -->
         <div class="footer">
-            <div>
-                <strong>{{ $tenant->name ?? 'Ballie Business Management' }}</strong> - Accounting System
-            </div>
-            <div class="print-date">
-                Generated on: {{ now()->format('l, F j, Y \a\t g:i A') }}
-            </div>
-            <div style="margin-top: 8px; font-size: 9px; color: #9ca3af;">
-                Powered by <strong>Ballie</strong> - Business Management Software
-            </div>
+            <table class="footer-table">
+                <tr>
+                    <td>
+                        <strong>{{ $tenant->name ?? 'Ballie Business Management' }}</strong> - Accounting System
+                    </td>
+                    <td class="text-right">
+                        Generated on {{ now()->format('l, F j, Y \a\t g:i A') }}
+                    </td>
+                </tr>
+                <tr>
+                    <td colspan="2" class="small" style="padding-top: 6px; text-align: center;">
+                        Powered by <strong>Ballie</strong> - Business Management Software
+                    </td>
+                </tr>
+            </table>
         </div>
     </div>
-
-    <script>
-        // Auto-print when page loads (optional)
-        window.onload = function() {
-            // Uncomment the line below to auto-print
-            // window.print();
-        };
-
-        // Print function for manual printing
-        function printPage() {
-            window.print();
-        }
-    </script>
 </body>
 </html>

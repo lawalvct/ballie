@@ -386,6 +386,7 @@ Route::prefix('ledger-accounts')->name('ledger-accounts.')->group(function () {
     Route::get('/{ledgerAccount}/statement', [LedgerAccountController::class, 'statement'])->name('statement');
     Route::get('/{ledgerAccount}/export-ledger', [LedgerAccountController::class, 'exportLedger'])->name('export-ledger');
     Route::get('/{ledgerAccount}/print-ledger', [LedgerAccountController::class, 'printLedger'])->name('print-ledger');
+    Route::get('/{ledgerAccount}/pdf-ledger', [LedgerAccountController::class, 'pdfLedger'])->name('pdf-ledger');
     Route::get('/{ledgerAccount}/balance', [LedgerAccountController::class, 'getBalance'])->name('balance');
 
     // Bulk actions

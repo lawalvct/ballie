@@ -140,19 +140,43 @@
                     </svg>
                     Print
                 </a>
+                <a href="{{ route('tenant.accounting.ledger-accounts.pdf-ledger', [$tenant, $ledgerAccount]) }}"
+                   class="inline-flex items-center px-4 py-2 border border-red-600 rounded-md text-sm font-medium text-white bg-red-600 hover:bg-red-700">
+                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                    </svg>
+                    Download PDF
+                </a>
                 <a href="{{ route('tenant.accounting.ledger-accounts.export-ledger', [$tenant, $ledgerAccount]) }}"
                    class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50">
                     <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
                     </svg>
-                    Export
+                    Export CSV
                 </a>
             </div>
         </div>
     </div>
 
+    @php
+        $statementTxJs = [];
+        foreach ($transactionsWithBalance as $item) {
+            $t = $item['transaction'];
+            $statementTxJs[] = [
+                'id' => (int) $t->id,
+                'voucher_id' => (int) $t->voucher->id,
+                'voucher_number' => $t->voucher->voucher_number,
+                'date' => $t->voucher->voucher_date->format('d M Y'),
+                'description' => $t->particulars ?? $t->voucher->narration ?? 'Transaction',
+                'debit' => (float) $t->debit_amount,
+                'credit' => (float) $t->credit_amount,
+            ];
+        }
+    @endphp
+
     <!-- Transactions Table -->
-    <div class="bg-white shadow-sm rounded-lg border border-gray-200" x-data="{ viewMode: 'condensed' }">
+    <div class="bg-white shadow-sm rounded-lg border border-gray-200"
+         x-data="statementManager({ opening: {{ (float) $ledgerAccount->opening_balance }}, transactions: {{ \Illuminate\Support\Js::from($statementTxJs) }} })">
         <div class="px-6 py-4 border-b border-gray-200">
             <div class="flex items-center justify-between">
                 <h3 class="text-lg font-medium text-gray-900">Transaction History</h3>
@@ -182,6 +206,70 @@
                 </div>
             </div>
         </div>
+
+        <!-- Live (Tally-style) Summary Banner -->
+        <div class="px-6 py-3 bg-amber-50 border-b border-amber-200 flex flex-wrap items-center justify-between gap-3"
+             x-show="removed.length > 0 || highlighted.length > 0"
+             x-cloak>
+            <div class="flex items-center space-x-6 text-sm">
+                <div class="flex items-center space-x-2">
+                    <span class="h-2 w-2 rounded-full bg-amber-500"></span>
+                    <span class="font-medium text-amber-800">Simulation mode</span>
+                    <span class="text-amber-700 text-xs">(no database changes)</span>
+                </div>
+                <div class="text-gray-700">
+                    Removed: <span class="font-bold text-red-600" x-text="removed.length"></span>
+                </div>
+                <div class="text-gray-700">
+                    Highlighted: <span class="font-bold text-yellow-700" x-text="highlighted.length"></span>
+                </div>
+                <div class="text-gray-700">
+                    Net Debits: <span class="font-semibold text-green-700" x-text="fmt(totalDebits)"></span>
+                </div>
+                <div class="text-gray-700">
+                    Net Credits: <span class="font-semibold text-red-700" x-text="fmt(totalCredits)"></span>
+                </div>
+                <div class="text-gray-700">
+                    Closing: <span class="font-bold text-blue-700" x-text="fmt(Math.abs(closingBalance)) + ' ' + (closingBalance >= 0 ? 'Dr' : 'Cr')"></span>
+                </div>
+            </div>
+            <button type="button" @click="resetAll()"
+                    class="inline-flex items-center px-3 py-1.5 text-xs font-medium rounded-md bg-white border border-amber-300 text-amber-800 hover:bg-amber-100">
+                <svg class="w-3.5 h-3.5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582M20 20v-5h-.581M5.64 9A7.002 7.002 0 0119 12M18.36 15A7.002 7.002 0 015 12"/>
+                </svg>
+                Reset all
+            </button>
+        </div>
+
+        <!-- Removed Rows Panel -->
+        <div class="px-6 py-3 bg-red-50 border-b border-red-200"
+             x-show="removed.length > 0"
+             x-cloak>
+            <div class="text-xs font-semibold text-red-800 mb-2 flex items-center">
+                <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                </svg>
+                Removed rows — click to restore
+            </div>
+            <div class="flex flex-wrap gap-2">
+                <template x-for="tx in removedDetails" :key="tx.id">
+                    <button type="button"
+                            @click="toggleRemove(tx.id)"
+                            class="inline-flex items-center px-3 py-1.5 text-xs rounded-md bg-white border border-red-300 text-gray-700 hover:bg-red-100 hover:border-red-400">
+                        <svg class="w-3.5 h-3.5 mr-1 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h10a4 4 0 014 4v2m0 0l-3-3m3 3l-3 3"/>
+                        </svg>
+                        <span class="font-mono font-medium" x-text="tx.voucher_number"></span>
+                        <span class="mx-1 text-gray-400">·</span>
+                        <span x-text="tx.date"></span>
+                        <span class="mx-1 text-gray-400">·</span>
+                        <span x-text="tx.debit > 0 ? 'Dr ' + fmt(tx.debit) : 'Cr ' + fmt(tx.credit)"></span>
+                    </button>
+                </template>
+            </div>
+        </div>
+
         <div class="overflow-x-auto">
             @if($transactions->count() > 0)
                 <table class="min-w-full divide-y divide-gray-200">
@@ -208,6 +296,9 @@
                             <th scope="col" class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
                                 Dr/Cr
                             </th>
+                            <th scope="col" class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Actions
+                            </th>
                         </tr>
                     </thead>
                     <tbody class="bg-white divide-y divide-gray-200">
@@ -228,6 +319,7 @@
                                     {{ $ledgerAccount->opening_balance >= 0 ? 'Dr' : 'Cr' }}
                                 </span>
                             </td>
+                            <td class="px-4 py-4 whitespace-nowrap text-sm text-center text-gray-300">—</td>
                         </tr>
 
                         <!-- Transaction Rows -->
@@ -235,8 +327,10 @@
                             @php
                                 $transaction = $item['transaction'];
                                 $runningBalance = $item['running_balance'];
+                                $txId = (int) $transaction->id;
                             @endphp
-                            <tr class="hover:bg-gray-50">
+                            <tr class="transition-colors"
+                                :class="isRemoved({{ $txId }}) ? 'bg-red-50 opacity-50 line-through' : (isHighlighted({{ $txId }}) ? 'bg-yellow-100 ring-2 ring-yellow-400' : 'hover:bg-gray-50')">
                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                                     {{ $transaction->voucher->voucher_date->format('d M Y') }}
                                 </td>
@@ -265,19 +359,52 @@
                                         <span class="text-gray-400">-</span>
                                     @endif
                                 </td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm text-right font-semibold text-gray-900">
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-right font-semibold text-gray-900"
+                                    x-text="isRemoved({{ $txId }}) ? '—' : fmt(Math.abs(balanceAt({{ $txId }})))">
                                     {{ number_format(abs($runningBalance), 2) }}
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-center">
-                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {{ $runningBalance >= 0 ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800' }}">
+                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium"
+                                          :class="isRemoved({{ $txId }}) ? 'bg-gray-100 text-gray-500' : (balanceAt({{ $txId }}) >= 0 ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800')"
+                                          x-text="isRemoved({{ $txId }}) ? '—' : (balanceAt({{ $txId }}) >= 0 ? 'Dr' : 'Cr')">
                                         {{ $runningBalance >= 0 ? 'Dr' : 'Cr' }}
                                     </span>
+                                </td>
+                                <td class="px-4 py-4 whitespace-nowrap text-sm text-center">
+                                    <div class="inline-flex items-center space-x-1">
+                                        <button type="button"
+                                                @click="toggleHighlight({{ $txId }})"
+                                                :title="isHighlighted({{ $txId }}) ? 'Remove highlight' : 'Highlight row'"
+                                                :class="isHighlighted({{ $txId }}) ? 'bg-yellow-300 text-yellow-900 hover:bg-yellow-400' : 'bg-gray-100 text-gray-600 hover:bg-yellow-100 hover:text-yellow-700'"
+                                                class="p-1.5 rounded transition-colors">
+                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/>
+                                            </svg>
+                                        </button>
+                                        <button type="button"
+                                                @click="toggleRemove({{ $txId }})"
+                                                :title="isRemoved({{ $txId }}) ? 'Restore row' : 'Remove row (does not delete)'"
+                                                :class="isRemoved({{ $txId }}) ? 'bg-green-100 text-green-700 hover:bg-green-200' : 'bg-gray-100 text-gray-600 hover:bg-red-100 hover:text-red-700'"
+                                                class="p-1.5 rounded transition-colors">
+                                            <template x-if="!isRemoved({{ $txId }})">
+                                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                                </svg>
+                                            </template>
+                                            <template x-if="isRemoved({{ $txId }})">
+                                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582M20 20v-5h-.581M5.64 9A7.002 7.002 0 0119 12M18.36 15A7.002 7.002 0 015 12"/>
+                                                </svg>
+                                            </template>
+                                        </button>
+                                    </div>
                                 </td>
                             </tr>
 
                             <!-- Expandable Details Row -->
-                            <tr id="voucher-{{ $transaction->voucher->id }}" class="hidden bg-blue-50 border-l-4 border-blue-500">
-                                <td colspan="7" class="px-6 py-4">
+                            <tr id="voucher-{{ $transaction->voucher->id }}" class="hidden bg-blue-50 border-l-4 border-blue-500"
+                                :style="isRemoved({{ $txId }}) ? 'display:none !important' : ''">
+                                <td colspan="8" class="px-6 py-4">
                                     <div class="space-y-3">
                                         <div class="flex items-center justify-between">
                                             <h4 class="text-sm font-semibold text-gray-900">
@@ -354,20 +481,25 @@
                             <td colspan="3" class="px-6 py-4 text-right text-sm text-gray-900">
                                 <strong>TOTALS:</strong>
                             </td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-right text-green-600">
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-right text-green-600"
+                                x-text="fmt(totalDebits)">
                                 {{ number_format($totalDebits, 2) }}
                             </td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-right text-red-600">
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-right text-red-600"
+                                x-text="fmt(totalCredits)">
                                 {{ number_format($totalCredits, 2) }}
                             </td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-right text-blue-600">
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-right text-blue-600"
+                                x-text="fmt(Math.abs(closingBalance))">
                                 {{ number_format(abs($currentBalance), 2) }}
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-center">
-                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800"
+                                      x-text="closingBalance >= 0 ? 'Dr' : 'Cr'">
                                     {{ $currentBalance >= 0 ? 'Dr' : 'Cr' }}
                                 </span>
                             </td>
+                            <td class="px-4 py-4 text-center text-xs text-gray-400">—</td>
                         </tr>
                     </tbody>
                 </table>
@@ -459,6 +591,8 @@
         height: 8px;
     }
 
+    [x-cloak] { display: none !important; }
+
     .overflow-x-auto::-webkit-scrollbar-track {
         background: #f1f5f9;
         border-radius: 4px;
@@ -506,6 +640,73 @@
                 row.classList.add('hidden');
             }
         });
+    }
+
+    // Tally-style row manager: hide/restore/highlight with live balance recompute.
+    // NOTE: All actions are local/simulation only — no database changes.
+    function statementManager({ opening, transactions }) {
+        return {
+            viewMode: 'condensed',
+            opening: Number(opening) || 0,
+            transactions: transactions || [],
+            removed: [],      // array of transaction ids (reactive)
+            highlighted: [],  // array of transaction ids (reactive)
+
+            isRemoved(id)     { return this.removed.includes(id); },
+            isHighlighted(id) { return this.highlighted.includes(id); },
+
+            toggleRemove(id) {
+                const i = this.removed.indexOf(id);
+                if (i === -1) this.removed.push(id);
+                else this.removed.splice(i, 1);
+            },
+            toggleHighlight(id) {
+                const i = this.highlighted.indexOf(id);
+                if (i === -1) this.highlighted.push(id);
+                else this.highlighted.splice(i, 1);
+            },
+            resetAll() {
+                this.removed = [];
+                this.highlighted = [];
+            },
+
+            // Running balance up to and including the given transaction id,
+            // skipping any rows currently removed.
+            balanceAt(id) {
+                let bal = this.opening;
+                for (const t of this.transactions) {
+                    if (!this.removed.includes(t.id)) {
+                        bal += (t.debit || 0) - (t.credit || 0);
+                    }
+                    if (t.id === id) break;
+                }
+                return bal;
+            },
+
+            get totalDebits() {
+                return this.transactions
+                    .filter(t => !this.removed.includes(t.id))
+                    .reduce((s, t) => s + (t.debit || 0), 0);
+            },
+            get totalCredits() {
+                return this.transactions
+                    .filter(t => !this.removed.includes(t.id))
+                    .reduce((s, t) => s + (t.credit || 0), 0);
+            },
+            get closingBalance() {
+                return this.opening + this.totalDebits - this.totalCredits;
+            },
+            get removedDetails() {
+                return this.transactions.filter(t => this.removed.includes(t.id));
+            },
+
+            fmt(n) {
+                return Number(n || 0).toLocaleString(undefined, {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2,
+                });
+            },
+        };
     }
 </script>
 @endpush
