@@ -72,28 +72,52 @@
                                     </span>
                                 </td>
                                 <td class="py-2 md:py-3 px-2 min-w-[180px] md:min-w-[200px]">
-                                    <!-- Product select — for product items -->
-                                    <div x-show="item.item_type === 'product'">
-                                        <select :name="`inventory_items[${index}][product_id]`"
-                                                x-model="item.product_id"
-                                                @change="onProductChange(index)"
-                                                :required="item.item_type === 'product'"
-                                                class="block w-full px-2 py-1.5 text-xs md:text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-primary-500 focus:border-primary-500">
-                                            <option value="">Select @term('product')</option>
-                                            @foreach($products as $product)
-                                                <option value="{{ $product->id }}"
-                                                        data-name="{{ $product->name }}"
-                                                        data-rate="{{ $product->sales_rate ?? 0 }}"
-                                                        data-purchase-rate="{{ $product->purchase_rate ?? 0 }}"
-                                                        data-description="{{ $product->description ?? '' }}"
-                                                        data-stock="{{ $product->current_stock ?? 0 }}">
-                                                    {{ $product->name }}
-                                                </option>
-                                            @endforeach
-                                        </select>
-                                        <div class="mt-1 text-xs text-gray-500" x-show="item.current_stock !== null">
-                                            <span>Stock: </span>
-                                            <span x-text="item.current_stock"></span>
+                                    <!-- Product search — shown only for product items -->
+                                    <div x-show="item.item_type === 'product'" x-data="productSearch(index)" class="relative">
+                                        <div class="flex gap-1">
+                                            <input type="text"
+                                                   x-model="searchTerm"
+                                                   @input="searchProducts()"
+                                                   @focus="searchProducts()"
+                                                   placeholder="Search {{ strtolower($term->label('product')) }}..."
+                                                   class="block w-full pl-2 md:pl-3 pr-2 py-1.5 md:py-2 text-xs md:text-sm border border-gray-300 focus:outline-none focus:ring-primary-500 focus:border-primary-500 rounded-md">
+                                            <button type="button"
+                                                    @click="openQuickAddProduct(index)"
+                                                    class="px-2 py-1.5 bg-green-600 text-white rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 transition-colors flex-shrink-0"
+                                                    title="Quick Add {{ $term->label('product') }}">
+                                                <svg class="w-3 h-3 md:w-4 md:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                                                </svg>
+                                            </button>
+                                        </div>
+                                        <input type="hidden"
+                                               :name="item.item_type === 'product' ? `inventory_items[${index}][product_id]` : ''"
+                                               x-model="selectedProductId"
+                                               :required="item.item_type === 'product'">
+
+                                        <div x-show="showDropdown && (products.length > 0 || loading)"
+                                             x-transition
+                                             class="absolute z-20 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                                            <div x-show="loading" class="px-3 py-2 text-gray-500 text-xs">
+                                                Searching...
+                                            </div>
+
+                                            <template x-for="product in products" :key="product.id">
+                                                <div @click="selectProduct(product)"
+                                                     class="px-3 py-2 cursor-pointer hover:bg-gray-100 border-b border-gray-100 last:border-b-0">
+                                                    <div class="font-medium text-gray-900 text-xs" x-text="product.name"></div>
+                                                    <div class="text-xs text-gray-500">
+                                                        <span x-show="product.sku">SKU: <span x-text="product.sku"></span> | </span>
+                                                        Stock: <span x-text="product.current_stock"></span> <span x-text="product.unit"></span> |
+                                                        Rate: ₦<span x-text="isPurchaseInvoice() ? product.purchase_rate : product.sales_rate"></span>
+                                                    </div>
+                                                </div>
+                                            </template>
+
+                                            <div x-show="!loading && products.length === 0"
+                                                 class="px-3 py-2 text-gray-500 text-xs">
+                                                No products found
+                                            </div>
                                         </div>
                                     </div>
                                     <!-- Service description — for service items -->
@@ -104,8 +128,15 @@
                                                class="block w-full px-2 py-1.5 text-xs md:text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-green-500 focus:border-green-500"
                                             placeholder="Service description (e.g. Consulting, Installation)">
                                         <input type="hidden"
-                                               :name="`inventory_items[${index}][product_id]`"
+                                               :name="item.item_type === 'service' ? `inventory_items[${index}][product_id]` : ''"
                                                value="">
+                                    </div>
+
+                                    <div class="mt-1 text-xs text-gray-500" x-show="item.item_type === 'product' && item.current_stock !== null">
+                                        Stock: <span x-text="item.current_stock"></span> <span x-text="item.unit"></span>
+                                        <span x-show="parseFloat(item.quantity) > parseFloat(item.current_stock) && !isPurchaseInvoice()" class="text-red-600 font-medium">
+                                            (Low!)
+                                        </span>
                                     </div>
                                 </td>
                                 <td class="py-2 md:py-3 px-2 min-w-[150px] hidden md:table-cell">
@@ -329,6 +360,18 @@
     <input type="hidden" name="total_amount" x-bind:value="grandTotal.toFixed(2)">
 </div>
 
+@php
+    $voucherTypesForJs = $voucherTypes->mapWithKeys(function($type) {
+        return [
+            $type->id => [
+                'code' => $type->code,
+                'name' => $type->name,
+                'inventory_effect' => $type->inventory_effect,
+            ],
+        ];
+    });
+@endphp
+
 @push('scripts')
 <script>
 // Invoice Items Edit Component
@@ -346,9 +389,11 @@ window.invoiceItemsEdit = function() {
                 'rate' => $rate,
                 'purchase_rate' => $item['purchase_rate'] ?? 0,
                 'amount' => $quantity * $rate,
-                'current_stock' => null
+                'current_stock' => null,
+                'unit' => 'Pcs'
             ];
         })->values()) !!},
+        voucherTypes: @json($voucherTypesForJs),
         ledgerAccounts: [],
         vatEnabled: false,
         vatRate: 0.075, // 7.5%
@@ -383,6 +428,19 @@ window.invoiceItemsEdit = function() {
             }).format(num);
         },
 
+        isPurchaseInvoice() {
+            const voucherTypeSelect = document.getElementById('voucher_type_id');
+            const selectedVoucherType = voucherTypeSelect ? this.voucherTypes[voucherTypeSelect.value] : null;
+
+            if (!selectedVoucherType) {
+                return false;
+            }
+
+            return (selectedVoucherType.inventory_effect || '').toLowerCase() === 'increase'
+                || (selectedVoucherType.code || '').toLowerCase().includes('pur')
+                || (selectedVoucherType.name || '').toLowerCase().includes('purchase');
+        },
+
         addItem(type) {
             const itemType = type || 'product';
             this.items.push({
@@ -394,7 +452,8 @@ window.invoiceItemsEdit = function() {
                 rate: 0,
                 purchase_rate: 0,
                 amount: 0,
-                current_stock: null
+                current_stock: null,
+                unit: 'Pcs'
             });
             this.updateTotals();
         },
@@ -452,6 +511,10 @@ window.invoiceItemsEdit = function() {
             const rate = parseFloat(this.items[index].rate) || 0;
             this.items[index].amount = quantity * rate;
             this.updateTotals();
+        },
+
+        calculateAmount(index) {
+            this.updateItemAmount(index);
         },
 
         init() {

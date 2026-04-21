@@ -1033,21 +1033,17 @@ function productSearch(itemIndex) {
         itemIndex: itemIndex,
 
         searchProducts() {
-            if (this.searchTerm.length < 2) {
-                this.products = [];
-                this.showDropdown = false;
-                return;
-            }
-
             if (this.searchTimeout) {
                 clearTimeout(this.searchTimeout);
             }
+
+            const query = this.searchTerm || '';
 
             this.searchTimeout = setTimeout(() => {
                 this.loading = true;
                 this.showDropdown = true;
 
-                fetch('/{{ $tenant->slug }}/api/products/search?q=' + encodeURIComponent(this.searchTerm))
+                fetch('/{{ $tenant->slug }}/api/products/search?q=' + encodeURIComponent(query))
                     .then(response => response.json())
                     .then(data => {
                         this.products = data;
@@ -1068,12 +1064,14 @@ function productSearch(itemIndex) {
             this.products = [];
 
             // Get the parent Alpine component (invoiceItems)
-            const invoiceItemsComponent = Alpine.$data(this.$el.closest('[x-data*="invoiceItems"]'));
+            const invoiceItemsComponent = Alpine.$data(this.$el.closest('[x-data*="invoiceItemsEdit"]'));
             if (invoiceItemsComponent && invoiceItemsComponent.items[this.itemIndex]) {
                 const item = invoiceItemsComponent.items[this.itemIndex];
                 item.product_id = product.id;
                 item.product_name = product.name;
-                item.rate = parseFloat(product.sales_rate) || 0;
+
+                const isPurchase = invoiceItemsComponent.isPurchaseInvoice();
+                item.rate = isPurchase ? (parseFloat(product.purchase_rate) || 0) : (parseFloat(product.sales_rate) || 0);
                 item.purchase_rate = parseFloat(product.purchase_rate) || 0;
                 item.current_stock = parseFloat(product.current_stock) || 0;
                 item.unit = product.unit || 'Pcs';
@@ -1087,6 +1085,13 @@ function productSearch(itemIndex) {
         },
 
         init() {
+            const invoiceItemsComponent = Alpine.$data(this.$el.closest('[x-data*="invoiceItemsEdit"]'));
+            if (invoiceItemsComponent && invoiceItemsComponent.items[this.itemIndex]) {
+                const item = invoiceItemsComponent.items[this.itemIndex];
+                this.searchTerm = item.product_name || '';
+                this.selectedProductId = item.product_id || '';
+            }
+
             document.addEventListener('click', (e) => {
                 if (!this.$el.contains(e.target)) {
                     this.showDropdown = false;
@@ -1415,16 +1420,18 @@ window.addEventListener('product-created', function(e) {
     const { index, product } = e.detail;
 
     // Find the Alpine component and update the item
-    const invoiceItemsEl = document.querySelector('[x-data*="invoiceItems"]');
+    const invoiceItemsEl = document.querySelector('[x-data*="invoiceItemsEdit"]');
     if (invoiceItemsEl && invoiceItemsEl.__x) {
         const component = invoiceItemsEl.__x.$data;
         if (component.items && component.items[index]) {
+            const isPurchase = component.isPurchaseInvoice();
+
             // Update the item with the new product
             component.items[index] = {
                 ...component.items[index],
                 product_id: product.id,
-                name: product.name,
-                rate: product.sales_rate,
+                product_name: product.name,
+                rate: isPurchase ? product.purchase_rate : product.sales_rate,
                 purchase_rate: product.purchase_rate,
                 current_stock: product.current_stock,
                 unit: product.unit_name

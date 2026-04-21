@@ -15,6 +15,16 @@
 @endsection
 
 @section('content')
+@php
+    $isPurchaseInvoice = ($invoice->voucherType->inventory_effect ?? '') === 'increase';
+    $newInvoiceUrl = $isPurchaseInvoice
+        ? route('tenant.accounting.invoices.create', ['tenant' => $tenant->slug]) . '?type=pur'
+        : route('tenant.accounting.invoices.create', ['tenant' => $tenant->slug]);
+    $newInvoiceLabel = $isPurchaseInvoice ? 'New Purchase Invoice' : 'New Invoice';
+    $newInvoiceButtonClasses = $isPurchaseInvoice
+        ? 'bg-red-600 hover:bg-red-700 focus:ring-red-500'
+        : 'bg-green-600 hover:bg-green-700 focus:ring-green-500';
+@endphp
 <div class="grid grid-cols-1 lg:grid-cols-3 lg:gap-8" x-data="invoiceShow()">
 
     <!-- Left Column (Main Content) -->
@@ -253,6 +263,14 @@
                 </div>
             </div>
         </div>
+
+        <a href="{{ $newInvoiceUrl }}"
+           class="w-full inline-flex items-center justify-center px-4 py-3 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white focus:outline-none focus:ring-2 focus:ring-offset-2 transition {{ $newInvoiceButtonClasses }}">
+            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v12m6-6H6"></path>
+            </svg>
+            {{ $newInvoiceLabel }}
+        </a>
 
         @if(($invoice->voucherType->inventory_effect ?? '') === 'decrease')
         <!-- Actions Card (Sales Invoice) -->
