@@ -188,11 +188,11 @@ class OnboardingController extends Controller
                     $updatedFields[] = $field;
                     $fieldUpdated = true;
 
-                    Log::info("Field updated successfully", [
-                        'tenant_id' => $tenant->id,
-                        'field' => $field,
-                        'attempt' => $attempts + 1
-                    ]);
+                    // Log::info("Field updated successfully", [
+                    // 'tenant_id' => $tenant->id,
+                    // 'field' => $field,
+                    // 'attempt' => $attempts + 1
+                    // ]);
 
                 } catch (\Exception $e) {
                     $attempts++;
@@ -221,14 +221,14 @@ class OnboardingController extends Controller
         }
 
         // Log summary
-        Log::info("Tenant update summary", [
-            'tenant_id' => $tenant->id,
-            'updated_fields' => $updatedFields,
-            'failed_fields' => $failedFields,
-            'total_fields' => count($data),
-            'success_count' => count($updatedFields),
-            'failed_count' => count($failedFields)
-        ]);
+        // Log::info("Tenant update summary", [
+        // 'tenant_id' => $tenant->id,
+        // 'updated_fields' => $updatedFields,
+        // 'failed_fields' => $failedFields,
+        // 'total_fields' => count($data),
+        // 'success_count' => count($updatedFields),
+        // 'failed_count' => count($failedFields)
+        // ]);
 
         // If any critical fields failed, throw an exception
         if (!empty($failedFields)) {
@@ -255,11 +255,11 @@ class OnboardingController extends Controller
             $originalTimeout = ini_get('max_execution_time');
             set_time_limit(300); // 5 minutes for seeding
 
-            Log::info("Starting seeding for tenant", [
-                'tenant_id' => $tenant->id,
-                'tenant_name' => $tenant->name,
-                'original_timeout' => $originalTimeout
-            ]);
+            // Log::info("Starting seeding for tenant", [
+            // 'tenant_id' => $tenant->id,
+            // 'tenant_name' => $tenant->name,
+            // 'original_timeout' => $originalTimeout
+            // ]);
 
             // Refresh connection before each seeding operation
             $this->refreshDatabaseConnection();
@@ -276,9 +276,9 @@ class OnboardingController extends Controller
 
             // Seed Default Ledger Accounts with retry mechanism and extended timeout
             // This is the largest dataset so we give it special attention
-            Log::info("Starting ledger accounts seeding (largest dataset)", [
-                'tenant_id' => $tenant->id
-            ]);
+            // Log::info("Starting ledger accounts seeding (largest dataset)", [
+            // 'tenant_id' => $tenant->id
+            // ]);
 
             // Determine which accounts to seed:
             // - If user completed the accounts onboarding step, seed only their selection
@@ -293,10 +293,10 @@ class OnboardingController extends Controller
 
             // Verify ledger accounts were seeded
             $ledgerCount = LedgerAccount::where('tenant_id', $tenant->id)->count();
-            Log::info("Ledger accounts seeded", [
-                'tenant_id' => $tenant->id,
-                'count' => $ledgerCount
-            ]);
+            // Log::info("Ledger accounts seeded", [
+            // 'tenant_id' => $tenant->id,
+            // 'count' => $ledgerCount
+            // ]);
 
             if ($ledgerCount === 0) {
                 throw new \Exception("No ledger accounts were seeded for tenant {$tenant->id}");
@@ -305,9 +305,9 @@ class OnboardingController extends Controller
             // Seed Default Banks with retry mechanism
             // This must happen AFTER ledger accounts are seeded because
             // the Bank model's boot() method creates a linked ledger account
-            Log::info("Starting default banks seeding", [
-                'tenant_id' => $tenant->id
-            ]);
+            // Log::info("Starting default banks seeding", [
+            // 'tenant_id' => $tenant->id
+            // ]);
 
             $this->retryOperation(function() use ($tenant) {
                 DefaultBanksSeeder::seedForTenant($tenant->id);
@@ -315,10 +315,10 @@ class OnboardingController extends Controller
 
             // Verify default bank was seeded
             $banksCount = \App\Models\Bank::where('tenant_id', $tenant->id)->count();
-            Log::info("Default banks seeded", [
-                'tenant_id' => $tenant->id,
-                'count' => $banksCount
-            ]);
+            // Log::info("Default banks seeded", [
+            // 'tenant_id' => $tenant->id,
+            // 'count' => $banksCount
+            // ]);
 
             // Seed Product Categories with retry mechanism
             $this->retryOperation(function() use ($tenant) {
@@ -341,9 +341,9 @@ class OnboardingController extends Controller
             }, "Default PFAs seeding for tenant: {$tenant->id}");
 
             // Seed Permissions and create default roles
-            Log::info("Starting permissions seeding", [
-                'tenant_id' => $tenant->id
-            ]);
+            // Log::info("Starting permissions seeding", [
+            // 'tenant_id' => $tenant->id
+            // ]);
 
             $this->retryOperation(function() use ($tenant) {
                 // Run permissions seeder
@@ -352,9 +352,9 @@ class OnboardingController extends Controller
                 // Create default roles for tenant
                 $this->createDefaultRoles($tenant);
 
-                Log::info("Default roles created and permissions assigned", [
-                    'tenant_id' => $tenant->id
-                ]);
+                // Log::info("Default roles created and permissions assigned", [
+                // 'tenant_id' => $tenant->id
+                // ]);
             }, "Permissions seeding and roles setup for tenant: {$tenant->id}");
 
             // Final verification
@@ -367,21 +367,21 @@ class OnboardingController extends Controller
             $permissionsCount = Permission::count();
             $rolesCount = Role::where('tenant_id', $tenant->id)->count();
 
-            Log::info("All default data seeded successfully", [
-                'tenant_id' => $tenant->id,
-                'tenant_name' => $tenant->name,
-                'account_groups' => $accountGroupsCount,
-                'voucher_types' => $voucherTypesCount,
-                'ledger_accounts' => $ledgerCount,
-                'banks' => $banksCount,
-                'product_categories' => $categoriesCount,
-                'units' => $unitsCount,
-                'shifts' => $shiftsCount,
-                'pfas' => $pfasCount,
-                'permissions' => $permissionsCount,
-                'roles' => $rolesCount,
-                'total' => $accountGroupsCount + $voucherTypesCount + $ledgerCount + $banksCount + $categoriesCount + $unitsCount + $shiftsCount + $pfasCount
-            ]);
+            // Log::info("All default data seeded successfully", [
+            // 'tenant_id' => $tenant->id,
+            // 'tenant_name' => $tenant->name,
+            // 'account_groups' => $accountGroupsCount,
+            // 'voucher_types' => $voucherTypesCount,
+            // 'ledger_accounts' => $ledgerCount,
+            // 'banks' => $banksCount,
+            // 'product_categories' => $categoriesCount,
+            // 'units' => $unitsCount,
+            // 'shifts' => $shiftsCount,
+            // 'pfas' => $pfasCount,
+            // 'permissions' => $permissionsCount,
+            // 'roles' => $rolesCount,
+            // 'total' => $accountGroupsCount + $voucherTypesCount + $ledgerCount + $banksCount + $categoriesCount + $unitsCount + $shiftsCount + $pfasCount
+            // ]);
 
             // Restore original timeout
             set_time_limit((int)$originalTimeout);
@@ -407,7 +407,7 @@ class OnboardingController extends Controller
                 }
 
                 $callback();
-                Log::info($logMessage . " - Success on attempt " . ($attempts + 1));
+                // Log::info($logMessage . " - Success on attempt " . ($attempts + 1));
                 return;
 
             } catch (\Exception $e) {
@@ -515,10 +515,10 @@ class OnboardingController extends Controller
             // Check current ledger account count
             $existingCount = LedgerAccount::where('tenant_id', $tenantId)->count();
 
-            Log::info("Reseeding ledger accounts", [
-                'tenant_id' => $tenantId,
-                'existing_count' => $existingCount
-            ]);
+            // Log::info("Reseeding ledger accounts", [
+            // 'tenant_id' => $tenantId,
+            // 'existing_count' => $existingCount
+            // ]);
 
             // Extend timeout
             set_time_limit(300);
@@ -535,12 +535,12 @@ class OnboardingController extends Controller
             $newCount = LedgerAccount::where('tenant_id', $tenantId)->count();
             $addedCount = $newCount - $existingCount;
 
-            Log::info("Ledger accounts reseeded", [
-                'tenant_id' => $tenantId,
-                'previous_count' => $existingCount,
-                'new_count' => $newCount,
-                'added' => $addedCount
-            ]);
+            // Log::info("Ledger accounts reseeded", [
+            // 'tenant_id' => $tenantId,
+            // 'previous_count' => $existingCount,
+            // 'new_count' => $newCount,
+            // 'added' => $addedCount
+            // ]);
 
             return response()->json([
                 'success' => true,
@@ -663,11 +663,11 @@ class OnboardingController extends Controller
             $this->refreshDatabaseConnection();
             $this->safeModelUpdate($tenant, ['onboarding_progress' => $progress]);
 
-            Log::info("Company step completed successfully", [
-                'tenant_id' => $tenant->id,
-                'updated_fields' => $updateResult['updated'],
-                'failed_fields' => $updateResult['failed']
-            ]);
+            // Log::info("Company step completed successfully", [
+            // 'tenant_id' => $tenant->id,
+            // 'updated_fields' => $updateResult['updated'],
+            // 'failed_fields' => $updateResult['failed']
+            // ]);
 
         } catch (\Exception $e) {
             Log::error("Company step failed", [
@@ -739,10 +739,10 @@ class OnboardingController extends Controller
             $this->refreshDatabaseConnection();
             $this->safeModelUpdate($tenant, ['onboarding_progress' => $progress]);
 
-            Log::info("Preferences step completed successfully", [
-                'tenant_id' => $tenant->id,
-                'settings_count' => count($data)
-            ]);
+            // Log::info("Preferences step completed successfully", [
+            // 'tenant_id' => $tenant->id,
+            // 'settings_count' => count($data)
+            // ]);
 
         } catch (\Exception $e) {
             Log::error("Preferences step failed", [
@@ -788,10 +788,10 @@ class OnboardingController extends Controller
             $this->refreshDatabaseConnection();
             $this->safeModelUpdate($tenant, ['onboarding_progress' => $progress]);
 
-            Log::info("Accounts step completed successfully", [
-                'tenant_id' => $tenant->id,
-                'selected_count' => count($validatedCodes),
-            ]);
+            // Log::info("Accounts step completed successfully", [
+            // 'tenant_id' => $tenant->id,
+            // 'selected_count' => count($validatedCodes),
+            // ]);
 
         } catch (\Exception $e) {
             Log::error("Accounts step failed", [
@@ -866,10 +866,10 @@ class OnboardingController extends Controller
 
     private function createTeamMemberInvitation($tenant, $memberData)
     {
-        Log::info('Team member invitation created', [
-            'tenant_id' => $tenant->id,
-            'member_data' => $memberData
-        ]);
+        // Log::info('Team member invitation created', [
+        // 'tenant_id' => $tenant->id,
+        // 'member_data' => $memberData
+        // ]);
     }
 
     private function createDefaultRoles($tenant)
@@ -988,11 +988,11 @@ class OnboardingController extends Controller
                 if ($ownerRole) {
                     auth()->user()->roles()->syncWithoutDetaching([$ownerRole->id]);
 
-                    Log::info("Owner role assigned to user", [
-                        'tenant_id' => $tenant->id,
-                        'user_id' => auth()->id(),
-                        'role_id' => $ownerRole->id
-                    ]);
+                    // Log::info("Owner role assigned to user", [
+                    // 'tenant_id' => $tenant->id,
+                    // 'user_id' => auth()->id(),
+                    // 'role_id' => $ownerRole->id
+                    // ]);
                 }
             }
 
@@ -1011,11 +1011,11 @@ class OnboardingController extends Controller
             // Use field-by-field update for completion
             $updateResult = $this->updateTenantFieldByField($tenant, $completionData);
 
-            Log::info("Onboarding completion successful", [
-                'tenant_id' => $tenant->id,
-                'updated_fields' => $updateResult['updated'],
-                'failed_fields' => $updateResult['failed']
-            ]);
+            // Log::info("Onboarding completion successful", [
+            // 'tenant_id' => $tenant->id,
+            // 'updated_fields' => $updateResult['updated'],
+            // 'failed_fields' => $updateResult['failed']
+            // ]);
 
             return redirect()->route('tenant.dashboard', ['tenant' => $tenant->slug])
                 ->with('success', 'Welcome to Ballie! Your account is now fully set up and ready to use.');

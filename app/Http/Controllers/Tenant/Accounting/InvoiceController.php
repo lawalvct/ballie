@@ -228,22 +228,22 @@ class InvoiceController extends Controller
 
     public function store(Request $request, Tenant $tenant)
     {
-        Log::info('=== INVOICE STORE STARTED ===', [
-            'tenant_id' => $tenant->id,
-            'tenant_slug' => $tenant->slug,
-            'user_id' => auth()->id(),
-            'timestamp' => now()->toDateTimeString()
-        ]);
+        // Log::info('=== INVOICE STORE STARTED ===', [
+        // 'tenant_id' => $tenant->id,
+        // 'tenant_slug' => $tenant->slug,
+        // 'user_id' => auth()->id(),
+        // 'timestamp' => now()->toDateTimeString()
+        // ]);
 
-        Log::info('Request Data Received', [
-            'all_request_data' => $request->all(),
-            'action' => $request->input('action'),
-            'voucher_type_id' => $request->input('voucher_type_id'),
-            'customer_id' => $request->input('customer_id'),
-            'customer_id_is_null' => is_null($request->input('customer_id')),
-            'customer_id_is_empty' => empty($request->input('customer_id')),
-            'inventory_items_count' => count($request->input('inventory_items', []))
-        ]);
+        // Log::info('Request Data Received', [
+        // 'all_request_data' => $request->all(),
+        // 'action' => $request->input('action'),
+        // 'voucher_type_id' => $request->input('voucher_type_id'),
+        // 'customer_id' => $request->input('customer_id'),
+        // 'customer_id_is_null' => is_null($request->input('customer_id')),
+        // 'customer_id_is_empty' => empty($request->input('customer_id')),
+        // 'inventory_items_count' => count($request->input('inventory_items', []))
+        // ]);
 
         // Check if customer_id is missing and log the form state
         if (is_null($request->input('customer_id')) || empty($request->input('customer_id'))) {
@@ -289,41 +289,41 @@ class InvoiceController extends Controller
                 ->withInput();
         }
 
-        Log::info('Validation Passed Successfully');
+        // Log::info('Validation Passed Successfully');
 
         try {
             $shouldPost = in_array($request->action, ['save_and_post', 'save_and_post_new_sales']);
 
             DB::beginTransaction();
-            Log::info('Database Transaction Started');
+            // Log::info('Database Transaction Started');
 
             // Get voucher type
             $voucherType = VoucherType::findOrFail($request->voucher_type_id);
-            Log::info('Voucher Type Retrieved', [
-                'voucher_type_id' => $voucherType->id,
-                'voucher_type_name' => $voucherType->name,
-                'voucher_type_code' => $voucherType->code,
-                'affects_inventory' => $voucherType->affects_inventory,
-                'inventory_effect' => $voucherType->inventory_effect
-            ]);
+            // Log::info('Voucher Type Retrieved', [
+            // 'voucher_type_id' => $voucherType->id,
+            // 'voucher_type_name' => $voucherType->name,
+            // 'voucher_type_code' => $voucherType->code,
+            // 'affects_inventory' => $voucherType->affects_inventory,
+            // 'inventory_effect' => $voucherType->inventory_effect
+            // ]);
 
             // Calculate total amount from inventory items
             $totalAmount = 0;
             $inventoryItems = [];
 
-            Log::info('Processing Inventory Items', [
-                'items_count' => count($request->inventory_items)
-            ]);
+            // Log::info('Processing Inventory Items', [
+            // 'items_count' => count($request->inventory_items)
+            // ]);
 
             foreach ($request->inventory_items as $index => $item) {
                 $itemType = $item['item_type'] ?? 'product';
 
-                Log::info("Processing Item {$index}", [
-                    'item_type' => $itemType,
-                    'product_id' => $item['product_id'] ?? null,
-                    'quantity' => $item['quantity'],
-                    'rate' => $item['rate']
-                ]);
+                // Log::info("Processing Item {$index}", [
+                // 'item_type' => $itemType,
+                // 'product_id' => $item['product_id'] ?? null,
+                // 'quantity' => $item['quantity'],
+                // 'rate' => $item['rate']
+                // ]);
 
                 $amount = $item['quantity'] * $item['rate'];
                 $totalAmount += $amount;
@@ -343,11 +343,11 @@ class InvoiceController extends Controller
                 } else {
                     // Product item — standard product lookup
                     $product = Product::findOrFail($item['product_id']);
-                    Log::info("Product Retrieved", [
-                        'product_id' => $product->id,
-                        'product_name' => $product->name,
-                        'current_stock' => $product->stock_quantity
-                    ]);
+                    // Log::info("Product Retrieved", [
+                    // 'product_id' => $product->id,
+                    // 'product_name' => $product->name,
+                    // 'current_stock' => $product->stock_quantity
+                    // ]);
 
                     $inventoryItems[] = [
                         'item_type' => 'product',
@@ -361,18 +361,18 @@ class InvoiceController extends Controller
                     ];
                 }
 
-                Log::info("Item Processed", [
-                    'amount' => $amount,
-                    'running_total' => $totalAmount
-                ]);
+                // Log::info("Item Processed", [
+                // 'amount' => $amount,
+                // 'running_total' => $totalAmount
+                // ]);
             }
 
             // Process additional ledger accounts (like VAT, Transport, etc.)
             $additionalLedgerAccounts = [];
             if ($request->has('ledger_accounts') && is_array($request->ledger_accounts)) {
-                Log::info('Processing Additional Ledger Accounts', [
-                    'count' => count($request->ledger_accounts)
-                ]);
+                // Log::info('Processing Additional Ledger Accounts', [
+                // 'count' => count($request->ledger_accounts)
+                // ]);
 
                 foreach ($request->ledger_accounts as $index => $ledgerItem) {
                     if (!empty($ledgerItem['ledger_account_id']) && !empty($ledgerItem['amount'])) {
@@ -385,43 +385,43 @@ class InvoiceController extends Controller
                             'narration' => $ledgerItem['narration'] ?? ''
                         ];
 
-                        Log::info("Additional Ledger Account {$index}", [
-                            'ledger_account_id' => $ledgerItem['ledger_account_id'],
-                            'amount' => $amount,
-                            'running_total' => $totalAmount
-                        ]);
+                        // Log::info("Additional Ledger Account {$index}", [
+                        // 'ledger_account_id' => $ledgerItem['ledger_account_id'],
+                        // 'amount' => $amount,
+                        // 'running_total' => $totalAmount
+                        // ]);
                     }
                 }
             }
 
             // Process VAT if enabled
-            Log::info('VAT Processing Check', [
-                'has_vat_enabled' => $request->has('vat_enabled'),
-                'vat_enabled_value' => $request->vat_enabled,
-                'vat_amount_value' => $request->vat_amount,
-                'vat_applies_to' => $request->vat_applies_to,
-            ]);
+            // Log::info('VAT Processing Check', [
+            // 'has_vat_enabled' => $request->has('vat_enabled'),
+            // 'vat_enabled_value' => $request->vat_enabled,
+            // 'vat_amount_value' => $request->vat_amount,
+            // 'vat_applies_to' => $request->vat_applies_to,
+            // ]);
 
             if ($request->has('vat_enabled') && $request->vat_enabled == '1') {
                 $vatAmount = (float) $request->vat_amount;
                 $vatAppliesTo = $request->input('vat_applies_to', 'items_only');
 
-                Log::info('VAT Enabled - Processing', [
-                    'vat_amount' => $vatAmount,
-                    'vat_applies_to' => $vatAppliesTo,
-                    'voucher_type_code' => $voucherType->code,
-                    'inventory_effect' => $voucherType->inventory_effect,
-                ]);
+                // Log::info('VAT Enabled - Processing', [
+                // 'vat_amount' => $vatAmount,
+                // 'vat_applies_to' => $vatAppliesTo,
+                // 'voucher_type_code' => $voucherType->code,
+                // 'inventory_effect' => $voucherType->inventory_effect,
+                // ]);
 
                 if ($vatAmount > 0) {
                     // Determine VAT account based on invoice type
                     $isSales = $voucherType->inventory_effect === 'decrease';
                     $vatAccountCode = $isSales ? 'VAT-OUT-001' : 'VAT-IN-001';
 
-                    Log::info('VAT Account Selection', [
-                        'is_sales' => $isSales,
-                        'vat_account_code' => $vatAccountCode,
-                    ]);
+                    // Log::info('VAT Account Selection', [
+                    // 'is_sales' => $isSales,
+                    // 'vat_account_code' => $vatAccountCode,
+                    // ]);
 
                     // Get VAT ledger account
                     $vatAccount = LedgerAccount::where('tenant_id', $tenant->id)
@@ -442,16 +442,16 @@ class InvoiceController extends Controller
                             'narration' => $narration
                         ];
 
-                        Log::info('VAT Added Successfully', [
-                            'vat_account_id' => $vatAccount->id,
-                            'vat_account' => $vatAccount->name,
-                            'vat_account_code' => $vatAccountCode,
-                            'vat_amount' => $vatAmount,
-                            'vat_applies_to' => $vatAppliesTo,
-                            'is_sales' => $isSales,
-                            'running_total' => $totalAmount,
-                            'additional_ledger_accounts_count' => count($additionalLedgerAccounts),
-                        ]);
+                        // Log::info('VAT Added Successfully', [
+                        // 'vat_account_id' => $vatAccount->id,
+                        // 'vat_account' => $vatAccount->name,
+                        // 'vat_account_code' => $vatAccountCode,
+                        // 'vat_amount' => $vatAmount,
+                        // 'vat_applies_to' => $vatAppliesTo,
+                        // 'is_sales' => $isSales,
+                        // 'running_total' => $totalAmount,
+                        // 'additional_ledger_accounts_count' => count($additionalLedgerAccounts),
+                        // ]);
                     } else {
                         Log::warning('VAT Account Not Found', [
                             'vat_account_code' => $vatAccountCode,
@@ -465,19 +465,19 @@ class InvoiceController extends Controller
                     ]);
                 }
             } else {
-                Log::info('VAT Not Enabled', [
-                    'has_vat_enabled' => $request->has('vat_enabled'),
-                    'vat_enabled_value' => $request->vat_enabled,
-                ]);
+                // Log::info('VAT Not Enabled', [
+                // 'has_vat_enabled' => $request->has('vat_enabled'),
+                // 'vat_enabled_value' => $request->vat_enabled,
+                // ]);
             }
 
-            Log::info('All Items Processed', [
-                'products_total' => array_sum(array_column($inventoryItems, 'amount')),
-                'ledger_accounts_total' => array_sum(array_column($additionalLedgerAccounts, 'amount')),
-                'grand_total' => $totalAmount,
-                'items_count' => count($inventoryItems),
-                'ledger_accounts_count' => count($additionalLedgerAccounts)
-            ]);
+            // Log::info('All Items Processed', [
+            // 'products_total' => array_sum(array_column($inventoryItems, 'amount')),
+            // 'ledger_accounts_total' => array_sum(array_column($additionalLedgerAccounts, 'amount')),
+            // 'grand_total' => $totalAmount,
+            // 'items_count' => count($inventoryItems),
+            // 'ledger_accounts_count' => count($additionalLedgerAccounts)
+            // ]);
 
             // Generate voucher number (use MAX to avoid duplicates)
             $maxNumber = Voucher::where('tenant_id', $tenant->id)
@@ -487,10 +487,10 @@ class InvoiceController extends Controller
 
             $nextNumber = ($maxNumber ?? 0) + 1;
 
-            Log::info('Voucher Number Generated', [
-                'max_voucher_number' => $maxNumber,
-                'next_number' => $nextNumber
-            ]);
+            // Log::info('Voucher Number Generated', [
+            // 'max_voucher_number' => $maxNumber,
+            // 'next_number' => $nextNumber
+            // ]);
 
             // Create voucher
             $voucherData = [
@@ -508,23 +508,23 @@ class InvoiceController extends Controller
                 'meta_data' => json_encode(['inventory_items' => $inventoryItems]),
             ];
 
-            Log::info('Creating Voucher with Data', $voucherData);
+            // Log::info('Creating Voucher with Data', $voucherData);
 
             $voucher = Voucher::create($voucherData);
 
-            Log::info('Voucher Created Successfully', [
-                'voucher_id' => $voucher->id,
-                'voucher_number' => $voucher->voucher_number,
-                'status' => $voucher->status
-            ]);
+            // Log::info('Voucher Created Successfully', [
+            // 'voucher_id' => $voucher->id,
+            // 'voucher_number' => $voucher->voucher_number,
+            // 'status' => $voucher->status
+            // ]);
 
           foreach ($inventoryItems as $item) {
-    Log::info('Creating Voucher Item', [
-        'item_type' => $item['item_type'] ?? 'product',
-        'product_id' => $item['product_id'],
-        'quantity' => $item['quantity'],
-        'amount' => $item['amount']
-    ]);
+    // Log::info('Creating Voucher Item', [
+    // 'item_type' => $item['item_type'] ?? 'product',
+    // 'product_id' => $item['product_id'],
+    // 'quantity' => $item['quantity'],
+    // 'amount' => $item['amount']
+    // ]);
 
     $voucher->items()->create([
         'item_type' => $item['item_type'] ?? 'product',
@@ -544,42 +544,42 @@ class InvoiceController extends Controller
     ]);
 }
 
-            Log::info('All Voucher Items Created', [
-                'items_count' => count($inventoryItems)
-            ]);
+            // Log::info('All Voucher Items Created', [
+            // 'items_count' => count($inventoryItems)
+            // ]);
 
             // Create accounting entries
-            Log::info('Creating Accounting Entries', [
-                'customer_ledger_id' => $request->customer_id,
-                'additional_ledger_accounts' => count($additionalLedgerAccounts)
-            ]);
+            // Log::info('Creating Accounting Entries', [
+            // 'customer_ledger_id' => $request->customer_id,
+            // 'additional_ledger_accounts' => count($additionalLedgerAccounts)
+            // ]);
 
             $this->createAccountingEntries($voucher, $inventoryItems, $tenant, $request->customer_id, $additionalLedgerAccounts);
 
-            Log::info('Accounting Entries Created Successfully');
+            // Log::info('Accounting Entries Created Successfully');
 
             // Update product stock if posted, using voucher type's inventory_effect
             if ($shouldPost) {
-                Log::info('Updating Product Stock', [
-                    'effect' => $voucherType->inventory_effect ?? 'decrease'
-                ]);
+                // Log::info('Updating Product Stock', [
+                // 'effect' => $voucherType->inventory_effect ?? 'decrease'
+                // ]);
 
                 $effect = $voucherType->inventory_effect ?? 'decrease';
                 if ($effect === 'increase' || $effect === 'decrease') {
                     $this->updateProductStock($inventoryItems, $effect, $voucher);
-                    Log::info('Product Stock Updated Successfully');
+                    // Log::info('Product Stock Updated Successfully');
                 } else {
-                    Log::info('Stock Update Skipped', [
-                        'effect' => $effect
-                    ]);
+                    // Log::info('Stock Update Skipped', [
+                    // 'effect' => $effect
+                    // ]);
                 }
                 // If 'none', do not update stock
             } else {
-                Log::info('Stock Update Skipped - Draft Invoice');
+                // Log::info('Stock Update Skipped - Draft Invoice');
             }
 
             DB::commit();
-            Log::info('Database Transaction Committed Successfully');
+            // Log::info('Database Transaction Committed Successfully');
 
             // Generate payment links for customer convenience (only if Online Payments module is enabled)
             if (ModuleRegistry::isModuleEnabled($tenant, 'online_payments')) {
@@ -590,13 +590,13 @@ class InvoiceController extends Controller
                 ? 'Invoice created and posted successfully!'
                 : 'Invoice saved as draft successfully!';
 
-            Log::info('=== INVOICE STORE COMPLETED SUCCESSFULLY ===', [
-                'voucher_id' => $voucher->id,
-                'voucher_number' => $voucher->voucher_number,
-                'status' => $voucher->status,
-                'total_amount' => $voucher->total_amount,
-                'message' => $message
-            ]);
+            // Log::info('=== INVOICE STORE COMPLETED SUCCESSFULLY ===', [
+            // 'voucher_id' => $voucher->id,
+            // 'voucher_number' => $voucher->voucher_number,
+            // 'status' => $voucher->status,
+            // 'total_amount' => $voucher->total_amount,
+            // 'message' => $message
+            // ]);
 
             // If user chose to Save, Post and open a new Sales invoice, redirect to create page with type=sv
             if ($request->action === 'save_and_post_new_sales') {
@@ -720,15 +720,15 @@ class InvoiceController extends Controller
             }
         }
 
-        Log::info('Found bank accounts and payments for invoice', [
-            'tenant_id' => $tenant->id,
-            'invoice_id' => $invoice->id,
-            'invoice_reference' => $invoiceReference,
-            'bank_accounts_count' => $bankAccounts->count(),
-            'payments_count' => $payments->count(),
-            'total_paid' => $totalPaid,
-            'balance_due' => $balanceDue
-        ]);
+        // Log::info('Found bank accounts and payments for invoice', [
+        // 'tenant_id' => $tenant->id,
+        // 'invoice_id' => $invoice->id,
+        // 'invoice_reference' => $invoiceReference,
+        // 'bank_accounts_count' => $bankAccounts->count(),
+        // 'payments_count' => $payments->count(),
+        // 'total_paid' => $totalPaid,
+        // 'balance_due' => $balanceDue
+        // ]);
 
         return view('tenant.accounting.invoices.show', compact(
             'tenant',
@@ -819,11 +819,11 @@ class InvoiceController extends Controller
 
     public function update(Request $request, Tenant $tenant, Voucher $invoice)
     {
-        Log::info('=== INVOICE UPDATE STARTED ===', [
-            'invoice_id' => $invoice->id,
-            'tenant_id' => $tenant->id,
-            'user_id' => auth()->id(),
-        ]);
+        // Log::info('=== INVOICE UPDATE STARTED ===', [
+        // 'invoice_id' => $invoice->id,
+        // 'tenant_id' => $tenant->id,
+        // 'user_id' => auth()->id(),
+        // ]);
 
         // Ensure the invoice belongs to the tenant and is editable
         if ($invoice->tenant_id !== $tenant->id) {
@@ -870,7 +870,7 @@ class InvoiceController extends Controller
             $shouldPost = in_array($request->action, ['save_and_post', 'save_and_post_new_sales']);
 
             DB::beginTransaction();
-            Log::info('Database Transaction Started');
+            // Log::info('Database Transaction Started');
 
             // Get voucher type
             $voucherType = VoucherType::findOrFail($request->voucher_type_id);
@@ -935,11 +935,11 @@ class InvoiceController extends Controller
                 }
             }
 
-            Log::info('Calculated Totals', [
-                'total_amount' => $totalAmount,
-                'inventory_items_count' => count($inventoryItems),
-                'additional_ledger_accounts_count' => count($additionalLedgerAccounts)
-            ]);
+            // Log::info('Calculated Totals', [
+            // 'total_amount' => $totalAmount,
+            // 'inventory_items_count' => count($inventoryItems),
+            // 'additional_ledger_accounts_count' => count($additionalLedgerAccounts)
+            // ]);
 
             // Update voucher
             $invoice->update([
@@ -957,10 +957,10 @@ class InvoiceController extends Controller
                 ])
             ]);
 
-            Log::info('Voucher Updated', [
-                'voucher_id' => $invoice->id,
-                'status' => $invoice->status
-            ]);
+            // Log::info('Voucher Updated', [
+            // 'voucher_id' => $invoice->id,
+            // 'status' => $invoice->status
+            // ]);
 
             // Delete old voucher items and create new ones
             $invoice->items()->delete();
@@ -983,35 +983,35 @@ class InvoiceController extends Controller
                 ]);
             }
 
-            Log::info('Voucher Items Recreated', ['items_count' => count($inventoryItems)]);
+            // Log::info('Voucher Items Recreated', ['items_count' => count($inventoryItems)]);
 
             // Delete old accounting entries and create new ones
             $invoice->entries()->delete();
             $this->createAccountingEntries($invoice, $inventoryItems, $tenant, $request->customer_id, $additionalLedgerAccounts);
 
-            Log::info('Accounting Entries Recreated');
+            // Log::info('Accounting Entries Recreated');
 
             // Update product stock if posted
             if ($shouldPost) {
                 $effect = $voucherType->inventory_effect ?? 'decrease';
                 if ($effect === 'increase' || $effect === 'decrease') {
                     $this->updateProductStock($inventoryItems, $effect, $invoice);
-                    Log::info('Product Stock Updated');
+                    // Log::info('Product Stock Updated');
                 }
             }
 
             DB::commit();
-            Log::info('Database Transaction Committed');
+            // Log::info('Database Transaction Committed');
 
             $message = $shouldPost
                 ? 'Invoice updated and posted successfully!'
                 : 'Invoice updated successfully!';
 
-            Log::info('=== INVOICE UPDATE COMPLETED ===', [
-                'voucher_id' => $invoice->id,
-                'status' => $invoice->status,
-                'message' => $message
-            ]);
+            // Log::info('=== INVOICE UPDATE COMPLETED ===', [
+            // 'voucher_id' => $invoice->id,
+            // 'status' => $invoice->status,
+            // 'message' => $message
+            // ]);
 
             // If user chose to Save, Post and open a new Sales invoice, redirect to create page with type=sv
             if ($request->action === 'save_and_post_new_sales') {
@@ -1548,12 +1548,12 @@ class InvoiceController extends Controller
                     'particulars' => 'Inventory reduction - ' . $voucher->getDisplayNumber(),
                 ]);
 
-                Log::info('COGS entries created for sales invoice', [
-                    'voucher_id' => $voucher->id,
-                    'total_cost' => $totalCost,
-                    'cogs_account' => $cogsAccount->name,
-                    'inventory_account' => $inventoryAccount->name,
-                ]);
+                // Log::info('COGS entries created for sales invoice', [
+                // 'voucher_id' => $voucher->id,
+                // 'total_cost' => $totalCost,
+                // 'cogs_account' => $cogsAccount->name,
+                // 'inventory_account' => $inventoryAccount->name,
+                // ]);
             } else {
                 Log::warning('COGS not created - no purchase rate data', [
                     'voucher_id' => $voucher->id,
@@ -1584,10 +1584,10 @@ class InvoiceController extends Controller
         }
 
         // Debit: Additional Ledger Accounts (VAT, Transport, etc.)
-        Log::info('Creating Purchase Additional Ledger Entries', [
-            'additional_ledger_accounts_count' => count($additionalLedgerAccounts),
-            'additional_ledger_accounts' => $additionalLedgerAccounts,
-        ]);
+        // Log::info('Creating Purchase Additional Ledger Entries', [
+        // 'additional_ledger_accounts_count' => count($additionalLedgerAccounts),
+        // 'additional_ledger_accounts' => $additionalLedgerAccounts,
+        // ]);
 
         foreach ($additionalLedgerAccounts as $additionalLedger) {
             $entry = VoucherEntry::create([
@@ -1598,12 +1598,12 @@ class InvoiceController extends Controller
                 'particulars' => $additionalLedger['narration'] ?: ('Additional charge - ' . $voucher->getDisplayNumber()),
             ]);
 
-            Log::info('Purchase Additional Entry Created', [
-                'entry_id' => $entry->id,
-                'ledger_account_id' => $additionalLedger['ledger_account_id'],
-                'debit_amount' => $additionalLedger['amount'],
-                'narration' => $additionalLedger['narration'],
-            ]);
+            // Log::info('Purchase Additional Entry Created', [
+            // 'entry_id' => $entry->id,
+            // 'ledger_account_id' => $additionalLedger['ledger_account_id'],
+            // 'debit_amount' => $additionalLedger['amount'],
+            // 'narration' => $additionalLedger['narration'],
+            // ]);
         }
 
         // Credit: Supplier Account (Balance Sheet - Accounts Payable increases)
@@ -1619,37 +1619,37 @@ class InvoiceController extends Controller
     // Update ledger account balances
     try {
         // Update party (customer/supplier) account balance
-        Log::info('Before updating party balance', [
-            'party_account_id' => $partyAccount->id,
-            'current_balance_before' => $partyAccount->current_balance
-        ]);
+        // Log::info('Before updating party balance', [
+        // 'party_account_id' => $partyAccount->id,
+        // 'current_balance_before' => $partyAccount->current_balance
+        // ]);
 
         $partyBalance = $partyAccount->updateCurrentBalance();
 
-        Log::info('After updating party balance', [
-            'party_account_id' => $partyAccount->id,
-            'current_balance_after' => $partyAccount->fresh()->current_balance,
-            'calculated_balance' => $partyBalance
-        ]);
+        // Log::info('After updating party balance', [
+        // 'party_account_id' => $partyAccount->id,
+        // 'current_balance_after' => $partyAccount->fresh()->current_balance,
+        // 'calculated_balance' => $partyBalance
+        // ]);
 
         // Update all affected product ledger accounts
         foreach ($groupedItems as $accountId => $amount) {
             $productAccount = LedgerAccount::find($accountId);
             if ($productAccount) {
-                Log::info('Before updating product account balance', [
-                    'account_id' => $productAccount->id,
-                    'account_name' => $productAccount->name,
-                    'current_balance_before' => $productAccount->current_balance
-                ]);
+                // Log::info('Before updating product account balance', [
+                // 'account_id' => $productAccount->id,
+                // 'account_name' => $productAccount->name,
+                // 'current_balance_before' => $productAccount->current_balance
+                // ]);
 
                 $productBalance = $productAccount->updateCurrentBalance();
 
-                Log::info('After updating product account balance', [
-                    'account_id' => $productAccount->id,
-                    'account_name' => $productAccount->name,
-                    'current_balance_after' => $productAccount->fresh()->current_balance,
-                    'calculated_balance' => $productBalance
-                ]);
+                // Log::info('After updating product account balance', [
+                // 'account_id' => $productAccount->id,
+                // 'account_name' => $productAccount->name,
+                // 'current_balance_after' => $productAccount->fresh()->current_balance,
+                // 'calculated_balance' => $productBalance
+                // ]);
             }
         }
 
@@ -1657,20 +1657,20 @@ class InvoiceController extends Controller
         foreach ($additionalLedgerAccounts as $additionalLedger) {
             $additionalAccount = LedgerAccount::find($additionalLedger['ledger_account_id']);
             if ($additionalAccount) {
-                Log::info('Before updating additional account balance', [
-                    'account_id' => $additionalAccount->id,
-                    'account_name' => $additionalAccount->name,
-                    'current_balance_before' => $additionalAccount->current_balance
-                ]);
+                // Log::info('Before updating additional account balance', [
+                // 'account_id' => $additionalAccount->id,
+                // 'account_name' => $additionalAccount->name,
+                // 'current_balance_before' => $additionalAccount->current_balance
+                // ]);
 
                 $additionalBalance = $additionalAccount->updateCurrentBalance();
 
-                Log::info('After updating additional account balance', [
-                    'account_id' => $additionalAccount->id,
-                    'account_name' => $additionalAccount->name,
-                    'current_balance_after' => $additionalAccount->fresh()->current_balance,
-                    'calculated_balance' => $additionalBalance
-                ]);
+                // Log::info('After updating additional account balance', [
+                // 'account_id' => $additionalAccount->id,
+                // 'account_name' => $additionalAccount->name,
+                // 'current_balance_after' => $additionalAccount->fresh()->current_balance,
+                // 'calculated_balance' => $additionalBalance
+                // ]);
             }
         }
 
@@ -1692,18 +1692,18 @@ class InvoiceController extends Controller
 
             if ($cogsAccount) {
                 $cogsAccount->updateCurrentBalance();
-                Log::info('COGS account balance updated', [
-                    'account_id' => $cogsAccount->id,
-                    'new_balance' => $cogsAccount->fresh()->current_balance,
-                ]);
+                // Log::info('COGS account balance updated', [
+                // 'account_id' => $cogsAccount->id,
+                // 'new_balance' => $cogsAccount->fresh()->current_balance,
+                // ]);
             }
 
             if ($inventoryAccount) {
                 $inventoryAccount->updateCurrentBalance();
-                Log::info('Inventory account balance updated', [
-                    'account_id' => $inventoryAccount->id,
-                    'new_balance' => $inventoryAccount->fresh()->current_balance,
-                ]);
+                // Log::info('Inventory account balance updated', [
+                // 'account_id' => $inventoryAccount->id,
+                // 'new_balance' => $inventoryAccount->fresh()->current_balance,
+                // ]);
             }
         }
 
@@ -1714,10 +1714,10 @@ class InvoiceController extends Controller
                 $outstandingBalance = max(0, $partyBalance);
                 $customer->update(['outstanding_balance' => $outstandingBalance]);
 
-                Log::info('Updated customer outstanding balance', [
-                    'customer_id' => $customer->id,
-                    'outstanding_balance' => $outstandingBalance
-                ]);
+                // Log::info('Updated customer outstanding balance', [
+                // 'customer_id' => $customer->id,
+                // 'outstanding_balance' => $outstandingBalance
+                // ]);
             }
         } elseif ($isPurchase) {
             $vendor = Vendor::where('ledger_account_id', $partyAccount->id)->first();
@@ -1725,10 +1725,10 @@ class InvoiceController extends Controller
                 $outstandingBalance = max(0, abs($partyBalance)); // Vendors have credit balances
                 $vendor->update(['outstanding_balance' => $outstandingBalance]);
 
-                Log::info('Updated vendor outstanding balance', [
-                    'vendor_id' => $vendor->id,
-                    'outstanding_balance' => $outstandingBalance
-                ]);
+                // Log::info('Updated vendor outstanding balance', [
+                // 'vendor_id' => $vendor->id,
+                // 'outstanding_balance' => $outstandingBalance
+                // ]);
             }
         }
 
@@ -2012,11 +2012,11 @@ class InvoiceController extends Controller
 
     public function recordPayment(Request $request, Tenant $tenant, Voucher $invoice)
     {
-        Log::info('recordPayment method called', [
-            'tenant_id' => $tenant->id,
-            'invoice_id' => $invoice->id,
-            'request_all' => $request->all()
-        ]);
+        // Log::info('recordPayment method called', [
+        // 'tenant_id' => $tenant->id,
+        // 'invoice_id' => $invoice->id,
+        // 'request_all' => $request->all()
+        // ]);
 
         // Ensure the invoice belongs to the tenant
         if ($invoice->tenant_id !== $tenant->id) {
@@ -2042,16 +2042,16 @@ class InvoiceController extends Controller
             return response()->json(['message' => 'Validation failed', 'errors' => $validator->errors()], 422);
         }
 
-        Log::info('Validation passed');
+        // Log::info('Validation passed');
 
         try {
             DB::beginTransaction();
 
-            Log::info('Recording payment for invoice', [
-                'invoice_id' => $invoice->id,
-                'tenant_id' => $tenant->id,
-                'request_data' => $request->all()
-            ]);
+            // Log::info('Recording payment for invoice', [
+            // 'invoice_id' => $invoice->id,
+            // 'tenant_id' => $tenant->id,
+            // 'request_data' => $request->all()
+            // ]);
 
             // Get receipt voucher type
             $receiptVoucherType = VoucherType::where('tenant_id', $tenant->id)
@@ -2063,11 +2063,11 @@ class InvoiceController extends Controller
                 throw new \Exception('Receipt voucher type not found. Please create it first.');
             }
 
-            Log::info('Found receipt voucher type', ['voucher_type_id' => $receiptVoucherType->id]);
+            // Log::info('Found receipt voucher type', ['voucher_type_id' => $receiptVoucherType->id]);
 
             // Get bank account
             $bankAccount = LedgerAccount::findOrFail($request->bank_account_id);
-            Log::info('Found bank account', ['bank_account' => $bankAccount->toArray()]);
+            // Log::info('Found bank account', ['bank_account' => $bankAccount->toArray()]);
 
             // Get customer account from the original invoice
             $customerAccount = $invoice->entries->where('debit_amount', '>', 0)->first()?->ledgerAccount;
@@ -2099,11 +2099,11 @@ class InvoiceController extends Controller
                 'posted_by' => auth()->id(),
             ];
 
-            Log::info('Creating receipt voucher with data', $voucherData);
+            // Log::info('Creating receipt voucher with data', $voucherData);
 
             $receiptVoucher = Voucher::create($voucherData);
 
-            Log::info('Receipt voucher created', ['voucher_id' => $receiptVoucher->id]);
+            // Log::info('Receipt voucher created', ['voucher_id' => $receiptVoucher->id]);
 
             // Create accounting entries for receipt
             // Debit: Bank/Cash Account
@@ -2115,7 +2115,7 @@ class InvoiceController extends Controller
                 'particulars' => 'Payment received from ' . $customerAccount->name,
             ];
 
-            Log::info('Creating debit entry', $debitEntry);
+            // Log::info('Creating debit entry', $debitEntry);
             VoucherEntry::create($debitEntry);
 
             // Credit: Customer Account (reducing their outstanding balance)
@@ -2127,7 +2127,7 @@ class InvoiceController extends Controller
                 'particulars' => 'Payment received against Invoice ' . $invoice->voucherType->prefix . $invoice->voucher_number,
             ];
 
-            Log::info('Creating credit entry', $creditEntry);
+            // Log::info('Creating credit entry', $creditEntry);
             VoucherEntry::create($creditEntry);
 
             // Force refresh the models to get latest data
@@ -2136,10 +2136,10 @@ class InvoiceController extends Controller
 
             // Explicitly update ledger account balances
             try {
-                Log::info('Before updating bank account balance', [
-                    'bank_account_id' => $bankAccount->id,
-                    'current_balance_before' => $bankAccount->current_balance
-                ]);
+                // Log::info('Before updating bank account balance', [
+                // 'bank_account_id' => $bankAccount->id,
+                // 'current_balance_before' => $bankAccount->current_balance
+                // ]);
 
                 // Manual calculation for bank account (asset type)
                 $bankTotalDebits = $bankAccount->voucherEntries()
@@ -2160,18 +2160,18 @@ class InvoiceController extends Controller
                     'last_transaction_date' => $request->date
                 ]);
 
-                Log::info('After updating bank account balance', [
-                    'bank_account_id' => $bankAccount->id,
-                    'current_balance_after' => $bankAccount->fresh()->current_balance,
-                    'calculated_balance' => $bankBalance,
-                    'total_debits' => $bankTotalDebits,
-                    'total_credits' => $bankTotalCredits
-                ]);
+                // Log::info('After updating bank account balance', [
+                // 'bank_account_id' => $bankAccount->id,
+                // 'current_balance_after' => $bankAccount->fresh()->current_balance,
+                // 'calculated_balance' => $bankBalance,
+                // 'total_debits' => $bankTotalDebits,
+                // 'total_credits' => $bankTotalCredits
+                // ]);
 
-                Log::info('Before updating customer account balance', [
-                    'customer_account_id' => $customerAccount->id,
-                    'current_balance_before' => $customerAccount->current_balance
-                ]);
+                // Log::info('Before updating customer account balance', [
+                // 'customer_account_id' => $customerAccount->id,
+                // 'current_balance_before' => $customerAccount->current_balance
+                // ]);
 
                 // Manual calculation for customer account (asset type)
                 $customerTotalDebits = $customerAccount->voucherEntries()
@@ -2192,13 +2192,13 @@ class InvoiceController extends Controller
                     'last_transaction_date' => $request->date
                 ]);
 
-                Log::info('After updating customer account balance', [
-                    'customer_account_id' => $customerAccount->id,
-                    'current_balance_after' => $customerAccount->fresh()->current_balance,
-                    'calculated_balance' => $customerBalance,
-                    'total_debits' => $customerTotalDebits,
-                    'total_credits' => $customerTotalCredits
-                ]);
+                // Log::info('After updating customer account balance', [
+                // 'customer_account_id' => $customerAccount->id,
+                // 'current_balance_after' => $customerAccount->fresh()->current_balance,
+                // 'calculated_balance' => $customerBalance,
+                // 'total_debits' => $customerTotalDebits,
+                // 'total_credits' => $customerTotalCredits
+                // ]);
 
                 // Update customer outstanding balance
                 $customer = Customer::where('ledger_account_id', $customerAccount->id)->first();
@@ -2208,12 +2208,12 @@ class InvoiceController extends Controller
                     // Force update customer outstanding balance
                     $customer->update(['outstanding_balance' => $outstandingBalance]);
 
-                    Log::info('Updated customer outstanding balance', [
-                        'customer_id' => $customer->id,
-                        'outstanding_balance_before' => $customer->getOriginal('outstanding_balance'),
-                        'outstanding_balance_after' => $customer->fresh()->outstanding_balance,
-                        'ledger_balance' => $customerBalance
-                    ]);
+                    // Log::info('Updated customer outstanding balance', [
+                    // 'customer_id' => $customer->id,
+                    // 'outstanding_balance_before' => $customer->getOriginal('outstanding_balance'),
+                    // 'outstanding_balance_after' => $customer->fresh()->outstanding_balance,
+                    // 'ledger_balance' => $customerBalance
+                    // ]);
                 } else {
                     Log::warning('Customer not found for ledger account', [
                         'ledger_account_id' => $customerAccount->id
@@ -2242,11 +2242,11 @@ class InvoiceController extends Controller
      */
     public function recordVendorPayment(Request $request, Tenant $tenant, Voucher $invoice)
     {
-        Log::info('recordVendorPayment method called', [
-            'tenant_id' => $tenant->id,
-            'invoice_id' => $invoice->id,
-            'request_all' => $request->all()
-        ]);
+        // Log::info('recordVendorPayment method called', [
+        // 'tenant_id' => $tenant->id,
+        // 'invoice_id' => $invoice->id,
+        // 'request_all' => $request->all()
+        // ]);
 
         if ($invoice->tenant_id !== $tenant->id) {
             abort(404);
@@ -2318,7 +2318,7 @@ class InvoiceController extends Controller
 
             $paymentVoucher = Voucher::create($voucherData);
 
-            Log::info('Payment voucher created', ['voucher_id' => $paymentVoucher->id]);
+            // Log::info('Payment voucher created', ['voucher_id' => $paymentVoucher->id]);
 
             // Create accounting entries for payment
             // Debit: Vendor Account (reducing AP / what we owe them)
@@ -2373,17 +2373,17 @@ class InvoiceController extends Controller
                     $outstandingBalance = max(0, abs($vendorBalance));
                     $vendor->update(['outstanding_balance' => $outstandingBalance]);
 
-                    Log::info('Updated vendor outstanding balance', [
-                        'vendor_id' => $vendor->id,
-                        'outstanding_balance' => $outstandingBalance,
-                    ]);
+                    // Log::info('Updated vendor outstanding balance', [
+                    // 'vendor_id' => $vendor->id,
+                    // 'outstanding_balance' => $outstandingBalance,
+                    // ]);
                 }
             } catch (\Exception $e) {
                 Log::error('Error updating account balances: ' . $e->getMessage());
             }
 
             DB::commit();
-            Log::info('Vendor payment recording completed successfully');
+            // Log::info('Vendor payment recording completed successfully');
 
             return response()->json(['message' => 'Payment recorded successfully']);
 
@@ -2458,9 +2458,9 @@ class InvoiceController extends Controller
             $email = $party->email ?? null;
 
             if (!$email) {
-                Log::info('No email found for payment link generation', [
-                    'voucher_id' => $voucher->id
-                ]);
+                // Log::info('No email found for payment link generation', [
+                // 'voucher_id' => $voucher->id
+                // ]);
                 // Don't generate links if no email
                 return;
             }
@@ -2494,13 +2494,13 @@ class InvoiceController extends Controller
                             'currency' => $nombaResult['currency']
                         ];
 
-                        Log::info('Nomba payment link generated', [
-                            'voucher_id' => $voucher->id,
-                            'link' => $nombaResult['checkoutLink']
-                        ]);
+                        // Log::info('Nomba payment link generated', [
+                        // 'voucher_id' => $voucher->id,
+                        // 'link' => $nombaResult['checkoutLink']
+                        // ]);
                     }
                 } else {
-                    Log::info('Nomba not configured or credentials missing');
+                    // Log::info('Nomba not configured or credentials missing');
                 }
             } catch (\Exception $e) {
                 Log::warning('Failed to generate Nomba payment link', [
@@ -2534,13 +2534,13 @@ class InvoiceController extends Controller
                             'access_code' => $paystackResult['access_code']
                         ];
 
-                        Log::info('Paystack payment link generated', [
-                            'voucher_id' => $voucher->id,
-                            'link' => $paystackResult['authorization_url']
-                        ]);
+                        // Log::info('Paystack payment link generated', [
+                        // 'voucher_id' => $voucher->id,
+                        // 'link' => $paystackResult['authorization_url']
+                        // ]);
                     }
                 } else {
-                    Log::info('Paystack not configured');
+                    // Log::info('Paystack not configured');
                 }
             } catch (\Exception $e) {
                 Log::warning('Failed to generate Paystack payment link', [
@@ -2564,10 +2564,10 @@ class InvoiceController extends Controller
 
                 $voucher->update(['meta_data' => $metaData]);
 
-                Log::info('Payment links stored in voucher', [
-                    'voucher_id' => $voucher->id,
-                    'links_count' => count($paymentLinks)
-                ]);
+                // Log::info('Payment links stored in voucher', [
+                // 'voucher_id' => $voucher->id,
+                // 'links_count' => count($paymentLinks)
+                // ]);
             }
 
         } catch (\Exception $e) {

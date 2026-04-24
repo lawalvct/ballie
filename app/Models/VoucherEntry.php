@@ -148,12 +148,12 @@ class VoucherEntry extends Model
             // Update customer outstanding balance
             $customer->update(['outstanding_balance' => $outstandingBalance]);
 
-            Log::info('VoucherEntry: Updated customer outstanding balance', [
-                'customer_id' => $customer->id,
-                'ledger_account_id' => $this->ledger_account_id,
-                'ledger_balance' => $ledgerBalance,
-                'outstanding_balance' => $outstandingBalance
-            ]);
+            // Log::info('VoucherEntry: Updated customer outstanding balance', [
+            // 'customer_id' => $customer->id,
+            // 'ledger_account_id' => $this->ledger_account_id,
+            // 'ledger_balance' => $ledgerBalance,
+            // 'outstanding_balance' => $outstandingBalance
+            // ]);
         }
     }
 

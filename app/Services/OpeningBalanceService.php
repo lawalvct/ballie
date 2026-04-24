@@ -87,15 +87,15 @@ class OpeningBalanceService
 
             DB::commit();
 
-            Log::info("Opening balance entry created", [
-                'account' => $account->name,
-                'account_code' => $account->code,
-                'amount' => $amount,
-                'voucher_id' => $voucher->id,
-                'voucher_number' => $voucher->voucher_number,
-                'debit_account' => $debitAccount->name,
-                'credit_account' => $creditAccount->name,
-            ]);
+            // Log::info("Opening balance entry created", [
+            // 'account' => $account->name,
+            // 'account_code' => $account->code,
+            // 'amount' => $amount,
+            // 'voucher_id' => $voucher->id,
+            // 'voucher_number' => $voucher->voucher_number,
+            // 'debit_account' => $debitAccount->name,
+            // 'credit_account' => $creditAccount->name,
+            // ]);
 
             return $voucher;
 
@@ -174,7 +174,7 @@ class OpeningBalanceService
                     'is_active' => true,
                 ]);
 
-                Log::info("Created equity account group", ['group_id' => $equityGroup->id]);
+                // Log::info("Created equity account group", ['group_id' => $equityGroup->id]);
             }
 
             // Check if code already exists and generate a unique one
@@ -200,10 +200,10 @@ class OpeningBalanceService
                 'current_balance' => 0,
             ]);
 
-            Log::info("Created Opening Balance Equity account", [
-                'account_id' => $account->id,
-                'tenant_id' => $tenantId
-            ]);
+            // Log::info("Created Opening Balance Equity account", [
+            // 'account_id' => $account->id,
+            // 'tenant_id' => $tenantId
+            // ]);
         }
 
         return $account;
@@ -235,10 +235,10 @@ class OpeningBalanceService
                 'next_number' => 1,
             ]);
 
-            Log::info("Created Opening Balance voucher type", [
-                'voucher_type_id' => $voucherType->id,
-                'tenant_id' => $tenantId
-            ]);
+            // Log::info("Created Opening Balance voucher type", [
+            // 'voucher_type_id' => $voucherType->id,
+            // 'tenant_id' => $tenantId
+            // ]);
         }
 
         return $voucherType;
@@ -348,12 +348,12 @@ class OpeningBalanceService
 
             DB::commit();
 
-            Log::info("Opening balance equity reclassified", [
-                'amount' => $amount,
-                'from' => $openingBalanceEquity->name,
-                'to' => $targetAccount->name,
-                'voucher_id' => $voucher->id,
-            ]);
+            // Log::info("Opening balance equity reclassified", [
+            // 'amount' => $amount,
+            // 'from' => $openingBalanceEquity->name,
+            // 'to' => $targetAccount->name,
+            // 'voucher_id' => $voucher->id,
+            // ]);
 
             return $voucher;
 

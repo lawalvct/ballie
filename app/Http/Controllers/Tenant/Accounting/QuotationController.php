@@ -124,10 +124,10 @@ class QuotationController extends Controller
 
     public function store(Request $request, Tenant $tenant)
     {
-        Log::info('=== QUOTATION STORE STARTED ===', [
-            'tenant_id' => $tenant->id,
-            'user_id' => auth()->id(),
-        ]);
+        // Log::info('=== QUOTATION STORE STARTED ===', [
+        // 'tenant_id' => $tenant->id,
+        // 'user_id' => auth()->id(),
+        // ]);
 
         $validator = Validator::make($request->all(), [
             'quotation_date' => 'required|date',
@@ -199,7 +199,7 @@ class QuotationController extends Controller
                 'created_by' => auth()->id(),
             ]);
 
-            Log::info('Quotation Created', ['quotation_id' => $quotation->id]);
+            // Log::info('Quotation Created', ['quotation_id' => $quotation->id]);
 
             // Create quotation items
             foreach ($request->items as $index => $item) {
@@ -243,10 +243,10 @@ class QuotationController extends Controller
 
             DB::commit();
 
-            Log::info('=== QUOTATION STORE COMPLETED ===', [
-                'quotation_id' => $quotation->id,
-                'quotation_number' => $quotation->getQuotationNumber(),
-            ]);
+            // Log::info('=== QUOTATION STORE COMPLETED ===', [
+            // 'quotation_id' => $quotation->id,
+            // 'quotation_number' => $quotation->getQuotationNumber(),
+            // ]);
 
             // Check if user wants to send immediately
             if ($request->action === 'save_and_send') {

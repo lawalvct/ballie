@@ -140,10 +140,10 @@ class OrderManagementController extends Controller
 
                 if ($invoice && $invoice->status === 'posted') {
                     $this->createReceiptVoucher($order, $invoice, $tenant, $validated);
-                    Log::info('Receipt voucher created for order payment', [
-                        'order_id' => $order->id,
-                        'invoice_id' => $invoice->id
-                    ]);
+                    // Log::info('Receipt voucher created for order payment', [
+                    // 'order_id' => $order->id,
+                    // 'invoice_id' => $invoice->id
+                    // ]);
                 }
 
                 DB::commit();
@@ -196,11 +196,11 @@ class OrderManagementController extends Controller
 
     private function createInvoiceFromOrder($order, $tenant)
     {
-        Log::info('Creating invoice from order', [
-            'order_id' => $order->id,
-            'order_number' => $order->order_number,
-            'tenant_id' => $tenant->id
-        ]);
+        // Log::info('Creating invoice from order', [
+        // 'order_id' => $order->id,
+        // 'order_number' => $order->order_number,
+        // 'tenant_id' => $tenant->id
+        // ]);
 
         // Get Sales Invoice voucher type - try 'SALES' first, then 'SV'
         $voucherType = VoucherType::where('tenant_id', $tenant->id)
@@ -214,11 +214,11 @@ class OrderManagementController extends Controller
             throw new \Exception('Sales voucher type not found. Please create a Sales Invoice voucher type first.');
         }
 
-        Log::info('Voucher type found', [
-            'voucher_type_id' => $voucherType->id,
-            'voucher_type_code' => $voucherType->code,
-            'voucher_type_name' => $voucherType->name
-        ]);
+        // Log::info('Voucher type found', [
+        // 'voucher_type_id' => $voucherType->id,
+        // 'voucher_type_code' => $voucherType->code,
+        // 'voucher_type_name' => $voucherType->name
+        // ]);
 
         // Generate voucher number
         $lastVoucher = Voucher::where('tenant_id', $tenant->id)
@@ -238,10 +238,10 @@ class OrderManagementController extends Controller
 
         $voucherNumber = str_pad($nextNumber, 4, '0', STR_PAD_LEFT);
 
-        Log::info('Voucher number generated', [
-            'voucher_number' => $voucherNumber,
-            'last_voucher_number' => $lastVoucher ? $lastVoucher->voucher_number : null
-        ]);
+        // Log::info('Voucher number generated', [
+        // 'voucher_number' => $voucherNumber,
+        // 'last_voucher_number' => $lastVoucher ? $lastVoucher->voucher_number : null
+        // ]);
 
         // Prepare inventory items array for accounting entries
         $inventoryItems = [];
@@ -287,11 +287,11 @@ class OrderManagementController extends Controller
             'posted_at' => now(),
         ]);
 
-        Log::info('Voucher created', [
-            'voucher_id' => $voucher->id,
-            'voucher_number' => $voucher->voucher_number,
-            'total_amount' => $totalAmount
-        ]);
+        // Log::info('Voucher created', [
+        // 'voucher_id' => $voucher->id,
+        // 'voucher_number' => $voucher->voucher_number,
+        // 'total_amount' => $totalAmount
+        // ]);
 
         // Create voucher items
         foreach ($inventoryItems as $item) {
@@ -307,7 +307,7 @@ class OrderManagementController extends Controller
             ]);
         }
 
-        Log::info('Voucher items created', ['items_count' => count($inventoryItems)]);
+        // Log::info('Voucher items created', ['items_count' => count($inventoryItems)]);
 
         // Get customer ledger account
         $customerLedgerId = null;
@@ -326,20 +326,20 @@ class OrderManagementController extends Controller
         // Pass tax amount from order for VAT Output recording
         $this->createAccountingEntries($voucher, $inventoryItems, $tenant, $customerLedgerId, $order->tax_amount ?? 0);
 
-        Log::info('Accounting entries created');
+        // Log::info('Accounting entries created');
 
         // Update product stock - using 'decrease' effect for sales
         $this->updateProductStock($inventoryItems, 'decrease', $voucher);
 
-        Log::info('Product stock updated');
+        // Log::info('Product stock updated');
 
         // Link voucher to order
         $order->update(['voucher_id' => $voucher->id]);
 
-        Log::info('Invoice created successfully from order', [
-            'voucher_id' => $voucher->id,
-            'order_id' => $order->id
-        ]);
+        // Log::info('Invoice created successfully from order', [
+        // 'voucher_id' => $voucher->id,
+        // 'order_id' => $order->id
+        // ]);
 
         return $voucher;
     }
@@ -432,10 +432,10 @@ class OrderManagementController extends Controller
                 // Update VAT Output account balance
                 $vatOutputAccount->updateCurrentBalance();
 
-                Log::info('VAT Output recorded', [
-                    'voucher_id' => $voucher->id,
-                    'vat_amount' => $taxAmount
-                ]);
+                // Log::info('VAT Output recorded', [
+                // 'voucher_id' => $voucher->id,
+                // 'vat_amount' => $taxAmount
+                // ]);
             } else {
                 Log::warning('VAT Output account not found', [
                     'tenant_id' => $tenant->id,
@@ -539,11 +539,11 @@ class OrderManagementController extends Controller
 
     private function createReceiptVoucher($order, $invoice, $tenant, $paymentData)
     {
-        Log::info('Creating receipt voucher for order payment', [
-            'order_id' => $order->id,
-            'invoice_id' => $invoice->id,
-            'tenant_id' => $tenant->id
-        ]);
+        // Log::info('Creating receipt voucher for order payment', [
+        // 'order_id' => $order->id,
+        // 'invoice_id' => $invoice->id,
+        // 'tenant_id' => $tenant->id
+        // ]);
 
         // Get receipt voucher type (RV)
         $receiptVoucherType = VoucherType::where('tenant_id', $tenant->id)
@@ -625,10 +625,10 @@ class OrderManagementController extends Controller
             'posted_by' => auth()->id(),
         ]);
 
-        Log::info('Receipt voucher created', [
-            'receipt_voucher_id' => $receiptVoucher->id,
-            'voucher_number' => $receiptVoucher->voucher_number
-        ]);
+        // Log::info('Receipt voucher created', [
+        // 'receipt_voucher_id' => $receiptVoucher->id,
+        // 'voucher_number' => $receiptVoucher->voucher_number
+        // ]);
 
         // Create accounting entries for receipt
         // Debit: Bank/Cash Account (Asset increases)
@@ -661,17 +661,17 @@ class OrderManagementController extends Controller
                 $outstandingBalance = max(0, $customerLedger->current_balance);
                 $customer->update(['outstanding_balance' => $outstandingBalance]);
 
-                Log::info('Updated customer outstanding balance', [
-                    'customer_id' => $customer->id,
-                    'outstanding_balance' => $outstandingBalance
-                ]);
+                // Log::info('Updated customer outstanding balance', [
+                // 'customer_id' => $customer->id,
+                // 'outstanding_balance' => $outstandingBalance
+                // ]);
             }
         }
 
-        Log::info('Receipt voucher completed successfully', [
-            'receipt_voucher_id' => $receiptVoucher->id,
-            'order_id' => $order->id
-        ]);
+        // Log::info('Receipt voucher completed successfully', [
+        // 'receipt_voucher_id' => $receiptVoucher->id,
+        // 'order_id' => $order->id
+        // ]);
 
         return $receiptVoucher;
     }

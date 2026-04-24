@@ -94,12 +94,12 @@ class PhysicalStockController extends Controller
     public function store(Tenant $tenant, Request $request)
     {
         // Debug: Log the incoming request data
-        Log::info('Physical Stock Store Request Data:', [
-            'request_all' => $request->all(),
-            'entries' => $request->input('entries'),
-            'voucher_date' => $request->input('voucher_date'),
-            'tenant_id' => $tenant->id
-        ]);
+        // Log::info('Physical Stock Store Request Data:', [
+        // 'request_all' => $request->all(),
+        // 'entries' => $request->input('entries'),
+        // 'voucher_date' => $request->input('voucher_date'),
+        // 'tenant_id' => $tenant->id
+        // ]);
 
         $validator = Validator::make($request->all(), [
             'voucher_date' => 'required|date|before_or_equal:today',
@@ -127,10 +127,10 @@ class PhysicalStockController extends Controller
         try {
             DB::beginTransaction();
 
-            Log::info('Physical Stock: Starting voucher creation', [
-                'tenant_id' => $tenant->id,
-                'entries_count' => count($request->entries)
-            ]);
+            // Log::info('Physical Stock: Starting voucher creation', [
+            // 'tenant_id' => $tenant->id,
+            // 'entries_count' => count($request->entries)
+            // ]);
 
             // Create voucher
             $voucher = PhysicalStockVoucher::create([
@@ -143,17 +143,17 @@ class PhysicalStockController extends Controller
                 'created_by' => auth()->id(),
             ]);
 
-            Log::info('Physical Stock: Voucher created', [
-                'voucher_id' => $voucher->id,
-                'voucher_number' => $voucher->voucher_number
-            ]);
+            // Log::info('Physical Stock: Voucher created', [
+            // 'voucher_id' => $voucher->id,
+            // 'voucher_number' => $voucher->voucher_number
+            // ]);
 
             // Create entries
             foreach ($request->entries as $index => $entryData) {
-                Log::info("Physical Stock: Processing entry {$index}", [
-                    'product_id' => $entryData['product_id'],
-                    'physical_quantity' => $entryData['physical_quantity']
-                ]);
+                // Log::info("Physical Stock: Processing entry {$index}", [
+                // 'product_id' => $entryData['product_id'],
+                // 'physical_quantity' => $entryData['physical_quantity']
+                // ]);
 
                 $product = Product::find($entryData['product_id']);
                 if (!$product) {
@@ -180,11 +180,11 @@ class PhysicalStockController extends Controller
                     'created_by' => auth()->id(),
                 ]);
 
-                Log::info("Physical Stock: Entry created", [
-                    'entry_id' => $entry->id,
-                    'book_quantity' => $bookQuantity,
-                    'current_rate' => $currentRate
-                ]);
+                // Log::info("Physical Stock: Entry created", [
+                // 'entry_id' => $entry->id,
+                // 'book_quantity' => $bookQuantity,
+                // 'current_rate' => $currentRate
+                // ]);
             }
 
             // Update voucher totals and type
@@ -194,9 +194,9 @@ class PhysicalStockController extends Controller
 
             DB::commit();
 
-            Log::info('Physical Stock: Transaction committed successfully', [
-                'voucher_id' => $voucher->id
-            ]);
+            // Log::info('Physical Stock: Transaction committed successfully', [
+            // 'voucher_id' => $voucher->id
+            // ]);
 
             return redirect()->route('tenant.inventory.physical-stock.show', [
                 'tenant' => $tenant->slug,

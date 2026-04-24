@@ -707,11 +707,11 @@ class PosController extends Controller
                 ]);
             }
 
-            Log::info('POS: Accounting entries created successfully', [
-                'sale_id' => $sale->id,
-                'voucher_id' => $voucher->id,
-                'voucher_number' => $voucher->voucher_number,
-            ]);
+            // Log::info('POS: Accounting entries created successfully', [
+            // 'sale_id' => $sale->id,
+            // 'voucher_id' => $voucher->id,
+            // 'voucher_number' => $voucher->voucher_number,
+            // ]);
 
         } catch (\Exception $e) {
             Log::error('POS: Failed to create accounting entries', [

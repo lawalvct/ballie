@@ -73,7 +73,7 @@ class DiagnosticController extends Controller
         }
 
         // 5. Log results
-        Log::info('Route Diagnostic Results', $diagnostics);
+        // Log::info('Route Diagnostic Results', $diagnostics);
 
         // Return as JSON for easy reading
         return response()->json($diagnostics, 200, [], JSON_PRETTY_PRINT);
@@ -118,7 +118,7 @@ class DiagnosticController extends Controller
             $diagnostics['error'] = $e->getMessage();
         }
 
-        Log::info('User Access Test', $diagnostics);
+        // Log::info('User Access Test', $diagnostics);
 
         return response()->json($diagnostics, 200, [], JSON_PRETTY_PRINT);
     }

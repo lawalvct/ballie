@@ -57,7 +57,7 @@ class RegisteredUserController extends Controller
             abort(403, 'Registration is currently disabled.');
         }
 
-        Log::info('Registration attempt started', ['email' => $request->email]);
+        // Log::info('Registration attempt started', ['email' => $request->email]);
 
         $request->validate([
             'name' => ['required', 'string', 'max:255'],
@@ -71,7 +71,7 @@ class RegisteredUserController extends Controller
             'terms' => ['required', 'accepted'],
         ]);
 
-        Log::info('Validation passed', ['business_name' => $request->business_name]);
+        // Log::info('Validation passed', ['business_name' => $request->business_name]);
 
         try {
             $tenant = null;
@@ -79,11 +79,11 @@ class RegisteredUserController extends Controller
             $code = null;
 
             DB::transaction(function () use ($request, &$tenant, &$user, &$code) {
-                Log::info('Starting database transaction');
+                // Log::info('Starting database transaction');
 
                 // Get the selected plan
                 $selectedPlan = Plan::findOrFail($request->plan_id);
-                Log::info('Selected plan', ['plan_id' => $selectedPlan->id, 'plan_name' => $selectedPlan->name]);
+                // Log::info('Selected plan', ['plan_id' => $selectedPlan->id, 'plan_name' => $selectedPlan->name]);
 
                 // Create tenant with the selected plan
                 $tenantData = [
@@ -99,7 +99,7 @@ class RegisteredUserController extends Controller
                     'onboarding_completed' => false,
                 ];
 
-                Log::info('Creating tenant with data', $tenantData);
+                // Log::info('Creating tenant with data', $tenantData);
 
                 $tenant = Tenant::create($tenantData);
 
@@ -110,7 +110,7 @@ class RegisteredUserController extends Controller
                     'enabled_modules' => ModuleRegistry::getDefaultModules($category),
                 ]);
 
-                Log::info('Tenant created successfully', ['tenant_id' => $tenant->id, 'slug' => $tenant->slug, 'business_category' => $category]);
+                // Log::info('Tenant created successfully', ['tenant_id' => $tenant->id, 'slug' => $tenant->slug, 'business_category' => $category]);
 
                 // Check for affiliate referral code from cookie or request
                 $affiliateCode = session('affiliate_code') ?? $request->cookie('ballie_ref') ?? $request->input('ref');
@@ -153,11 +153,11 @@ class RegisteredUserController extends Controller
                         // Increment affiliate's total referrals
                         $affiliate->increment('total_referrals');
 
-                        Log::info('Affiliate referral recorded', [
-                            'affiliate_id' => $affiliate->id,
-                            'affiliate_code' => $affiliateCode,
-                            'tenant_id' => $tenant->id,
-                        ]);
+                        // Log::info('Affiliate referral recorded', [
+                        // 'affiliate_id' => $affiliate->id,
+                        // 'affiliate_code' => $affiliateCode,
+                        // 'tenant_id' => $tenant->id,
+                        // ]);
 
                         // Clear affiliate session data
                         session()->forget(['affiliate_code', 'affiliate_id', 'tracking_data', 'referral_timestamp']);
@@ -167,7 +167,7 @@ class RegisteredUserController extends Controller
                 // Start trial for the selected plan using the tenant method
                 $tenant->startTrial($selectedPlan);
 
-                Log::info('Trial started successfully', ['plan' => $selectedPlan->name, 'trial_ends_at' => $tenant->trial_ends_at]);
+                // Log::info('Trial started successfully', ['plan' => $selectedPlan->name, 'trial_ends_at' => $tenant->trial_ends_at]);
 
                 // Create user associated with the tenant
                 $userData = [
@@ -180,7 +180,7 @@ class RegisteredUserController extends Controller
                     'is_active' => true,
                 ];
 
-                Log::info('Creating user with data', array_merge($userData, ['password' => '[HIDDEN]']));
+                // Log::info('Creating user with data', array_merge($userData, ['password' => '[HIDDEN]']));
 
                 $user = User::create($userData);
 
@@ -194,7 +194,7 @@ class RegisteredUserController extends Controller
                     ],
                 ]);
 
-                Log::info('User created successfully', ['user_id' => $user->id]);
+                // Log::info('User created successfully', ['user_id' => $user->id]);
 
                 // Generate 4-digit verification code
                 $code = sprintf('%04d', random_int(0, 9999));
@@ -208,26 +208,26 @@ class RegisteredUserController extends Controller
                     'updated_at' => now(),
                 ]);
 
-                Log::info('Verification code generated', ['user_id' => $user->id]);
+                // Log::info('Verification code generated', ['user_id' => $user->id]);
 
                 // Log user in
                 Auth::login($user);
 
-                Log::info('User logged in successfully');
+                // Log::info('User logged in successfully');
             });
 
             if (! $tenant || ! $user || ! $code) {
                 throw new \RuntimeException('Registration completed without the required notification context.');
             }
 
-            Log::info('Registration completed successfully');
+            // Log::info('Registration completed successfully');
 
             // Send welcome email AFTER transaction completes
             // If email fails, user is already registered and logged in
             $emailSent = false;
             try {
                 $user->notify(new WelcomeNotification($code));
-                Log::info('Welcome email sent successfully', ['user_id' => $user->id]);
+                // Log::info('Welcome email sent successfully', ['user_id' => $user->id]);
                 $emailSent = true;
             } catch (\Exception $emailError) {
                 Log::error('Email sending failed but registration succeeded', [
@@ -252,7 +252,7 @@ class RegisteredUserController extends Controller
                     'lawalvct@gmail.com' => 'Admin',
                 ])->notify(new NewUserRegisteredNotification($user, $tenant));
 
-                Log::info('Admin registration notifications sent', ['user_id' => $user->id]);
+                // Log::info('Admin registration notifications sent', ['user_id' => $user->id]);
             } catch (\Exception $adminNotifyError) {
                 Log::error('Admin registration notification failed', [
                     'user_id' => $user->id,
