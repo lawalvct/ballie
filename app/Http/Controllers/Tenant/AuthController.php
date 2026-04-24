@@ -20,7 +20,7 @@ class AuthController extends Controller
      */
     public function showLoginForm()
     {
-        return view('tenant.auth.login');
+        return view('auth.login');
     }
 
     /**
@@ -87,7 +87,7 @@ class AuthController extends Controller
      */
     public function showRegistrationForm()
     {
-        return view('tenant.auth.register');
+        return view('auth.register');
     }
 
     /**
@@ -125,7 +125,7 @@ class AuthController extends Controller
      */
     public function showForgotPasswordForm()
     {
-        return view('tenant.auth.forgot-password');
+        return view('auth.forgot-password');
     }
 
     /**
@@ -149,7 +149,7 @@ class AuthController extends Controller
      */
     public function showResetPasswordForm($token)
     {
-        return view('tenant.auth.reset-password', ['token' => $token]);
+        return view('auth.reset-password', ['token' => $token]);
     }
 
     /**

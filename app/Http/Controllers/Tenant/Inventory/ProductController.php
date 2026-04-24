@@ -726,6 +726,40 @@ public function update(Request $request, Tenant $tenant, Product $product)
     }
 
 
+    /**
+     * Check if a product name already exists for this tenant.
+     * Used for real-time duplicate detection on the create form.
+     */
+    public function checkName(Request $request, Tenant $tenant)
+    {
+        $name = trim($request->input('name', ''));
+
+        if (empty($name)) {
+            return response()->json(['exists' => false]);
+        }
+
+        $query = Product::where('tenant_id', $tenant->id)
+            ->whereRaw('LOWER(name) = ?', [strtolower($name)]);
+
+        // When editing, exclude the current product from the check
+        if ($request->filled('exclude_id')) {
+            $query->where('id', '!=', (int) $request->input('exclude_id'));
+        }
+
+        $existing = $query->select('id', 'name', 'sku', 'type', 'is_active')->first();
+
+        return response()->json([
+            'exists' => (bool) $existing,
+            'product' => $existing ? [
+                'id'     => $existing->id,
+                'name'   => $existing->name,
+                'sku'    => $existing->sku,
+                'type'   => $existing->type,
+                'active' => $existing->is_active,
+            ] : null,
+        ]);
+    }
+
     public function destroy(Tenant $tenant, Product $product)
 {
     // Ensure the product belongs to the tenant

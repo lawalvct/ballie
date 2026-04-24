@@ -35,6 +35,62 @@ class AppServiceProvider extends ServiceProvider
             }
         });
 
+        // Provide $authUrls to the shared auth views so they work in both
+        // central and tenant routing contexts.
+        View::composer([
+            'auth.login',
+            'auth.register',
+            'auth.forgot-password',
+            'auth.reset-password',
+        ], function ($view) {
+            $request = request();
+            $routeTenant = $request ? $request->route('tenant') : null;
+            $boundTenant = function_exists('tenant') ? tenant() : null;
+            $tenantRef = $routeTenant ?: $boundTenant;
+            $tenantSlug = is_object($tenantRef) ? ($tenantRef->slug ?? null) : $tenantRef;
+            $isTenant = ! empty($tenantSlug) && \Illuminate\Support\Facades\Route::has('tenant.login');
+
+            $resolve = function (string $tenantName, string $centralName, string $fallbackPath) use ($isTenant, $tenantSlug) {
+                if ($isTenant) {
+                    return \Illuminate\Support\Facades\Route::has($tenantName)
+                        ? route($tenantName, ['tenant' => $tenantSlug])
+                        : url($tenantSlug . $fallbackPath);
+                }
+
+                return \Illuminate\Support\Facades\Route::has($centralName)
+                    ? route($centralName)
+                    : url($fallbackPath);
+            };
+
+            $view->with('authUrls', [
+                'login'            => $resolve('tenant.login', 'login', '/login'),
+                'login_post'       => $resolve('tenant.login', 'login', '/login'),
+                'register'         => $resolve('tenant.register', 'register', '/register'),
+                'register_post'    => $resolve('tenant.register', 'register', '/register'),
+                'password_request' => $resolve('tenant.password.request', 'password.request', '/forgot-password'),
+                'password_email'   => $resolve('tenant.password.email', 'password.email', '/forgot-password'),
+                'password_update'  => $isTenant
+                    ? (\Illuminate\Support\Facades\Route::has('tenant.password.update')
+                        ? route('tenant.password.update', ['tenant' => $tenantSlug])
+                        : url($tenantSlug . '/reset-password'))
+                    : (\Illuminate\Support\Facades\Route::has('password.store')
+                        ? route('password.store')
+                        : (\Illuminate\Support\Facades\Route::has('password.update')
+                            ? route('password.update')
+                            : url('/reset-password'))),
+                'auth_google'      => $isTenant
+                    ? (\Illuminate\Support\Facades\Route::has('tenant.auth.google')
+                        ? route('tenant.auth.google', ['tenant' => $tenantSlug])
+                        : '#')
+                    : (\Illuminate\Support\Facades\Route::has('auth.google') ? route('auth.google') : '#'),
+                'auth_facebook'    => $isTenant
+                    ? (\Illuminate\Support\Facades\Route::has('tenant.auth.facebook')
+                        ? route('tenant.auth.facebook', ['tenant' => $tenantSlug])
+                        : '#')
+                    : (\Illuminate\Support\Facades\Route::has('auth.facebook') ? route('auth.facebook') : '#'),
+            ]);
+        });
+
         // Register @module / @endmodule Blade directive for module visibility
         Blade::if('module', function (string $module) {
             $tenant = tenant();

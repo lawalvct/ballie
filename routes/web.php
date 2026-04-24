@@ -51,6 +51,12 @@ Route::get('/test-email', function () {
     return 'Test email sent to ' . $to;
 })->name('test.email');
 
+if (app()->isLocal()) {
+    Route::get('/test-500', function () {
+        abort(500, 'Intentional 500 for local testing.');
+    })->name('test.500');
+}
+
 // Include authentication routes
 require __DIR__.'/auth.php';
 

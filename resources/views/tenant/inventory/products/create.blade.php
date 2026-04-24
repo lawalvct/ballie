@@ -135,13 +135,38 @@
                     <label for="name" class="block text-sm font-medium text-gray-700 mb-1">
                         Product Name <span class="text-red-500">*</span>
                     </label>
-                    <input type="text" name="name" id="name" value="{{ old('name') }}" required
-                        class="mt-1 focus:ring-green-500 focus:border-green-500 block w-full shadow-sm sm:text-sm rounded-md {{ $errors->has('name') ? 'border-red-300' : 'border-gray-300' }}"
-                        placeholder="Enter product name">
+                    <div class="relative">
+                        <input type="text" name="name" id="name" value="{{ old('name') }}" required
+                            class="mt-1 focus:ring-green-500 focus:border-green-500 block w-full shadow-sm sm:text-sm rounded-md {{ $errors->has('name') ? 'border-red-300' : 'border-gray-300' }} pr-8"
+                            placeholder="Enter product name"
+                            autocomplete="off">
+                        <span id="name-check-spinner" class="absolute inset-y-0 right-2 flex items-center hidden">
+                            <svg class="animate-spin h-4 w-4 text-gray-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"></path>
+                            </svg>
+                        </span>
+                    </div>
                     @error('name')
                         <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                     @enderror
                     <div class="hidden text-sm text-red-600 mt-1 field-error" id="name-error"></div>
+                    {{-- Duplicate product warning --}}
+                    <div id="name-duplicate-warning" class="hidden mt-2 p-3 bg-amber-50 border border-amber-300 rounded-md">
+                        <div class="flex items-start gap-2">
+                            <svg class="h-4 w-4 text-amber-500 mt-0.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
+                            </svg>
+                            <div class="text-sm">
+                                <p class="font-medium text-amber-800">A product with this name already exists</p>
+                                <p id="name-duplicate-detail" class="text-amber-700 mt-0.5"></p>
+                                <a id="name-duplicate-link" href="#" class="inline-flex items-center gap-1 mt-1 text-xs font-medium text-amber-800 underline hover:text-amber-900">
+                                    View existing product
+                                    <svg class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
                 </div>
 
                 <div class="form-group">
@@ -1123,6 +1148,49 @@ document.addEventListener('DOMContentLoaded', function() {
     if (!mrpInput.value || mrpInput.value === '0') {
         mrpInput.value = salesRateInput.value;
     }
+
+    // ── Duplicate product name check on blur ──
+    const nameCheckUrl  = '{{ route("tenant.inventory.products.check-name", ["tenant" => $tenant->slug]) }}';
+    const productShowBase = '{{ url($tenant->slug . "/inventory/products") }}';
+    const nameInput2      = document.getElementById('name');
+    const dupWarning      = document.getElementById('name-duplicate-warning');
+    const dupDetail       = document.getElementById('name-duplicate-detail');
+    const dupLink         = document.getElementById('name-duplicate-link');
+    const spinner         = document.getElementById('name-check-spinner');
+    let nameCheckTimer    = null;
+
+    nameInput2.addEventListener('blur', function () {
+        const val = this.value.trim();
+        dupWarning.classList.add('hidden');
+        if (!val) return;
+
+        spinner.classList.remove('hidden');
+
+        clearTimeout(nameCheckTimer);
+        nameCheckTimer = setTimeout(function () {
+            fetch(nameCheckUrl + '?name=' + encodeURIComponent(val), {
+                headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' }
+            })
+            .then(r => r.json())
+            .then(data => {
+                spinner.classList.add('hidden');
+                if (data.exists && data.product) {
+                    const p = data.product;
+                    const typeLabel = p.type === 'service' ? 'Service' : 'Item';
+                    const statusLabel = p.active ? 'Active' : 'Inactive';
+                    dupDetail.textContent = (p.sku ? 'SKU: ' + p.sku + ' · ' : '') + typeLabel + ' · ' + statusLabel;
+                    dupLink.href = productShowBase + '/' + p.id;
+                    dupWarning.classList.remove('hidden');
+                }
+            })
+            .catch(() => spinner.classList.add('hidden'));
+        }, 300);
+    });
+
+    // Hide warning as soon as user starts retyping
+    nameInput2.addEventListener('input', function () {
+        dupWarning.classList.add('hidden');
+    });
 
     // Real-time thousand separator display for all price fields
     const purchaseRateFormatted = document.getElementById('purchase_rate_formatted');

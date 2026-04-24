@@ -93,7 +93,7 @@
                 </p>
             </div>
 
-            <form method="POST" action="{{ route('password.store') }}" class="space-y-6" id="resetForm">
+            <form method="POST" action="{{ $authUrls['password_update'] }}" class="space-y-6" id="resetForm">
                 @csrf
                 <input type="hidden" name="token" value="{{ $request->route('token') }}">
 
@@ -234,7 +234,7 @@
 
                 <!-- Back to Login -->
                 <div class="text-center pt-4">
-                    <a href="{{ route('login') }}" class="inline-flex items-center text-sm font-medium hover:underline" style="color: var(--color-blue);">
+                    <a href="{{ $authUrls['login'] }}" class="inline-flex items-center text-sm font-medium hover:underline" style="color: var(--color-blue);">
                         <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
                         </svg>
