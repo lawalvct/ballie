@@ -141,6 +141,7 @@ class QuotationController extends Controller
             'items' => 'required|array|min:1',
             'items.*.item_type' => 'nullable|string|in:product,service',
             'items.*.product_id' => 'nullable|exists:products,id',
+            'items.*.unit' => 'nullable|string|max:255',
             'items.*.quantity' => 'required|numeric|min:0.01',
             'items.*.rate' => 'required|numeric|min:0',
             'items.*.description' => 'nullable|string',
@@ -206,14 +207,17 @@ class QuotationController extends Controller
                 $itemType = $item['item_type'] ?? 'product';
 
                 if ($itemType === 'product' && !empty($item['product_id'])) {
-                    $product = Product::findOrFail($item['product_id']);
+                    $product = Product::with('primaryUnit')->findOrFail($item['product_id']);
+                    $primaryUnit = $product->primaryUnit;
+                    $unitLabel = $primaryUnit?->symbol ?? $primaryUnit?->name ?? ($item['unit'] ?? 'Pcs');
+
                     $quotation->items()->create([
                         'item_type' => 'product',
                         'product_id' => $product->id,
                         'product_name' => $product->name,
                         'description' => $item['description'] ?? $product->description,
                         'quantity' => $item['quantity'],
-                        'unit' => $product->primaryUnit->symbol ?? 'Pcs',
+                        'unit' => $unitLabel,
                         'rate' => $item['rate'],
                         'discount' => 0,
                         'tax' => 0,
@@ -227,7 +231,7 @@ class QuotationController extends Controller
                         'product_name' => $item['description'] ?? 'Service',
                         'description' => $item['description'] ?? '',
                         'quantity' => $item['quantity'],
-                        'unit' => 'Pcs',
+                        'unit' => $item['unit'] ?? '',
                         'rate' => $item['rate'],
                         'discount' => 0,
                         'tax' => 0,
@@ -375,6 +379,7 @@ class QuotationController extends Controller
             'items' => 'required|array|min:1',
             'items.*.item_type' => 'nullable|string|in:product,service',
             'items.*.product_id' => 'nullable|exists:products,id',
+            'items.*.unit' => 'nullable|string|max:255',
             'items.*.quantity' => 'required|numeric|min:0.01',
             'items.*.rate' => 'required|numeric|min:0',
             'items.*.description' => 'nullable|string',
@@ -427,14 +432,17 @@ class QuotationController extends Controller
                 $itemType = $item['item_type'] ?? 'product';
 
                 if ($itemType === 'product' && !empty($item['product_id'])) {
-                    $product = Product::findOrFail($item['product_id']);
+                    $product = Product::with('primaryUnit')->findOrFail($item['product_id']);
+                    $primaryUnit = $product->primaryUnit;
+                    $unitLabel = $primaryUnit?->symbol ?? $primaryUnit?->name ?? ($item['unit'] ?? 'Pcs');
+
                     $quotation->items()->create([
                         'item_type' => 'product',
                         'product_id' => $product->id,
                         'product_name' => $product->name,
                         'description' => $item['description'] ?? $product->description,
                         'quantity' => $item['quantity'],
-                        'unit' => $product->primaryUnit->symbol ?? 'Pcs',
+                        'unit' => $unitLabel,
                         'rate' => $item['rate'],
                         'discount' => 0,
                         'tax' => 0,
@@ -448,7 +456,7 @@ class QuotationController extends Controller
                         'product_name' => $item['description'] ?? 'Service',
                         'description' => $item['description'] ?? '',
                         'quantity' => $item['quantity'],
-                        'unit' => 'Pcs',
+                        'unit' => $item['unit'] ?? '',
                         'rate' => $item['rate'],
                         'discount' => 0,
                         'tax' => 0,
@@ -873,6 +881,9 @@ class QuotationController extends Controller
             ->limit(15)
             ->get()
             ->map(function($product) {
+                $primaryUnit = $product->primaryUnit;
+                $unitLabel = $primaryUnit?->symbol ?? $primaryUnit?->name ?? 'Pcs';
+
                 return [
                     'id' => $product->id,
                     'name' => $product->name,
@@ -880,7 +891,14 @@ class QuotationController extends Controller
                     'sales_rate' => $product->sales_rate,
                     'purchase_rate' => $product->purchase_rate,
                     'current_stock' => $product->current_stock,
-                    'unit' => $product->primaryUnit->symbol ?? 'Pcs',
+                    'unit' => $unitLabel,
+                    'unit_id' => $product->primary_unit_id,
+                    'primary_unit' => $primaryUnit ? [
+                        'id' => $primaryUnit->id,
+                        'name' => $primaryUnit->name,
+                        'symbol' => $primaryUnit->symbol,
+                        'abbreviation' => $unitLabel,
+                    ] : null,
                     'description' => $product->description
                 ];
             });

@@ -41,6 +41,9 @@
                             <th class="text-left py-2 md:py-3 px-2 text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap hidden md:table-cell">
                                 Description
                             </th>
+                            <th class="text-left py-2 md:py-3 px-2 text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">
+                                Unit
+                            </th>
                             <th class="text-right py-2 md:py-3 px-2 text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">
                                 Qty <span class="text-red-500">*</span>
                             </th>
@@ -157,6 +160,16 @@
                                            :placeholder="item.item_type === 'service' ? 'Additional notes' : 'Description'"
                                            :class="item.item_type === 'service' ? 'bg-green-50' : ''">
                                 </td>
+                                    <td class="py-2 md:py-3 px-2 min-w-[90px]">
+                                     <input type="hidden"
+                                         :name="item.item_type === 'product' ? `inventory_items[${index}][unit_id]` : ''"
+                                         x-model="item.unit_id">
+                                     <input type="text"
+                                         x-model="item.unit"
+                                         class="block w-full px-2 md:px-3 py-1.5 md:py-2 text-xs md:text-sm border border-gray-300 rounded-md bg-gray-50 text-gray-600"
+                                         placeholder="Auto"
+                                         readonly>
+                                    </td>
                                 <td class="py-2 md:py-3 px-2 min-w-[80px]">
                                     <input type="number"
                                            :name="`inventory_items[${index}][quantity]`"
@@ -206,10 +219,10 @@
                     </tbody>
                     <tfoot>
                         <tr class="border-t border-gray-200 bg-gray-50">
-                            <td colspan="4" class="md:hidden py-2 px-2 text-xs font-medium text-gray-700 text-right">
+                            <td colspan="5" class="md:hidden py-2 px-2 text-xs font-medium text-gray-700 text-right">
                                 Subtotal:
                             </td>
-                            <td colspan="5" class="hidden md:table-cell py-2 md:py-3 px-2 text-xs md:text-sm font-medium text-gray-700 text-right">
+                            <td colspan="6" class="hidden md:table-cell py-2 md:py-3 px-2 text-xs md:text-sm font-medium text-gray-700 text-right">
                                 Subtotal (Items):
                             </td>
                             <td class="py-2 md:py-3 px-2 text-right text-xs md:text-sm font-medium text-gray-900">

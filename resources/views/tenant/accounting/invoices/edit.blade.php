@@ -1067,6 +1067,7 @@ function productSearch(itemIndex) {
             const invoiceItemsComponent = Alpine.$data(this.$el.closest('[x-data*="invoiceItemsEdit"]'));
             if (invoiceItemsComponent && invoiceItemsComponent.items[this.itemIndex]) {
                 const item = invoiceItemsComponent.items[this.itemIndex];
+                const primaryUnit = product.primary_unit || null;
                 item.product_id = product.id;
                 item.product_name = product.name;
 
@@ -1074,7 +1075,10 @@ function productSearch(itemIndex) {
                 item.rate = isPurchase ? (parseFloat(product.purchase_rate) || 0) : (parseFloat(product.sales_rate) || 0);
                 item.purchase_rate = parseFloat(product.purchase_rate) || 0;
                 item.current_stock = parseFloat(product.current_stock) || 0;
-                item.unit = product.unit || 'Pcs';
+                item.unit_id = primaryUnit ? primaryUnit.id : (product.unit_id || '');
+                item.unit = primaryUnit
+                    ? (primaryUnit.abbreviation || primaryUnit.symbol || primaryUnit.name || '')
+                    : (product.unit || '');
 
                 if (!item.description) {
                     item.description = product.name;

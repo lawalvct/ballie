@@ -40,6 +40,9 @@
                             <th class="text-left py-2 md:py-3 px-2 text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap hidden md:table-cell">
                                 Description
                             </th>
+                            <th class="text-left py-2 md:py-3 px-2 text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">
+                                Unit
+                            </th>
                             <th class="text-right py-2 md:py-3 px-2 text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">
                                 Qty <span class="text-red-500">*</span>
                             </th>
@@ -132,6 +135,17 @@
                                            :class="item.item_type === 'service' ? 'bg-green-50' : ''">
                                 </td>
 
+                                    <td class="py-2 md:py-3 px-2 min-w-[90px]">
+                                     <input type="hidden"
+                                         :name="`items[${index}][unit]`"
+                                         x-model="item.unit">
+                                     <input type="text"
+                                         x-model="item.unit"
+                                         class="block w-full px-2 md:px-3 py-1.5 md:py-2 text-xs md:text-sm border border-gray-300 rounded-md bg-gray-50 text-gray-600"
+                                         placeholder="Auto"
+                                         readonly>
+                                    </td>
+
                                 <td class="py-2 md:py-3 px-2 min-w-[80px]">
                                     <input type="number"
                                            :name="`items[${index}][quantity]`"
@@ -176,10 +190,10 @@
                     </tbody>
                     <tfoot>
                         <tr class="border-t border-gray-200 bg-gray-50">
-                            <td colspan="4" class="md:hidden py-2 px-2 text-xs font-medium text-gray-700 text-right">
+                            <td colspan="5" class="md:hidden py-2 px-2 text-xs font-medium text-gray-700 text-right">
                                 Subtotal:
                             </td>
-                            <td colspan="5" class="hidden md:table-cell py-2 md:py-3 px-2 text-xs md:text-sm font-medium text-gray-700 text-right">
+                            <td colspan="6" class="hidden md:table-cell py-2 md:py-3 px-2 text-xs md:text-sm font-medium text-gray-700 text-right">
                                 Subtotal (Items):
                             </td>
                             <td class="py-2 md:py-3 px-2 text-right text-xs md:text-sm font-medium text-gray-900">
@@ -359,6 +373,7 @@ function quotationItems() {
                         product_id: {{ $item->product_id ?? 'null' }},
                         product_name: @json($item->product_name ?? ''),
                         description: @json($item->description ?? ''),
+                        unit: @json($item->unit ?? ''),
                         quantity: {{ $item->quantity }},
                         rate: {{ $item->rate }},
                         amount: {{ ($item->quantity * $item->rate) }}
@@ -388,6 +403,7 @@ function quotationItems() {
                 product_id: '',
                 product_name: '',
                 description: '',
+                unit: '',
                 quantity: 1,
                 rate: 0,
                 amount: 0
@@ -453,10 +469,14 @@ function qProductSearch(itemIndex) {
         selectProduct(product) {
             const comp = Alpine.$data(this.$el.closest('[x-data="quotationItems()"]'));
             if (comp && comp.items[itemIndex]) {
+                const primaryUnit = product.primary_unit || null;
                 comp.items[itemIndex].product_id = product.id;
                 comp.items[itemIndex].product_name = product.name;
                 comp.items[itemIndex].rate = parseFloat(product.sales_rate) || 0;
                 comp.items[itemIndex].description = product.description || '';
+                comp.items[itemIndex].unit = primaryUnit
+                    ? (primaryUnit.abbreviation || primaryUnit.symbol || primaryUnit.name || '')
+                    : (product.unit || '');
                 comp.calculateAmount(itemIndex);
             }
             this.searchTerm = product.name;

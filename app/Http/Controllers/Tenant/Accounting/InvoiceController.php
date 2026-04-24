@@ -264,6 +264,7 @@ class InvoiceController extends Controller
             'inventory_items' => 'required|array|min:1',
             'inventory_items.*.item_type' => 'nullable|in:product,service',
             'inventory_items.*.product_id' => 'required_if:inventory_items.*.item_type,product|nullable|exists:products,id',
+            'inventory_items.*.unit_id' => 'nullable|exists:units,id',
             'inventory_items.*.quantity' => 'required|numeric|min:0.01',
             'inventory_items.*.rate' => 'required|numeric|min:0',
             'inventory_items.*.purchase_rate' => 'nullable|numeric|min:0',
@@ -335,6 +336,8 @@ class InvoiceController extends Controller
                         'product_id' => null,
                         'product_name' => $item['description'] ?? 'Service',
                         'description' => $item['description'] ?? 'Service',
+                        'unit_id' => null,
+                        'unit' => '',
                         'quantity' => $item['quantity'],
                         'rate' => $item['rate'],
                         'amount' => $amount,
@@ -342,7 +345,13 @@ class InvoiceController extends Controller
                     ];
                 } else {
                     // Product item — standard product lookup
-                    $product = Product::findOrFail($item['product_id']);
+                    $product = Product::with('primaryUnit')->findOrFail($item['product_id']);
+                    $primaryUnit = $product->primaryUnit;
+                    $unitLabel = 'Pcs';
+
+                    if ($primaryUnit) {
+                        $unitLabel = $primaryUnit->abbreviation ?? $primaryUnit->symbol ?? $primaryUnit->name ?? $unitLabel;
+                    }
                     // Log::info("Product Retrieved", [
                     // 'product_id' => $product->id,
                     // 'product_name' => $product->name,
@@ -354,6 +363,8 @@ class InvoiceController extends Controller
                         'product_id' => $product->id,
                         'product_name' => $product->name,
                         'description' => $item['description'] ?? $product->name,
+                        'unit_id' => $product->primary_unit_id,
+                        'unit' => $unitLabel,
                         'quantity' => $item['quantity'],
                         'rate' => $item['rate'],
                         'amount' => $amount,
@@ -803,6 +814,29 @@ class InvoiceController extends Controller
             }
         }
 
+        $productsById = $products->keyBy('id');
+        $inventoryItems = $inventoryItems->map(function ($item) use ($productsById) {
+            if (($item['item_type'] ?? 'product') !== 'product' || empty($item['product_id'])) {
+                $item['unit_id'] = $item['unit_id'] ?? null;
+                $item['unit'] = $item['unit'] ?? '';
+
+                return $item;
+            }
+
+            $product = $productsById->get($item['product_id']);
+            $primaryUnit = $product ? $product->primaryUnit : null;
+            $unitLabel = $item['unit'] ?? '';
+
+            if ($primaryUnit) {
+                $unitLabel = $primaryUnit->abbreviation ?? $primaryUnit->symbol ?? $primaryUnit->name ?? $unitLabel;
+            }
+
+            $item['unit_id'] = $item['unit_id'] ?? ($product ? $product->primary_unit_id : null);
+            $item['unit'] = $unitLabel;
+
+            return $item;
+        });
+
         return view('tenant.accounting.invoices.edit', compact(
             'tenant',
             'invoice',
@@ -844,6 +878,7 @@ class InvoiceController extends Controller
             'inventory_items' => 'required|array|min:1',
             'inventory_items.*.item_type' => 'nullable|in:product,service',
             'inventory_items.*.product_id' => 'required_if:inventory_items.*.item_type,product|nullable|exists:products,id',
+            'inventory_items.*.unit_id' => 'nullable|exists:units,id',
             'inventory_items.*.quantity' => 'required|numeric|min:0.01',
             'inventory_items.*.rate' => 'required|numeric|min:0',
             'inventory_items.*.purchase_rate' => 'nullable|numeric|min:0',
@@ -890,6 +925,8 @@ class InvoiceController extends Controller
                         'product_id' => null,
                         'product_name' => $item['description'] ?? 'Service',
                         'description' => $item['description'] ?? 'Service',
+                        'unit_id' => null,
+                        'unit' => '',
                         'quantity' => $item['quantity'],
                         'rate' => $item['rate'],
                         'purchase_rate' => 0,
@@ -900,12 +937,20 @@ class InvoiceController extends Controller
                         'total' => $amount,
                     ];
                 } else {
-                    $product = Product::findOrFail($item['product_id']);
+                    $product = Product::with('primaryUnit')->findOrFail($item['product_id']);
+                    $primaryUnit = $product->primaryUnit;
+                    $unitLabel = 'Pcs';
+
+                    if ($primaryUnit) {
+                        $unitLabel = $primaryUnit->abbreviation ?? $primaryUnit->symbol ?? $primaryUnit->name ?? $unitLabel;
+                    }
                     $inventoryItems[] = [
                         'item_type' => 'product',
                         'product_id' => $product->id,
                         'product_name' => $product->name,
                         'description' => $item['description'] ?? $product->name,
+                        'unit_id' => $product->primary_unit_id,
+                        'unit' => $unitLabel,
                         'quantity' => $item['quantity'],
                         'rate' => $item['rate'],
                         'purchase_rate' => $item['purchase_rate'] ?? 0,
@@ -1307,6 +1352,13 @@ class InvoiceController extends Controller
             ->limit(15)
             ->get()
             ->map(function($product) {
+                $primaryUnit = $product->primaryUnit;
+                $unitLabel = 'Pcs';
+
+                if ($primaryUnit) {
+                    $unitLabel = $primaryUnit->abbreviation ?? $primaryUnit->symbol ?? $primaryUnit->name ?? $unitLabel;
+                }
+
                 return [
                     'id' => $product->id,
                     'name' => $product->name,
@@ -1314,7 +1366,14 @@ class InvoiceController extends Controller
                     'sales_rate' => $product->sales_rate,
                     'purchase_rate' => $product->purchase_rate,
                     'current_stock' => $product->current_stock,
-                    'unit' => $product->primaryUnit->abbreviation ?? 'Pcs',
+                    'unit' => $unitLabel,
+                    'unit_id' => $product->primary_unit_id,
+                    'primary_unit' => $primaryUnit ? [
+                        'id' => $primaryUnit->id,
+                        'name' => $primaryUnit->name,
+                        'symbol' => $primaryUnit->symbol,
+                        'abbreviation' => $unitLabel,
+                    ] : null,
                     'description' => $product->description
                 ];
             });

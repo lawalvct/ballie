@@ -52,6 +52,7 @@ class PurchaseOrderController extends Controller
             'expected_delivery_date' => 'nullable|date|after:lpo_date',
             'items' => 'required|array|min:1',
             'items.*.product_id' => 'required|exists:products,id',
+            'items.*.unit' => 'nullable|string|max:255',
             'items.*.quantity' => 'required|numeric|min:0.01',
             'items.*.unit_price' => 'required|numeric|min:0',
             'items.*.discount' => 'nullable|numeric|min:0',
@@ -79,7 +80,9 @@ class PurchaseOrderController extends Controller
             $discountAmount = 0;
 
             foreach ($request->items as $item) {
-                $product = Product::find($item['product_id']);
+                $product = Product::with('primaryUnit')->findOrFail($item['product_id']);
+                $primaryUnit = $product->primaryUnit;
+                $unitLabel = $primaryUnit?->symbol ?? $primaryUnit?->name ?? ($item['unit'] ?? 'Pcs');
                 $itemTotal = ($item['quantity'] * $item['unit_price']) - ($item['discount'] ?? 0);
                 $itemTax = $itemTotal * (($item['tax_rate'] ?? 0) / 100);
                 $total = $itemTotal + $itemTax;
@@ -89,7 +92,7 @@ class PurchaseOrderController extends Controller
                     'product_id' => $product->id,
                     'description' => $item['description'] ?? $product->name,
                     'quantity' => $item['quantity'],
-                    'unit' => $product->primaryUnit->symbol ?? 'Pcs',
+                    'unit' => $unitLabel,
                     'unit_price' => $item['unit_price'],
                     'discount' => $item['discount'] ?? 0,
                     'tax_rate' => $item['tax_rate'] ?? 0,
@@ -228,12 +231,22 @@ class PurchaseOrderController extends Controller
             ->limit(15)
             ->get()
             ->map(function($product) {
+                $primaryUnit = $product->primaryUnit;
+                $unitLabel = $primaryUnit?->symbol ?? $primaryUnit?->name ?? 'Pcs';
+
                 return [
                     'id' => $product->id,
                     'name' => $product->name,
                     'sku' => $product->sku,
                     'purchase_rate' => $product->purchase_rate,
-                    'unit' => $product->primaryUnit->symbol ?? 'Pcs',
+                    'unit' => $unitLabel,
+                    'unit_id' => $product->primary_unit_id,
+                    'primary_unit' => $primaryUnit ? [
+                        'id' => $primaryUnit->id,
+                        'name' => $primaryUnit->name,
+                        'symbol' => $primaryUnit->symbol,
+                        'abbreviation' => $unitLabel,
+                    ] : null,
                 ];
             });
 

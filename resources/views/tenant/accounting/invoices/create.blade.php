@@ -1849,7 +1849,8 @@ window.invoiceItems = function() {
                 amount: 0,
                 purchase_rate: 0,
                 current_stock: null,
-                unit: 'Pcs'
+                unit_id: '',
+                unit: ''
             }
         ],
         ledgerAccounts: [],
@@ -1918,7 +1919,8 @@ window.invoiceItems = function() {
                 amount: 0,
                 purchase_rate: 0,
                 current_stock: null,
-                unit: 'Pcs'
+                unit_id: '',
+                unit: ''
             });
             this.debouncedUpdateTotals();
         },
@@ -1968,7 +1970,8 @@ window.invoiceItems = function() {
                     item.rate = parseFloat(selectedOption.getAttribute('data-sales-rate')) || 0;
                     item.purchase_rate = parseFloat(selectedOption.getAttribute('data-purchase-rate')) || 0;
                     item.current_stock = parseFloat(selectedOption.getAttribute('data-stock')) || 0;
-                    item.unit = selectedOption.getAttribute('data-unit') || 'Pcs';
+                    item.unit_id = selectedOption.getAttribute('data-unit-id') || '';
+                    item.unit = selectedOption.getAttribute('data-unit') || '';
 
                     if (!item.description) {
                         item.description = item.product_name;
@@ -1979,7 +1982,8 @@ window.invoiceItems = function() {
             } else {
                 item.current_stock = null;
                 item.purchase_rate = 0;
-                item.unit = 'Pcs';
+                item.unit_id = '';
+                item.unit = '';
             }
         },
 
@@ -2273,6 +2277,7 @@ function productSearch(itemIndex) {
             const invoiceItemsComponent = Alpine.$data(this.$el.closest('[x-data*="invoiceItems"]'));
             if (invoiceItemsComponent && invoiceItemsComponent.items[this.itemIndex]) {
                 const item = invoiceItemsComponent.items[this.itemIndex];
+                const primaryUnit = product.primary_unit || null;
                 item.product_id = product.id;
                 item.product_name = product.name;
 
@@ -2281,7 +2286,10 @@ function productSearch(itemIndex) {
                 item.rate = isPurchase ? (parseFloat(product.purchase_rate) || 0) : (parseFloat(product.sales_rate) || 0);
                 item.purchase_rate = parseFloat(product.purchase_rate) || 0;
                 item.current_stock = parseFloat(product.current_stock) || 0;
-                item.unit = product.unit || 'Pcs';
+                item.unit_id = primaryUnit ? primaryUnit.id : (product.unit_id || '');
+                item.unit = primaryUnit
+                    ? (primaryUnit.abbreviation || primaryUnit.symbol || primaryUnit.name || '')
+                    : (product.unit || '');
 
                 if (!item.description) {
                     item.description = product.name;

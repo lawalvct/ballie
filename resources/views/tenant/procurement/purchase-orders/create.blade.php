@@ -66,9 +66,10 @@
                 <!-- Column Headers -->
                 <div class="grid grid-cols-12 gap-2 mb-2">
                     <div class="col-span-3 text-xs font-semibold text-gray-500 uppercase">Product *</div>
+                    <div class="col-span-1 text-xs font-semibold text-gray-500 uppercase">Unit</div>
                     <div class="col-span-2 text-xs font-semibold text-gray-500 uppercase">Quantity *</div>
                     <div class="col-span-2 text-xs font-semibold text-gray-500 uppercase">Unit Price *</div>
-                    <div class="col-span-2 text-xs font-semibold text-gray-500 uppercase">Discount</div>
+                    <div class="col-span-1 text-xs font-semibold text-gray-500 uppercase">Discount</div>
                     <div class="col-span-2 text-xs font-semibold text-gray-500 uppercase">Total</div>
                     <div class="col-span-1"></div>
                 </div>
@@ -77,13 +78,19 @@
                     <template x-for="(item, index) in items" :key="index">
                         <div class="grid grid-cols-12 gap-2 items-start border-b pb-3">
                             <div class="col-span-3">
-                                <select x-model="item.product_id" @change="selectProduct(index, $event.target.value)" :name="'items['+index+'][product_id]'" required
+                                <select x-model="item.product_id" @change="selectProduct(index, $event.target)" :name="'items['+index+'][product_id]'" required
                                         class="block w-full px-2 py-1 text-sm border border-gray-300 rounded">
                                     <option value="">Select Product</option>
                                     @foreach($products as $product)
                                         <option value="{{ $product->id }}" data-price="{{ $product->purchase_rate }}" data-unit="{{ $product->primaryUnit->symbol ?? 'Pcs' }}">{{ $product->name }}</option>
                                     @endforeach
                                 </select>
+                            </div>
+                            <div class="col-span-1">
+                                <input type="hidden" x-model="item.unit" :name="'items['+index+'][unit]'">
+                                <input type="text" x-model="item.unit" readonly
+                                       class="block w-full px-2 py-1 text-sm border border-gray-300 rounded bg-gray-50 text-gray-600"
+                                       placeholder="-">
                             </div>
                             <div class="col-span-2">
                                 <input type="number" x-model="item.quantity" @input="calculateItem(index)" :name="'items['+index+'][quantity]'" step="0.01" min="0.01" required
@@ -93,7 +100,7 @@
                                 <input type="number" x-model="item.unit_price" @input="calculateItem(index)" :name="'items['+index+'][unit_price]'" step="0.01" min="0" required
                                        class="block w-full px-2 py-1 text-sm border border-gray-300 rounded" placeholder="Price">
                             </div>
-                            <div class="col-span-2">
+                            <div class="col-span-1">
                                 <input type="number" x-model="item.discount" @input="calculateItem(index)" :name="'items['+index+'][discount]'" step="0.01" min="0"
                                        class="block w-full px-2 py-1 text-sm border border-gray-300 rounded" placeholder="Discount">
                             </div>
@@ -169,12 +176,12 @@
 <script>
 function purchaseOrderForm() {
     return {
-        items: [{ product_id: '', quantity: 1, unit_price: 0, discount: 0, total: 0 }],
+        items: [{ product_id: '', unit: '', quantity: 1, unit_price: 0, discount: 0, total: 0 }],
         subtotal: 0,
         total: 0,
 
         addItem() {
-            this.items.push({ product_id: '', quantity: 1, unit_price: 0, discount: 0, total: 0 });
+            this.items.push({ product_id: '', unit: '', quantity: 1, unit_price: 0, discount: 0, total: 0 });
         },
 
         removeItem(index) {
@@ -182,13 +189,17 @@ function purchaseOrderForm() {
             this.calculateTotals();
         },
 
-        selectProduct(index, productId) {
-            const select = event.target;
+        selectProduct(index, select) {
             const option = select.options[select.selectedIndex];
-            if (option) {
+            if (option && option.value) {
                 this.items[index].unit_price = parseFloat(option.dataset.price) || 0;
-                this.calculateItem(index);
+                this.items[index].unit = option.dataset.unit || '';
+            } else {
+                this.items[index].unit_price = 0;
+                this.items[index].unit = '';
             }
+
+            this.calculateItem(index);
         },
 
         calculateItem(index) {
