@@ -1865,6 +1865,22 @@ window.invoiceItems = function() {
             }, 0);
         },
 
+        get unitTotals() {
+            const map = {};
+            this.items.forEach(i => {
+                if (i.item_type === 'service') return;
+                const unit = (i.unit || '').toString().trim();
+                if (!unit) return;
+                const q = parseFloat(i.quantity) || 0;
+                if (q <= 0) return;
+                map[unit] = (map[unit] || 0) + q;
+            });
+            return Object.entries(map).map(([unit, qty]) => ({
+                unit,
+                qty: Number.isInteger(qty) ? qty : parseFloat(qty.toFixed(3))
+            }));
+        },
+
         get ledgerAccountsTotal() {
             return this.ledgerAccounts.reduce((sum, ledger) => {
                 return sum + (parseFloat(ledger.amount) || 0);

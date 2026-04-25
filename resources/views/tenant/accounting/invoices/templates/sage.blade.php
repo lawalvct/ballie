@@ -345,7 +345,8 @@
                                     <br><span class="product-desc">{{ $item->description }}</span>
                                 @endif
                             </td>
-                            <td class="text-center">{{ number_format((float)($item->quantity ?? 0), 2) }}</td>
+                            @php $__rowUnit = trim((string)($item->unit ?? '')) ?: trim((string)(optional(optional($item->product ?? null)->primaryUnit)->symbol ?? '')); @endphp
+                            <td class="text-center">{{ number_format((float)($item->quantity ?? 0), 2) }}@if($__rowUnit !== '') <span style="color:#666; font-size:9px;">{{ $__rowUnit }}</span>@endif</td>
                             <td class="text-right">{{ $currencySymbol }}{{ number_format($itemRate, 2) }}</td>
                             <td class="text-right">-</td>
                             <td class="text-right" style="font-weight: bold;">{{ $currencySymbol }}{{ number_format($itemAmount, 2) }}</td>
@@ -354,6 +355,16 @@
                 </tbody>
             </table>
         </div>
+        @endif
+
+        @if($unitTotals->count() > 0)
+            <div class="no-break" style="text-align:right; margin:4px 0 8px;">
+                @foreach($unitTotals as $ut)
+                    <span style="display:inline-block; background:#eef4ff; border:1px solid #c9d9f2; color:#1e3d72; padding:2px 8px; border-radius:10px; font-size:9px; font-weight:bold; margin-left:4px;">
+                        Total {{ $ut['unit'] }}: {{ $ut['label'] }}
+                    </span>
+                @endforeach
+            </div>
         @endif
 
         <!-- Summary + Notes -->
@@ -455,6 +466,7 @@
         <div class="footer">
             {{ $tenant->name }} | Generated: {{ now()->format('d M Y, g:i A') }} | Thank you for your business!
         </div>
+        @include('tenant.accounting.invoices.templates.partials.powered-by')
     </div>
 </body>
 </html>

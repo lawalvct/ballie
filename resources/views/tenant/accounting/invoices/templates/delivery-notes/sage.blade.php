@@ -93,6 +93,9 @@
                     <strong>Invoice #:</strong> {{ $invoiceNumber }}<br>
                     <strong>Total Items:</strong> {{ $deliveryItems->count() }}<br>
                     <strong>Total Qty:</strong> {{ number_format($totalQuantity, 2) }}<br>
+                    @if($unitTotals->count() > 0)
+                        <strong>By Unit:</strong> {{ $unitTotalsText }}<br>
+                    @endif
                     @if($invoice->createdBy)
                         <strong>Prepared:</strong> {{ $invoice->createdBy->name ?? 'System' }}
                     @endif
@@ -123,7 +126,7 @@
                                 @endif
                             </td>
                             <td class="text-center">{{ number_format((float)($item->quantity ?? 0), 2) }}</td>
-                            <td class="text-center">{{ $item->unit ?? $item->unit_name ?? 'Pcs' }}</td>
+                            <td class="text-center">{{ $item->unit ?: ($item->unit_name ?? (optional(optional($item->product ?? null)->primaryUnit)->symbol ?? '')) }}</td>
                         </tr>
                     @endforeach
                 </tbody>
@@ -135,6 +138,9 @@
         <div class="summary-box">
             <strong>Total Items:</strong> {{ $deliveryItems->count() }} &nbsp; | &nbsp;
             <strong>Total Quantity:</strong> {{ number_format($totalQuantity, 2) }}
+            @if($unitTotals->count() > 0)
+                &nbsp; | &nbsp; <strong>By Unit:</strong> {{ $unitTotalsText }}
+            @endif
         </div>
 
         <!-- Notes -->
@@ -162,6 +168,7 @@
         <div class="footer">
             {{ $tenant->name }} | Delivery Note for Invoice {{ $invoiceNumber }} | Generated: {{ now()->format('d M Y, g:i A') }}
         </div>
+        @include('tenant.accounting.invoices.templates.partials.powered-by')
     </div>
 </body>
 </html>

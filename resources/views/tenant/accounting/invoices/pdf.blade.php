@@ -494,6 +494,7 @@ if (!function_exists('numberToWords')) {
         @endphp
 
         <!-- Items Table -->
+        @php $unitTotalsMap = []; @endphp
         @if($lineItems->count() > 0)
         <div class="no-break">
             <table class="items-table">
@@ -511,6 +512,15 @@ if (!function_exists('numberToWords')) {
                         @php
                             $itemAmount = (float) ($item->amount ?? (((float) ($item->quantity ?? 0)) * ((float) ($item->rate ?? $item->unit_price ?? 0))));
                             $itemRate = (float) ($item->rate ?? $item->unit_price ?? 0);
+                            $itemQty = (float) ($item->quantity ?? 0);
+                            $itemUnit = trim((string) ($item->unit ?? ''));
+                            if ($itemUnit === '') {
+                                $itemUnit = trim((string) (optional(optional($item->product ?? null)->primaryUnit)->symbol ?? ''));
+                            }
+                            $itemType = $item->item_type ?? 'product';
+                            if (strtolower((string) $itemType) !== 'service' && $itemUnit !== '' && $itemQty > 0) {
+                                $unitTotalsMap[$itemUnit] = ($unitTotalsMap[$itemUnit] ?? 0) + $itemQty;
+                            }
                         @endphp
                         <tr>
                             <td class="sn-col">{{ $index + 1 }}</td>
@@ -520,7 +530,12 @@ if (!function_exists('numberToWords')) {
                                     <div class="product-desc">{{ $item->description }}</div>
                                 @endif
                             </td>
-                            <td class="qty-col">{{ number_format((float) ($item->quantity ?? 0), 2) }}</td>
+                            <td class="qty-col">
+                                {{ number_format($itemQty, 2) }}
+                                @if($itemUnit !== '')
+                                    <span style="color:#666; font-size:9px;">{{ $itemUnit }}</span>
+                                @endif
+                            </td>
                             <td class="rate-col">₦{{ number_format($itemRate, 2) }}</td>
                             <td class="amount-col">₦{{ number_format($itemAmount, 2) }}</td>
                         </tr>
@@ -528,6 +543,23 @@ if (!function_exists('numberToWords')) {
                 </tbody>
             </table>
         </div>
+        @endif
+
+        @php
+            $unitTotalsList = [];
+            foreach ($unitTotalsMap as $__u => $__q) {
+                $__fmt = (floor($__q) == $__q) ? number_format($__q, 0) : rtrim(rtrim(number_format($__q, 3, '.', ''), '0'), '.');
+                $unitTotalsList[] = ['unit' => $__u, 'label' => $__fmt . ' ' . $__u];
+            }
+        @endphp
+        @if(count($unitTotalsList) > 0)
+            <div class="no-break" style="text-align:right; margin:4px 0 8px;">
+                @foreach($unitTotalsList as $ut)
+                    <span style="display:inline-block; background:#eef4ff; border:1px solid #c9d9f2; color:#1e3d72; padding:2px 8px; border-radius:10px; font-size:9px; font-weight:bold; margin-left:4px;">
+                        Total {{ $ut['unit'] }}: {{ $ut['label'] }}
+                    </span>
+                @endforeach
+            </div>
         @endif
 
         <!-- Summary -->
@@ -705,6 +737,7 @@ if (!function_exists('numberToWords')) {
         <div class="footer">
             <strong>{{ $tenant->name }}</strong> | Generated: {{ now()->format('d M Y, g:i A') }} | Thank you for your business!
         </div>
+        @include('tenant.accounting.invoices.templates.partials.powered-by')
     </div>
 </body>
 </html>

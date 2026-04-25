@@ -105,4 +105,27 @@
 
     // Invoice number
     $invoiceNumber = ($invoice->voucherType->prefix ?? '') . str_pad($invoice->voucher_number, 4, '0', STR_PAD_LEFT);
+
+    // Per-unit totals (grouped by unit symbol, e.g. kg => 30, bags => 7)
+    $unitTotalsMap = [];
+    foreach ($lineItems as $__uItem) {
+        $__type = is_object($__uItem) ? ($__uItem->item_type ?? 'product') : ($__uItem['item_type'] ?? 'product');
+        if (strtolower((string) $__type) === 'service') continue;
+        $__unit = trim((string) (is_object($__uItem) ? ($__uItem->unit ?? '') : ($__uItem['unit'] ?? '')));
+        if ($__unit === '') {
+            // Fallback to the product's primary unit symbol when the line item has no stored unit.
+            if (is_object($__uItem)) {
+                $__unit = trim((string) (optional(optional($__uItem->product ?? null)->primaryUnit)->symbol ?? ''));
+            }
+        }
+        if ($__unit === '') continue;
+        $__q = (float) (is_object($__uItem) ? ($__uItem->quantity ?? 0) : ($__uItem['quantity'] ?? 0));
+        if ($__q <= 0) continue;
+        $unitTotalsMap[$__unit] = ($unitTotalsMap[$__unit] ?? 0) + $__q;
+    }
+    $unitTotals = collect($unitTotalsMap)->map(function ($qty, $unit) {
+        $formatted = (floor($qty) == $qty) ? number_format($qty, 0) : rtrim(rtrim(number_format($qty, 3, '.', ''), '0'), '.');
+        return ['unit' => $unit, 'qty' => $qty, 'qty_formatted' => $formatted, 'label' => $formatted . ' ' . $unit];
+    })->values();
+    $unitTotalsText = $unitTotals->pluck('label')->implode(', ');
 ?>

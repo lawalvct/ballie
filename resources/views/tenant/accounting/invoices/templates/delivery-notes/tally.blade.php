@@ -150,7 +150,7 @@
                                 @endif
                             </td>
                             <td class="col-qty">{{ number_format((float)($item->quantity ?? 0), 2) }}</td>
-                            <td class="col-unit">{{ $item->unit ?? $item->unit_name ?? 'Nos' }}</td>
+                            <td class="col-unit">{{ $item->unit ?: ($item->unit_name ?? (optional(optional($item->product ?? null)->primaryUnit)->symbol ?? '')) }}</td>
                         </tr>
                     @endforeach
 
@@ -160,6 +160,14 @@
                         <td class="col-qty"><strong>{{ number_format($totalQuantity, 2) }}</strong></td>
                         <td class="col-unit"></td>
                     </tr>
+                    @foreach($unitTotals as $ut)
+                        <tr class="total-row" style="background:#f6f8fb;">
+                            <td class="col-sn"></td>
+                            <td class="col-desc" style="text-align: right; padding-right: 10px;">Total {{ $ut['unit'] }}</td>
+                            <td class="col-qty"><strong>{{ $ut['qty_formatted'] }}</strong></td>
+                            <td class="col-unit">{{ $ut['unit'] }}</td>
+                        </tr>
+                    @endforeach
                 </tbody>
             </table>
         </div>
@@ -205,6 +213,7 @@
         <div class="computer-generated">
             This is a Computer Generated Delivery Note
         </div>
+        @include('tenant.accounting.invoices.templates.partials.powered-by')
     </div>
 </body>
 </html>

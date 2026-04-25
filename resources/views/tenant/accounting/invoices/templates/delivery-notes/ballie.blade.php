@@ -100,6 +100,9 @@
                 <div class="detail-line"><strong>Date:</strong> {{ $invoice->voucher_date->format('d M, Y') }}</div>
                 <div class="detail-line"><strong>Total Items:</strong> {{ $deliveryItems->count() }}</div>
                 <div class="detail-line"><strong>Total Qty:</strong> {{ number_format($totalQuantity, 2) }}</div>
+                @if($unitTotals->count() > 0)
+                    <div class="detail-line"><strong>By Unit:</strong> {{ $unitTotalsText }}</div>
+                @endif
             </div>
         </div>
 
@@ -125,7 +128,7 @@
                                 @endif
                             </td>
                             <td class="qty-col">{{ number_format((float)($item->quantity ?? 0), 2) }}</td>
-                            <td class="unit-col">{{ $item->unit ?? $item->unit_name ?? 'Pcs' }}</td>
+                            <td class="unit-col">{{ $item->unit ?: ($item->unit_name ?? (optional(optional($item->product ?? null)->primaryUnit)->symbol ?? '')) }}</td>
                         </tr>
                     @endforeach
                 </tbody>
@@ -136,6 +139,9 @@
         <div class="summary-box">
             <strong>Total Items:</strong> {{ $deliveryItems->count() }} |
             <strong>Total Quantity:</strong> {{ number_format($totalQuantity, 2) }}
+            @if($unitTotals->count() > 0)
+                | <strong>By Unit:</strong> {{ $unitTotalsText }}
+            @endif
         </div>
 
         @if($invoice->narration)
@@ -160,6 +166,7 @@
         <div class="footer">
             <strong>{{ $tenant->name }}</strong> | Delivery Note for Invoice {{ $invoiceNumber }} | Generated: {{ now()->format('d M Y, g:i A') }}
         </div>
+        @include('tenant.accounting.invoices.templates.partials.powered-by')
     </div>
 </body>
 </html>

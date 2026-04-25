@@ -328,6 +328,9 @@
                             $itemRate = (float) ($item->rate ?? $item->unit_price ?? 0);
                             $itemQty = (float) ($item->quantity ?? 0);
                             $unit = $item->unit ?? $item->unit_name ?? '';
+                            if (trim((string)$unit) === '') {
+                                $unit = trim((string)(optional(optional($item->product ?? null)->primaryUnit)->symbol ?? ''));
+                            }
                         @endphp
                         <tr>
                             <td class="col-sn">{{ $index + 1 }}</td>
@@ -388,6 +391,16 @@
                         <td class="col-desc" style="text-align: right; padding-right: 10px;" colspan="4"><strong>Total</strong></td>
                         <td class="col-amount">{{ $currencySymbol }}{{ number_format($totalAmount, 2) }}</td>
                     </tr>
+                    @foreach($unitTotals as $ut)
+                        <tr style="background:#f6f8fb;">
+                            <td class="col-sn"></td>
+                            <td class="col-desc" style="text-align: right; padding-right: 10px;">Total {{ $ut['unit'] }}</td>
+                            <td class="col-qty"><strong>{{ $ut['qty_formatted'] }}</strong></td>
+                            <td class="col-rate"></td>
+                            <td class="col-per">{{ $ut['unit'] }}</td>
+                            <td class="col-amount"></td>
+                        </tr>
+                    @endforeach
                 </tbody>
             </table>
         </div>
@@ -461,6 +474,7 @@
         <div class="computer-generated">
             This is a Computer Generated {{ $term->label('sales_invoice') }}
         </div>
+        @include('tenant.accounting.invoices.templates.partials.powered-by')
     </div>
 </body>
 </html>

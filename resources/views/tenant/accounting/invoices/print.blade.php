@@ -630,7 +630,7 @@ if (!function_exists('convertChunkToWords')) {
                     </tr>
                 </thead>
                 <tbody>
-                    @php $subtotal = 0; @endphp
+                    @php $subtotal = 0; $unitTotalsMap = []; @endphp
                     @foreach($items as $index => $item)
                         @php
                             // Support both array and object formats
@@ -640,9 +640,20 @@ if (!function_exists('convertChunkToWords')) {
                             $rate = is_array($item) ? $item['rate'] : $item->rate;
                             $amount = is_array($item) ? $item['amount'] : $item->amount;
                             $sku = is_array($item) ? ($item['sku'] ?? '') : ($item->product->sku ?? '');
-                            $unit = is_array($item) ? ($item['unit'] ?? '') : ($item->product->primaryUnit->abbreviation ?? '');
+                            $unit = is_array($item)
+                                ? ($item['unit'] ?? '')
+                                : (trim((string)($item->unit ?? '')) !== ''
+                                    ? $item->unit
+                                    : (optional(optional($item->product ?? null)->primaryUnit)->symbol ?? ''));
+                            $itemType = is_array($item) ? ($item['item_type'] ?? 'product') : ($item->item_type ?? 'product');
 
                             $subtotal += $amount;
+
+                            $unitKey = trim((string) $unit);
+                            $qtyVal = (float) $quantity;
+                            if (strtolower((string) $itemType) !== 'service' && $unitKey !== '' && $qtyVal > 0) {
+                                $unitTotalsMap[$unitKey] = ($unitTotalsMap[$unitKey] ?? 0) + $qtyVal;
+                            }
                         @endphp
                         <tr>
                             <td class="text-center sn-column">{{ $index + 1 }}</td>
@@ -680,6 +691,23 @@ if (!function_exists('convertChunkToWords')) {
                 </tbody>
             </table>
         </div>
+
+        @php
+            $unitTotalsList = [];
+            foreach ($unitTotalsMap as $__u => $__q) {
+                $__fmt = (floor($__q) == $__q) ? number_format($__q, 0) : rtrim(rtrim(number_format($__q, 3, '.', ''), '0'), '.');
+                $unitTotalsList[] = ['unit' => $__u, 'label' => $__fmt . ' ' . $__u];
+            }
+        @endphp
+        @if(count($unitTotalsList) > 0)
+        <div style="display:flex; flex-wrap:wrap; gap:8px; justify-content:flex-end; margin:6px 0 10px;">
+            @foreach($unitTotalsList as $ut)
+                <div style="background:#eef4ff; border:1px solid #c9d9f2; color:#1e3d72; padding:4px 10px; border-radius:20px; font-size:11px; font-weight:600;">
+                    Total <span style="text-transform:lowercase;">{{ $ut['unit'] }}</span>: {{ $ut['label'] }}
+                </div>
+            @endforeach
+        </div>
+        @endif
         @endif
 
         <!-- Summary Section -->
@@ -687,7 +715,7 @@ if (!function_exists('convertChunkToWords')) {
             <table class="summary-table">
                 <tr>
                     <td class="label" contenteditable="true">Subtotal:</td>
-                    <td class="amount" contenteditable="true">₦{{ number_format($subtotal ?? $inventoryItems->sum('amount'), 2) }}</td>
+                    <td class="amount" contenteditable="true">₦{{ number_format($subtotal ?? 0, 2) }}</td>
                 </tr>
 
                 @php
@@ -877,7 +905,7 @@ if (!function_exists('convertChunkToWords')) {
         <!-- Footer -->
         <div class="footer-info" contenteditable="true">
             <p><strong>{{ $tenant->name }}</strong> | Generated on {{ now()->format('l, M d, Y \a\t g:i A') }}</p>
-            <p>Powered by Ballie Business Management System | Thank you for your business!</p>
+            <p>Powered by <a href="https://ballie.co" target="_blank" style="color:inherit; text-decoration:none; font-weight:600;">Ballie</a> - Business Management Software | Thank you for your business!</p>
         </div>
     </div>
 

@@ -206,6 +206,20 @@
                         </template>
                     </tbody>
                     <tfoot>
+                        <template x-for="row in unitTotals" :key="row.unit">
+                            <tr class="border-t border-gray-100 bg-blue-50/40">
+                                <td colspan="3" class="md:hidden py-1.5 px-2 text-xs text-gray-600 text-right">
+                                    Total <span class="font-medium" x-text="row.unit"></span>:
+                                </td>
+                                <td colspan="4" class="hidden md:table-cell py-1.5 px-2 text-xs text-gray-600 text-right">
+                                    Total <span class="font-medium" x-text="row.unit"></span>:
+                                </td>
+                                <td class="py-1.5 px-2 text-right text-xs font-semibold text-blue-800">
+                                    <span x-text="row.qty"></span> <span x-text="row.unit"></span>
+                                </td>
+                                <td colspan="3"></td>
+                            </tr>
+                        </template>
                         <tr class="border-t border-gray-200 bg-gray-50">
                             <td colspan="5" class="md:hidden py-2 px-2 text-xs font-medium text-gray-700 text-right">
                                 Subtotal:
@@ -416,6 +430,22 @@ window.invoiceItemsEdit = function() {
 
         get totalAmount() {
             return this.items.reduce((sum, item) => sum + (parseFloat(item.amount) || 0), 0);
+        },
+
+        get unitTotals() {
+            const map = {};
+            this.items.forEach(i => {
+                if (i.item_type === 'service') return;
+                const unit = (i.unit || '').toString().trim();
+                if (!unit) return;
+                const q = parseFloat(i.quantity) || 0;
+                if (q <= 0) return;
+                map[unit] = (map[unit] || 0) + q;
+            });
+            return Object.entries(map).map(([unit, qty]) => ({
+                unit,
+                qty: Number.isInteger(qty) ? qty : parseFloat(qty.toFixed(3))
+            }));
         },
 
         get ledgerAccountsTotal() {

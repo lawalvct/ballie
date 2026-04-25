@@ -129,7 +129,15 @@
                 </button>
 
                 <div class="mt-4 flex justify-end">
-                    <div class="w-64 space-y-2">
+                    <div class="w-72 space-y-2">
+                        <template x-for="row in unitTotals" :key="row.unit">
+                            <div class="flex justify-between text-xs text-gray-600 bg-blue-50/40 px-2 py-1 rounded">
+                                <span>Total <span class="font-medium" x-text="row.unit"></span>:</span>
+                                <span class="font-semibold text-blue-800">
+                                    <span x-text="row.qty"></span> <span x-text="row.unit"></span>
+                                </span>
+                            </div>
+                        </template>
                         <div class="flex justify-between text-sm">
                             <span>Subtotal:</span>
                             <span x-text="'₦' + subtotal.toFixed(2)"></span>
@@ -179,6 +187,21 @@ function purchaseOrderForm() {
         items: [{ product_id: '', unit: '', quantity: 1, unit_price: 0, discount: 0, total: 0 }],
         subtotal: 0,
         total: 0,
+
+        get unitTotals() {
+            const map = {};
+            this.items.forEach(i => {
+                const unit = (i.unit || '').toString().trim();
+                if (!unit) return;
+                const q = parseFloat(i.quantity) || 0;
+                if (q <= 0) return;
+                map[unit] = (map[unit] || 0) + q;
+            });
+            return Object.entries(map).map(([unit, qty]) => ({
+                unit,
+                qty: Number.isInteger(qty) ? qty : parseFloat(qty.toFixed(3))
+            }));
+        },
 
         addItem() {
             this.items.push({ product_id: '', unit: '', quantity: 1, unit_price: 0, discount: 0, total: 0 });

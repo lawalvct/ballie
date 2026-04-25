@@ -45,4 +45,31 @@
     $totalQuantity = $deliveryItems->sum(function ($item) {
         return (float) ($item->quantity ?? 0);
     });
+
+    // Per-unit totals (grouped by unit symbol, e.g. ["kg" => 30, "bags" => 7])
+    $unitTotalsMap = [];
+    foreach ($deliveryItems as $__dItem) {
+        $__unit = trim((string) ($__dItem->unit ?? ''));
+        if ($__unit === '') {
+            $__unit = trim((string) (optional(optional($__dItem->product ?? null)->primaryUnit)->symbol ?? ''));
+        }
+        if ($__unit === '') {
+            continue;
+        }
+        $__qty = (float) ($__dItem->quantity ?? 0);
+        if ($__qty <= 0) {
+            continue;
+        }
+        $unitTotalsMap[$__unit] = ($unitTotalsMap[$__unit] ?? 0) + $__qty;
+    }
+    $unitTotals = collect($unitTotalsMap)->map(function ($qty, $unit) {
+        $formatted = (floor($qty) == $qty) ? number_format($qty, 0) : rtrim(rtrim(number_format($qty, 3, '.', ''), '0'), '.');
+        return [
+            'unit' => $unit,
+            'qty' => $qty,
+            'qty_formatted' => $formatted,
+            'label' => $formatted . ' ' . $unit,
+        ];
+    })->values();
+    $unitTotalsText = $unitTotals->pluck('label')->implode(', ');
 ?>

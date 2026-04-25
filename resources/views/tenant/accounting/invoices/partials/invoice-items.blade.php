@@ -218,6 +218,20 @@
                         </template>
                     </tbody>
                     <tfoot>
+                        <template x-for="row in unitTotals" :key="row.unit">
+                            <tr class="border-t border-gray-100 bg-blue-50/40">
+                                <td colspan="3" class="md:hidden py-1.5 px-2 text-xs text-gray-600 text-right">
+                                    Total <span class="font-medium" x-text="row.unit"></span>:
+                                </td>
+                                <td colspan="4" class="hidden md:table-cell py-1.5 px-2 text-xs text-gray-600 text-right">
+                                    Total <span class="font-medium" x-text="row.unit"></span>:
+                                </td>
+                                <td class="py-1.5 px-2 text-right text-xs font-semibold text-blue-800">
+                                    <span x-text="row.qty"></span> <span x-text="row.unit"></span>
+                                </td>
+                                <td colspan="3"></td>
+                            </tr>
+                        </template>
                         <tr class="border-t border-gray-200 bg-gray-50">
                             <td colspan="5" class="md:hidden py-2 px-2 text-xs font-medium text-gray-700 text-right">
                                 Subtotal:
