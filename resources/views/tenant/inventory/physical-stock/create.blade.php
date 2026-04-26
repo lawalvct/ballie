@@ -1,6 +1,8 @@
 @extends('layouts.tenant')
 
 @section('title', 'Create Physical Stock Voucher')
+@section('page-title', 'Create Physical Stock Voucher')
+@section('page-description', 'Record and manage physical stock adjustments.')
 
 @push('styles')
 <style>
@@ -31,15 +33,15 @@
 
 @section('content')
 <div class="space-y-6">
-    <!-- Header -->
-    <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between">
-        <div>
-            <h1 class="text-3xl font-bold text-gray-900">Create Physical Stock Voucher</h1>
-            <p class="mt-2 text-gray-600">Record and manage physical stock adjustments</p>
+    <!-- Action Bar -->
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+        <div class="flex items-center space-x-3 text-sm text-gray-500">
+            <span class="inline-flex h-2.5 w-2.5 rounded-full bg-green-500"></span>
+            <span>New voucher entry</span>
         </div>
-        <div class="mt-4 lg:mt-0">
+        <div>
             <a href="{{ route('tenant.inventory.physical-stock.index', ['tenant' => $tenant->slug]) }}"
-               class="inline-flex items-center px-4 py-2 bg-gray-600 border border-transparent rounded-lg font-semibold text-xs text-white uppercase tracking-widest hover:bg-gray-700 focus:bg-gray-700 active:bg-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 transition ease-in-out duration-150">
+               class="inline-flex items-center px-3 py-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors duration-200">
                 <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
                 </svg>
@@ -830,10 +832,53 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
+    function getFormSubmitter(event) {
+        return event.submitter || (document.activeElement && document.activeElement.type === 'submit' ? document.activeElement : null);
+    }
+
+    function preserveSubmitterValue(form, submitter) {
+        if (!submitter || !submitter.name) return;
+
+        let hiddenInput = form.querySelector(`input[type="hidden"][data-submitter-name="${submitter.name}"]`);
+        if (!hiddenInput) {
+            hiddenInput = document.createElement('input');
+            hiddenInput.type = 'hidden';
+            hiddenInput.name = submitter.name;
+            hiddenInput.dataset.submitterName = submitter.name;
+            form.appendChild(hiddenInput);
+        }
+
+        hiddenInput.value = submitter.value;
+    }
+
+    function lockFormSubmission(form, submitter) {
+        form.dataset.submitting = 'true';
+
+        form.querySelectorAll('button[type="submit"], input[type="submit"]').forEach(function(button) {
+            button.disabled = true;
+            button.classList.add('opacity-75', 'cursor-not-allowed');
+        });
+
+        if (submitter && submitter.tagName === 'BUTTON') {
+            submitter.innerHTML = `
+                <svg class="animate-spin w-4 h-4 mr-2" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
+                </svg>
+                Processing...
+            `;
+        }
+    }
+
     // Form validation
     const voucherForm = document.getElementById('voucherForm');
     if (voucherForm) {
         voucherForm.addEventListener('submit', function(e) {
+            if (voucherForm.dataset.submitting === 'true') {
+                e.preventDefault();
+                return false;
+            }
+
             const hasEntries = document.querySelectorAll('.entry-row').length > 0;
 
             if (!hasEntries) {
@@ -881,12 +926,9 @@ document.addEventListener('DOMContentLoaded', function() {
                 return false;
             }
 
-            // Debug: Log form data before submission
-            console.log('Form data being submitted:');
-            const formData = new FormData(voucherForm);
-            for (let [key, value] of formData.entries()) {
-                console.log(key + ': ' + value);
-            }
+            const submitter = getFormSubmitter(e);
+            preserveSubmitterValue(voucherForm, submitter);
+            lockFormSubmission(voucherForm, submitter);
         });
     }    // Initialize the page
     toggleNoEntriesMessage();

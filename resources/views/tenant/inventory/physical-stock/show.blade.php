@@ -1,77 +1,58 @@
 @extends('layouts.tenant')
 
 @section('title', 'Physical Stock Voucher - ' . $voucher->voucher_number)
+@section('page-title', $voucher->voucher_number)
+@section('page-description', 'Physical Stock Voucher Details')
+
+@php
+    $statusBadgeClasses = [
+        'draft' => 'bg-gray-100 text-gray-800',
+        'pending' => 'bg-yellow-100 text-yellow-800',
+        'approved' => 'bg-green-100 text-green-800',
+        'cancelled' => 'bg-red-100 text-red-800',
+    ];
+    $statusIconPaths = [
+        'draft' => 'M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z',
+        'pending' => 'M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z',
+        'approved' => 'M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z',
+        'cancelled' => 'M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z',
+    ];
+    $statusBadgeClass = $statusBadgeClasses[$voucher->status] ?? $statusBadgeClasses['cancelled'];
+    $statusIconPath = $statusIconPaths[$voucher->status] ?? $statusIconPaths['cancelled'];
+    $stockDifferenceTotal = $voucher->entries->sum(function ($entry) {
+        return $entry->physical_quantity - $entry->book_quantity;
+    });
+    $adjustmentTypeLabel = $stockDifferenceTotal > 0 ? 'Excess' : ($stockDifferenceTotal < 0 ? 'Shortage' : 'Balanced');
+    $adjustmentTypeClass = $stockDifferenceTotal > 0 ? 'text-green-600' : ($stockDifferenceTotal < 0 ? 'text-red-600' : 'text-gray-600');
+@endphp
 
 @section('content')
 <div class="space-y-6">
-    <!-- Header -->
-    <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between">
-        <div>
-            <div class="flex items-center space-x-3 mb-2">
-                <div class="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
-                    <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-                    </svg>
-                </div>
-                <div>
-                    <h1 class="text-3xl font-bold text-gray-900">{{ $voucher->voucher_number }}</h1>
-                    <p class="text-gray-600">Physical Stock Voucher Details</p>
-                </div>
-            </div>
-            <nav class="flex" aria-label="Breadcrumb">
-                <ol class="inline-flex items-center space-x-1 md:space-x-3">
-                    <li class="inline-flex items-center">
-                        <a href="{{ route('tenant.inventory.physical-stock.index', ['tenant' => $tenant->slug]) }}" class="inline-flex items-center text-sm font-medium text-gray-700 hover:text-blue-600">
-                            <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path>
-                            </svg>
-                            Physical Stock
-                        </a>
-                    </li>
-                    <li>
-                        <div class="flex items-center">
-                            <svg class="w-6 h-6 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
-                                <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd"></path>
-                            </svg>
-                            <span class="ml-1 text-sm font-medium text-gray-500">{{ $voucher->voucher_number }}</span>
-                        </div>
-                    </li>
-                </ol>
-            </nav>
-        </div>
-        <div class="mt-4 lg:mt-0 flex items-center space-x-3">
+    <!-- Action Bar -->
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4 flex flex-col xl:flex-row xl:items-center xl:justify-between gap-3">
+        <div class="flex flex-col sm:flex-row sm:items-center gap-3">
+            <a href="{{ route('tenant.inventory.physical-stock.index', ['tenant' => $tenant->slug]) }}"
+               class="inline-flex items-center px-3 py-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors duration-200">
+                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
+                </svg>
+                Back to Physical Stock
+            </a>
+
             <!-- Status Badge -->
-            <span class="inline-flex items-center px-4 py-2 rounded-full text-sm font-medium
-                @if($voucher->status === 'draft') bg-gray-100 text-gray-800
-                @elseif($voucher->status === 'pending') bg-yellow-100 text-yellow-800
-                @elseif($voucher->status === 'approved') bg-green-100 text-green-800
-                @else bg-red-100 text-red-800
-                @endif">
-                @if($voucher->status === 'draft')
-                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
-                    </svg>
-                @elseif($voucher->status === 'pending')
-                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                    </svg>
-                @elseif($voucher->status === 'approved')
-                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                    </svg>
-                @else
-                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                    </svg>
-                @endif
+            <span class="inline-flex items-center px-4 py-2 rounded-full text-sm font-medium {{ $statusBadgeClass }}">
+                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="{{ $statusIconPath }}"></path>
+                </svg>
                 {{ $voucher->status_display }}
             </span>
-            
+        </div>
+
+        <div class="flex flex-wrap gap-2">
             <!-- Action Buttons -->
-            <div class="flex items-center space-x-2">
                 @if($voucher->canEdit())
                     <a href="{{ route('tenant.inventory.physical-stock.edit', ['tenant' => $tenant->slug, 'voucher' => $voucher->id]) }}"
-                       class="inline-flex items-center px-4 py-2 bg-blue-600 border border-transparent rounded-lg font-semibold text-xs text-white uppercase tracking-widest hover:bg-blue-700 focus:bg-blue-700 active:bg-blue-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition ease-in-out duration-150">
+                       class="inline-flex items-center px-3 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
                         <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
                         </svg>
@@ -82,7 +63,7 @@
                 @if($voucher->status === 'draft')
                     <form method="POST" action="{{ route('tenant.inventory.physical-stock.submit', ['tenant' => $tenant->slug, 'voucher' => $voucher->id]) }}" class="inline">
                         @csrf
-                        <button type="submit" class="inline-flex items-center px-4 py-2 bg-yellow-600 border border-transparent rounded-lg font-semibold text-xs text-white uppercase tracking-widest hover:bg-yellow-700 focus:bg-yellow-700 active:bg-yellow-900 focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:ring-offset-2 transition ease-in-out duration-150">
+                        <button type="submit" class="inline-flex items-center px-3 py-2 bg-yellow-600 text-white text-sm font-medium rounded-lg shadow-sm hover:bg-yellow-700 focus:outline-none focus:ring-2 focus:ring-yellow-500">
                             <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path>
                             </svg>
@@ -94,7 +75,7 @@
                 @if($voucher->canApprove())
                     <form method="POST" action="{{ route('tenant.inventory.physical-stock.approve', ['tenant' => $tenant->slug, 'voucher' => $voucher->id]) }}" class="inline">
                         @csrf
-                        <button type="submit" class="inline-flex items-center px-4 py-2 bg-green-600 border border-transparent rounded-lg font-semibold text-xs text-white uppercase tracking-widest hover:bg-green-700 focus:bg-green-700 active:bg-green-900 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition ease-in-out duration-150" onclick="return confirm('Are you sure you want to approve this voucher? This will create stock movements.')">
+                        <button type="submit" class="inline-flex items-center px-3 py-2 bg-green-600 text-white text-sm font-medium rounded-lg shadow-sm hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500" onclick="return confirm('Are you sure you want to approve this voucher? This will create stock movements.')">
                             <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                             </svg>
@@ -104,13 +85,12 @@
                 @endif
 
                 <a href="{{ route('tenant.inventory.physical-stock.index', ['tenant' => $tenant->slug]) }}"
-                   class="inline-flex items-center px-4 py-2 bg-gray-600 border border-transparent rounded-lg font-semibold text-xs text-white uppercase tracking-widest hover:bg-gray-700 focus:bg-gray-700 active:bg-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 transition ease-in-out duration-150">
+                   class="inline-flex items-center px-3 py-2 bg-gray-600 text-white text-sm font-medium rounded-lg shadow-sm hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500">
                     <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
                     </svg>
                     Back to List
                 </a>
-            </div>
         </div>
     </div>
 
@@ -156,13 +136,7 @@
                     <div class="bg-gray-50 rounded-lg p-4 border border-gray-200">
                         <dt class="text-sm font-medium text-gray-500 mb-1">Adjustment Type</dt>
                         <dd class="text-lg font-semibold text-gray-900">
-                            @if($voucher->entries->sum(function($entry) { return $entry->physical_quantity - $entry->book_quantity; }) > 0)
-                                <span class="text-green-600">Excess</span>
-                            @elseif($voucher->entries->sum(function($entry) { return $entry->physical_quantity - $entry->book_quantity; }) < 0)
-                                <span class="text-red-600">Shortage</span>
-                            @else
-                                <span class="text-gray-600">Balanced</span>
-                            @endif
+                            <span class="{{ $adjustmentTypeClass }}">{{ $adjustmentTypeLabel }}</span>
                         </dd>
                     </div>
                 </div>
@@ -207,6 +181,8 @@
                                     @php
                                         $difference = $entry->physical_quantity - $entry->book_quantity;
                                         $value = $difference * $entry->rate;
+                                        $differenceBadgeClass = $difference > 0 ? 'bg-green-100 text-green-800' : ($difference < 0 ? 'bg-red-100 text-red-800' : 'bg-gray-100 text-gray-800');
+                                        $valueTextClass = $value > 0 ? 'text-green-600' : ($value < 0 ? 'text-red-600' : 'text-gray-600');
                                     @endphp
                                     <tr class="hover:bg-gray-50">
                                         <td class="px-6 py-4 whitespace-nowrap">
@@ -231,11 +207,7 @@
                                             {{ number_format($entry->physical_quantity, 4) }}
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap text-right text-sm">
-                                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
-                                                @if($difference > 0) bg-green-100 text-green-800
-                                                @elseif($difference < 0) bg-red-100 text-red-800
-                                                @else bg-gray-100 text-gray-800
-                                                @endif">
+                                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {{ $differenceBadgeClass }}">
                                                 @if($difference > 0)
                                                     +{{ number_format($difference, 4) }}
                                                 @else
@@ -247,11 +219,7 @@
                                             ₦{{ number_format($entry->rate, 2) }}
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap text-right text-sm">
-                                            <span class="font-medium
-                                                @if($value > 0) text-green-600
-                                                @elseif($value < 0) text-red-600
-                                                @else text-gray-600
-                                                @endif">
+                                            <span class="font-medium {{ $valueTextClass }}">
                                                 ₦{{ number_format($value, 2) }}
                                             </span>
                                         </td>
@@ -301,12 +269,9 @@
                                 <div class="text-center">
                                     @php
                                         $netAdjustment = $voucher->entries->sum(function($entry) { return ($entry->physical_quantity - $entry->book_quantity) * $entry->rate; });
+                                        $netAdjustmentClass = $netAdjustment > 0 ? 'text-green-600' : ($netAdjustment < 0 ? 'text-red-600' : 'text-gray-600');
                                     @endphp
-                                    <div class="text-2xl font-bold
-                                        @if($netAdjustment > 0) text-green-600
-                                        @elseif($netAdjustment < 0) text-red-600
-                                        @else text-gray-600
-                                        @endif">
+                                    <div class="text-2xl font-bold {{ $netAdjustmentClass }}">
                                         ₦{{ number_format($netAdjustment, 2) }}
                                     </div>
                                     <div class="text-sm text-purple-700 font-medium">Net Adjustment</div>
@@ -331,15 +296,10 @@
             <!-- Status & Actions -->
             <div class="bg-white shadow-sm rounded-lg border border-gray-200 p-6">
                 <h3 class="text-lg font-medium text-gray-900 mb-4">Status & Actions</h3>
-                
+
                 <div class="mb-6 text-center">
                     <div class="text-sm font-medium text-gray-500 mb-2">Current Status</div>
-                    <span class="inline-flex items-center px-4 py-2 rounded-full text-sm font-medium
-                        @if($voucher->status === 'draft') bg-gray-100 text-gray-800
-                        @elseif($voucher->status === 'pending') bg-yellow-100 text-yellow-800
-                        @elseif($voucher->status === 'approved') bg-green-100 text-green-800
-                        @else bg-red-100 text-red-800
-                        @endif">
+                    <span class="inline-flex items-center px-4 py-2 rounded-full text-sm font-medium {{ $statusBadgeClass }}">
                         {{ $voucher->status_display }}
                     </span>
                 </div>
@@ -459,7 +419,7 @@
             <!-- Audit Information -->
             <div class="bg-white shadow-sm rounded-lg border border-gray-200 p-6">
                 <h3 class="text-lg font-medium text-gray-900 mb-4">Audit Information</h3>
-                
+
                 <div class="space-y-4">
                     <div>
                         <dt class="text-sm font-medium text-gray-500">Created By</dt>

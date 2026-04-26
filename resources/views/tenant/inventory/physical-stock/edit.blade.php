@@ -1,6 +1,8 @@
 @extends('layouts.tenant')
 
 @section('title', 'Edit Physical Stock Voucher')
+@section('page-title', 'Edit Physical Stock Voucher')
+@section('page-description', 'Update physical stock count details and adjustment entries.')
 
 @push('styles')
 <style>
@@ -244,51 +246,21 @@
         }
     }
 </style>
-</style>
 @endpush
 
 @section('content')
 <div class="container-fluid py-4">
-    <!-- Enhanced Page Header -->
-    <div class="page-header">
-        <div class="row align-items-center">
-            <div class="col">
-                <nav aria-label="breadcrumb" class="mb-3">
-                    <ol class="breadcrumb mb-0" style="background: transparent;">
-                        <li class="breadcrumb-item">
-                            <a href="{{ route('tenant.inventory.physical-stock.index', ['tenant' => $tenant->slug]) }}"
-                               class="text-white-50 text-decoration-none">
-                                <i class="fas fa-clipboard-list me-1"></i>Physical Stock
-                            </a>
-                        </li>
-                        <li class="breadcrumb-item">
-                            <a href="{{ route('tenant.inventory.physical-stock.show', ['tenant' => $tenant->slug, 'voucher' => $voucher->id]) }}"
-                               class="text-white-50 text-decoration-none">
-                                {{ $voucher->voucher_number }}
-                            </a>
-                        </li>
-                        <li class="breadcrumb-item active text-white">
-                            <i class="fas fa-edit me-1"></i>Edit
-                        </li>
-                    </ol>
-                </nav>
-                <h1 class="mb-2 fw-bold">
-                    <i class="fas fa-edit me-3"></i>
-                    Edit Physical Stock Voucher
-                </h1>
-                <p class="mb-0 text-white-50 fs-5">
-                    <i class="fas fa-hashtag me-2"></i>{{ $voucher->voucher_number }}
-                    <span class="ms-3">
-                        <i class="fas fa-calendar me-2"></i>{{ $voucher->voucher_date->format('d M Y') }}
-                    </span>
-                </p>
+    <!-- Action Bar -->
+    <div class="modern-card mb-4">
+        <div class="card-body d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-3">
+            <div class="text-muted">
+                <div class="fw-semibold text-dark">{{ $voucher->voucher_number }}</div>
+                <div class="small">Voucher date: {{ $voucher->voucher_date->format('d M Y') }}</div>
             </div>
-            <div class="col-auto">
-                <a href="{{ route('tenant.inventory.physical-stock.show', ['tenant' => $tenant->slug, 'voucher' => $voucher->id]) }}"
-                   class="action-btn btn btn-light">
-                    <i class="fas fa-arrow-left me-2"></i>Back to Voucher
-                </a>
-            </div>
+            <a href="{{ route('tenant.inventory.physical-stock.show', ['tenant' => $tenant->slug, 'voucher' => $voucher->id]) }}"
+               class="action-btn btn btn-light">
+                <i class="fas fa-arrow-left me-2"></i>Back to Voucher
+            </a>
         </div>
     </div>
 
@@ -777,6 +749,13 @@ $(document).ready(function() {
 
     // Form validation
     $('#voucherForm').submit(function(e) {
+        const form = this;
+
+        if ($(form).data('submitting')) {
+            e.preventDefault();
+            return false;
+        }
+
         const hasEntries = $('.entry-row').length > 0;
 
         if (!hasEntries) {
@@ -801,6 +780,29 @@ $(document).ready(function() {
             e.preventDefault();
             alert('Please select products for all entries.');
             return false;
+        }
+
+        const submitter = e.originalEvent && e.originalEvent.submitter ? e.originalEvent.submitter : document.activeElement;
+
+        if (submitter && submitter.name) {
+            let hiddenInput = form.querySelector(`input[type="hidden"][data-submitter-name="${submitter.name}"]`);
+            if (!hiddenInput) {
+                hiddenInput = document.createElement('input');
+                hiddenInput.type = 'hidden';
+                hiddenInput.name = submitter.name;
+                hiddenInput.dataset.submitterName = submitter.name;
+                form.appendChild(hiddenInput);
+            }
+
+            hiddenInput.value = submitter.value;
+        }
+
+        $(form).data('submitting', true);
+        const $submitButtons = $(form).find('button[type="submit"], input[type="submit"]');
+        $submitButtons.prop('disabled', true).addClass('disabled');
+
+        if (submitter && submitter.tagName === 'BUTTON') {
+            $(submitter).html('<i class="fas fa-spinner fa-spin me-2"></i>Processing...');
         }
     });
 

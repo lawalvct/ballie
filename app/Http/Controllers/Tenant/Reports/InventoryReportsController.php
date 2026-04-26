@@ -7,7 +7,9 @@ use App\Models\Tenant;
 use App\Models\Product;
 use App\Models\StockMovement;
 use App\Models\ProductCategory;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
+use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
 
@@ -435,14 +437,41 @@ class InventoryReportsController extends Controller
      */
     public function binCard(Request $request, Tenant $tenant)
     {
+        return view('tenant.reports.inventory.bin-card', $this->buildBinCardReportData($request, $tenant));
+    }
+
+    public function binCardPdf(Request $request, Tenant $tenant)
+    {
+        $reportData = $this->buildBinCardReportData($request, $tenant, false);
+        $showValues = !$request->boolean('hide_values');
+        $reportData['showValues'] = $showValues;
+
+        $productName = $reportData['product'] ? $reportData['product']->name : 'all-products';
+        $safeProductName = trim(preg_replace('/[^A-Za-z0-9_-]+/', '-', $productName), '-') ?: 'bin-card';
+        $valueMode = $showValues ? 'with-values' : 'without-values';
+        $filename = $tenant->slug . '_bin-card_' . $safeProductName . '_' . $reportData['fromDate'] . '_to_' . $reportData['toDate'] . '_' . $valueMode . '.pdf';
+
+        $pdf = Pdf::loadView('tenant.reports.inventory.bin-card-pdf', $reportData)
+            ->setPaper('a4', 'landscape');
+
+        return $pdf->download($filename);
+    }
+
+    protected function buildBinCardReportData(Request $request, Tenant $tenant, bool $paginate = true): array
+    {
         $fromDate = $request->get('from_date', now()->startOfMonth()->toDateString());
         $toDate = $request->get('to_date', now()->toDateString());
         $productId = $request->get('product_id');
+
+        if (Carbon::parse($fromDate)->gt(Carbon::parse($toDate))) {
+            [$fromDate, $toDate] = [$toDate, $fromDate];
+        }
 
         // Products for filter
         $products = Product::where('tenant_id', $tenant->id)
             ->where('maintain_stock', true)
             ->where('type', '!=', 'service') // Exclude services
+            ->with(['category', 'primaryUnit'])
             ->orderBy('name')
             ->get();
 
@@ -486,27 +515,27 @@ class InventoryReportsController extends Controller
             $runningQty = $openingQty;
             $runningValue = $openingValue;
 
-            foreach ($movements as $m) {
-                $inQty = $m->quantity > 0 ? $m->quantity : 0;
-                $outQty = $m->quantity < 0 ? abs($m->quantity) : 0;
-                $inValue = $inQty * ($m->rate ?? 0);
-                $outValue = $outQty * ($m->rate ?? 0);
+            foreach ($movements as $movement) {
+                $inQty = $movement->quantity > 0 ? $movement->quantity : 0;
+                $outQty = $movement->quantity < 0 ? abs($movement->quantity) : 0;
+                $inValue = $inQty * ($movement->rate ?? 0);
+                $outValue = $outQty * ($movement->rate ?? 0);
 
-                $runningQty += $m->quantity;
-                $runningValue += ($m->quantity * ($m->rate ?? 0));
+                $runningQty += $movement->quantity;
+                $runningValue += ($movement->quantity * ($movement->rate ?? 0));
 
                 $rows->push((object)[
-                    'date' => $m->transaction_date,
-                    'particulars' => $m->reference ?? ($m->particulars ?? '-'),
-                    'vch_type' => $m->vch_type ?? '-',
-                    'vch_no' => $m->vch_no ?? '-',
+                    'date' => $movement->transaction_date,
+                    'particulars' => $movement->reference ?? ($movement->particulars ?? '-'),
+                    'vch_type' => $movement->vch_type ?? '-',
+                    'vch_no' => $movement->vch_no ?? '-',
                     'in_qty' => $inQty,
                     'in_value' => $inValue,
                     'out_qty' => $outQty,
                     'out_value' => $outValue,
                     'closing_qty' => $runningQty,
                     'closing_value' => $runningValue,
-                    'created_by' => $m->creator->name ?? null,
+                    'created_by' => $movement->creator->name ?? null,
                 ]);
             }
         }
@@ -516,32 +545,45 @@ class InventoryReportsController extends Controller
         $totalOutQty = $rows->sum('out_qty');
         $totalInValue = $rows->sum('in_value');
         $totalOutValue = $rows->sum('out_value');
+        $netMovementQty = $totalInQty - $totalOutQty;
+        $netMovementValue = $totalInValue - $totalOutValue;
+        $closingQty = $openingQty + $netMovementQty;
+        $closingValue = $openingValue + $netMovementValue;
+        $transactionCount = $rows->count();
 
-        // Build a pagination for the ledger rows
-        $page = $request->get('page', 1);
-        $perPage = 50;
-        $paginatedRows = new \Illuminate\Pagination\LengthAwarePaginator(
-            $rows->forPage($page, $perPage),
-            $rows->count(),
-            $perPage,
-            $page,
-            ['path' => $request->url(), 'query' => $request->query()]
-        );
+        $paginatedRows = null;
+        if ($paginate) {
+            $page = $request->get('page', 1);
+            $perPage = 50;
+            $paginatedRows = new LengthAwarePaginator(
+                $rows->forPage($page, $perPage),
+                $rows->count(),
+                $perPage,
+                $page,
+                ['path' => $request->url(), 'query' => $request->query()]
+            );
+        }
 
-        return view('tenant.reports.inventory.bin-card', compact(
-            'tenant',
-            'fromDate',
-            'toDate',
-            'productId',
-            'products',
-            'rows',
-            'paginatedRows',
-            'openingQty',
-            'openingValue',
-            'totalInQty',
-            'totalOutQty',
-            'totalInValue',
-            'totalOutValue'
-        ));
+        return [
+            'tenant' => $tenant,
+            'fromDate' => $fromDate,
+            'toDate' => $toDate,
+            'productId' => $productId,
+            'product' => $product,
+            'products' => $products,
+            'rows' => $rows,
+            'paginatedRows' => $paginatedRows,
+            'openingQty' => $openingQty,
+            'openingValue' => $openingValue,
+            'totalInQty' => $totalInQty,
+            'totalOutQty' => $totalOutQty,
+            'totalInValue' => $totalInValue,
+            'totalOutValue' => $totalOutValue,
+            'netMovementQty' => $netMovementQty,
+            'netMovementValue' => $netMovementValue,
+            'closingQty' => $closingQty,
+            'closingValue' => $closingValue,
+            'transactionCount' => $transactionCount,
+        ];
     }
 }
