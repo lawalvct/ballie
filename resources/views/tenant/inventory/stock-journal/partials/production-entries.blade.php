@@ -21,16 +21,11 @@
                     <div class="border border-red-200 rounded-lg p-3 bg-red-50/60">
                         <div class="space-y-2">
                             <div>
-                                <select required x-model="item.product_id"
-                                    @change="updateConsumptionStock(index, $event.target.value)"
-                                    class="w-full px-2 py-1 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500/20 focus:border-red-500">
-                                    <option value="">Select Product</option>
-                                    @foreach($products as $product)
-                                        <option value="{{ $product->id }}" data-stock="{{ $product->current_stock }}" data-rate="{{ $product->cost_price }}">
-                                            {{ $product->name }} ({{ $product->sku }})
-                                        </option>
-                                    @endforeach
-                                </select>
+                                @include('tenant.inventory.stock-journal.partials._product-picker', [
+                                    'rateField' => 'cost_price',
+                                    'onSelect'  => 'calculateConsumptionAmount(index)',
+                                    'accent'    => 'red',
+                                ])
                             </div>
 
                             <div class="grid grid-cols-3 gap-2">
@@ -101,16 +96,11 @@
                     <div class="border border-green-200 rounded-lg p-3 bg-green-50/60">
                         <div class="space-y-2">
                             <div>
-                                <select required x-model="item.product_id"
-                                    @change="updateProductionStock(index, $event.target.value)"
-                                    class="w-full px-2 py-1 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500/20 focus:border-green-500">
-                                    <option value="">Select Product</option>
-                                    @foreach($products as $product)
-                                        <option value="{{ $product->id }}" data-stock="{{ $product->current_stock }}" data-rate="{{ $product->cost_price }}">
-                                            {{ $product->name }} ({{ $product->sku }})
-                                        </option>
-                                    @endforeach
-                                </select>
+                                @include('tenant.inventory.stock-journal.partials._product-picker', [
+                                    'rateField' => 'cost_price',
+                                    'onSelect'  => 'calculateProductionAmount(index)',
+                                    'accent'    => 'green',
+                                ])
                             </div>
 
                             <div class="grid grid-cols-3 gap-2">

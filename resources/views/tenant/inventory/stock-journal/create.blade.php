@@ -5,6 +5,23 @@
 @section('page-description', 'Manage stock movements with detailed journal entries.')
 
 @section('content')
+@php
+    $sjProductsJson = $products->map(function ($p) {
+        return [
+            'id'            => $p->id,
+            'name'          => $p->name,
+            'sku'           => $p->sku,
+            'stock'         => (float) ($p->current_stock ?? 0),
+            'unit'          => $p->primaryUnit->symbol ?? ($p->primaryUnit->name ?? ''),
+            'purchase_rate' => (float) ($p->purchase_rate ?? 0),
+            'cost_price'    => (float) ($p->cost_price ?? 0),
+        ];
+    })->values();
+@endphp
+<script>
+    // Product catalogue exposed once for the searchable product picker (used across all entry types).
+    window.__sjProducts = {!! $sjProductsJson->toJson(JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT) !!};
+</script>
 <div class="space-y-6">
     <!-- Header with Back Button -->
     <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
@@ -169,19 +186,12 @@
                             <tr class="border-b border-gray-100 hover:bg-gray-50">
                                 <!-- Product Selection -->
                                 <td class="py-2 px-3">
-                                        <select :name="`items[${index}][product_id]`" x-model="item.product_id"
-                                            @change="updateProductInfo(index)"
-                                            class="w-full px-2 py-1 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500/20 focus:border-green-500">
-                                        <option value="">Select Product</option>
-                                        @foreach($products as $product)
-                                            <option value="{{ $product->id }}"
-                                                    data-stock="{{ $product->current_stock ?? 0 }}"
-                                                    data-unit="{{ $product->primaryUnit->name ?? '' }}"
-                                                    data-rate="{{ $product->purchase_rate ?? 0 }}">
-                                                {{ $product->name }} ({{ $product->sku ?? 'No SKU' }})
-                                            </option>
-                                        @endforeach
-                                    </select>
+                                    @include('tenant.inventory.stock-journal.partials._product-picker', [
+                                        'rateField' => 'purchase_rate',
+                                        'onSelect'  => 'updateProductInfo(index)',
+                                        'accent'    => 'green',
+                                    ])
+                                    <input type="hidden" :name="`items[${index}][product_id]`" :value="item.product_id">
                                 </td>
 
                                 <!-- Movement Type -->
