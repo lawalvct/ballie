@@ -202,12 +202,12 @@
            class="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50">
             Cancel
         </a>
-        <button type="submit" name="action" value="save"
-                class="px-4 py-2 bg-gray-600 text-white rounded-lg shadow-sm hover:bg-gray-700">
+        <button type="submit" name="action" value="save" @click="$el.form.querySelector('#stock-journal-action').value = 'save'"
+            class="px-4 py-2 bg-gray-600 text-white rounded-lg shadow-sm hover:bg-gray-700 disabled:opacity-60 disabled:cursor-not-allowed">
             Save as Draft
         </button>
-        <button type="submit" name="action" value="save_and_post"
-                class="px-4 py-2 bg-green-600 text-white rounded-lg shadow-sm hover:bg-green-700">
+        <button type="submit" name="action" value="save_and_post" @click="$el.form.querySelector('#stock-journal-action').value = 'save_and_post'"
+            class="px-4 py-2 bg-green-600 text-white rounded-lg shadow-sm hover:bg-green-700 disabled:opacity-60 disabled:cursor-not-allowed">
             Save & Post
         </button>
     </div>

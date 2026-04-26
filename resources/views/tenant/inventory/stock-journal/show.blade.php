@@ -79,6 +79,25 @@
                     </svg>
                     Duplicate
                 </a>
+
+                <!-- Download PDF Button -->
+                <a href="{{ route('tenant.inventory.stock-journal.pdf', ['tenant' => $tenant->slug, 'stockJournal' => $stockJournal->id]) }}"
+                   class="inline-flex items-center px-3 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3M4 6h16M4 6a2 2 0 00-2 2v10a2 2 0 002 2h16a2 2 0 002-2V8a2 2 0 00-2-2"></path>
+                    </svg>
+                    Download PDF
+                </a>
+
+                <!-- Print Button -->
+                <a href="{{ route('tenant.inventory.stock-journal.print', ['tenant' => $tenant->slug, 'stockJournal' => $stockJournal->id]) }}"
+                   target="_blank"
+                   class="inline-flex items-center px-3 py-2 bg-white border border-gray-300 text-gray-700 text-sm font-medium rounded-lg shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-300">
+                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path>
+                    </svg>
+                    Print
+                </a>
             </div>
         </div>
     </div>
@@ -148,6 +167,49 @@
                 </div>
             </div>
 
+            @if($stockJournal->entry_type === 'production')
+            <div class="mt-6 rounded-xl border border-blue-200 bg-blue-50/60 p-4">
+                <h4 class="text-sm font-semibold text-blue-900 mb-3">Production Report Details</h4>
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 text-sm">
+                    <div>
+                        <div class="text-gray-500">Operator</div>
+                        <div class="font-medium text-gray-900">{{ $stockJournal->operator->full_name ?? 'Not assigned' }}</div>
+                    </div>
+                    <div>
+                        <div class="text-gray-500">Assistant Operator</div>
+                        <div class="font-medium text-gray-900">{{ $stockJournal->assistantOperator->full_name ?? 'Not assigned' }}</div>
+                    </div>
+                    <div>
+                        <div class="text-gray-500">Production Batch</div>
+                        <div class="font-medium text-gray-900">{{ $stockJournal->production_batch_number ?? 'N/A' }}</div>
+                    </div>
+                    <div>
+                        <div class="text-gray-500">Work Order</div>
+                        <div class="font-medium text-gray-900">{{ $stockJournal->work_order_number ?? 'N/A' }}</div>
+                    </div>
+                    <div>
+                        <div class="text-gray-500">Shift</div>
+                        <div class="font-medium text-gray-900">{{ $stockJournal->production_shift ?? 'N/A' }}</div>
+                    </div>
+                    <div>
+                        <div class="text-gray-500">Machine / Line</div>
+                        <div class="font-medium text-gray-900">{{ $stockJournal->machine_name ?? 'N/A' }}</div>
+                    </div>
+                    <div>
+                        <div class="text-gray-500">Start Time</div>
+                        <div class="font-medium text-gray-900">{{ $stockJournal->production_started_at ?? 'N/A' }}</div>
+                    </div>
+                    <div>
+                        <div class="text-gray-500">End Time</div>
+                        <div class="font-medium text-gray-900">{{ $stockJournal->production_ended_at ?? 'N/A' }}</div>
+                    </div>
+                </div>
+                @if($stockJournal->production_notes)
+                    <div class="mt-3 text-sm text-gray-700">{{ $stockJournal->production_notes }}</div>
+                @endif
+            </div>
+            @endif
+
             @if($stockJournal->reference_number)
             <div class="mt-4">
                 <label class="block text-sm font-medium text-gray-500 mb-1">Reference Number</label>
@@ -202,11 +264,13 @@
                         <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Rate</th>
                         <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Amount</th>
                         <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Stock After</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Quality</th>
                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Batch Details</th>
                     </tr>
                 </thead>
                 <tbody class="bg-white divide-y divide-gray-200">
                     @forelse($stockJournal->items as $item)
+                    @php $itemUnit = $item->unit_snapshot ?: ($item->product->primaryUnit->symbol ?? $item->product->primaryUnit->name ?? ''); @endphp
                     <tr class="hover:bg-gray-50">
                         <td class="px-6 py-4">
                             <div>
@@ -233,11 +297,11 @@
                             @endif
                         </td>
                         <td class="px-6 py-4 text-right text-sm text-gray-900">
-                            {{ number_format($item->stock_before, 4) }} {{ $item->product->primaryUnit->name ?? '' }}
+                            {{ number_format($item->stock_before, 4) }} {{ $itemUnit }}
                         </td>
                         <td class="px-6 py-4 text-right">
                             <div class="text-sm font-medium text-gray-900">{{ number_format($item->quantity, 4) }}</div>
-                            <div class="text-xs text-gray-500">{{ $item->product->primaryUnit->name ?? '' }}</div>
+                            <div class="text-xs text-gray-500">{{ $itemUnit }}</div>
                         </td>
                         <td class="px-6 py-4 text-right text-sm text-gray-900">
                             ₦{{ number_format($item->rate, 2) }}
@@ -246,7 +310,14 @@
                             ₦{{ number_format($item->amount, 2) }}
                         </td>
                         <td class="px-6 py-4 text-right text-sm text-gray-900">
-                            {{ number_format($item->stock_after, 4) }} {{ $item->product->primaryUnit->name ?? '' }}
+                            {{ number_format($item->stock_after, 4) }} {{ $itemUnit }}
+                        </td>
+                        <td class="px-6 py-4 text-sm text-gray-700">
+                            @if($item->movement_type === 'in')
+                                <div><strong>Rejected:</strong> {{ number_format($item->rejected_quantity ?? 0, 4) }} {{ $itemUnit }}</div>
+                            @else
+                                <div><strong>Waste:</strong> {{ number_format($item->waste_quantity ?? 0, 4) }} {{ $itemUnit }}</div>
+                            @endif
                         </td>
                         <td class="px-6 py-4">
                             @if($item->batch_number || $item->expiry_date)
@@ -265,7 +336,7 @@
                     </tr>
                     @empty
                     <tr>
-                        <td colspan="8" class="px-6 py-8 text-center text-gray-500">
+                        <td colspan="9" class="px-6 py-8 text-center text-gray-500">
                             <div class="flex flex-col items-center">
                                 <svg class="w-12 h-12 text-gray-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2 2v-5m16 0h-2M4 13h2m0 0V9a2 2 0 012-2h2m0 0V6a1 1 0 011-1h2a1 1 0 011 1v1m0 0h2a2 2 0 012 2v4.01"></path>
@@ -283,7 +354,7 @@
                         <td class="px-6 py-3 text-right text-sm font-bold text-gray-900">
                             ₦{{ number_format($stockJournal->items->sum('amount'), 2) }}
                         </td>
-                        <td colspan="2" class="px-6 py-3"></td>
+                        <td colspan="3" class="px-6 py-3"></td>
                     </tr>
                 </tfoot>
                 @endif

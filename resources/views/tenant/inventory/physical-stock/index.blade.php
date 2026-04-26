@@ -2,23 +2,20 @@
 
 @section('title', 'Physical Stock Vouchers')
 
+@section('page-title', 'Physical Stock Vouchers')
+@section('page-description', 'Manage physical stock adjustments and reconciliation')
+
 @section('content')
 <div class="space-y-6">
-    <!-- Header -->
-    <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between">
-        <div>
-            <h1 class="text-3xl font-bold text-gray-900">Physical Stock Vouchers</h1>
-            <p class="mt-2 text-gray-600">Manage physical stock adjustments and reconciliation</p>
-        </div>
-        <div class="mt-4 lg:mt-0">
-            <a href="{{ route('tenant.inventory.physical-stock.create', ['tenant' => $tenant->slug]) }}"
-               class="inline-flex items-center px-4 py-2 bg-green-600 border border-transparent rounded-lg font-semibold text-xs text-white uppercase tracking-widest hover:bg-green-700 focus:bg-green-700 active:bg-green-900 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition ease-in-out duration-150">
-                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
-                </svg>
-                New Physical Stock Voucher
-            </a>
-        </div>
+    <!-- Action Bar -->
+    <div class="flex justify-end">
+        <a href="{{ route('tenant.inventory.physical-stock.create', ['tenant' => $tenant->slug]) }}"
+           class="inline-flex items-center px-4 py-2 bg-green-600 border border-transparent rounded-lg font-semibold text-xs text-white uppercase tracking-widest hover:bg-green-700 focus:bg-green-700 active:bg-green-900 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition ease-in-out duration-150">
+            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+            </svg>
+            New Physical Stock Voucher
+        </a>
     </div>
 
     <!-- Statistics Cards -->

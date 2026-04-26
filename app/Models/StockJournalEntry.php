@@ -21,6 +21,15 @@ class StockJournalEntry extends Model
         'reference_number',
         'narration',
         'entry_type',
+        'operator_id',
+        'assistant_operator_id',
+        'production_batch_number',
+        'work_order_number',
+        'production_shift',
+        'machine_name',
+        'production_started_at',
+        'production_ended_at',
+        'production_notes',
         'status',
         'posted_at',
         'posted_by',
@@ -110,12 +119,32 @@ class StockJournalEntry extends Model
         return $this->belongsTo(User::class, 'posted_by');
     }
 
+    public function operator(): BelongsTo
+    {
+        return $this->belongsTo(Employee::class, 'operator_id');
+    }
+
+    public function assistantOperator(): BelongsTo
+    {
+        return $this->belongsTo(Employee::class, 'assistant_operator_id');
+    }
+
     /**
      * Get the journal entry items.
      */
     public function items(): HasMany
     {
         return $this->hasMany(StockJournalEntryItem::class);
+    }
+
+    public function productionOutputs(): HasMany
+    {
+        return $this->hasMany(StockJournalEntryItem::class)->where('movement_type', 'in');
+    }
+
+    public function materialInputs(): HasMany
+    {
+        return $this->hasMany(StockJournalEntryItem::class)->where('movement_type', 'out');
     }
 
     /**
@@ -131,7 +160,8 @@ class StockJournalEntry extends Model
      */
     public function stockMovements(): HasMany
     {
-        return $this->hasMany(StockMovement::class, 'reference', 'journal_number');
+        return $this->hasMany(StockMovement::class, 'source_transaction_id')
+            ->where('source_transaction_type', self::class);
     }
 
     /**

@@ -156,10 +156,11 @@ class StockMovement extends Model
         $movementType = $item->movement_type === 'in' ? 'in' : 'out';
         $quantity = $movementType === 'out' ? -abs($item->quantity) : abs($item->quantity);
         $journalNumber = $stockJournal->journal_number ?? $stockJournal->id;
+        $isProduction = ($stockJournal->entry_type ?? null) === 'production';
 
         // Calculate old stock before this movement using date-based calculation
         $product = \App\Models\Product::find($item->product_id);
-        $oldStock = $product ? $product->getStockAsOfDate($stockJournal->journal_date ?? now(), true) : 0;
+        $oldStock = $product ? $product->getStockAsOfDate($stockJournal->journal_date ?? now()) : 0;
         $newStock = $oldStock + $quantity;
 
         return self::create([
@@ -168,10 +169,10 @@ class StockMovement extends Model
             'type' => $movementType,
             'quantity' => $quantity,
             'rate' => $item->rate ?? 0,
-            'transaction_type' => 'stock_journal',
+            'transaction_type' => $isProduction ? 'manufacturing' : 'stock_journal',
             'transaction_date' => $stockJournal->journal_date ?? now()->toDateString(),
             'transaction_reference' => $journalNumber,
-            'reference' => $item->remarks ?? "Stock Journal #{$journalNumber}",
+            'reference' => $item->remarks ?? ($isProduction ? "Production Report #{$journalNumber}" : "Stock Journal #{$journalNumber}"),
             'source_transaction_type' => get_class($stockJournal),
             'source_transaction_id' => $stockJournal->id,
             'batch_number' => $item->batch_number,
@@ -180,6 +181,21 @@ class StockMovement extends Model
             'old_stock' => $oldStock,
             'new_stock' => $newStock,
             'remarks' => $item->remarks,
+            'additional_data' => $isProduction ? [
+                'entry_type' => 'production',
+                'movement_role' => $movementType === 'in' ? 'finished_good_output' : 'material_consumption',
+                'operator_id' => $stockJournal->operator_id,
+                'assistant_operator_id' => $stockJournal->assistant_operator_id,
+                'production_batch_number' => $stockJournal->production_batch_number,
+                'work_order_number' => $stockJournal->work_order_number,
+                'production_shift' => $stockJournal->production_shift,
+                'machine_name' => $stockJournal->machine_name,
+                'production_started_at' => $stockJournal->production_started_at,
+                'production_ended_at' => $stockJournal->production_ended_at,
+                'unit_snapshot' => $item->unit_snapshot,
+                'rejected_quantity' => (float) ($item->rejected_quantity ?? 0),
+                'waste_quantity' => (float) ($item->waste_quantity ?? 0),
+            ] : null,
         ]);
     }
 

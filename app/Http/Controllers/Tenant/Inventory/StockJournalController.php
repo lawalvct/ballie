@@ -6,12 +6,14 @@ use App\Http\Controllers\Controller;
 use App\Models\StockJournalEntry;
 use App\Models\StockJournalEntryItem;
 use App\Models\Product;
+use App\Models\Employee;
 use App\Models\Tenant;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\Rule;
 use Carbon\Carbon;
+use Barryvdh\DomPDF\Facade\Pdf;
 
 class StockJournalController extends Controller
 {
@@ -21,7 +23,7 @@ class StockJournalController extends Controller
     public function index(Request $request, Tenant $tenant)
     {
         $query = StockJournalEntry::where('tenant_id', $tenant->id)
-            ->with(['creator', 'items.product']);
+            ->with(['creator', 'operator', 'assistantOperator', 'items.product.primaryUnit']);
 
         // Search functionality
         if ($request->filled('search')) {
@@ -29,7 +31,14 @@ class StockJournalController extends Controller
             $query->where(function($q) use ($search) {
                 $q->where('journal_number', 'like', "%{$search}%")
                   ->orWhere('reference_number', 'like', "%{$search}%")
-                  ->orWhere('narration', 'like', "%{$search}%");
+                  ->orWhere('narration', 'like', "%{$search}%")
+                  ->orWhere('production_batch_number', 'like', "%{$search}%")
+                  ->orWhere('work_order_number', 'like', "%{$search}%")
+                  ->orWhereHas('operator', function ($employeeQuery) use ($search) {
+                      $employeeQuery->where('first_name', 'like', "%{$search}%")
+                          ->orWhere('last_name', 'like', "%{$search}%")
+                          ->orWhere('employee_number', 'like', "%{$search}%");
+                  });
             });
         }
 
@@ -64,6 +73,9 @@ class StockJournalController extends Controller
             'posted_entries' => StockJournalEntry::where('tenant_id', $tenant->id)->where('status', 'posted')->count(),
             'this_month_entries' => StockJournalEntry::where('tenant_id', $tenant->id)
                 ->whereBetween('journal_date', [now()->startOfMonth(), now()->endOfMonth()])->count(),
+            'production_runs_this_month' => StockJournalEntry::where('tenant_id', $tenant->id)
+                ->where('entry_type', 'production')
+                ->whereBetween('journal_date', [now()->startOfMonth(), now()->endOfMonth()])->count(),
         ];
 
         return view('tenant.inventory.stock-journal.index', compact(
@@ -71,6 +83,152 @@ class StockJournalController extends Controller
             'tenant',
             'stats'
         ));
+    }
+
+    /**
+     * Display a dedicated production history report with filters.
+     */
+    public function productionHistory(Request $request, Tenant $tenant)
+    {
+        $fromDate = $request->date_from ?: now()->startOfMonth()->toDateString();
+        $toDate = $request->date_to ?: now()->endOfMonth()->toDateString();
+
+        $query = StockJournalEntry::where('tenant_id', $tenant->id)
+            ->where('entry_type', 'production')
+            ->whereBetween('journal_date', [$fromDate, $toDate])
+            ->with(['operator', 'assistantOperator', 'items.product.primaryUnit']);
+
+        if ($request->filled('status')) {
+            $query->where('status', $request->status);
+        }
+
+        if ($request->filled('operator_id')) {
+            $query->where('operator_id', $request->operator_id);
+        }
+
+        if ($request->filled('product_id')) {
+            $productId = $request->product_id;
+            $query->whereHas('items', function ($q) use ($productId) {
+                $q->where('product_id', $productId)->where('movement_type', 'in');
+            });
+        }
+
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function ($q) use ($search) {
+                $q->where('journal_number', 'like', "%{$search}%")
+                  ->orWhere('production_batch_number', 'like', "%{$search}%")
+                  ->orWhere('work_order_number', 'like', "%{$search}%");
+            });
+        }
+
+        $productionHistory = $query->orderBy('journal_date', 'desc')
+            ->orderBy('created_at', 'desc')
+            ->paginate(20)
+            ->withQueryString();
+
+        // Aggregates only against posted entries within the same filters (excluding pagination).
+        $aggregateQuery = StockJournalEntry::where('tenant_id', $tenant->id)
+            ->where('entry_type', 'production')
+            ->where('status', 'posted')
+            ->whereBetween('journal_date', [$fromDate, $toDate]);
+
+        if ($request->filled('operator_id')) {
+            $aggregateQuery->where('operator_id', $request->operator_id);
+        }
+
+        if ($request->filled('product_id')) {
+            $productId = $request->product_id;
+            $aggregateQuery->whereHas('items', function ($q) use ($productId) {
+                $q->where('product_id', $productId)->where('movement_type', 'in');
+            });
+        }
+
+        $postedProductionIds = $aggregateQuery->pluck('id');
+
+        $productionOutputItems = StockJournalEntryItem::with(['product.primaryUnit'])
+            ->whereIn('stock_journal_entry_id', $postedProductionIds)
+            ->where('movement_type', 'in')
+            ->get();
+
+        // Wastage is captured on the OUT (consumption) side of production entries.
+        $productionConsumptionItems = StockJournalEntryItem::with(['product.primaryUnit'])
+            ->whereIn('stock_journal_entry_id', $postedProductionIds)
+            ->where('movement_type', 'out')
+            ->get();
+
+        $consumptionWasteByUnit = $productionConsumptionItems
+            ->groupBy(function ($item) {
+                return $item->unit_snapshot ?: ($item->product->primaryUnit->symbol ?? $item->product->primaryUnit->name ?? 'Unit');
+            })
+            ->map(fn ($items) => $items->sum('waste_quantity'));
+
+        $productionUnitTotals = $productionOutputItems
+            ->groupBy(function ($item) {
+                return $item->unit_snapshot ?: ($item->product->primaryUnit->symbol ?? $item->product->primaryUnit->name ?? 'Unit');
+            })
+            ->map(function ($items, $unit) use ($consumptionWasteByUnit) {
+                return [
+                    'unit' => $unit,
+                    'quantity' => $items->sum('quantity'),
+                    'rejected_quantity' => $items->sum('rejected_quantity'),
+                    'waste_quantity' => (float) ($consumptionWasteByUnit[$unit] ?? 0),
+                    'amount' => $items->sum('amount'),
+                ];
+            })
+            ->values();
+
+        // Include any wastage units that have no matching production output (still useful to display).
+        foreach ($consumptionWasteByUnit as $unit => $waste) {
+            if ($waste <= 0) {
+                continue;
+            }
+            $exists = $productionUnitTotals->firstWhere('unit', $unit);
+            if (!$exists) {
+                $productionUnitTotals->push([
+                    'unit' => $unit,
+                    'quantity' => 0,
+                    'rejected_quantity' => 0,
+                    'waste_quantity' => (float) $waste,
+                    'amount' => 0,
+                ]);
+            }
+        }
+
+        $productionProductTotals = $productionOutputItems
+            ->groupBy('product_id')
+            ->map(function ($items) {
+                $first = $items->first();
+                return [
+                    'product' => $first?->product,
+                    'quantity' => $items->sum('quantity'),
+                    'unit' => $first?->unit_snapshot ?: ($first?->product?->primaryUnit?->symbol ?? $first?->product?->primaryUnit?->name ?? ''),
+                    'rejected_quantity' => $items->sum('rejected_quantity'),
+                    'waste_quantity' => $items->sum('waste_quantity'),
+                    'amount' => $items->sum('amount'),
+                ];
+            })
+            ->sortByDesc('quantity')
+            ->values();
+
+        $operators = $this->productionEmployees($tenant);
+
+        $products = Product::where('tenant_id', $tenant->id)
+            ->where('is_active', true)
+            ->orderBy('name')
+            ->get(['id', 'name', 'sku']);
+
+        return view('tenant.inventory.stock-journal.production-history', [
+            'tenant' => $tenant,
+            'productionHistory' => $productionHistory,
+            'productionUnitTotals' => $productionUnitTotals,
+            'productionProductTotals' => $productionProductTotals,
+            'operators' => $operators,
+            'products' => $products,
+            'fromDate' => $fromDate,
+            'toDate' => $toDate,
+            'filters' => $request->only(['date_from', 'date_to', 'status', 'operator_id', 'product_id', 'search']),
+        ]);
     }
 
     /**
@@ -93,10 +251,13 @@ class StockJournalController extends Controller
             ->orderBy('name')
             ->get();
 
+        $employees = $this->productionEmployees($tenant);
+
         return view('tenant.inventory.stock-journal.create', compact(
             'tenant',
             'entryType',
-            'products'
+            'products',
+            'employees'
         ));
     }
 
@@ -110,13 +271,24 @@ class StockJournalController extends Controller
             'entry_type' => 'required|in:consumption,production,adjustment,transfer',
             'reference_number' => 'nullable|string|max:100',
             'narration' => 'nullable|string|max:500',
+            'operator_id' => ['nullable', 'required_if:entry_type,production', Rule::exists('employees', 'id')->where('tenant_id', $tenant->id)],
+            'assistant_operator_id' => ['nullable', 'different:operator_id', Rule::exists('employees', 'id')->where('tenant_id', $tenant->id)],
+            'production_batch_number' => 'nullable|string|max:100',
+            'work_order_number' => 'nullable|string|max:100',
+            'production_shift' => 'nullable|string|max:50',
+            'machine_name' => 'nullable|string|max:150',
+            'production_started_at' => 'nullable|date_format:H:i',
+            'production_ended_at' => 'nullable|date_format:H:i',
+            'production_notes' => 'nullable|string|max:1000',
             'items' => 'required|array|min:1',
-            'items.*.product_id' => 'required|exists:products,id',
+            'items.*.product_id' => ['required', Rule::exists('products', 'id')->where('tenant_id', $tenant->id)],
             'items.*.movement_type' => 'required|in:in,out',
             'items.*.quantity' => 'required|numeric|min:0.0001',
             'items.*.rate' => 'required|numeric|min:0',
+            'items.*.rejected_quantity' => 'nullable|numeric|min:0',
+            'items.*.waste_quantity' => 'nullable|numeric|min:0',
             'items.*.batch_number' => 'nullable|string|max:50',
-            'items.*.expiry_date' => 'nullable|date|after:today',
+            'items.*.expiry_date' => 'nullable|date',
             'items.*.remarks' => 'nullable|string|max:200',
         ]);
 
@@ -128,19 +300,23 @@ class StockJournalController extends Controller
                 'entry_type' => $request->entry_type,
                 'reference_number' => $request->reference_number,
                 'narration' => $request->narration,
+                ...$this->productionHeaderData($request),
                 'status' => 'draft',
                 'created_by' => Auth::id(),
             ]);
 
             foreach ($request->items as $itemData) {
                 $product = Product::findOrFail($itemData['product_id']);
-                $stockBefore = $product->getStockAsOfDate(now());
+                $stockBefore = $product->getStockAsOfDate($request->journal_date);
 
                 StockJournalEntryItem::create([
                     'stock_journal_entry_id' => $journalEntry->id,
                     'product_id' => $itemData['product_id'],
                     'movement_type' => $itemData['movement_type'],
                     'quantity' => $itemData['quantity'],
+                    'unit_snapshot' => $product->primaryUnit->symbol ?? $product->primaryUnit->name ?? null,
+                    'rejected_quantity' => $itemData['rejected_quantity'] ?? 0,
+                    'waste_quantity' => $itemData['waste_quantity'] ?? 0,
                     'rate' => $itemData['rate'],
                     'stock_before' => $stockBefore,
                     'batch_number' => $itemData['batch_number'] ?? null,
@@ -173,7 +349,7 @@ class StockJournalController extends Controller
      */
     public function show(Tenant $tenant, StockJournalEntry $stockJournal)
     {
-        $stockJournal->load(['creator', 'poster', 'items.product.category', 'items.product.primaryUnit', 'stockMovements.product.primaryUnit']);
+        $stockJournal->load(['creator', 'poster', 'operator', 'assistantOperator', 'items.product.category', 'items.product.primaryUnit', 'stockMovements.product.primaryUnit']);
 
         return view('tenant.inventory.stock-journal.show', compact('tenant', 'stockJournal'));
     }
@@ -200,10 +376,15 @@ class StockJournalController extends Controller
             ->orderBy('name')
             ->get();
 
-        return view('tenant.inventory.stock-journal.edit', compact(
+        $employees = $this->productionEmployees($tenant);
+        $entryType = $stockJournal->entry_type;
+
+        return view('tenant.inventory.stock-journal.create', compact(
             'tenant',
             'stockJournal',
-            'products'
+            'products',
+            'employees',
+            'entryType'
         ));
     }
 
@@ -224,13 +405,24 @@ class StockJournalController extends Controller
             'entry_type' => 'required|in:consumption,production,adjustment,transfer',
             'reference_number' => 'nullable|string|max:100',
             'narration' => 'nullable|string|max:500',
+            'operator_id' => ['nullable', 'required_if:entry_type,production', Rule::exists('employees', 'id')->where('tenant_id', $tenant->id)],
+            'assistant_operator_id' => ['nullable', 'different:operator_id', Rule::exists('employees', 'id')->where('tenant_id', $tenant->id)],
+            'production_batch_number' => 'nullable|string|max:100',
+            'work_order_number' => 'nullable|string|max:100',
+            'production_shift' => 'nullable|string|max:50',
+            'machine_name' => 'nullable|string|max:150',
+            'production_started_at' => 'nullable|date_format:H:i',
+            'production_ended_at' => 'nullable|date_format:H:i',
+            'production_notes' => 'nullable|string|max:1000',
             'items' => 'required|array|min:1',
-            'items.*.product_id' => 'required|exists:products,id',
+            'items.*.product_id' => ['required', Rule::exists('products', 'id')->where('tenant_id', $tenant->id)],
             'items.*.movement_type' => 'required|in:in,out',
             'items.*.quantity' => 'required|numeric|min:0.0001',
             'items.*.rate' => 'required|numeric|min:0',
+            'items.*.rejected_quantity' => 'nullable|numeric|min:0',
+            'items.*.waste_quantity' => 'nullable|numeric|min:0',
             'items.*.batch_number' => 'nullable|string|max:50',
-            'items.*.expiry_date' => 'nullable|date|after:today',
+            'items.*.expiry_date' => 'nullable|date',
             'items.*.remarks' => 'nullable|string|max:200',
         ]);
 
@@ -242,6 +434,7 @@ class StockJournalController extends Controller
                 'entry_type' => $request->entry_type,
                 'reference_number' => $request->reference_number,
                 'narration' => $request->narration,
+                ...$this->productionHeaderData($request),
                 'updated_by' => Auth::id(),
             ]);
 
@@ -253,13 +446,16 @@ class StockJournalController extends Controller
                 $product = Product::findOrFail($itemData['product_id']);
 
                 // Get current stock using date-based calculation
-                $stockBefore = $product->getStockAsOfDate(now());
+                $stockBefore = $product->getStockAsOfDate($request->journal_date);
 
                 StockJournalEntryItem::create([
                     'stock_journal_entry_id' => $stockJournal->id,
                     'product_id' => $itemData['product_id'],
                     'movement_type' => $itemData['movement_type'],
                     'quantity' => $itemData['quantity'],
+                    'unit_snapshot' => $product->primaryUnit->symbol ?? $product->primaryUnit->name ?? null,
+                    'rejected_quantity' => $itemData['rejected_quantity'] ?? 0,
+                    'waste_quantity' => $itemData['waste_quantity'] ?? 0,
                     'rate' => $itemData['rate'],
                     'stock_before' => $stockBefore,
                     'batch_number' => $itemData['batch_number'] ?? null,
@@ -339,7 +535,7 @@ class StockJournalController extends Controller
      */
     public function duplicate(Tenant $tenant, StockJournalEntry $stockJournal)
     {
-        $stockJournal->load(['items']);
+        $stockJournal->load(['items.product.primaryUnit']);
 
         return view('tenant.inventory.stock-journal.create', [
             'tenant' => $tenant,
@@ -350,6 +546,7 @@ class StockJournalController extends Controller
                 ->with(['category', 'primaryUnit'])
                 ->orderBy('name')
                 ->get(),
+            'employees' => $this->productionEmployees($tenant),
             'duplicateFrom' => $stockJournal,
         ]);
     }
@@ -361,7 +558,7 @@ class StockJournalController extends Controller
     {
         return response()->json([
             'current_stock' => $product->getStockAsOfDate(now()),
-            'unit' => $product->primaryUnit->name ?? '',
+            'unit' => $product->primaryUnit->symbol ?? $product->primaryUnit->name ?? '',
             'rate' => $product->purchase_rate ?? 0,
         ]);
     }
@@ -389,7 +586,7 @@ class StockJournalController extends Controller
         return response()->json([
             'current_stock' => $currentStock,
             'new_stock' => max(0, $newStock), // Don't allow negative stock in display
-            'unit' => $product->primaryUnit->name ?? '',
+            'unit' => $product->primaryUnit->symbol ?? $product->primaryUnit->name ?? '',
         ]);
     }
 
@@ -398,9 +595,29 @@ class StockJournalController extends Controller
      */
     public function print(Tenant $tenant, StockJournalEntry $stockJournal)
     {
-        $stockJournal->load(['creator', 'poster', 'items.product.category', 'items.product.primaryUnit']);
+        $stockJournal->load(['creator', 'poster', 'operator', 'assistantOperator', 'items.product.category', 'items.product.primaryUnit']);
 
         return view('tenant.inventory.stock-journal.print', compact('tenant', 'stockJournal'));
+    }
+
+    /**
+     * Download journal entry as PDF (presentation-ready, with company info).
+     */
+    public function pdf(Tenant $tenant, StockJournalEntry $stockJournal)
+    {
+        $stockJournal->load(['creator', 'poster', 'operator', 'assistantOperator', 'items.product.category', 'items.product.primaryUnit']);
+
+        $isProduction = $stockJournal->entry_type === 'production';
+        $documentLabel = $isProduction ? 'Production Report' : 'Stock Journal';
+        $filename = strtoupper(str_replace(' ', '-', $documentLabel)) . '-' . $stockJournal->journal_number . '.pdf';
+
+        $pdf = Pdf::loadView('tenant.inventory.stock-journal.pdf', [
+            'tenant' => $tenant,
+            'stockJournal' => $stockJournal,
+            'documentLabel' => $documentLabel,
+        ])->setPaper('a4', 'portrait');
+
+        return $pdf->download($filename);
     }
 
     /**
@@ -503,5 +720,43 @@ class StockJournalController extends Controller
         }
 
         return back()->with($deleted > 0 ? 'success' : 'error', $message);
+    }
+
+    private function productionEmployees(Tenant $tenant)
+    {
+        return Employee::where('tenant_id', $tenant->id)
+            ->where('status', 'active')
+            ->orderBy('first_name')
+            ->orderBy('last_name')
+            ->get();
+    }
+
+    private function productionHeaderData(Request $request): array
+    {
+        if ($request->entry_type !== 'production') {
+            return [
+                'operator_id' => null,
+                'assistant_operator_id' => null,
+                'production_batch_number' => null,
+                'work_order_number' => null,
+                'production_shift' => null,
+                'machine_name' => null,
+                'production_started_at' => null,
+                'production_ended_at' => null,
+                'production_notes' => null,
+            ];
+        }
+
+        return [
+            'operator_id' => $request->operator_id,
+            'assistant_operator_id' => $request->assistant_operator_id,
+            'production_batch_number' => $request->production_batch_number,
+            'work_order_number' => $request->work_order_number,
+            'production_shift' => $request->production_shift,
+            'machine_name' => $request->machine_name,
+            'production_started_at' => $request->production_started_at,
+            'production_ended_at' => $request->production_ended_at,
+            'production_notes' => $request->production_notes,
+        ];
     }
 }

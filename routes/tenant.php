@@ -540,6 +540,7 @@ Route::prefix('ledger-accounts')->name('ledger-accounts.')->group(function () {
             // Stock Journal Entries
             Route::prefix('stock-journal')->name('stock-journal.')->group(function () {
                 Route::get('/', [StockJournalController::class, 'index'])->name('index');
+                Route::get('/production-history', [StockJournalController::class, 'productionHistory'])->name('production-history');
                 Route::get('/create', [StockJournalController::class, 'create'])->name('create');
                 Route::get('/create/{type}', [StockJournalController::class, 'create'])->name('create.type');
                 Route::post('/', [StockJournalController::class, 'store'])->name('store');
@@ -553,6 +554,7 @@ Route::prefix('ledger-accounts')->name('ledger-accounts.')->group(function () {
                 Route::post('/{stockJournal}/cancel', [StockJournalController::class, 'cancel'])->name('cancel');
                 Route::get('/{stockJournal}/duplicate', [StockJournalController::class, 'duplicate'])->name('duplicate');
                 Route::get('/{stockJournal}/print', [StockJournalController::class, 'print'])->name('print');
+                Route::get('/{stockJournal}/pdf', [StockJournalController::class, 'pdf'])->name('pdf');
 
                 // Bulk actions
                 Route::post('/bulk-post', [StockJournalController::class, 'bulkPost'])->name('bulk-post');

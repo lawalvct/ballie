@@ -131,6 +131,30 @@
         </div>
     </div>
 
+    <!-- Production Report Quick Access -->
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200 px-6 py-4 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3">
+        <div>
+            <h3 class="text-lg font-semibold text-gray-900">Production Reports</h3>
+            <p class="text-sm text-gray-500">Track production output, rejected quantity, wastage and operator performance.</p>
+        </div>
+        <div class="flex flex-wrap gap-2">
+            <a href="{{ route('tenant.inventory.stock-journal.production-history', ['tenant' => $tenant->slug]) }}"
+                class="inline-flex items-center px-4 py-2 bg-white border border-gray-300 text-gray-700 text-sm font-medium rounded-lg shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-primary-500">
+                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-6h13M9 5h13M3 5h.01M3 12h.01M3 19h.01"></path>
+                </svg>
+                View Production History
+            </a>
+            <a href="{{ route('tenant.inventory.stock-journal.create.type', ['tenant' => $tenant->slug, 'type' => 'production']) }}"
+                class="inline-flex items-center px-4 py-2 bg-primary-600 text-white text-sm font-medium rounded-lg shadow-sm hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-primary-500">
+                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                </svg>
+                New Production Report
+            </a>
+        </div>
+    </div>
+
     <!-- Filters Card -->
     <div class="bg-white rounded-xl shadow-sm border border-gray-200">
         <div class="p-6">

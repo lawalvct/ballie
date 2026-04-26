@@ -14,6 +14,8 @@
             'stock'         => (float) ($p->current_stock ?? 0),
             'unit'          => $p->primaryUnit->symbol ?? ($p->primaryUnit->name ?? ''),
             'purchase_rate' => (float) ($p->purchase_rate ?? 0),
+            'sales_rate'    => (float) ($p->sales_rate ?? 0),
+            'selling_price' => (float) ($p->selling_price ?? $p->sales_rate ?? 0),
             'cost_price'    => (float) ($p->cost_price ?? 0),
         ];
     })->values();
@@ -68,8 +70,10 @@
           action="{{ isset($stockJournal) ? route('tenant.inventory.stock-journal.update', ['tenant' => $tenant->slug, 'stockJournal' => $stockJournal->id]) : route('tenant.inventory.stock-journal.store', ['tenant' => $tenant->slug]) }}"
           x-data="journalEntryForm()"
           x-init="init()"
+                    @submit="guardSubmit($event, $el)"
           class="space-y-6">
         @csrf
+                <input type="hidden" id="stock-journal-action" name="action" value="save">
         @if(isset($stockJournal))
             @method('PUT')
         @endif
@@ -297,8 +301,8 @@
             </div>
 
             <div class="flex space-x-3">
-                <button type="submit" name="action" value="save"
-                    class="inline-flex items-center px-6 py-2 bg-green-600 text-white text-sm font-medium rounded-lg shadow-sm hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500">
+                <button type="submit" name="action" value="save" @click="$el.form.querySelector('#stock-journal-action').value = 'save'"
+                    class="inline-flex items-center px-6 py-2 bg-green-600 text-white text-sm font-medium rounded-lg shadow-sm hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 disabled:opacity-60 disabled:cursor-not-allowed">
                     <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"></path>
                     </svg>
@@ -306,8 +310,8 @@
                 </button>
 
                 @if(!isset($stockJournal))
-                <button type="submit" name="action" value="save_and_post"
-                    class="inline-flex items-center px-6 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                <button type="submit" name="action" value="save_and_post" @click="$el.form.querySelector('#stock-journal-action').value = 'save_and_post'"
+                    class="inline-flex items-center px-6 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-60 disabled:cursor-not-allowed">
                     <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                     </svg>
@@ -335,8 +339,12 @@ function productionEntryForm() {
                 product_id: '',
                 current_stock: 0,
                 quantity: 0,
+                unit: '',
                 rate: 0,
-                amount: 0
+                amount: 0,
+                waste_quantity: 0,
+                batch_number: '',
+                remarks: ''
             });
         },
 
@@ -345,8 +353,13 @@ function productionEntryForm() {
                 product_id: '',
                 current_stock: 0,
                 quantity: 0,
+                unit: '',
                 rate: 0,
-                amount: 0
+                amount: 0,
+                rejected_quantity: 0,
+                batch_number: '',
+                expiry_date: '',
+                remarks: ''
             });
         },
 
@@ -396,6 +409,14 @@ function productionEntryForm() {
             this.productionTotal = this.productionItems.reduce((sum, item) => sum + (parseFloat(item.amount) || 0), 0);
         },
 
+        totalRejectedQuantity() {
+            return this.productionItems.reduce((sum, item) => sum + (parseFloat(item.rejected_quantity) || 0), 0).toFixed(4);
+        },
+
+        totalWasteQuantity() {
+            return this.consumptionItems.reduce((sum, item) => sum + (parseFloat(item.waste_quantity) || 0), 0).toFixed(4);
+        },
+
         consumptionItemIndex(index) {
             return index;
         },
@@ -405,8 +426,74 @@ function productionEntryForm() {
         },
 
         init() {
-            this.addConsumptionItem();
-            this.addProductionItem();
+            @if(isset($stockJournal) && $stockJournal->entry_type === 'production')
+                @foreach($stockJournal->items as $item)
+                    @if($item->movement_type === 'out')
+                        this.consumptionItems.push({
+                            product_id: @json((string) $item->product_id),
+                            current_stock: {{ (float) $item->stock_before }},
+                            quantity: {{ (float) $item->quantity }},
+                            unit: @json($item->unit_snapshot ?: ($item->product->primaryUnit->symbol ?? $item->product->primaryUnit->name ?? '')),
+                            rate: {{ (float) $item->rate }},
+                            amount: {{ (float) $item->amount }},
+                            waste_quantity: {{ (float) ($item->waste_quantity ?? 0) }},
+                            batch_number: @json($item->batch_number ?? ''),
+                            remarks: @json($item->remarks ?? '')
+                        });
+                    @else
+                        this.productionItems.push({
+                            product_id: @json((string) $item->product_id),
+                            current_stock: {{ (float) $item->stock_before }},
+                            quantity: {{ (float) $item->quantity }},
+                            unit: @json($item->unit_snapshot ?: ($item->product->primaryUnit->symbol ?? $item->product->primaryUnit->name ?? '')),
+                            rate: {{ (float) $item->rate }},
+                            amount: {{ (float) $item->amount }},
+                            rejected_quantity: {{ (float) ($item->rejected_quantity ?? 0) }},
+                            batch_number: @json($item->batch_number ?? ''),
+                            expiry_date: @json($item->expiry_date ? $item->expiry_date->format('Y-m-d') : ''),
+                            remarks: @json($item->remarks ?? '')
+                        });
+                    @endif
+                @endforeach
+                if (this.consumptionItems.length === 0) this.addConsumptionItem();
+                if (this.productionItems.length === 0) this.addProductionItem();
+            @elseif(isset($duplicateFrom) && $duplicateFrom->entry_type === 'production')
+                @foreach($duplicateFrom->items as $item)
+                    @if($item->movement_type === 'out')
+                        this.consumptionItems.push({
+                            product_id: @json((string) $item->product_id),
+                            current_stock: 0,
+                            quantity: {{ (float) $item->quantity }},
+                            unit: @json($item->unit_snapshot ?: ($item->product->primaryUnit->symbol ?? $item->product->primaryUnit->name ?? '')),
+                            rate: {{ (float) $item->rate }},
+                            amount: {{ (float) $item->amount }},
+                            waste_quantity: {{ (float) ($item->waste_quantity ?? 0) }},
+                            batch_number: @json($item->batch_number ?? ''),
+                            remarks: @json($item->remarks ?? '')
+                        });
+                    @else
+                        this.productionItems.push({
+                            product_id: @json((string) $item->product_id),
+                            current_stock: 0,
+                            quantity: {{ (float) $item->quantity }},
+                            unit: @json($item->unit_snapshot ?: ($item->product->primaryUnit->symbol ?? $item->product->primaryUnit->name ?? '')),
+                            rate: {{ (float) $item->rate }},
+                            amount: {{ (float) $item->amount }},
+                            rejected_quantity: {{ (float) ($item->rejected_quantity ?? 0) }},
+                            batch_number: '',
+                            expiry_date: '',
+                            remarks: @json($item->remarks ?? '')
+                        });
+                    @endif
+                @endforeach
+                if (this.consumptionItems.length === 0) this.addConsumptionItem();
+                if (this.productionItems.length === 0) this.addProductionItem();
+            @else
+                this.addConsumptionItem();
+                this.addProductionItem();
+            @endif
+            this.calculateConsumptionTotal();
+            this.calculateProductionTotal();
         }
     }
 }
@@ -504,7 +591,20 @@ function transferEntryForm() {
 function journalEntryForm() {
     return {
         entryType: '{{ old("entry_type", $entryType ?? "consumption") }}',
+        isSubmitting: false,
         items: [],
+
+        guardSubmit(event, form) {
+            if (this.isSubmitting) {
+                event.preventDefault();
+                return false;
+            }
+
+            this.isSubmitting = true;
+            form.querySelectorAll('button[type="submit"]').forEach((button) => {
+                button.disabled = true;
+            });
+        },
 
         init() {
             @if(isset($stockJournal))

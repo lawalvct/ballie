@@ -183,6 +183,29 @@
         </div>
     </div>
 
+    @if($stockJournal->entry_type === 'production')
+    <div style="border: 1px solid #b8daff; background: #f3f8ff; padding: 10px; margin-bottom: 20px;">
+        <div style="font-weight: bold; margin-bottom: 8px;">Production Report Details</div>
+        <div class="info-section" style="margin-bottom: 0;">
+            <div class="info-box">
+                <div><span class="info-label">Operator:</span> {{ $stockJournal->operator->full_name ?? 'Not assigned' }}</div>
+                <div><span class="info-label">Assistant:</span> {{ $stockJournal->assistantOperator->full_name ?? 'Not assigned' }}</div>
+                <div><span class="info-label">Work Order:</span> {{ $stockJournal->work_order_number ?? 'N/A' }}</div>
+                <div><span class="info-label">Batch:</span> {{ $stockJournal->production_batch_number ?? 'N/A' }}</div>
+            </div>
+            <div class="info-box">
+                <div><span class="info-label">Shift:</span> {{ $stockJournal->production_shift ?? 'N/A' }}</div>
+                <div><span class="info-label">Machine/Line:</span> {{ $stockJournal->machine_name ?? 'N/A' }}</div>
+                <div><span class="info-label">Start Time:</span> {{ $stockJournal->production_started_at ?? 'N/A' }}</div>
+                <div><span class="info-label">End Time:</span> {{ $stockJournal->production_ended_at ?? 'N/A' }}</div>
+            </div>
+        </div>
+        @if($stockJournal->production_notes)
+            <div style="margin-top: 8px;"><span class="info-label">Notes:</span> {{ $stockJournal->production_notes }}</div>
+        @endif
+    </div>
+    @endif
+
     @if($stockJournal->narration)
     <!-- Narration -->
     <div style="margin-bottom: 20px;">
@@ -205,10 +228,12 @@
                 <th style="width: 12%;" class="text-right">Rate (₦)</th>
                 <th style="width: 12%;" class="text-right">Amount (₦)</th>
                 <th style="width: 12%;" class="text-right">Stock After</th>
+                <th style="width: 10%;" class="text-right">Quality</th>
             </tr>
         </thead>
         <tbody>
             @forelse($stockJournal->items as $index => $item)
+            @php $itemUnit = $item->unit_snapshot ?: ($item->product->primaryUnit->symbol ?? $item->product->primaryUnit->name ?? ''); @endphp
             <tr>
                 <td class="text-center">{{ $index + 1 }}</td>
                 <td>
@@ -237,22 +262,30 @@
                 </td>
                 <td class="text-right">
                     {{ number_format($item->stock_before, 4) }}
-                    <br><small>{{ $item->product->primaryUnit->name ?? '' }}</small>
+                    <br><small>{{ $itemUnit }}</small>
                 </td>
                 <td class="text-right">
                     <strong>{{ number_format($item->quantity, 4) }}</strong>
-                    <br><small>{{ $item->product->primaryUnit->name ?? '' }}</small>
+                    <br><small>{{ $itemUnit }}</small>
                 </td>
                 <td class="text-right">{{ number_format($item->rate, 2) }}</td>
                 <td class="text-right"><strong>{{ number_format($item->amount, 2) }}</strong></td>
                 <td class="text-right">
                     {{ number_format($item->stock_after, 4) }}
-                    <br><small>{{ $item->product->primaryUnit->name ?? '' }}</small>
+                    <br><small>{{ $itemUnit }}</small>
+                </td>
+                <td class="text-right">
+                    @if($item->movement_type === 'in')
+                        Rej: {{ number_format($item->rejected_quantity ?? 0, 4) }}
+                    @else
+                        Waste: {{ number_format($item->waste_quantity ?? 0, 4) }}
+                    @endif
+                    <br><small>{{ $itemUnit }}</small>
                 </td>
             </tr>
             @empty
             <tr>
-                <td colspan="8" class="text-center" style="padding: 20px; color: #666;">
+                <td colspan="9" class="text-center" style="padding: 20px; color: #666;">
                     No items found in this journal entry.
                 </td>
             </tr>
@@ -263,7 +296,7 @@
             <tr style="background-color: #f8f9fa; font-weight: bold;">
                 <td colspan="6" class="text-right">TOTAL:</td>
                 <td class="text-right">₦{{ number_format($stockJournal->items->sum('amount'), 2) }}</td>
-                <td></td>
+                <td colspan="2"></td>
             </tr>
         </tfoot>
         @endif

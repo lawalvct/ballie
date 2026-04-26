@@ -15,6 +15,9 @@ class StockJournalEntryItem extends Model
         'product_id',
         'movement_type',
         'quantity',
+        'unit_snapshot',
+        'rejected_quantity',
+        'waste_quantity',
         'rate',
         'amount',
         'stock_before',
@@ -26,6 +29,8 @@ class StockJournalEntryItem extends Model
 
     protected $casts = [
         'quantity' => 'decimal:4',
+        'rejected_quantity' => 'decimal:4',
+        'waste_quantity' => 'decimal:4',
         'rate' => 'decimal:2',
         'amount' => 'decimal:2',
         'stock_before' => 'decimal:4',

@@ -186,6 +186,23 @@
                 </div>
                 <p class="text-xs text-indigo-200">Calculate total inventory valuation.</p>
             </a>
+
+            <!-- Production History Card -->
+            <a href="{{ route('tenant.inventory.stock-journal.production-history', ['tenant' => $tenant->slug]) }}"
+               class="action-card bg-gradient-to-br from-lime-600 to-lime-800 hover:from-lime-500 hover:to-lime-700 border border-lime-500 rounded-xl p-4 transition-all duration-300 hover:shadow-lg hover:scale-105 group">
+                <div class="flex items-center mb-3">
+                    <div class="w-10 h-10 bg-lime-500 bg-opacity-30 rounded-lg flex items-center justify-center mr-3 group-hover:scale-110 transition-transform duration-300">
+                        <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-6h13M9 5h13M3 5h.01M3 12h.01M3 19h.01"></path>
+                        </svg>
+                    </div>
+                    <div>
+                        <h5 class="font-semibold text-white group-hover:text-lime-200 transition-colors duration-300">Production History</h5>
+                        <p class="text-xs text-lime-200">Manufacturing reports</p>
+                    </div>
+                </div>
+                <p class="text-xs text-lime-200">Track output, rejected qty, wastage and operator performance.</p>
+            </a>
         </div>
     </div>
 
@@ -315,7 +332,7 @@
                 <p class="text-xs text-slate-200">Analyze stock movement patterns.</p>
             </a>
 
-          
+
 
 
         </div>

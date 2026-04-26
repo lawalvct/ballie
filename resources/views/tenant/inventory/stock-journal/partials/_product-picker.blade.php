@@ -10,12 +10,14 @@
      *   - $rateField  : JS field name on the product to copy into item.rate (default 'purchase_rate')
      *   - $onSelect   : JS expression to run after choosing a product (e.g. "calculateFromAmount(index)")
      *   - $accent     : 'green' | 'red' | 'blue' (visual accent for highlight)
-     *   - $placeholder: input placeholder text
+    *   - $placeholder: input placeholder text
+    *   - $rateLabel  : label displayed beside the selected rate in dropdown rows
      */
     $rateField   = $rateField   ?? 'purchase_rate';
     $onSelect    = $onSelect    ?? '';
     $accent      = $accent      ?? 'blue';
     $placeholder = $placeholder ?? 'Search product by name or SKU...';
+    $rateLabel   = $rateLabel   ?? 'Rate';
 
     $accentClasses = [
         'green' => ['ring' => 'focus:ring-green-500/30 focus:border-green-500', 'hl' => 'bg-green-50'],
@@ -29,6 +31,7 @@
         open: false,
         highlight: 0,
         rateField: '{{ $rateField }}',
+        rateLabel: '{{ $rateLabel }}',
         get filtered() {
             const list = window.__sjProducts || [];
             const q = (this.search || '').toLowerCase().trim();
@@ -45,10 +48,21 @@
             if (!p) return '';
             return p.sku ? (p.name + ' (' + p.sku + ')') : p.name;
         },
+        productRate(p) {
+            const primary = Number(p[this.rateField] || 0);
+            if (primary > 0) return primary;
+            if (this.rateField === 'sales_rate' || this.rateField === 'selling_price') {
+                return Number(p.selling_price || p.sales_rate || p.purchase_rate || p.cost_price || 0);
+            }
+            if (this.rateField === 'cost_price') {
+                return Number(p.cost_price || p.purchase_rate || p.sales_rate || p.selling_price || 0);
+            }
+            return Number(p.purchase_rate || p.cost_price || p.sales_rate || p.selling_price || 0);
+        },
         choose(p) {
             item.product_id     = String(p.id);
             item.current_stock  = parseFloat(p.stock || 0);
-            item.rate           = parseFloat(p[this.rateField] ?? p.purchase_rate ?? p.cost_price ?? 0);
+            item.rate           = this.productRate(p);
             item.unit           = p.unit || '';
             this.search         = p.sku ? (p.name + ' (' + p.sku + ')') : p.name;
             this.open           = false;
@@ -112,8 +126,8 @@
                               x-text="(p.stock ?? 0) + (p.unit ? (' ' + p.unit) : '')"></span>
                     </span>
                     <span>
-                        <span class="text-gray-400">Rate:</span>
-                        <span class="font-medium text-gray-700" x-text="'₦' + formatMoney(p[rateField] ?? p.purchase_rate ?? p.cost_price ?? 0)"></span>
+                        <span class="text-gray-400" x-text="rateLabel + ':'"></span>
+                        <span class="font-medium text-gray-700" x-text="'₦' + formatMoney(productRate(p))"></span>
                     </span>
                 </div>
             </div>
