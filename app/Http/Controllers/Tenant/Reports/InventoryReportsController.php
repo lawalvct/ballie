@@ -276,6 +276,7 @@ class InventoryReportsController extends Controller
     {
         $asOfDate = $request->get('as_of_date', now()->toDateString());
         $categoryId = $request->get('category_id');
+        $search = $request->get('search');
         $valuationMethod = $request->get('valuation_method', 'weighted_average'); // weighted_average, fifo
         $groupBy = $request->get('group_by', 'product'); // product, category
 
@@ -287,6 +288,10 @@ class InventoryReportsController extends Controller
 
         if ($categoryId) {
             $query->where('category_id', $categoryId);
+        }
+
+        if ($search) {
+            $query->where('name', 'like', '%' . $search . '%');
         }
 
         $products = $query->get();
@@ -360,6 +365,7 @@ class InventoryReportsController extends Controller
             'tenant',
             'asOfDate',
             'categoryId',
+            'search',
             'valuationMethod',
             'groupBy',
             'paginatedData',

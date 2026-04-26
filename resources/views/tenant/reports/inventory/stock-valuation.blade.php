@@ -126,16 +126,16 @@
     <!-- Filters & Search Section -->
     <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
         <form method="GET" id="filterForm">
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+            <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4">
                 <!-- Search Input -->
-                <div class="lg:col-span-2">
+                <div>
                     <label for="search" class="block text-sm font-medium text-gray-700 mb-2">
                         <svg class="w-4 h-4 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
                         </svg>
                         Search Product
                     </label>
-                    <input type="text" name="search" id="search" value="{{ request('search') }}" placeholder="Search by product name..." class="block w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all">
+                    <input type="text" name="search" id="search" value="{{ $search ?? '' }}" placeholder="Search by name..." class="block w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all">
                 </div>
 
                 <!-- As of Date -->
@@ -211,6 +211,36 @@
                     Reset Filters
                 </a>
             </div>
+
+            <details class="mt-4 rounded-xl border border-green-200 bg-green-50/60">
+                <summary class="flex cursor-pointer list-none items-center justify-between gap-3 px-4 py-3 text-sm font-semibold text-green-800 marker:hidden">
+                    <span class="inline-flex items-center gap-2">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                        </svg>
+                        How valuation methods work
+                    </span>
+                    <span class="text-xs font-medium text-green-700">Click to expand</span>
+                </summary>
+
+                <div class="border-t border-green-200 px-4 py-4 text-sm leading-6 text-gray-700 space-y-4">
+                    <div>
+                        <h4 class="font-semibold text-gray-900">Weighted Average</h4>
+                        <p class="mt-1">This method blends all stock purchases into one running average cost. Every time stock comes in, the system adds the new value and quantity, then recalculates one average rate for the remaining stock.</p>
+                        <p class="mt-2 text-gray-600">Example: if you buy 10 units at NGN 100 and another 10 units at NGN 140, the average becomes NGN 120. If you sell 12 units, the remaining 8 units are still valued at NGN 120 each.</p>
+                    </div>
+
+                    <div>
+                        <h4 class="font-semibold text-gray-900">FIFO</h4>
+                        <p class="mt-1">FIFO means First In, First Out. The earliest stock received is treated as the first stock sold, so the remaining stock value comes from the newest purchase layers left in inventory.</p>
+                        <p class="mt-2 text-gray-600">Using the same example, selling 12 units removes the first 10 units at NGN 100 and 2 units at NGN 140. The remaining 8 units are valued at NGN 140 each.</p>
+                    </div>
+
+                    <div class="rounded-lg border border-green-100 bg-white/80 px-3 py-3 text-xs text-gray-600">
+                        Quantity stays the same in both methods. What changes is the stock value, average rate shown in the report, category totals, and the ranking of the most valuable items.
+                    </div>
+                </div>
+            </details>
         </form>
     </div>
 
