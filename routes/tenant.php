@@ -1128,6 +1128,7 @@ Route::prefix('ledger-accounts')->name('ledger-accounts.')->group(function () {
             Route::get('/purchases-by-period', [PurchaseReportsController::class, 'purchasesByPeriod'])->name('purchases-by-period');
 
             // Inventory Reports
+            Route::get('/stock-summary/pdf', [\App\Http\Controllers\Tenant\Reports\InventoryReportsController::class, 'stockSummaryPdf'])->name('stock-summary.pdf');
             Route::get('/stock-summary', [\App\Http\Controllers\Tenant\Reports\InventoryReportsController::class, 'stockSummary'])->name('stock-summary');
             Route::get('/low-stock-alert', [\App\Http\Controllers\Tenant\Reports\InventoryReportsController::class, 'lowStockAlert'])->name('low-stock-alert');
             Route::get('/stock-valuation', [\App\Http\Controllers\Tenant\Reports\InventoryReportsController::class, 'stockValuation'])->name('stock-valuation');

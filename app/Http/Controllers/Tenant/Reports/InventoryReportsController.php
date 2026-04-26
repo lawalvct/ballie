@@ -21,6 +21,28 @@ class InventoryReportsController extends Controller
      */
     public function stockSummary(Request $request, Tenant $tenant)
     {
+        $data = $this->buildStockSummaryData($request, $tenant, true);
+        return view('tenant.reports.inventory.stock-summary', $data);
+    }
+
+    public function stockSummaryPdf(Request $request, Tenant $tenant)
+    {
+        $data = $this->buildStockSummaryData($request, $tenant, false);
+        $showValues = !$request->boolean('hide_values');
+        $data['showValues'] = $showValues;
+        $data['tenant'] = $tenant;
+
+        $valueMode = $showValues ? 'with-values' : 'without-values';
+        $filename = $tenant->slug . '_stock-summary_' . $data['asOfDate'] . '_' . $valueMode . '.pdf';
+
+        $pdf = Pdf::loadView('tenant.reports.inventory.stock-summary-pdf', $data)
+            ->setPaper('a4', 'landscape');
+
+        return $pdf->download($filename);
+    }
+
+    protected function buildStockSummaryData(Request $request, Tenant $tenant, bool $paginate = true): array
+    {
         $asOfDate = $request->get('as_of_date', now()->toDateString());
         $categoryId = $request->get('category_id');
         $stockStatus = $request->get('stock_status'); // all, in_stock, low_stock, out_of_stock
@@ -82,6 +104,9 @@ class InventoryReportsController extends Controller
         $totalStockValue = $products->sum(function($product) {
             return $product->calculated_stock * ($product->purchase_rate ?? 0);
         });
+        $totalSalesValue = $products->sum(function($product) {
+            return $product->calculated_stock * ($product->sales_rate ?? 0);
+        });
         $totalStockQuantity = $products->sum('calculated_stock');
         $outOfStockCount = $products->where('status_flag', 'out_of_stock')->count();
         $lowStockCount = $products->where('status_flag', 'low_stock')->count();
@@ -91,32 +116,39 @@ class InventoryReportsController extends Controller
             ->orderBy('name')
             ->get();
 
-        // Paginate manually
-        $page = $request->get('page', 1);
-        $perPage = 20;
-        $paginatedProducts = new \Illuminate\Pagination\LengthAwarePaginator(
-            $products->forPage($page, $perPage),
-            $products->count(),
-            $perPage,
-            $page,
-            ['path' => $request->url(), 'query' => $request->query()]
-        );
+        if ($paginate) {
+            // Paginate manually
+            $page = $request->get('page', 1);
+            $perPage = 20;
+            $paginatedProducts = new \Illuminate\Pagination\LengthAwarePaginator(
+                $products->forPage($page, $perPage),
+                $products->count(),
+                $perPage,
+                $page,
+                ['path' => $request->url(), 'query' => $request->query()]
+            );
+        } else {
+            // For PDF: emulate a paginator interface so the same view variables work
+            $paginatedProducts = $products->values();
+        }
 
-        return view('tenant.reports.inventory.stock-summary', compact(
-            'tenant',
-            'asOfDate',
-            'categoryId',
-            'stockStatus',
-            'sortBy',
-            'sortOrder',
-            'paginatedProducts',
-            'categories',
-            'totalProducts',
-            'totalStockValue',
-            'totalStockQuantity',
-            'outOfStockCount',
-            'lowStockCount'
-        ));
+        return [
+            'tenant' => $tenant,
+            'asOfDate' => $asOfDate,
+            'categoryId' => $categoryId,
+            'stockStatus' => $stockStatus,
+            'sortBy' => $sortBy,
+            'sortOrder' => $sortOrder,
+            'paginatedProducts' => $paginatedProducts,
+            'allProducts' => $products->values(),
+            'categories' => $categories,
+            'totalProducts' => $totalProducts,
+            'totalStockValue' => $totalStockValue,
+            'totalSalesValue' => $totalSalesValue,
+            'totalStockQuantity' => $totalStockQuantity,
+            'outOfStockCount' => $outOfStockCount,
+            'lowStockCount' => $lowStockCount,
+        ];
     }
 
     /**

@@ -68,84 +68,69 @@
         </div>
     </div>
 
-    <!-- Alert Summary Cards with Gradient Backgrounds -->
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
-        <!-- Total Alerts Card -->
-        <div class="bg-gradient-to-br from-orange-500 to-orange-600 rounded-xl shadow-lg p-6 text-white transform hover:scale-105 transition-transform duration-200">
-            <div class="flex items-center justify-between">
-                <div class="flex-1">
-                    <p class="text-sm font-medium text-orange-100 mb-1">Total Alerts</p>
-                    <p class="text-3xl font-bold">{{ number_format($totalAlerts) }}</p>
-                    <p class="text-xs text-orange-100 mt-2">Requires attention</p>
+    <!-- Alert Summary Cards -->
+    <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 border-l-4 border-l-orange-500 p-4">
+            <div class="flex items-start justify-between gap-2">
+                <div class="flex-1 min-w-0">
+                    <p class="text-[11px] font-medium text-gray-500 uppercase tracking-wide">Total Alerts</p>
+                    <p class="mt-1 text-xl font-bold text-gray-900 leading-tight break-all">{{ number_format($totalAlerts) }}</p>
+                    <p class="text-[11px] text-gray-400 mt-1">Need attention</p>
                 </div>
-                <div class="flex-shrink-0 w-14 h-14 bg-white bg-opacity-20 rounded-lg flex items-center justify-center backdrop-blur-sm">
-                    <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
-                    </svg>
+                <div class="w-9 h-9 bg-orange-50 rounded-lg flex items-center justify-center flex-shrink-0">
+                    <svg class="w-5 h-5 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
                 </div>
             </div>
         </div>
 
-        <!-- Critical Alerts Card -->
-        <div class="bg-gradient-to-br from-red-500 to-red-600 rounded-xl shadow-lg p-6 text-white transform hover:scale-105 transition-transform duration-200">
-            <div class="flex items-center justify-between">
-                <div class="flex-1">
-                    <p class="text-sm font-medium text-red-100 mb-1">Critical</p>
-                    <p class="text-3xl font-bold">{{ number_format($criticalAlerts) }}</p>
-                    <p class="text-xs text-red-100 mt-2">Urgent restock needed</p>
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 border-l-4 border-l-red-500 p-4">
+            <div class="flex items-start justify-between gap-2">
+                <div class="flex-1 min-w-0">
+                    <p class="text-[11px] font-medium text-gray-500 uppercase tracking-wide">Critical</p>
+                    <p class="mt-1 text-xl font-bold text-red-700 leading-tight break-all">{{ number_format($criticalAlerts) }}</p>
+                    <p class="text-[11px] text-gray-400 mt-1">Urgent restock</p>
                 </div>
-                <div class="flex-shrink-0 w-14 h-14 bg-white bg-opacity-20 rounded-lg flex items-center justify-center backdrop-blur-sm">
-                    <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
-                    </svg>
+                <div class="w-9 h-9 bg-red-50 rounded-lg flex items-center justify-center flex-shrink-0">
+                    <svg class="w-5 h-5 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
                 </div>
             </div>
         </div>
 
-        <!-- Warning Alerts Card -->
-        <div class="bg-gradient-to-br from-yellow-500 to-yellow-600 rounded-xl shadow-lg p-6 text-white transform hover:scale-105 transition-transform duration-200">
-            <div class="flex items-center justify-between">
-                <div class="flex-1">
-                    <p class="text-sm font-medium text-yellow-100 mb-1">Warning</p>
-                    <p class="text-3xl font-bold">{{ number_format($warningAlerts) }}</p>
-                    <p class="text-xs text-yellow-100 mt-2">Below reorder level</p>
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 border-l-4 border-l-yellow-500 p-4">
+            <div class="flex items-start justify-between gap-2">
+                <div class="flex-1 min-w-0">
+                    <p class="text-[11px] font-medium text-gray-500 uppercase tracking-wide">Warning</p>
+                    <p class="mt-1 text-xl font-bold text-yellow-700 leading-tight break-all">{{ number_format($warningAlerts) }}</p>
+                    <p class="text-[11px] text-gray-400 mt-1">Below reorder</p>
                 </div>
-                <div class="flex-shrink-0 w-14 h-14 bg-white bg-opacity-20 rounded-lg flex items-center justify-center backdrop-blur-sm">
-                    <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
-                    </svg>
+                <div class="w-9 h-9 bg-yellow-50 rounded-lg flex items-center justify-center flex-shrink-0">
+                    <svg class="w-5 h-5 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
                 </div>
             </div>
         </div>
 
-        <!-- Out of Stock Card -->
-        <div class="bg-gradient-to-br from-gray-500 to-gray-600 rounded-xl shadow-lg p-6 text-white transform hover:scale-105 transition-transform duration-200">
-            <div class="flex items-center justify-between">
-                <div class="flex-1">
-                    <p class="text-sm font-medium text-gray-100 mb-1">Out of Stock</p>
-                    <p class="text-3xl font-bold">{{ number_format($outOfStockCount) }}</p>
-                    <p class="text-xs text-gray-100 mt-2">Zero inventory</p>
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 border-l-4 border-l-gray-500 p-4">
+            <div class="flex items-start justify-between gap-2">
+                <div class="flex-1 min-w-0">
+                    <p class="text-[11px] font-medium text-gray-500 uppercase tracking-wide">Out of Stock</p>
+                    <p class="mt-1 text-xl font-bold text-gray-900 leading-tight break-all">{{ number_format($outOfStockCount) }}</p>
+                    <p class="text-[11px] text-gray-400 mt-1">Zero inventory</p>
                 </div>
-                <div class="flex-shrink-0 w-14 h-14 bg-white bg-opacity-20 rounded-lg flex items-center justify-center backdrop-blur-sm">
-                    <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"/>
-                    </svg>
+                <div class="w-9 h-9 bg-gray-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                    <svg class="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"/></svg>
                 </div>
             </div>
         </div>
 
-        <!-- Reorder Value Card -->
-        <div class="bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl shadow-lg p-6 text-white transform hover:scale-105 transition-transform duration-200">
-            <div class="flex items-center justify-between">
-                <div class="flex-1">
-                    <p class="text-sm font-medium text-blue-100 mb-1">Reorder Value</p>
-                    <p class="text-3xl font-bold">₦{{ number_format($estimatedReorderValue, 0) }}</p>
-                    <p class="text-xs text-blue-100 mt-2">Estimated cost</p>
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 border-l-4 border-l-blue-500 p-4">
+            <div class="flex items-start justify-between gap-2">
+                <div class="flex-1 min-w-0">
+                    <p class="text-[11px] font-medium text-gray-500 uppercase tracking-wide">Reorder Value</p>
+                    <p class="mt-1 text-base font-bold text-gray-900 leading-tight break-all" title="NGN {{ number_format($estimatedReorderValue, 2) }}">NGN {{ number_format($estimatedReorderValue, 0) }}</p>
+                    <p class="text-[11px] text-gray-400 mt-1">Estimated cost</p>
                 </div>
-                <div class="flex-shrink-0 w-14 h-14 bg-white bg-opacity-20 rounded-lg flex items-center justify-center backdrop-blur-sm">
-                    <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"/>
-                    </svg>
+                <div class="w-9 h-9 bg-blue-50 rounded-lg flex items-center justify-center flex-shrink-0">
+                    <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"/></svg>
                 </div>
             </div>
         </div>

@@ -68,100 +68,82 @@
         </div>
     </div>
 
-    <!-- Summary Cards with Gradient Backgrounds -->
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4">
-        <!-- Total In Card -->
-        <div class="bg-gradient-to-br from-green-500 to-green-600 rounded-xl shadow-lg p-6 text-white transform hover:scale-105 transition-transform duration-200">
-            <div class="flex items-center justify-between">
-                <div class="flex-1">
-                    <p class="text-sm font-medium text-green-100 mb-1">Total In</p>
-                    <p class="text-3xl font-bold">{{ number_format($totalIn, 0) }}</p>
-                    <p class="text-xs text-green-100 mt-2">Incoming units</p>
+    <!-- Summary Cards -->
+    <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 border-l-4 border-l-green-500 p-4">
+            <div class="flex items-start justify-between gap-2">
+                <div class="flex-1 min-w-0">
+                    <p class="text-[11px] font-medium text-gray-500 uppercase tracking-wide">Total In</p>
+                    <p class="mt-1 text-xl font-bold text-green-700 leading-tight break-all">{{ number_format($totalIn, 0) }}</p>
+                    <p class="text-[11px] text-gray-400 mt-1">Incoming units</p>
                 </div>
-                <div class="flex-shrink-0 w-14 h-14 bg-white bg-opacity-20 rounded-lg flex items-center justify-center backdrop-blur-sm">
-                    <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 11l5-5m0 0l5 5m-5-5v12"/>
-                    </svg>
+                <div class="w-9 h-9 bg-green-50 rounded-lg flex items-center justify-center flex-shrink-0">
+                    <svg class="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 11l5-5m0 0l5 5m-5-5v12"/></svg>
                 </div>
             </div>
         </div>
 
-        <!-- Total Out Card -->
-        <div class="bg-gradient-to-br from-red-500 to-red-600 rounded-xl shadow-lg p-6 text-white transform hover:scale-105 transition-transform duration-200">
-            <div class="flex items-center justify-between">
-                <div class="flex-1">
-                    <p class="text-sm font-medium text-red-100 mb-1">Total Out</p>
-                    <p class="text-3xl font-bold">{{ number_format(abs($totalOut), 0) }}</p>
-                    <p class="text-xs text-red-100 mt-2">Outgoing units</p>
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 border-l-4 border-l-red-500 p-4">
+            <div class="flex items-start justify-between gap-2">
+                <div class="flex-1 min-w-0">
+                    <p class="text-[11px] font-medium text-gray-500 uppercase tracking-wide">Total Out</p>
+                    <p class="mt-1 text-xl font-bold text-red-700 leading-tight break-all">{{ number_format(abs($totalOut), 0) }}</p>
+                    <p class="text-[11px] text-gray-400 mt-1">Outgoing units</p>
                 </div>
-                <div class="flex-shrink-0 w-14 h-14 bg-white bg-opacity-20 rounded-lg flex items-center justify-center backdrop-blur-sm">
-                    <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 13l-5 5m0 0l-5-5m5 5V6"/>
-                    </svg>
+                <div class="w-9 h-9 bg-red-50 rounded-lg flex items-center justify-center flex-shrink-0">
+                    <svg class="w-5 h-5 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 13l-5 5m0 0l-5-5m5 5V6"/></svg>
                 </div>
             </div>
         </div>
 
-        <!-- Net Movement Card -->
-        <div class="bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl shadow-lg p-6 text-white transform hover:scale-105 transition-transform duration-200">
-            <div class="flex items-center justify-between">
-                <div class="flex-1">
-                    <p class="text-sm font-medium text-blue-100 mb-1">Net Movement</p>
-                    <p class="text-3xl font-bold">{{ number_format($netMovement, 0) }}</p>
-                    <p class="text-xs text-blue-100 mt-2">{{ $netMovement >= 0 ? 'Positive' : 'Negative' }} balance</p>
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 border-l-4 border-l-blue-500 p-4">
+            <div class="flex items-start justify-between gap-2">
+                <div class="flex-1 min-w-0">
+                    <p class="text-[11px] font-medium text-gray-500 uppercase tracking-wide">Net Movement</p>
+                    <p class="mt-1 text-xl font-bold {{ $netMovement >= 0 ? 'text-green-700' : 'text-red-700' }} leading-tight break-all">{{ number_format($netMovement, 0) }}</p>
+                    <p class="text-[11px] text-gray-400 mt-1">{{ $netMovement >= 0 ? 'Positive' : 'Negative' }} balance</p>
                 </div>
-                <div class="flex-shrink-0 w-14 h-14 bg-white bg-opacity-20 rounded-lg flex items-center justify-center backdrop-blur-sm">
-                    <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4"/>
-                    </svg>
+                <div class="w-9 h-9 bg-blue-50 rounded-lg flex items-center justify-center flex-shrink-0">
+                    <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4"/></svg>
                 </div>
             </div>
         </div>
 
-        <!-- In Value Card -->
-        <div class="bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-xl shadow-lg p-6 text-white transform hover:scale-105 transition-transform duration-200">
-            <div class="flex items-center justify-between">
-                <div class="flex-1">
-                    <p class="text-sm font-medium text-emerald-100 mb-1">In Value</p>
-                    <p class="text-2xl font-bold">₦{{ number_format($totalInValue, 0) }}</p>
-                    <p class="text-xs text-emerald-100 mt-2">Purchase value</p>
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 border-l-4 border-l-emerald-500 p-4">
+            <div class="flex items-start justify-between gap-2">
+                <div class="flex-1 min-w-0">
+                    <p class="text-[11px] font-medium text-gray-500 uppercase tracking-wide">In Value</p>
+                    <p class="mt-1 text-base font-bold text-gray-900 leading-tight break-all" title="NGN {{ number_format($totalInValue, 2) }}">NGN {{ number_format($totalInValue, 0) }}</p>
+                    <p class="text-[11px] text-gray-400 mt-1">Purchase value</p>
                 </div>
-                <div class="flex-shrink-0 w-14 h-14 bg-white bg-opacity-20 rounded-lg flex items-center justify-center backdrop-blur-sm">
-                    <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"/>
-                    </svg>
+                <div class="w-9 h-9 bg-emerald-50 rounded-lg flex items-center justify-center flex-shrink-0">
+                    <svg class="w-5 h-5 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"/></svg>
                 </div>
             </div>
         </div>
 
-        <!-- Out Value Card -->
-        <div class="bg-gradient-to-br from-rose-500 to-rose-600 rounded-xl shadow-lg p-6 text-white transform hover:scale-105 transition-transform duration-200">
-            <div class="flex items-center justify-between">
-                <div class="flex-1">
-                    <p class="text-sm font-medium text-rose-100 mb-1">Out Value</p>
-                    <p class="text-2xl font-bold">₦{{ number_format($totalOutValue, 0) }}</p>
-                    <p class="text-xs text-rose-100 mt-2">Sales value</p>
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 border-l-4 border-l-rose-500 p-4">
+            <div class="flex items-start justify-between gap-2">
+                <div class="flex-1 min-w-0">
+                    <p class="text-[11px] font-medium text-gray-500 uppercase tracking-wide">Out Value</p>
+                    <p class="mt-1 text-base font-bold text-gray-900 leading-tight break-all" title="NGN {{ number_format($totalOutValue, 2) }}">NGN {{ number_format($totalOutValue, 0) }}</p>
+                    <p class="text-[11px] text-gray-400 mt-1">Sales value</p>
                 </div>
-                <div class="flex-shrink-0 w-14 h-14 bg-white bg-opacity-20 rounded-lg flex items-center justify-center backdrop-blur-sm">
-                    <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"/>
-                    </svg>
+                <div class="w-9 h-9 bg-rose-50 rounded-lg flex items-center justify-center flex-shrink-0">
+                    <svg class="w-5 h-5 text-rose-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"/></svg>
                 </div>
             </div>
         </div>
 
-        <!-- Transactions Card -->
-        <div class="bg-gradient-to-br from-purple-500 to-purple-600 rounded-xl shadow-lg p-6 text-white transform hover:scale-105 transition-transform duration-200">
-            <div class="flex items-center justify-between">
-                <div class="flex-1">
-                    <p class="text-sm font-medium text-purple-100 mb-1">Transactions</p>
-                    <p class="text-3xl font-bold">{{ number_format($transactionCount) }}</p>
-                    <p class="text-xs text-purple-100 mt-2">Total movements</p>
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 border-l-4 border-l-purple-500 p-4">
+            <div class="flex items-start justify-between gap-2">
+                <div class="flex-1 min-w-0">
+                    <p class="text-[11px] font-medium text-gray-500 uppercase tracking-wide">Transactions</p>
+                    <p class="mt-1 text-xl font-bold text-gray-900 leading-tight break-all">{{ number_format($transactionCount) }}</p>
+                    <p class="text-[11px] text-gray-400 mt-1">Total movements</p>
                 </div>
-                <div class="flex-shrink-0 w-14 h-14 bg-white bg-opacity-20 rounded-lg flex items-center justify-center backdrop-blur-sm">
-                    <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/>
-                    </svg>
+                <div class="w-9 h-9 bg-purple-50 rounded-lg flex items-center justify-center flex-shrink-0">
+                    <svg class="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/></svg>
                 </div>
             </div>
         </div>

@@ -68,68 +68,56 @@
         </div>
     </div>
 
-    <!-- Summary Cards with Gradient Backgrounds -->
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <!-- Products Card -->
-        <div class="bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl shadow-lg p-6 text-white transform hover:scale-105 transition-transform duration-200">
-            <div class="flex items-center justify-between">
-                <div class="flex-1">
-                    <p class="text-sm font-medium text-blue-100 mb-1">Total Products</p>
-                    <p class="text-3xl font-bold">{{ number_format($totalProducts) }}</p>
-                    <p class="text-xs text-blue-100 mt-2">Inventory items</p>
+    <!-- Summary Cards -->
+    <div class="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-3">
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 border-l-4 border-l-blue-500 p-4">
+            <div class="flex items-start justify-between gap-2">
+                <div class="flex-1 min-w-0">
+                    <p class="text-[11px] font-medium text-gray-500 uppercase tracking-wide">Total Products</p>
+                    <p class="mt-1 text-xl font-bold text-gray-900 leading-tight break-all">{{ number_format($totalProducts) }}</p>
+                    <p class="text-[11px] text-gray-400 mt-1">Inventory items</p>
                 </div>
-                <div class="flex-shrink-0 w-14 h-14 bg-white bg-opacity-20 rounded-lg flex items-center justify-center backdrop-blur-sm">
-                    <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/>
-                    </svg>
+                <div class="w-9 h-9 bg-blue-50 rounded-lg flex items-center justify-center flex-shrink-0">
+                    <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
                 </div>
             </div>
         </div>
 
-        <!-- Total Value Card -->
-        <div class="bg-gradient-to-br from-green-500 to-green-600 rounded-xl shadow-lg p-6 text-white transform hover:scale-105 transition-transform duration-200">
-            <div class="flex items-center justify-between">
-                <div class="flex-1">
-                    <p class="text-sm font-medium text-green-100 mb-1">Total Value</p>
-                    <p class="text-3xl font-bold">₦{{ number_format($totalStockValue, 0) }}</p>
-                    <p class="text-xs text-green-100 mt-2">Stock valuation</p>
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 border-l-4 border-l-green-500 p-4">
+            <div class="flex items-start justify-between gap-2">
+                <div class="flex-1 min-w-0">
+                    <p class="text-[11px] font-medium text-gray-500 uppercase tracking-wide">Total Value</p>
+                    <p class="mt-1 text-base font-bold text-gray-900 leading-tight break-all" title="NGN {{ number_format($totalStockValue, 2) }}">NGN {{ number_format($totalStockValue, 0) }}</p>
+                    <p class="text-[11px] text-gray-400 mt-1">Stock valuation</p>
                 </div>
-                <div class="flex-shrink-0 w-14 h-14 bg-white bg-opacity-20 rounded-lg flex items-center justify-center backdrop-blur-sm">
-                    <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"/>
-                    </svg>
+                <div class="w-9 h-9 bg-green-50 rounded-lg flex items-center justify-center flex-shrink-0">
+                    <svg class="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"/></svg>
                 </div>
             </div>
         </div>
 
-        <!-- Total Quantity Card -->
-        <div class="bg-gradient-to-br from-purple-500 to-purple-600 rounded-xl shadow-lg p-6 text-white transform hover:scale-105 transition-transform duration-200">
-            <div class="flex items-center justify-between">
-                <div class="flex-1">
-                    <p class="text-sm font-medium text-purple-100 mb-1">Total Quantity</p>
-                    <p class="text-3xl font-bold">{{ number_format($totalQuantity, 0) }}</p>
-                    <p class="text-xs text-purple-100 mt-2">Combined units</p>
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 border-l-4 border-l-purple-500 p-4">
+            <div class="flex items-start justify-between gap-2">
+                <div class="flex-1 min-w-0">
+                    <p class="text-[11px] font-medium text-gray-500 uppercase tracking-wide">Total Quantity</p>
+                    <p class="mt-1 text-xl font-bold text-gray-900 leading-tight break-all">{{ number_format($totalQuantity, 0) }}</p>
+                    <p class="text-[11px] text-gray-400 mt-1">Combined units</p>
                 </div>
-                <div class="flex-shrink-0 w-14 h-14 bg-white bg-opacity-20 rounded-lg flex items-center justify-center backdrop-blur-sm">
-                    <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z"/>
-                    </svg>
+                <div class="w-9 h-9 bg-purple-50 rounded-lg flex items-center justify-center flex-shrink-0">
+                    <svg class="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z"/></svg>
                 </div>
             </div>
         </div>
 
-        <!-- Average Value Card -->
-        <div class="bg-gradient-to-br from-orange-500 to-orange-600 rounded-xl shadow-lg p-6 text-white transform hover:scale-105 transition-transform duration-200">
-            <div class="flex items-center justify-between">
-                <div class="flex-1">
-                    <p class="text-sm font-medium text-orange-100 mb-1">Average Value</p>
-                    <p class="text-3xl font-bold">₦{{ number_format($averageValue, 0) }}</p>
-                    <p class="text-xs text-orange-100 mt-2">Per product</p>
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 border-l-4 border-l-orange-500 p-4">
+            <div class="flex items-start justify-between gap-2">
+                <div class="flex-1 min-w-0">
+                    <p class="text-[11px] font-medium text-gray-500 uppercase tracking-wide">Average Value</p>
+                    <p class="mt-1 text-base font-bold text-gray-900 leading-tight break-all" title="NGN {{ number_format($averageValue, 2) }}">NGN {{ number_format($averageValue, 0) }}</p>
+                    <p class="text-[11px] text-gray-400 mt-1">Per product</p>
                 </div>
-                <div class="flex-shrink-0 w-14 h-14 bg-white bg-opacity-20 rounded-lg flex items-center justify-center backdrop-blur-sm">
-                    <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"/>
-                    </svg>
+                <div class="w-9 h-9 bg-orange-50 rounded-lg flex items-center justify-center flex-shrink-0">
+                    <svg class="w-5 h-5 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>
                 </div>
             </div>
         </div>
