@@ -53,6 +53,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{ $typeBadge }} {{ ($voucher->voucherType->prefix ?? '') . $voucher->voucher_number }} - {{ $tenant->name }}</title>
+    <link rel="icon" type="image/png" sizes="32x32" href="{{ asset('images/ballie_logo.png') }}">
+    <link rel="icon" type="image/png" sizes="16x16" href="{{ asset('images/ballie_logo.png') }}">
+    <link rel="apple-touch-icon" href="{{ asset('images/ballie_logo.png') }}">
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: Arial, sans-serif; font-size: 12px; line-height: 1.4; color: #333; background: #f5f5f5; }

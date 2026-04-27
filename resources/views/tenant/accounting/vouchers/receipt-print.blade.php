@@ -47,6 +47,9 @@ if (!function_exists('convertChunkToWords')) {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{ $isReceipt ? 'Receipt' : 'Payment' }} {{ $voucher->voucherType->prefix ?? '' }}{{ $voucher->voucher_number }} - {{ $tenant->name }}</title>
+    <link rel="icon" type="image/png" sizes="32x32" href="{{ asset('images/ballie_logo.png') }}">
+    <link rel="icon" type="image/png" sizes="16x16" href="{{ asset('images/ballie_logo.png') }}">
+    <link rel="apple-touch-icon" href="{{ asset('images/ballie_logo.png') }}">
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: 'Arial', sans-serif; line-height: 1.4; color: #333; background: #f5f5f5; }

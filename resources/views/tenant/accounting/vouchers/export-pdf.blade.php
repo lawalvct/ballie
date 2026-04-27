@@ -3,6 +3,9 @@
 <head>
     <meta charset="utf-8">
     <title>Vouchers Export</title>
+    <link rel="icon" type="image/png" sizes="32x32" href="{{ asset('images/ballie_logo.png') }}">
+    <link rel="icon" type="image/png" sizes="16x16" href="{{ asset('images/ballie_logo.png') }}">
+    <link rel="apple-touch-icon" href="{{ asset('images/ballie_logo.png') }}">
     <style>
         body { font-family: Arial, sans-serif; font-size: 11px; color: #111827; }
         h1 { text-align: center; font-size: 18px; margin: 0 0 4px; }

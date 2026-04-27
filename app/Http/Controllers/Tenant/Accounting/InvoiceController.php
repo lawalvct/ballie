@@ -809,7 +809,7 @@ class InvoiceController extends Controller
         // Extract inventory items from meta_data
         $inventoryItems = collect();
         if ($invoice->meta_data) {
-            $metaData = json_decode($invoice->meta_data, true);
+            $metaData = is_array($invoice->meta_data) ? $invoice->meta_data : json_decode($invoice->meta_data, true);
             if (isset($metaData['inventory_items'])) {
                 $inventoryItems = collect($metaData['inventory_items']);
             }
@@ -1150,7 +1150,7 @@ class InvoiceController extends Controller
 
             // Update product stock using voucher type's inventory_effect
             if ($invoice->meta_data) {
-                $metaData = json_decode($invoice->meta_data, true);
+                $metaData = is_array($invoice->meta_data) ? $invoice->meta_data : json_decode($invoice->meta_data, true);
                 if (isset($metaData['inventory_items'])) {
                     $effect = $invoice->voucherType->inventory_effect ?? 'decrease';
                     if ($effect === 'increase' || $effect === 'decrease') {
@@ -1198,7 +1198,7 @@ class InvoiceController extends Controller
 
             // Reverse product stock changes using voucher type's inventory_effect
             if ($invoice->meta_data) {
-                $metaData = json_decode($invoice->meta_data, true);
+                $metaData = is_array($invoice->meta_data) ? $invoice->meta_data : json_decode($invoice->meta_data, true);
                 if (isset($metaData['inventory_items'])) {
                     $effect = $invoice->voucherType->inventory_effect ?? 'decrease';
                     // Reverse the effect: if original was 'decrease', now 'increase', and vice versa
@@ -1236,7 +1236,7 @@ class InvoiceController extends Controller
         // Get inventory items from meta data
         $inventoryItems = collect();
         if ($invoice->meta_data) {
-            $metaData = json_decode($invoice->meta_data, true);
+            $metaData = is_array($invoice->meta_data) ? $invoice->meta_data : json_decode($invoice->meta_data, true);
             if (isset($metaData['inventory_items'])) {
                 $inventoryItems = collect($metaData['inventory_items']);
             }
@@ -2007,7 +2007,7 @@ class InvoiceController extends Controller
             // Get inventory items from meta_data
             $inventoryItems = collect();
             if ($invoice->meta_data) {
-                $metaData = json_decode($invoice->meta_data, true);
+                $metaData = is_array($invoice->meta_data) ? $invoice->meta_data : json_decode($invoice->meta_data, true);
                 $inventoryItems = collect($metaData['inventory_items'] ?? []);
             }
 

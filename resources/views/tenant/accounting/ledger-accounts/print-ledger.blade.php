@@ -4,6 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{ $ledgerAccount->name }} - Ledger Account Statement</title>
+    <link rel="icon" type="image/png" sizes="32x32" href="{{ asset('images/ballie_logo.png') }}">
+    <link rel="icon" type="image/png" sizes="16x16" href="{{ asset('images/ballie_logo.png') }}">
+    <link rel="apple-touch-icon" href="{{ asset('images/ballie_logo.png') }}">
     <style>
         @page {
             margin: 10mm 9mm 9mm;
