@@ -13,6 +13,13 @@
             <p class="text-gray-600 mt-1">Manage measurement units for your inventory</p>
         </div>
         <div class="flex items-center gap-3">
+            <a href="{{ route('tenant.inventory.categories.index', ['tenant' => $tenant->slug]) }}"
+               class="inline-flex items-center px-4 py-2 bg-white border border-gray-300 text-gray-700 font-medium rounded-lg hover:bg-gray-50 transition-colors duration-200">
+                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"></path>
+                </svg>
+                Manage Categories
+            </a>
             <a href="{{ route('tenant.inventory.units.create', ['tenant' => $tenant->slug]) }}"
                class="inline-flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors duration-200">
                 <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -189,7 +196,7 @@
                                 </thead>
                                 <tbody class="bg-white divide-y divide-gray-200">
                                     @foreach($units as $unit)
-                                        <tr class="hover:bg-gray-50 transition-colors duration-150">
+                                        <tr class="hover:bg-gray-50 transition-colors duration-150" data-unit-row="{{ $unit->id }}">
                                             <td class="px-6 py-4 whitespace-nowrap">
                                                 <div class="flex items-center">
                                                     <div class="flex-shrink-0 h-10 w-10">
@@ -225,7 +232,7 @@
                                                     <span class="text-gray-400">-</span>
                                                 @endif
                                             </td>
-                                            <td class="px-6 py-4 whitespace-nowrap">
+                                            <td class="px-6 py-4 whitespace-nowrap" data-status-cell>
                                                 <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-{{ $unit->status_color }}-100 text-{{ $unit->status_color }}-800">
                                                     <span class="w-1.5 h-1.5 mr-1.5 bg-{{ $unit->status_color }}-400 rounded-full"></span>
                                                     {{ $unit->status }}
@@ -258,13 +265,14 @@
                                                     </a>
 
                                                     <!-- Status Toggle Button -->
-                                                    <form method="POST" action="{{ route('tenant.inventory.units.toggle-status', ['tenant' => $tenant->slug, 'unit' => $unit->id]) }}" class="inline">
+                                                    <form method="POST" action="{{ route('tenant.inventory.units.toggle-status', ['tenant' => $tenant->slug, 'unit' => $unit->id]) }}" class="inline" data-toggle-form>
                                                         @csrf
                                                         @method('PATCH')
                                                         <button type="submit"
                                                                 class="text-{{ $unit->is_active ? 'orange' : 'green' }}-600 hover:text-{{ $unit->is_active ? 'orange' : 'green' }}-900 transition-colors duration-200"
                                                                 title="{{ $unit->is_active ? 'Deactivate' : 'Activate' }} Unit"
-                                                                onclick="return confirm('Are you sure you want to {{ $unit->is_active ? 'deactivate' : 'activate' }} this unit?')">
+                                                                data-toggle-btn
+                                                                data-active="{{ $unit->is_active ? '1' : '0' }}">
                                                             @if($unit->is_active)
                                                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728L5.636 5.636m12.728 12.728L18.364 5.636M5.636 18.364l12.728-12.728"></path>
@@ -279,13 +287,12 @@
 
                                                     <!-- Delete Button -->
                                                     @if($unit->products_count == 0 && $unit->derivedUnits->count() == 0)
-                                                        <form method="POST" action="{{ route('tenant.inventory.units.destroy', ['tenant' => $tenant->slug, 'unit' => $unit->id]) }}" class="inline">
+                                                        <form method="POST" action="{{ route('tenant.inventory.units.destroy', ['tenant' => $tenant->slug, 'unit' => $unit->id]) }}" class="inline" data-delete-form>
                                                             @csrf
                                                             @method('DELETE')
                                                             <button type="submit"
                                                                     class="text-red-600 hover:text-red-900 transition-colors duration-200"
-                                                                    title="Delete Unit"
-                                                                    onclick="return confirm('Are you sure you want to delete this unit? This action cannot be undone.')">
+                                                                    title="Delete Unit">
                                                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
                                                                 </svg>
@@ -346,35 +353,176 @@
                     </div>
                 </div>
 
+                <div id="unitsAjaxToast"
+                     class="fixed top-5 right-5 z-50 hidden max-w-sm rounded-lg shadow-lg px-4 py-3 text-sm font-medium"
+                     role="status" aria-live="polite"></div>
+
                 @push('scripts')
                 <script>
-                    // Auto-submit form when filters change
                     document.addEventListener('DOMContentLoaded', function() {
                         const form = document.getElementById('filterForm');
-                        if (!form) {
-                            return;
-                        }
-                        const selects = form.querySelectorAll('select');
+                        const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+                        const toast = document.getElementById('unitsAjaxToast');
+                        let searchTimeout;
+                        let toastTimer;
 
-                        selects.forEach(select => {
-                            select.addEventListener('change', function() {
-                                form.submit();
+                        function showToast(message, type = 'success') {
+                            if (!toast) {
+                                return;
+                            }
+
+                            toast.textContent = message;
+                            toast.className = 'fixed top-5 right-5 z-50 max-w-sm rounded-lg shadow-lg px-4 py-3 text-sm font-medium ' +
+                                (type === 'success' ? 'bg-green-600 text-white' : 'bg-red-600 text-white');
+
+                            clearTimeout(toastTimer);
+                            toastTimer = setTimeout(() => toast.classList.add('hidden'), 3500);
+                        }
+
+                        async function ajaxSubmit(submitForm) {
+                            try {
+                                const response = await fetch(submitForm.action, {
+                                    method: 'POST',
+                                    headers: {
+                                        'X-CSRF-TOKEN': csrfToken,
+                                        'X-Requested-With': 'XMLHttpRequest',
+                                        'Accept': 'application/json',
+                                    },
+                                    body: new FormData(submitForm),
+                                });
+
+                                const data = await response.json().catch(() => ({}));
+
+                                return { ok: response.ok, data };
+                            } catch (error) {
+                                return {
+                                    ok: false,
+                                    data: { message: 'Network error. Please try again.' },
+                                };
+                            }
+                        }
+
+                        function updateStatusBadge(statusCell, status, statusColor) {
+                            if (!statusCell) {
+                                return;
+                            }
+
+                            statusCell.innerHTML =
+                                '<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-' + statusColor + '-100 text-' + statusColor + '-800">' +
+                                    '<span class="w-1.5 h-1.5 mr-1.5 bg-' + statusColor + '-400 rounded-full"></span>' +
+                                    status +
+                                '</span>';
+                        }
+
+                        function updateToggleButton(button, isActive) {
+                            if (!button) {
+                                return;
+                            }
+
+                            button.dataset.active = isActive ? '1' : '0';
+                            button.title = (isActive ? 'Deactivate' : 'Activate') + ' Unit';
+                            button.className = (isActive
+                                ? 'text-orange-600 hover:text-orange-900'
+                                : 'text-green-600 hover:text-green-900') + ' transition-colors duration-200';
+                            button.innerHTML = isActive
+                                ? '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728L5.636 5.636m12.728 12.728L18.364 5.636M5.636 18.364l12.728-12.728"></path></svg>'
+                                : '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>';
+                        }
+
+                        if (form) {
+                            const selects = form.querySelectorAll('select');
+
+                            selects.forEach(select => {
+                                select.addEventListener('change', function() {
+                                    form.submit();
+                                });
+                            });
+
+                            const searchInput = document.getElementById('search');
+
+                            if (searchInput) {
+                                searchInput.addEventListener('input', function() {
+                                    clearTimeout(searchTimeout);
+                                    searchTimeout = setTimeout(() => {
+                                        form.submit();
+                                    }, 500);
+                                });
+                            }
+                        }
+
+                        document.querySelectorAll('form[data-delete-form]').forEach(deleteForm => {
+                            deleteForm.addEventListener('submit', async function(event) {
+                                event.preventDefault();
+
+                                if (!confirm('Are you sure you want to delete this unit? This action cannot be undone.')) {
+                                    return;
+                                }
+
+                                const button = deleteForm.querySelector('button[type="submit"]');
+                                if (button) {
+                                    button.disabled = true;
+                                }
+
+                                const { ok, data } = await ajaxSubmit(deleteForm);
+
+                                if (ok && data.success) {
+                                    const row = deleteForm.closest('tr[data-unit-row]');
+                                    if (row) {
+                                        row.style.transition = 'opacity 0.3s ease';
+                                        row.style.opacity = '0';
+                                        setTimeout(() => row.remove(), 300);
+                                    }
+
+                                    showToast(data.message || 'Unit deleted successfully.', 'success');
+                                } else {
+                                    if (button) {
+                                        button.disabled = false;
+                                    }
+
+                                    showToast(data.message || 'Failed to delete unit.', 'error');
+                                }
                             });
                         });
 
-                        // Handle search input with debounce
-                        const searchInput = document.getElementById('search');
-                        let searchTimeout;
+                        document.querySelectorAll('form[data-toggle-form]').forEach(toggleForm => {
+                            toggleForm.addEventListener('submit', async function(event) {
+                                event.preventDefault();
 
-                        if (!searchInput) {
-                            return;
-                        }
+                                const button = toggleForm.querySelector('button[data-toggle-btn]');
+                                const isActive = button?.dataset.active === '1';
+                                const action = isActive ? 'deactivate' : 'activate';
 
-                        searchInput.addEventListener('input', function() {
-                            clearTimeout(searchTimeout);
-                            searchTimeout = setTimeout(() => {
-                                form.submit();
-                            }, 500);
+                                if (!confirm('Are you sure you want to ' + action + ' this unit?')) {
+                                    return;
+                                }
+
+                                if (button) {
+                                    button.disabled = true;
+                                }
+
+                                const { ok, data } = await ajaxSubmit(toggleForm);
+
+                                if (ok && data.success) {
+                                    const row = toggleForm.closest('tr[data-unit-row]');
+                                    const statusCell = row?.querySelector('[data-status-cell]');
+                                    const newActive = !!data.is_active;
+
+                                    updateStatusBadge(statusCell, data.status || (newActive ? 'Active' : 'Inactive'), data.status_color || (newActive ? 'green' : 'red'));
+                                    updateToggleButton(button, newActive);
+
+                                    if (button) {
+                                        button.disabled = false;
+                                    }
+
+                                    showToast(data.message || 'Unit status updated.', 'success');
+                                } else {
+                                    if (button) {
+                                        button.disabled = false;
+                                    }
+
+                                    showToast(data.message || 'Failed to update unit status.', 'error');
+                                }
+                            });
                         });
                     });
                 </script>

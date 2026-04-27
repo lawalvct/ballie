@@ -196,7 +196,7 @@
                     </thead>
                     <tbody class="bg-white divide-y divide-gray-200">
                         @foreach($categories as $category)
-                            <tr class="hover:bg-gray-50">
+                            <tr class="hover:bg-gray-50" data-category-row="{{ $category->id }}">
                                 <td class="px-6 py-4 whitespace-nowrap">
                                     <div class="flex items-center">
                                         @if($category->image)
@@ -231,7 +231,7 @@
                                         {{ $category->children_count }}
                                     </span>
                                 </td>
-                                <td class="px-6 py-4 whitespace-nowrap">
+                                <td class="px-6 py-4 whitespace-nowrap" data-status-cell>
                                     <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-{{ $category->is_active ? 'green' : 'red' }}-100 text-{{ $category->is_active ? 'green' : 'red' }}-800">
                                         <span class="w-1.5 h-1.5 mr-1.5 bg-{{ $category->is_active ? 'green' : 'red' }}-400 rounded-full"></span>
                                         {{ $category->is_active ? 'Active' : 'Inactive' }}
@@ -264,13 +264,14 @@
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
                                             </svg>
                                         </a>
-                                        <form method="POST" action="{{ route('tenant.inventory.categories.toggle-status', ['tenant' => $tenant->slug, 'category' => $category->id]) }}" class="inline">
+                                        <form method="POST" action="{{ route('tenant.inventory.categories.toggle-status', ['tenant' => $tenant->slug, 'category' => $category->id]) }}" class="inline" data-toggle-form>
                                             @csrf
                                             @method('PATCH')
                                             <button type="submit"
                                                     class="text-{{ $category->is_active ? 'orange' : 'green' }}-600 hover:text-{{ $category->is_active ? 'orange' : 'green' }}-900 transition-colors duration-200"
                                                     title="{{ $category->is_active ? 'Deactivate' : 'Activate' }} Category"
-                                                    onclick="return confirm('Are you sure you want to {{ $category->is_active ? 'deactivate' : 'activate' }} this category?')">
+                                                    data-toggle-btn
+                                                    data-active="{{ $category->is_active ? '1' : '0' }}">
                                                 @if($category->is_active)
                                                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728L5.636 5.636m12.728 12.728L5.636 5.636"></path>
@@ -283,13 +284,12 @@
                                             </button>
                                         </form>
                                         @if($category->products_count == 0 && $category->children_count == 0)
-                                            <form method="POST" action="{{ route('tenant.inventory.categories.destroy', ['tenant' => $tenant->slug, 'category' => $category->id]) }}" class="inline">
+                                            <form method="POST" action="{{ route('tenant.inventory.categories.destroy', ['tenant' => $tenant->slug, 'category' => $category->id]) }}" class="inline" data-delete-form>
                                                 @csrf
                                                 @method('DELETE')
                                                 <button type="submit"
                                                         class="text-red-600 hover:text-red-900 transition-colors duration-200"
-                                                        title="Delete Category"
-                                                        onclick="return confirm('Are you sure you want to delete this category? This action cannot be undone.')">
+                                                        title="Delete Category">
                                                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
                                                     </svg>
@@ -328,4 +328,123 @@
         @endif
     </div>
 </div>
+
+<!-- AJAX flash toast -->
+<div id="categoriesAjaxToast"
+     class="fixed top-5 right-5 z-50 hidden max-w-sm rounded-lg shadow-lg px-4 py-3 text-sm font-medium"
+     role="status" aria-live="polite"></div>
+
+@push('scripts')
+<script>
+(function () {
+    const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+    const toast = document.getElementById('categoriesAjaxToast');
+    let toastTimer;
+
+    function showToast(message, type = 'success') {
+        if (!toast) return;
+        toast.textContent = message;
+        toast.className = 'fixed top-5 right-5 z-50 max-w-sm rounded-lg shadow-lg px-4 py-3 text-sm font-medium ' +
+            (type === 'success' ? 'bg-green-600 text-white' : 'bg-red-600 text-white');
+        clearTimeout(toastTimer);
+        toastTimer = setTimeout(() => toast.classList.add('hidden'), 3500);
+    }
+
+    async function ajaxSubmit(form) {
+        const url = form.action;
+        const method = (form.querySelector('input[name="_method"]')?.value || form.method || 'POST').toUpperCase();
+        try {
+            const res = await fetch(url, {
+                method: 'POST',
+                headers: {
+                    'X-CSRF-TOKEN': csrfToken,
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'Accept': 'application/json',
+                },
+                body: new FormData(form),
+            });
+            const data = await res.json().catch(() => ({}));
+            return { ok: res.ok, status: res.status, data, method };
+        } catch (e) {
+            return { ok: false, status: 0, data: { message: 'Network error. Please try again.' }, method };
+        }
+    }
+
+    // Handle delete forms
+    document.querySelectorAll('form[data-delete-form]').forEach(form => {
+        form.addEventListener('submit', async function (e) {
+            e.preventDefault();
+            if (!confirm('Are you sure you want to delete this category? This action cannot be undone.')) return;
+
+            const btn = form.querySelector('button[type="submit"]');
+            if (btn) btn.disabled = true;
+
+            const { ok, data } = await ajaxSubmit(form);
+            if (ok && data.success) {
+                const row = form.closest('tr[data-category-row]');
+                if (row) {
+                    row.style.transition = 'opacity 0.3s ease';
+                    row.style.opacity = '0';
+                    setTimeout(() => row.remove(), 300);
+                }
+                showToast(data.message || 'Category deleted successfully.', 'success');
+            } else {
+                if (btn) btn.disabled = false;
+                showToast(data.message || 'Failed to delete category.', 'error');
+            }
+        });
+    });
+
+    // Handle toggle-status forms
+    document.querySelectorAll('form[data-toggle-form]').forEach(form => {
+        form.addEventListener('submit', async function (e) {
+            e.preventDefault();
+            const btn = form.querySelector('button[data-toggle-btn]');
+            const isActive = btn?.dataset.active === '1';
+            const action = isActive ? 'deactivate' : 'activate';
+            if (!confirm(`Are you sure you want to ${action} this category?`)) return;
+
+            if (btn) btn.disabled = true;
+
+            const { ok, data } = await ajaxSubmit(form);
+            if (ok && data.success) {
+                const row = form.closest('tr[data-category-row]');
+                const statusCell = row?.querySelector('[data-status-cell]');
+                const newActive = !!data.is_active;
+
+                // Update status badge
+                if (statusCell) {
+                    const color = newActive ? 'green' : 'red';
+                    const label = newActive ? 'Active' : 'Inactive';
+                    statusCell.innerHTML =
+                        '<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-' + color + '-100 text-' + color + '-800">' +
+                            '<span class="w-1.5 h-1.5 mr-1.5 bg-' + color + '-400 rounded-full"></span>' +
+                            label +
+                        '</span>';
+                }
+
+                // Update toggle button icon, color and tooltip
+                if (btn) {
+                    btn.dataset.active = newActive ? '1' : '0';
+                    btn.title = (newActive ? 'Deactivate' : 'Activate') + ' Category';
+                    const colorClass = newActive
+                        ? 'text-orange-600 hover:text-orange-900'
+                        : 'text-green-600 hover:text-green-900';
+                    btn.className = colorClass + ' transition-colors duration-200';
+                    btn.innerHTML = newActive
+                        ? '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728L5.636 5.636m12.728 12.728L5.636 5.636"></path></svg>'
+                        : '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>';
+                    btn.disabled = false;
+                }
+
+                showToast(data.message || 'Category status updated.', 'success');
+            } else {
+                if (btn) btn.disabled = false;
+                showToast(data.message || 'Failed to update category status.', 'error');
+            }
+        });
+    });
+})();
+</script>
+@endpush
 @endsection

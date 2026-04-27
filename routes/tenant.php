@@ -521,6 +521,7 @@ Route::prefix('ledger-accounts')->name('ledger-accounts.')->group(function () {
             // Product Categories
             Route::resource('categories', ProductCategoryController::class);
             Route::post('categories/quick-store', [ProductCategoryController::class, 'quickStore'])->name('categories.quick-store');
+            Route::post('categories/bulk-create', [ProductCategoryController::class, 'bulkCreate'])->name('categories.bulk-create');
             Route::patch('categories/{category}/toggle-status', [ProductCategoryController::class, 'toggleStatus'])->name('categories.toggle-status');
             Route::get('categories/export/all', [ProductCategoryController::class, 'export'])->name('categories.export');
             Route::get('categories/export/template', [ProductCategoryController::class, 'exportTemplate'])->name('categories.export.template');

@@ -63,7 +63,7 @@ class ProductCategoryController extends Controller
             $query->orderBy('sort_order', 'asc')->orderBy('name', 'asc');
         }
 
-        $categories = $query->paginate(15)->withQueryString();
+        $categories = $query->paginate(30)->withQueryString();
 
         // Get parent categories for filter dropdown
         $parentCategories = ProductCategory::where('tenant_id', $tenant->id)
@@ -139,6 +139,12 @@ class ProductCategoryController extends Controller
         }
 
         $category = ProductCategory::create($data);
+
+        if ($request->input('submit_action') === 'create_and_add_new') {
+            return redirect()
+                ->route('tenant.inventory.categories.create', ['tenant' => $tenant->slug])
+                ->with('success', 'Category created successfully. You can add another one.');
+        }
 
         return redirect()
             ->route('tenant.inventory.categories.show', ['tenant' => $tenant->slug, 'category' => $category->id])
@@ -234,16 +240,24 @@ class ProductCategoryController extends Controller
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(Tenant $tenant, ProductCategory $category)
+    public function destroy(Request $request, Tenant $tenant, ProductCategory $category)
     {
         // Check if category has products
         if ($category->products()->count() > 0) {
-            return back()->with('error', 'Cannot delete category that has products assigned to it.');
+            $message = 'Cannot delete category that has products assigned to it.';
+            if ($request->expectsJson()) {
+                return response()->json(['success' => false, 'message' => $message], 422);
+            }
+            return back()->with('error', $message);
         }
 
         // Check if category has children
         if ($category->children()->count() > 0) {
-            return back()->with('error', 'Cannot delete category that has subcategories.');
+            $message = 'Cannot delete category that has subcategories.';
+            if ($request->expectsJson()) {
+                return response()->json(['success' => false, 'message' => $message], 422);
+            }
+            return back()->with('error', $message);
         }
 
         // Delete image if exists
@@ -253,6 +267,13 @@ class ProductCategoryController extends Controller
 
         $category->delete();
 
+        if ($request->expectsJson()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Category deleted successfully.',
+            ]);
+        }
+
         return redirect()
             ->route('tenant.inventory.categories.index', ['tenant' => $tenant->slug])
             ->with('success', 'Category deleted successfully.');
@@ -261,11 +282,19 @@ class ProductCategoryController extends Controller
     /**
      * Toggle category status
      */
-    public function toggleStatus(Tenant $tenant, ProductCategory $category)
+    public function toggleStatus(Request $request, Tenant $tenant, ProductCategory $category)
     {
         $category->update(['is_active' => !$category->is_active]);
 
         $status = $category->is_active ? 'activated' : 'deactivated';
+
+        if ($request->expectsJson()) {
+            return response()->json([
+                'success' => true,
+                'is_active' => $category->is_active,
+                'message' => "Category {$status} successfully.",
+            ]);
+        }
 
         return back()->with('success', "Category {$status} successfully.");
     }
@@ -316,6 +345,108 @@ class ProductCategoryController extends Controller
                 'slug' => $category->slug,
             ]
         ]);
+    }
+
+    /**
+     * Bulk create categories from a textarea (newline- or comma-separated names).
+     */
+    public function bulkCreate(Request $request, Tenant $tenant)
+    {
+        $request->validate([
+            'names' => 'required|string|max:10000',
+        ]);
+
+        // Split on newlines and commas, trim, drop empties, dedupe (case-insensitive)
+        $rawNames = preg_split('/[\r\n,]+/', $request->input('names'));
+        $names = [];
+        $seen = [];
+        foreach ($rawNames as $n) {
+            $name = trim($n);
+            if ($name === '') continue;
+            if (mb_strlen($name) > 255) continue;
+            $key = mb_strtolower($name);
+            if (isset($seen[$key])) continue;
+            $seen[$key] = true;
+            $names[] = $name;
+        }
+
+        if (empty($names)) {
+            $payload = [
+                'success' => false,
+                'message' => 'Please enter at least one category name.',
+            ];
+            return $request->expectsJson()
+                ? response()->json($payload, 422)
+                : back()->with('error', $payload['message']);
+        }
+
+        // Find names that already exist for this tenant (case-insensitive)
+        $existing = ProductCategory::where('tenant_id', $tenant->id)
+            ->whereIn('name', $names)
+            ->pluck('name')
+            ->map(fn ($n) => mb_strtolower($n))
+            ->all();
+
+        $maxSortOrder = ProductCategory::where('tenant_id', $tenant->id)
+            ->whereNull('parent_id')
+            ->max('sort_order') ?? 0;
+
+        $created = [];
+        $skipped = [];
+
+        foreach ($names as $name) {
+            if (in_array(mb_strtolower($name), $existing, true)) {
+                $skipped[] = $name;
+                continue;
+            }
+
+            // Generate unique slug
+            $slug = Str::slug($name);
+            $originalSlug = $slug ?: 'category';
+            $slug = $originalSlug;
+            $counter = 1;
+            while (ProductCategory::where('tenant_id', $tenant->id)
+                                  ->where('slug', $slug)
+                                  ->exists()) {
+                $slug = $originalSlug . '-' . $counter++;
+            }
+
+            $maxSortOrder++;
+
+            $category = ProductCategory::create([
+                'tenant_id'  => $tenant->id,
+                'name'       => $name,
+                'slug'       => $slug,
+                'parent_id'  => null,
+                'is_active'  => true,
+                'sort_order' => $maxSortOrder,
+            ]);
+
+            $existing[] = mb_strtolower($name);
+            $created[] = $category->name;
+        }
+
+        $message = sprintf(
+            '%d categor%s created.%s',
+            count($created),
+            count($created) === 1 ? 'y' : 'ies',
+            count($skipped) ? ' Skipped (already exist): ' . implode(', ', $skipped) . '.' : ''
+        );
+
+        if ($request->expectsJson()) {
+            return response()->json([
+                'success'       => true,
+                'message'       => $message,
+                'created_count' => count($created),
+                'skipped_count' => count($skipped),
+                'created'       => $created,
+                'skipped'       => $skipped,
+            ]);
+        }
+
+        return redirect()
+            ->route('tenant.inventory.categories.index', ['tenant' => $tenant->slug])
+            ->with('success', $message);
     }
 
     /**

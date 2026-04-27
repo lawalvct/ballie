@@ -17,7 +17,9 @@ class UnitController extends Controller
      */
     public function index(Request $request, Tenant $tenant)
     {
-        $query = Unit::forTenant($tenant->id)->with(['baseUnit', 'derivedUnits']);
+        $query = Unit::forTenant($tenant->id)
+            ->with(['baseUnit', 'derivedUnits'])
+            ->withCount('products');
 
         // Search functionality
         if ($request->filled('search')) {
@@ -55,7 +57,7 @@ class UnitController extends Controller
             $query->orderBy($sortBy, $sortDirection);
         }
 
-        $units = $query->paginate(15)->withQueryString();
+        $units = $query->paginate(30)->withQueryString();
 
         // Statistics
         $totalUnits = Unit::forTenant($tenant->id)->count();
@@ -185,7 +187,7 @@ class UnitController extends Controller
     /**
      * Remove the specified unit from storage.
      */
-    public function destroy(Tenant $tenant, Unit $unit)
+    public function destroy(Request $request, Tenant $tenant, Unit $unit)
     {
         $this->authorize('delete', $unit);
 
@@ -194,21 +196,44 @@ class UnitController extends Controller
 
             // Check if unit is being used by products
             if ($unit->products()->count() > 0) {
+                DB::rollBack();
+
+                $message = 'Cannot delete unit. It is being used by products.';
+
+                if ($request->expectsJson()) {
+                    return response()->json(['success' => false, 'message' => $message], 422);
+                }
+
                 return redirect()
                     ->back()
-                    ->with('error', 'Cannot delete unit. It is being used by products.');
+                    ->with('error', $message);
             }
 
             // Check if unit has derived units
             if ($unit->derivedUnits()->count() > 0) {
+                DB::rollBack();
+
+                $message = 'Cannot delete unit. It has derived units.';
+
+                if ($request->expectsJson()) {
+                    return response()->json(['success' => false, 'message' => $message], 422);
+                }
+
                 return redirect()
                     ->back()
-                    ->with('error', 'Cannot delete unit. It has derived units.');
+                    ->with('error', $message);
             }
 
             $unit->delete();
 
             DB::commit();
+
+            if ($request->expectsJson()) {
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Unit deleted successfully.',
+                ]);
+            }
 
             return redirect()
                 ->route('tenant.inventory.units.index', ['tenant' => $tenant->slug])
@@ -226,7 +251,7 @@ class UnitController extends Controller
     /**
      * Toggle the status of the specified unit.
      */
-    public function toggleStatus(Tenant $tenant, Unit $unit)
+    public function toggleStatus(Request $request, Tenant $tenant, Unit $unit)
     {
         $this->authorize('update', $unit);
 
@@ -234,6 +259,16 @@ class UnitController extends Controller
             $unit->update(['is_active' => !$unit->is_active]);
 
             $status = $unit->is_active ? 'activated' : 'deactivated';
+
+            if ($request->expectsJson()) {
+                return response()->json([
+                    'success' => true,
+                    'is_active' => $unit->is_active,
+                    'status' => $unit->status,
+                    'status_color' => $unit->status_color,
+                    'message' => "Unit {$status} successfully.",
+                ]);
+            }
 
             return redirect()
                 ->back()

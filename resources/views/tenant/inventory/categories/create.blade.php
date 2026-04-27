@@ -6,14 +6,23 @@
 
 @section('content')
 <div class="max-w-4xl mx-auto space-y-6">
-    <!-- Back Button -->
-    <a href="{{ route('tenant.inventory.categories.index', ['tenant' => $tenant->slug]) }}" 
-       class="inline-flex items-center text-sm text-gray-600 hover:text-gray-900">
-        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
-        </svg>
-        Back to Categories
-    </a>
+    <!-- Top Actions -->
+    <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <a href="{{ route('tenant.inventory.categories.index', ['tenant' => $tenant->slug]) }}"
+           class="inline-flex items-center text-sm text-gray-600 hover:text-gray-900">
+            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
+            </svg>
+            Back to Categories
+        </a>
+        <button type="button" id="openBulkCreateModalBtn"
+                class="inline-flex items-center justify-center px-5 py-2.5 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors shadow-sm">
+            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"></path>
+            </svg>
+            Bulk Create Categories
+        </button>
+    </div>
 
     <!-- Form -->
     <div class="bg-white rounded-xl shadow-sm border border-gray-200">
@@ -174,6 +183,13 @@
                    class="px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors">
                     Cancel
                 </a>
+                <button type="submit" name="submit_action" value="create_and_add_new"
+                        class="inline-flex items-center px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
+                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+                    </svg>
+                    Create &amp; Add New
+                </button>
                 <button type="submit"
                         class="inline-flex items-center px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors">
                     <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -185,6 +201,58 @@
         </form>
     </div>
 </div>
+
+<!-- Bulk Create Modal -->
+<div id="bulkCreateModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/50 p-4" aria-hidden="true">
+    <div class="bg-white rounded-xl shadow-xl w-full max-w-lg">
+        <form id="bulkCreateForm"
+              action="{{ route('tenant.inventory.categories.bulk-create', ['tenant' => $tenant->slug]) }}"
+              method="POST">
+            @csrf
+            <div class="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
+                <div>
+                    <h3 class="text-lg font-semibold text-gray-900">Create Multiple Categories</h3>
+                    <p class="text-xs text-gray-500 mt-0.5">Add several categories at once — you'll stay on this page after creation.</p>
+                </div>
+                <button type="button" id="bulkCreateCloseBtn"
+                        class="text-gray-400 hover:text-gray-600" aria-label="Close">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                </button>
+            </div>
+            <div class="px-6 py-4 space-y-3">
+                <label for="bulkCreateNames" class="block text-sm font-medium text-gray-700">
+                    Category Names <span class="text-red-500">*</span>
+                </label>
+                <textarea id="bulkCreateNames" name="names" rows="8" required
+                          class="block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-indigo-500 focus:border-indigo-500 text-sm"
+                          placeholder="Bread Nylon, Shopping bags, Industrial bags&#10;&#10;— or one per line —&#10;&#10;Bread Nylon&#10;Shopping bags&#10;Industrial bags"></textarea>
+                <p class="text-xs text-gray-500">
+                    Separate names with commas <strong>or</strong> new lines. Duplicates and existing categories will be skipped automatically.
+                </p>
+            </div>
+            <div class="px-6 py-4 border-t border-gray-200 bg-gray-50 rounded-b-xl flex items-center justify-end space-x-2">
+                <button type="button" id="bulkCreateCancelBtn"
+                        class="px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors">
+                    Cancel
+                </button>
+                <button type="submit" id="bulkCreateSubmitBtn"
+                        class="inline-flex items-center px-5 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                    </svg>
+                    <span data-default-label>Create Categories</span>
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- AJAX flash toast -->
+<div id="bulkCreateToast"
+     class="fixed top-5 right-5 z-50 hidden max-w-sm rounded-lg shadow-lg px-4 py-3 text-sm font-medium"
+     role="status" aria-live="polite"></div>
 
 @push('scripts')
 <script>
@@ -213,7 +281,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // Image preview
     const imageInput = document.getElementById('image');
     const preview = document.getElementById('image-preview');
-    
+
     imageInput.addEventListener('change', function(e) {
         const file = e.target.files[0];
         if (file) {
@@ -222,7 +290,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 preview.innerHTML = `
                     <div class="relative inline-block">
                         <img src="${e.target.result}" alt="Preview" class="h-24 w-24 object-cover rounded-lg border-2 border-gray-300">
-                        <button type="button" onclick="removeImagePreview()" 
+                        <button type="button" onclick="removeImagePreview()"
                                 class="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center hover:bg-red-600 transition-colors">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
@@ -240,6 +308,94 @@ function removeImagePreview() {
     document.getElementById('image').value = '';
     document.getElementById('image-preview').innerHTML = '';
 }
+
+// Bulk Create modal logic
+(function () {
+    const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+    const bulkModal = document.getElementById('bulkCreateModal');
+    const bulkOpenBtn = document.getElementById('openBulkCreateModalBtn');
+    const bulkCloseBtn = document.getElementById('bulkCreateCloseBtn');
+    const bulkCancelBtn = document.getElementById('bulkCreateCancelBtn');
+    const bulkForm = document.getElementById('bulkCreateForm');
+    const bulkSubmitBtn = document.getElementById('bulkCreateSubmitBtn');
+    const bulkTextarea = document.getElementById('bulkCreateNames');
+    const toast = document.getElementById('bulkCreateToast');
+    let toastTimer;
+
+    function showToast(message, type) {
+        if (!toast) return;
+        type = type || 'success';
+        toast.textContent = message;
+        toast.className = 'fixed top-5 right-5 z-50 max-w-sm rounded-lg shadow-lg px-4 py-3 text-sm font-medium ' +
+            (type === 'success' ? 'bg-green-600 text-white' : 'bg-red-600 text-white');
+        clearTimeout(toastTimer);
+        toastTimer = setTimeout(() => toast.classList.add('hidden'), 4500);
+    }
+
+    function openBulkModal() {
+        if (!bulkModal) return;
+        bulkModal.classList.remove('hidden');
+        bulkModal.classList.add('flex');
+        bulkModal.setAttribute('aria-hidden', 'false');
+        setTimeout(() => bulkTextarea?.focus(), 50);
+    }
+    function closeBulkModal() {
+        if (!bulkModal) return;
+        bulkModal.classList.add('hidden');
+        bulkModal.classList.remove('flex');
+        bulkModal.setAttribute('aria-hidden', 'true');
+    }
+
+    bulkOpenBtn?.addEventListener('click', openBulkModal);
+    bulkCloseBtn?.addEventListener('click', closeBulkModal);
+    bulkCancelBtn?.addEventListener('click', closeBulkModal);
+    bulkModal?.addEventListener('click', function (e) {
+        if (e.target === bulkModal) closeBulkModal();
+    });
+    document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape' && bulkModal && !bulkModal.classList.contains('hidden')) {
+            closeBulkModal();
+        }
+    });
+
+    bulkForm?.addEventListener('submit', async function (e) {
+        e.preventDefault();
+        const value = (bulkTextarea?.value || '').trim();
+        if (!value) {
+            showToast('Please enter at least one category name.', 'error');
+            return;
+        }
+        const labelEl = bulkSubmitBtn?.querySelector('[data-default-label]');
+        const originalLabel = labelEl?.textContent;
+        if (bulkSubmitBtn) bulkSubmitBtn.disabled = true;
+        if (labelEl) labelEl.textContent = 'Creating...';
+
+        try {
+            const res = await fetch(bulkForm.action, {
+                method: 'POST',
+                headers: {
+                    'X-CSRF-TOKEN': csrfToken,
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'Accept': 'application/json',
+                },
+                body: new FormData(bulkForm),
+            });
+            const data = await res.json().catch(() => ({}));
+            if (res.ok && data.success) {
+                showToast(data.message || 'Categories created successfully.', 'success');
+                if (bulkTextarea) bulkTextarea.value = '';
+                closeBulkModal();
+            } else {
+                showToast(data.message || 'Failed to create categories.', 'error');
+            }
+        } catch (err) {
+            showToast('Network error. Please try again.', 'error');
+        } finally {
+            if (bulkSubmitBtn) bulkSubmitBtn.disabled = false;
+            if (labelEl && originalLabel) labelEl.textContent = originalLabel;
+        }
+    });
+})();
 </script>
 @endpush
 @endsection
