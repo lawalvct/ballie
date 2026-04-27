@@ -38,6 +38,13 @@
                     </svg>
                     Cash Flow
                 </a>
+                <a href="{{ route('tenant.reports.statement-of-changes-in-equity', ['tenant' => $tenant->slug]) }}"
+                   class="inline-flex items-center px-4 py-2 border border-rose-200 rounded-lg shadow-sm text-sm font-medium text-white bg-gradient-to-r from-rose-500 to-rose-600 hover:from-rose-600 hover:to-rose-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-rose-500 transition-all duration-200 transform hover:scale-105">
+                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"></path>
+                    </svg>
+                    Equity
+                </a>
             </div>
             <div class="mt-4 sm:mt-0 flex flex-wrap gap-2">
                 <button onclick="window.print()" class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-lg shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50">
@@ -159,8 +166,8 @@
 
                             <div class="mt-6 pt-6 border-t-2 border-emerald-200">
                                 <div class="flex items-center justify-between py-3 px-4 bg-emerald-50 rounded-lg">
-                                    <div class="text-lg font-bold text-emerald-800">Total Assets</div>
-                                    <div class="text-2xl font-bold text-emerald-600">₦{{ number_format($totalAssets, 2) }}</div>
+                                    <div class="text-base font-bold text-emerald-800">Total Assets</div>
+                                    <div class="text-base font-bold leading-tight tracking-tight text-emerald-600 sm:text-lg xl:text-xl break-all">₦{{ number_format($totalAssets, 2) }}</div>
                                 </div>
                             </div>
                         @else
@@ -212,8 +219,8 @@
 
                             <div class="mt-6 pt-6 border-t-2 border-red-200">
                                 <div class="flex items-center justify-between py-3 px-4 bg-red-50 rounded-lg">
-                                    <div class="text-lg font-bold text-red-800">Total Liabilities</div>
-                                    <div class="text-2xl font-bold text-red-600">₦{{ number_format($totalLiabilities, 2) }}</div>
+                                    <div class="text-base font-bold text-red-800">Total Liabilities</div>
+                                    <div class="text-base font-bold leading-tight tracking-tight text-red-600 sm:text-lg xl:text-xl break-all">₦{{ number_format($totalLiabilities, 2) }}</div>
                                 </div>
                             </div>
                         @else
@@ -287,8 +294,8 @@
 
                         <div class="mt-6 pt-6 border-t-2 border-purple-200">
                             <div class="flex items-center justify-between py-3 px-4 bg-purple-50 rounded-lg">
-                                <div class="text-lg font-bold text-purple-800">Total Equity</div>
-                                <div class="text-2xl font-bold text-purple-600">₦{{ number_format($totalEquity, 2) }}</div>
+                                <div class="text-base font-bold text-purple-800">Total Equity</div>
+                                <div class="text-base font-bold leading-tight tracking-tight text-purple-600 sm:text-lg xl:text-xl break-all">₦{{ number_format($totalEquity, 2) }}</div>
                             </div>
                         </div>
                     </div>
@@ -471,7 +478,7 @@
                     <div class="flex items-center space-x-6 text-center">
                         <!-- Assets -->
                         <div class="bg-emerald-50 rounded-xl p-6 border-2 border-emerald-200">
-                            <div class="text-2xl font-bold text-emerald-600 mb-2">₦{{ number_format($totalAssets, 2) }}</div>
+                            <div class="text-base font-bold leading-tight tracking-tight text-emerald-600 mb-2 sm:text-lg xl:text-xl break-all">₦{{ number_format($totalAssets, 2) }}</div>
                             <div class="text-sm font-semibold text-emerald-800">ASSETS</div>
                         </div>
 
@@ -482,7 +489,7 @@
 
                         <!-- Liabilities -->
                         <div class="bg-red-50 rounded-xl p-6 border-2 border-red-200">
-                            <div class="text-2xl font-bold text-red-600 mb-2">₦{{ number_format($totalLiabilities, 2) }}</div>
+                            <div class="text-base font-bold leading-tight tracking-tight text-red-600 mb-2 sm:text-lg xl:text-xl break-all">₦{{ number_format($totalLiabilities, 2) }}</div>
                             <div class="text-sm font-semibold text-red-800">LIABILITIES</div>
                         </div>
 
@@ -493,7 +500,7 @@
 
                         <!-- Equity -->
                         <div class="bg-purple-50 rounded-xl p-6 border-2 border-purple-200">
-                            <div class="text-2xl font-bold text-purple-600 mb-2">₦{{ number_format($totalEquity, 2) }}</div>
+                            <div class="text-base font-bold leading-tight tracking-tight text-purple-600 mb-2 sm:text-lg xl:text-xl break-all">₦{{ number_format($totalEquity, 2) }}</div>
                             <div class="text-sm font-semibold text-purple-800">EQUITY</div>
                         </div>
                     </div>

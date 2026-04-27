@@ -46,6 +46,14 @@
             </svg>
             Cash Flow
         </a>
+
+        <a href="{{ route('tenant.reports.statement-of-changes-in-equity', ['tenant' => $tenant->slug]) }}"
+           class="inline-flex items-center px-4 py-2 border border-rose-200 rounded-lg shadow-sm text-sm font-medium text-white bg-gradient-to-r from-rose-500 to-rose-600 hover:from-rose-600 hover:to-rose-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-rose-500 transition-all duration-200 transform hover:scale-105">
+            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"></path>
+            </svg>
+            Equity
+        </a>
     </div>
 
     <!-- Header -->
@@ -75,7 +83,7 @@
                 Update
             </button>
         </form>
-        
+
         <div class="flex flex-wrap items-center gap-2">
             @if(count($trialBalanceData ?? []) > 0)
                 <button onclick="exportToExcel()"
@@ -400,63 +408,63 @@
         .no-print {
             display: none !important;
         }
-        
+
         body {
             font-size: 12px;
             color: black !important;
         }
-        
+
         .print-header {
             text-align: center;
             margin-bottom: 20px;
             border-bottom: 2px solid #000;
             padding-bottom: 10px;
         }
-        
+
         .print-title {
             font-size: 18px;
             font-weight: bold;
             margin-bottom: 5px;
         }
-        
+
         .print-date {
             font-size: 12px;
             margin-bottom: 10px;
         }
-        
+
         table {
             width: 100% !important;
             border-collapse: collapse;
             margin-top: 20px;
         }
-        
+
         th, td {
             border: 1px solid #000 !important;
             padding: 8px !important;
             text-align: left;
         }
-        
+
         th {
             background-color: #f0f0f0 !important;
             font-weight: bold;
         }
-        
+
         .text-right {
             text-align: right !important;
         }
-        
+
         .font-bold {
             font-weight: bold !important;
         }
-        
+
         .bg-gray-50, .bg-gray-100 {
             background-color: #f9f9f9 !important;
         }
-        
+
         .text-blue-600, .text-red-600 {
             color: black !important;
         }
-        
+
         .rounded-full {
             border-radius: 0 !important;
             padding: 2px 6px !important;
@@ -527,16 +535,16 @@ function printReport() {
             @endif
         </div>
     `;
-    
+
     // Insert header before the table
     const tableContainer = document.querySelector('.bg-white.shadow-sm.rounded-lg');
     if (tableContainer) {
         tableContainer.insertBefore(printHeader, tableContainer.firstChild);
     }
-    
+
     // Print
     window.print();
-    
+
     // Remove header after printing
     setTimeout(() => {
         if (printHeader.parentNode) {

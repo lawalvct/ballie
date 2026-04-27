@@ -456,6 +456,10 @@ Route::prefix('ledger-accounts')->name('ledger-accounts.')->group(function () {
 
             // Cash Flow
             Route::get('/cash-flow', [ReportsController::class, 'cashFlow'])->name('cash-flow');
+
+            // Statement of Changes in Equity
+            Route::get('/statement-of-changes-in-equity', [ReportsController::class, 'statementOfChangesInEquity'])->name('statement-of-changes-in-equity');
+            Route::get('/statement-of-changes-in-equity-pdf', [ReportsController::class, 'statementOfChangesInEquityPdf'])->name('statement-of-changes-in-equity-pdf');
         });
 
         // Projects Module
@@ -1106,6 +1110,8 @@ Route::prefix('ledger-accounts')->name('ledger-accounts.')->group(function () {
             Route::get('/balance-sheet', [ReportsController::class, 'balanceSheet'])->name('balance-sheet');
             Route::get('/trial-balance', [ReportsController::class, 'trialBalance'])->name('trial-balance');
             Route::get('/cash-flow', [ReportsController::class, 'cashFlow'])->name('cash-flow');
+            Route::get('/statement-of-changes-in-equity', [ReportsController::class, 'statementOfChangesInEquity'])->name('statement-of-changes-in-equity');
+            Route::get('/statement-of-changes-in-equity-pdf', [ReportsController::class, 'statementOfChangesInEquityPdf'])->name('statement-of-changes-in-equity-pdf');
 
             // Inventory Reports
             Route::get('/inventory', [ReportsController::class, 'inventory'])->name('inventory');

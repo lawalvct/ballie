@@ -427,6 +427,173 @@ class ReportsController extends Controller
         return view('tenant.reports.cash-flow', $viewData);
     }
 
+    public function statementOfChangesInEquity(Request $request, Tenant $tenant)
+    {
+        $fromDate = $request->get('from_date', now()->startOfYear()->toDateString());
+        $toDate = $request->get('to_date', now()->toDateString());
+
+        if (strtotime($fromDate) > strtotime($toDate)) {
+            [$fromDate, $toDate] = [$toDate, $fromDate];
+        }
+
+        $viewData = array_merge(
+            $this->calculateStatementOfChangesInEquityData($tenant, $fromDate, $toDate),
+            [
+                'tenant' => $tenant,
+                'fromDate' => $fromDate,
+                'toDate' => $toDate,
+            ]
+        );
+
+        return view('tenant.reports.statement-of-changes-in-equity', $viewData);
+    }
+
+    public function statementOfChangesInEquityPdf(Request $request, Tenant $tenant)
+    {
+        $fromDate = $request->get('from_date', now()->startOfYear()->toDateString());
+        $toDate = $request->get('to_date', now()->toDateString());
+
+        if (strtotime($fromDate) > strtotime($toDate)) {
+            [$fromDate, $toDate] = [$toDate, $fromDate];
+        }
+
+        $viewData = array_merge(
+            $this->calculateStatementOfChangesInEquityData($tenant, $fromDate, $toDate),
+            [
+                'tenant' => $tenant,
+                'fromDate' => $fromDate,
+                'toDate' => $toDate,
+            ]
+        );
+
+        $pdf = Pdf::loadView('tenant.reports.statement-of-changes-in-equity-pdf', $viewData)
+            ->setPaper('a4', 'portrait');
+
+        return $pdf->download($tenant->slug . '_statement-of-changes-in-equity_' . $fromDate . '_to_' . $toDate . '.pdf');
+    }
+
+    private function calculateStatementOfChangesInEquityData(Tenant $tenant, string $fromDate, string $toDate): array
+    {
+        $openingDate = date('Y-m-d', strtotime($fromDate . ' -1 day'));
+        $equityAccounts = LedgerAccount::where('tenant_id', $tenant->id)
+            ->where('account_type', 'equity')
+            ->where('is_active', true)
+            ->with('accountGroup')
+            ->orderBy('code')
+            ->get();
+
+        $equityMovements = [];
+        $totalOpeningDirectEquity = 0;
+        $totalDirectEquityMovement = 0;
+        $totalClosingDirectEquity = 0;
+        $totalEquityAdditions = 0;
+        $totalEquityDeductions = 0;
+
+        foreach ($equityAccounts as $account) {
+            $openingBalance = (float) $this->calculateAccountBalance($account, $openingDate);
+            $movement = (float) $this->calculateAccountBalanceForPeriod($account, $fromDate, $toDate);
+            $closingBalance = (float) $this->calculateAccountBalance($account, $toDate);
+
+            if (abs($openingBalance) < 0.01 && abs($movement) < 0.01 && abs($closingBalance) < 0.01) {
+                continue;
+            }
+
+            $additions = $movement > 0 ? $movement : 0;
+            $deductions = $movement < 0 ? abs($movement) : 0;
+
+            $equityMovements[] = [
+                'account' => $account,
+                'opening_balance' => $openingBalance,
+                'additions' => $additions,
+                'deductions' => $deductions,
+                'movement' => $movement,
+                'closing_balance' => $closingBalance,
+            ];
+
+            $totalOpeningDirectEquity += $openingBalance;
+            $totalDirectEquityMovement += $movement;
+            $totalClosingDirectEquity += $closingBalance;
+            $totalEquityAdditions += $additions;
+            $totalEquityDeductions += $deductions;
+        }
+
+        $openingRetainedEarnings = $this->calculateRetainedEarningsAsOf($tenant, $openingDate);
+        $profitForPeriod = $this->calculateNetProfitForPeriod($tenant, $fromDate, $toDate);
+        $closingRetainedEarnings = $openingRetainedEarnings + $profitForPeriod;
+
+        $totalOpeningEquity = $totalOpeningDirectEquity + $openingRetainedEarnings;
+        $totalClosingEquity = $totalClosingDirectEquity + $closingRetainedEarnings;
+        $totalEquityMovement = $totalClosingEquity - $totalOpeningEquity;
+
+        return [
+            'openingDate' => $openingDate,
+            'equityMovements' => $equityMovements,
+            'openingRetainedEarnings' => $openingRetainedEarnings,
+            'profitForPeriod' => $profitForPeriod,
+            'closingRetainedEarnings' => $closingRetainedEarnings,
+            'totalOpeningDirectEquity' => $totalOpeningDirectEquity,
+            'totalDirectEquityMovement' => $totalDirectEquityMovement,
+            'totalClosingDirectEquity' => $totalClosingDirectEquity,
+            'totalEquityAdditions' => $totalEquityAdditions,
+            'totalEquityDeductions' => $totalEquityDeductions,
+            'totalOpeningEquity' => $totalOpeningEquity,
+            'totalClosingEquity' => $totalClosingEquity,
+            'totalEquityMovement' => $totalEquityMovement,
+        ];
+    }
+
+    private function calculateRetainedEarningsAsOf(Tenant $tenant, string $asOfDate): float
+    {
+        $incomeAccounts = LedgerAccount::where('tenant_id', $tenant->id)
+            ->where('account_type', 'income')
+            ->where('is_active', true)
+            ->get();
+
+        $expenseAccounts = LedgerAccount::where('tenant_id', $tenant->id)
+            ->where('account_type', 'expense')
+            ->where('is_active', true)
+            ->get();
+
+        $totalIncome = 0;
+        $totalExpenses = 0;
+
+        foreach ($incomeAccounts as $account) {
+            $totalIncome += (float) $this->calculateAccountBalance($account, $asOfDate);
+        }
+
+        foreach ($expenseAccounts as $account) {
+            $totalExpenses += (float) $this->calculateAccountBalance($account, $asOfDate);
+        }
+
+        return $totalIncome - $totalExpenses;
+    }
+
+    private function calculateNetProfitForPeriod(Tenant $tenant, string $fromDate, string $toDate): float
+    {
+        $incomeAccounts = LedgerAccount::where('tenant_id', $tenant->id)
+            ->where('account_type', 'income')
+            ->where('is_active', true)
+            ->get();
+
+        $expenseAccounts = LedgerAccount::where('tenant_id', $tenant->id)
+            ->where('account_type', 'expense')
+            ->where('is_active', true)
+            ->get();
+
+        $totalIncome = 0;
+        $totalExpenses = 0;
+
+        foreach ($incomeAccounts as $account) {
+            $totalIncome += abs((float) $this->calculateAccountBalanceForPeriod($account, $fromDate, $toDate));
+        }
+
+        foreach ($expenseAccounts as $account) {
+            $totalExpenses += abs((float) $this->calculateAccountBalanceForPeriod($account, $fromDate, $toDate));
+        }
+
+        return $totalIncome - $totalExpenses;
+    }
+
     private function calculateCashFlowData(Tenant $tenant, string $fromDate, string $toDate): array
     {
         $cashAccounts = $this->getCashAccounts($tenant);

@@ -39,6 +39,14 @@
             </svg>
             Cash Flow
         </a>
+
+        <a href="{{ route('tenant.reports.statement-of-changes-in-equity', ['tenant' => $tenant->slug]) }}"
+           class="inline-flex items-center px-4 py-2 border border-rose-200 rounded-lg shadow-sm text-sm font-medium text-white bg-gradient-to-r from-rose-500 to-rose-600 hover:from-rose-600 hover:to-rose-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-rose-500 transition-all duration-200 transform hover:scale-105">
+            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"></path>
+            </svg>
+            Equity
+        </a>
     </div>
 
     <!-- Professional Header -->
@@ -58,7 +66,7 @@
                 </div>
                 <div class="text-right">
                     <div class="text-sm text-gray-600 mb-1">Net Change in Cash and Cash Equivalents</div>
-                    <div class="text-2xl font-bold {{ $netCashFlow >= 0 ? 'text-green-600' : 'text-red-600' }}">
+                    <div class="text-base font-bold leading-tight tracking-tight {{ $netCashFlow >= 0 ? 'text-green-600' : 'text-red-600' }} sm:text-lg xl:text-xl break-all">
                         ₦{{ number_format(abs($netCashFlow), 2) }} {{ $netCashFlow >= 0 ? 'Increase' : 'Decrease' }}
                     </div>
                 </div>
@@ -177,12 +185,12 @@
 
             <div class="flex justify-between items-center py-4 px-6 {{ $netCashFlow >= 0 ? 'bg-green-100 border-2 border-green-300' : 'bg-red-100 border-2 border-red-300' }} rounded-lg">
                 <span class="text-lg font-bold text-gray-900">Net Cash Change</span>
-                <span class="text-2xl font-bold {{ $netCashFlow >= 0 ? 'text-green-700' : 'text-red-700' }}">₦{{ number_format($netCashFlow, 2) }}</span>
+                <span class="text-base font-bold leading-tight tracking-tight {{ $netCashFlow >= 0 ? 'text-green-700' : 'text-red-700' }} sm:text-lg xl:text-xl break-all">₦{{ number_format($netCashFlow, 2) }}</span>
             </div>
 
             <div class="flex justify-between items-center py-4 px-6 bg-gray-100 rounded-lg border-2 border-gray-300">
                 <span class="text-lg font-bold text-gray-900">Closing Cash Balance</span>
-                <span class="text-2xl font-bold text-gray-900">₦{{ number_format($closingCash, 2) }}</span>
+                <span class="text-base font-bold leading-tight tracking-tight text-gray-900 sm:text-lg xl:text-xl break-all">₦{{ number_format($closingCash, 2) }}</span>
             </div>
         </div>
     </div>
@@ -394,7 +402,7 @@
                         <div class="border-t-4 border-gray-900 pt-4 mt-6">
                             <div class="flex justify-between items-center py-4 px-6 bg-white border-2 border-gray-300 rounded-lg">
                                 <span class="text-lg font-bold text-gray-900 uppercase">Net Cash Provided by (Used in) Operating Activities</span>
-                                <span class="text-2xl font-mono font-bold {{ $operatingTotal >= 0 ? 'text-gray-900' : 'text-red-600' }}">
+                                <span class="text-base font-mono font-bold leading-tight tracking-tight {{ $operatingTotal >= 0 ? 'text-gray-900' : 'text-red-600' }} sm:text-lg xl:text-xl break-all">
                                     {{ $operatingTotal >= 0 ? '' : '(' }}₦{{ number_format(abs($operatingTotal), 2) }}{{ $operatingTotal >= 0 ? '' : ')' }}
                                 </span>
                             </div>
@@ -466,7 +474,7 @@
                         <div class="border-t-4 border-gray-900 pt-4 mt-6">
                             <div class="flex justify-between items-center py-4 px-6 bg-white border-2 border-gray-300 rounded-lg">
                                 <span class="text-lg font-bold text-gray-900 uppercase">Net Cash Provided by (Used in) Investing Activities</span>
-                                <span class="text-2xl font-mono font-bold {{ $investingTotal >= 0 ? 'text-gray-900' : 'text-red-600' }}">
+                                <span class="text-base font-mono font-bold leading-tight tracking-tight {{ $investingTotal >= 0 ? 'text-gray-900' : 'text-red-600' }} sm:text-lg xl:text-xl break-all">
                                     {{ $investingTotal >= 0 ? '' : '(' }}₦{{ number_format(abs($investingTotal), 2) }}{{ $investingTotal >= 0 ? '' : ')' }}
                                 </span>
                             </div>
@@ -544,7 +552,7 @@
                         <div class="border-t-4 border-gray-900 pt-4 mt-6 mb-5">
                             <div class="flex justify-between items-center py-4 px-6 bg-white border-2 border-gray-300 rounded-lg">
                                 <span class="text-lg font-bold text-gray-900 uppercase">Net Cash Provided by (Used in) Financing Activities</span>
-                                <span class="text-2xl font-mono font-bold {{ $financingTotal >= 0 ? 'text-gray-900' : 'text-red-600' }}">
+                                <span class="text-base font-mono font-bold leading-tight tracking-tight {{ $financingTotal >= 0 ? 'text-gray-900' : 'text-red-600' }} sm:text-lg xl:text-xl break-all">
                                     {{ $financingTotal >= 0 ? '' : '(' }}₦{{ number_format(abs($financingTotal), 2) }}{{ $financingTotal >= 0 ? '' : ')' }}
                                 </span>
                             </div>
@@ -596,7 +604,7 @@
                     <div class="border-t-4 border-gray-900 pt-4 mt-4">
                         <div class="flex justify-between items-center py-5 px-6 bg-gray-100 border-2 border-gray-400 rounded-lg">
                             <span class="text-xl font-bold text-gray-900 uppercase">Net Increase (Decrease) in Cash and Cash Equivalents</span>
-                            <span class="text-3xl font-mono font-bold {{ $netCashFlow >= 0 ? 'text-gray-900' : 'text-red-600' }}">
+                            <span class="text-lg font-mono font-bold leading-tight tracking-tight {{ $netCashFlow >= 0 ? 'text-gray-900' : 'text-red-600' }} sm:text-xl xl:text-2xl break-all">
                                 {{ $netCashFlow >= 0 ? '' : '(' }}₦{{ number_format(abs($netCashFlow), 2) }}{{ $netCashFlow >= 0 ? '' : ')' }}
                             </span>
                         </div>
@@ -610,19 +618,19 @@
                     <div class="space-y-4">
                         <div class="flex justify-between items-center py-4 px-6 bg-gray-50 border-2 border-gray-300 rounded-lg">
                             <span class="text-lg font-bold text-gray-900">Cash and Cash Equivalents at Beginning of Period</span>
-                            <span class="text-2xl font-mono font-bold text-gray-900">₦{{ number_format($openingCash, 2) }}</span>
+                            <span class="text-base font-mono font-bold leading-tight tracking-tight text-gray-900 sm:text-lg xl:text-xl break-all">₦{{ number_format($openingCash, 2) }}</span>
                         </div>
 
                         <div class="flex justify-between items-center py-4 px-6 bg-blue-50 border-2 border-blue-300 rounded-lg">
                             <span class="text-lg font-bold text-gray-900">Net Increase (Decrease) in Cash and Cash Equivalents</span>
-                            <span class="text-2xl font-mono font-bold {{ $netCashFlow >= 0 ? 'text-gray-900' : 'text-red-600' }}">
+                            <span class="text-base font-mono font-bold leading-tight tracking-tight {{ $netCashFlow >= 0 ? 'text-gray-900' : 'text-red-600' }} sm:text-lg xl:text-xl break-all">
                                 {{ $netCashFlow >= 0 ? '' : '(' }}₦{{ number_format(abs($netCashFlow), 2) }}{{ $netCashFlow >= 0 ? '' : ')' }}
                             </span>
                         </div>
 
                         <div class="flex justify-between items-center py-5 px-6 bg-green-50 border-4 border-green-600 rounded-lg shadow-md">
                             <span class="text-xl font-bold text-gray-900 uppercase">Cash and Cash Equivalents at End of Period</span>
-                            <span class="text-3xl font-mono font-bold text-green-700">₦{{ number_format($closingCash, 2) }}</span>
+                            <span class="text-lg font-mono font-bold leading-tight tracking-tight text-green-700 sm:text-xl xl:text-2xl break-all">₦{{ number_format($closingCash, 2) }}</span>
                         </div>
                     </div>
 
@@ -658,7 +666,7 @@
                             <div class="border-t-2 border-gray-400 pt-3 mt-4">
                                 <div class="flex justify-between items-center py-3 px-6 bg-blue-50 border-2 border-blue-400 rounded-lg">
                                     <span class="text-lg font-bold text-gray-900 uppercase">Total Cash and Cash Equivalents</span>
-                                    <span class="text-2xl font-mono font-bold text-blue-700">
+                                    <span class="text-base font-mono font-bold leading-tight tracking-tight text-blue-700 sm:text-lg xl:text-xl break-all">
                                         ₦{{ number_format($cashAccounts->sum('current_balance'), 2) }}
                                     </span>
                                 </div>

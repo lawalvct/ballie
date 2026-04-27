@@ -40,6 +40,14 @@
                 </svg>
                 Cash Flow
             </a>
+
+            <a href="{{ route('tenant.reports.statement-of-changes-in-equity', ['tenant' => $tenant->slug]) }}"
+               class="inline-flex items-center px-4 py-2 border border-rose-200 rounded-lg shadow-sm text-sm font-medium text-white bg-gradient-to-r from-rose-500 to-rose-600 hover:from-rose-600 hover:to-rose-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-rose-500 transition-all duration-200 transform hover:scale-105">
+                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"></path>
+                </svg>
+                Equity
+            </a>
         </div>
         <div class="mt-4 sm:mt-0 flex flex-wrap gap-2">
             <button onclick="window.print()" class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-lg shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50">
@@ -125,8 +133,8 @@
         </div>
         @endif
         <div class="bg-gradient-to-br from-emerald-50 to-emerald-100 rounded-xl p-6 border border-emerald-200">
-            <div class="text-sm font-medium text-emerald-600 mb-1">Total Income</div>
-            <div class="text-3xl font-bold text-emerald-700">₦{{ number_format($totalIncome, 2) }}</div>
+            <div class="text-xs font-medium text-emerald-600 mb-1 sm:text-sm">Total Income</div>
+            <div class="text-lg font-bold leading-tight tracking-tight text-emerald-700 sm:text-xl xl:text-2xl break-all">₦{{ number_format($totalIncome, 2) }}</div>
             @if($compare && $compareData)
             @php
                 $change = $compareData['totalIncome'] > 0 ? (($totalIncome - $compareData['totalIncome']) / $compareData['totalIncome']) * 100 : 0;
@@ -137,8 +145,8 @@
             @endif
         </div>
         <div class="bg-gradient-to-br from-red-50 to-red-100 rounded-xl p-6 border border-red-200">
-            <div class="text-sm font-medium text-red-600 mb-1">Total Expenses</div>
-            <div class="text-3xl font-bold text-red-700">₦{{ number_format($totalExpenses, 2) }}</div>
+            <div class="text-xs font-medium text-red-600 mb-1 sm:text-sm">Total Expenses</div>
+            <div class="text-lg font-bold leading-tight tracking-tight text-red-700 sm:text-xl xl:text-2xl break-all">₦{{ number_format($totalExpenses, 2) }}</div>
             @if($compare && $compareData)
             @php
                 $change = $compareData['totalExpenses'] > 0 ? (($totalExpenses - $compareData['totalExpenses']) / $compareData['totalExpenses']) * 100 : 0;
@@ -149,8 +157,8 @@
             @endif
         </div>
         <div class="bg-gradient-to-br {{ $netProfit >= 0 ? 'from-blue-50 to-blue-100 border-blue-200' : 'from-orange-50 to-orange-100 border-orange-200' }} rounded-xl p-6 border">
-            <div class="text-sm font-medium {{ $netProfit >= 0 ? 'text-blue-600' : 'text-orange-600' }} mb-1">Net {{ $netProfit >= 0 ? 'Profit' : 'Loss' }}</div>
-            <div class="text-3xl font-bold {{ $netProfit >= 0 ? 'text-blue-700' : 'text-orange-700' }}">₦{{ number_format(abs($netProfit), 2) }}</div>
+            <div class="text-xs font-medium {{ $netProfit >= 0 ? 'text-blue-600' : 'text-orange-600' }} mb-1 sm:text-sm">Net {{ $netProfit >= 0 ? 'Profit' : 'Loss' }}</div>
+            <div class="text-lg font-bold leading-tight tracking-tight {{ $netProfit >= 0 ? 'text-blue-700' : 'text-orange-700' }} sm:text-xl xl:text-2xl break-all">₦{{ number_format(abs($netProfit), 2) }}</div>
             @if($compare && $compareData)
             @php
                 $prevProfit = $compareData['netProfit'];
@@ -162,8 +170,8 @@
             @endif
         </div>
         <div class="bg-gradient-to-br from-purple-50 to-purple-100 rounded-xl p-6 border border-purple-200">
-            <div class="text-sm font-medium text-purple-600 mb-1">Profit Margin</div>
-            <div class="text-3xl font-bold text-purple-700">
+            <div class="text-xs font-medium text-purple-600 mb-1 sm:text-sm">Profit Margin</div>
+            <div class="text-lg font-bold leading-tight tracking-tight text-purple-700 sm:text-xl xl:text-2xl break-all">
                 @if($totalIncome > 0)
                     {{ number_format(($netProfit / $totalIncome) * 100, 2) }}%
                 @else

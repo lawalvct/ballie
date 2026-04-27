@@ -320,10 +320,19 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
+    function restoreWidget(showMessage) {
+        globalSearchWidget.style.display = 'block';
+        localStorage.setItem(WIDGET_HIDDEN_KEY, 'false');
+
+        if (showMessage) {
+            showNotification('Search widget restored.');
+        }
+    }
+
     function hideWidget() {
         globalSearchWidget.style.display = 'none';
         localStorage.setItem(WIDGET_HIDDEN_KEY, 'true');
-        showNotification('Search widget hidden. Press Ctrl+K to search anytime.');
+        showNotification('Search widget hidden. Press Ctrl+K to search or restore it.');
     }
 
     function showNotification(message) {
@@ -410,6 +419,10 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Open/Close search
     function openSearch() {
+        if (localStorage.getItem(WIDGET_HIDDEN_KEY) === 'true') {
+            restoreWidget(true);
+        }
+
         searchModal.classList.remove('hidden');
         searchModal.style.display = 'flex';
         document.body.style.overflow = 'hidden';

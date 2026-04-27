@@ -74,6 +74,7 @@ class GlobalSearchController extends Controller
             ['name' => 'tenant.accounting.balance-sheet', 'title' => 'Balance Sheet', 'description' => 'View balance sheet statement', 'icon' => 'fas fa-chart-bar', 'category' => 'Reports', 'keywords' => 'balance sheet assets liabilities equity'],
             ['name' => 'tenant.accounting.profit-loss', 'title' => 'Profit & Loss', 'description' => 'View income statement / P&L', 'icon' => 'fas fa-chart-line', 'category' => 'Reports', 'keywords' => 'profit loss income statement pnl'],
             ['name' => 'tenant.accounting.cash-flow', 'title' => 'Cash Flow Statement', 'description' => 'Cash flows from operating, investing, and financing', 'icon' => 'fas fa-money-bill-wave', 'category' => 'Reports', 'keywords' => 'cash flow statement'],
+            ['name' => 'tenant.accounting.statement-of-changes-in-equity', 'title' => 'Statement of Changes in Equity', 'description' => 'Track owner equity, drawings, retained earnings, and profit movement', 'icon' => 'fas fa-wallet', 'category' => 'Reports', 'keywords' => 'equity statement changes retained earnings owner capital drawings'],
 
             // CRM - Customers
             ['name' => 'tenant.crm.customers.index', 'title' => 'Customers', 'description' => 'View all customers', 'icon' => 'fas fa-users', 'category' => 'CRM', 'keywords' => 'customer client buyer'],
@@ -167,6 +168,7 @@ class GlobalSearchController extends Controller
             ['name' => 'tenant.reports.profit-loss', 'title' => 'Profit & Loss Report', 'description' => 'Profit and loss statement', 'icon' => 'fas fa-chart-pie', 'category' => 'Reports', 'keywords' => 'profit loss income'],
             ['name' => 'tenant.reports.balance-sheet', 'title' => 'Balance Sheet Report', 'description' => 'View balance sheet', 'icon' => 'fas fa-file-invoice-dollar', 'category' => 'Reports', 'keywords' => 'balance sheet assets liabilities'],
             ['name' => 'tenant.reports.cash-flow', 'title' => 'Cash Flow Report', 'description' => 'Cash flow statement', 'icon' => 'fas fa-money-bill-wave', 'category' => 'Reports', 'keywords' => 'cash flow'],
+            ['name' => 'tenant.reports.statement-of-changes-in-equity', 'title' => 'Statement of Changes in Equity', 'description' => 'Equity movement and retained earnings report', 'icon' => 'fas fa-wallet', 'category' => 'Reports', 'keywords' => 'equity statement changes retained earnings owner capital drawings'],
             ['name' => 'tenant.reports.financial', 'title' => 'Financial Reports', 'description' => 'All financial reports', 'icon' => 'fas fa-chart-bar', 'category' => 'Reports', 'keywords' => 'financial report'],
             ['name' => 'tenant.reports.sales', 'title' => 'Sales Reports', 'description' => 'All sales reports', 'icon' => 'fas fa-chart-line', 'category' => 'Reports', 'keywords' => 'sales report'],
             ['name' => 'tenant.reports.inventory', 'title' => 'Inventory Reports', 'description' => 'All inventory reports', 'icon' => 'fas fa-boxes', 'category' => 'Reports', 'keywords' => 'inventory report stock'],

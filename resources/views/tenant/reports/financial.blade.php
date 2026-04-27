@@ -128,6 +128,31 @@
             </div>
         </div>
 
+        <!-- Statement of Changes in Equity -->
+        <div class="bg-white rounded-2xl p-6 shadow-lg hover:shadow-xl transition-shadow duration-300">
+            <div class="flex items-center justify-between mb-4">
+                <div class="w-12 h-12 bg-gradient-to-br from-rose-400 to-rose-600 rounded-xl flex items-center justify-center">
+                    <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"></path>
+                    </svg>
+                </div>
+                <span class="text-xs bg-rose-100 text-rose-800 px-2 py-1 rounded-full">Available</span>
+            </div>
+            <h3 class="text-lg font-semibold text-gray-900 mb-2">@term('equity_report')</h3>
+            <p class="text-sm text-gray-600 mb-4">Track owner capital, drawings, retained earnings, and equity movement</p>
+            <div class="flex space-x-2">
+                <a href="{{ route('tenant.reports.statement-of-changes-in-equity', ['tenant' => $tenant->slug]) }}"
+                   class="flex-1 bg-rose-50 text-rose-700 px-3 py-2 rounded-lg text-sm font-medium hover:bg-rose-100 transition-colors text-center">
+                    Generate
+                </a>
+                <button onclick="window.location.href='{{ route('tenant.reports.statement-of-changes-in-equity', ['tenant' => $tenant->slug]) }}'" class="px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-600 hover:bg-gray-50 transition-colors">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                    </svg>
+                </button>
+            </div>
+        </div>
+
         <!-- General Ledger -->
         <div class="bg-white rounded-2xl p-6 shadow-lg hover:shadow-xl transition-shadow duration-300">
             <div class="flex items-center justify-between mb-4">
