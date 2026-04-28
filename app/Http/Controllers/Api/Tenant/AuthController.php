@@ -7,6 +7,7 @@ use App\Http\Resources\UserResource;
 use App\Models\Tenant;
 use App\Models\User;
 use App\Notifications\WelcomeNotification;
+use App\Support\RegistrationInputGuard;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -31,10 +32,10 @@ class AuthController extends BaseApiController
 
         // Validate request
         $validator = Validator::make($request->all(), [
-            'name' => ['required', 'string', 'max:255'],
-            'email' => ['required', 'string', 'email', 'max:255', 'unique:users,email'],
+            'name' => RegistrationInputGuard::humanNameRules(),
+            'email' => RegistrationInputGuard::emailRules('unique:users,email'),
             'password' => ['required', 'confirmed', Password::min(8)->mixedCase()->numbers()],
-            'phone' => ['nullable', 'string', 'max:20'],
+            'phone' => RegistrationInputGuard::phoneRules(),
             'device_name' => ['nullable', 'string', 'max:255'],
         ]);
 

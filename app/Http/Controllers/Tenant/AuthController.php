@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\Password;
 use Illuminate\Support\Facades\RateLimiter;
 use App\Models\User;
 use App\Models\SystemSetting;
+use App\Support\RegistrationInputGuard;
 use Illuminate\Auth\Events\Registered;
 use App\Notifications\WelcomeNotification;
 
@@ -96,8 +97,8 @@ class AuthController extends Controller
     public function register(Request $request)
     {
         $request->validate([
-            'name' => 'required|string|max:255',
-            'email' => 'required|string|email|max:255|unique:users',
+            'name' => RegistrationInputGuard::humanNameRules(),
+            'email' => RegistrationInputGuard::emailRules('unique:users,email'),
             'password' => 'required|string|min:8|confirmed',
         ]);
 

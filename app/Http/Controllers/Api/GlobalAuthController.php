@@ -7,6 +7,7 @@ use App\Http\Resources\UserResource;
 use App\Models\User;
 use App\Models\Tenant;
 use App\Models\SystemSetting;
+use App\Support\RegistrationInputGuard;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -202,11 +203,11 @@ class GlobalAuthController extends BaseApiController
             'business_structure' => 'nullable|string',
 
             // Step 2: Personal & Business Information
-            'name' => 'required|string|max:255',
-            'email' => 'required|email|max:255|unique:users,email',
+            'name' => RegistrationInputGuard::humanNameRules(),
+            'email' => RegistrationInputGuard::emailRules('unique:users,email'),
             'password' => 'required|string|min:8|confirmed',
-            'business_name' => 'required|string|max:255',
-            'phone' => 'nullable|string|max:20',
+            'business_name' => RegistrationInputGuard::businessNameRules(),
+            'phone' => RegistrationInputGuard::phoneRules(),
 
             // Step 3: Plan Selection & Terms
             'plan_id' => 'required|integer|exists:plans,id',
@@ -233,7 +234,7 @@ class GlobalAuthController extends BaseApiController
                 $tenant = Tenant::create([
                     'name' => $request->business_name,
                     'slug' => \App\Helpers\TenantHelper::generateUniqueSlug($request->business_name),
-                    'email' => $request->email,
+                    'email' => Str::lower($request->email),
                     'phone' => $request->phone,
                     'business_structure' => $request->business_structure,
                     'business_type_id' => $request->business_type_id,
@@ -270,7 +271,7 @@ class GlobalAuthController extends BaseApiController
                 $user = User::create([
                     'tenant_id' => $tenant->id,
                     'name' => $request->name,
-                    'email' => $request->email,
+                    'email' => Str::lower($request->email),
                     'password' => Hash::make($request->password),
                     'phone' => $request->phone,
                     'role' => User::ROLE_OWNER, // Owner role

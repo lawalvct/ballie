@@ -149,6 +149,11 @@
             <form id="registration-form" method="POST" action="{{ $authUrls['register_post'] }}">
                 @csrf
 
+                <div class="absolute left-[-9999px] top-auto w-px h-px overflow-hidden" aria-hidden="true">
+                    <label for="company_website">Company website</label>
+                    <input type="text" name="company_website" id="company_website" tabindex="-1" autocomplete="off">
+                </div>
+
                 <!-- Hidden fields for affiliate tracking -->
                 @if(request('ref'))
                     <input type="hidden" name="ref" value="{{ request('ref') }}">
@@ -301,6 +306,7 @@
                         <div>
                             <label for="business_name" class="block text-sm font-medium text-gray-700 mb-2">Business Name <span class="text-red-500">*</span></label>
                             <input type="text" id="business_name" name="business_name"
+                                   value="{{ old('business_name') }}" minlength="3" maxlength="120" autocomplete="organization"
                                    class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                                    placeholder="Your Business Name">
                             @error('business_name')
@@ -312,6 +318,7 @@
                         <div>
                             <label for="name" class="block text-sm font-medium text-gray-700 mb-2">Your Full Name <span class="text-red-500">*</span></label>
                             <input type="text" id="name" name="name"
+                                   value="{{ old('name') }}" minlength="5" maxlength="80" autocomplete="name"
                                    class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                                    placeholder="John Doe">
                             @error('name')
@@ -322,7 +329,7 @@
 
                         <div class="relative">
                             <label for="email" class="block text-sm font-medium text-gray-700 mb-2">Email Address <span class="text-red-500">*</span></label>
-                            <input type="email" id="email" name="email" autocomplete="off"
+                            <input type="email" id="email" name="email" value="{{ old('email') }}" autocomplete="email" maxlength="255"
                                    class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                                    placeholder="lawal@ballie.co">
 
@@ -340,6 +347,7 @@
                         <div>
                             <label for="phone" class="block text-sm font-medium text-gray-700 mb-2">Phone Number</label>
                             <input type="tel" id="phone" name="phone"
+                                   value="{{ old('phone') }}" minlength="7" maxlength="20" autocomplete="tel"
                                    class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                                    placeholder="+234 800 000 0000">
                             @error('phone')

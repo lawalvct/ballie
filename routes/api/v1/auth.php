@@ -21,7 +21,7 @@ Route::get('/plans', [GlobalAuthController::class, 'getPlans'])->name('plans');
 
 // Email-based tenant detection and authentication
 Route::post('/login', [GlobalAuthController::class, 'login'])->name('login');
-Route::post('/register', [GlobalAuthController::class, 'register'])->name('register');
+Route::post('/register', [GlobalAuthController::class, 'register'])->middleware('throttle:registration')->name('register');
 Route::post('/forgot-password', [GlobalAuthController::class, 'forgotPassword'])->name('forgot-password');
 
 // Check which tenant(s) an email belongs to

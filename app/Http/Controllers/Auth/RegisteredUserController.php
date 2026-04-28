@@ -13,6 +13,7 @@ use App\Models\AffiliateReferral;
 use App\Models\SuperAdmin;
 use App\Models\SystemSetting;
 use App\Services\ModuleRegistry;
+use App\Support\RegistrationInputGuard;
 use App\Notifications\NewUserRegisteredNotification;
 use App\Notifications\WelcomeNotification;
 use Illuminate\Support\Facades\Notification;
@@ -22,11 +23,17 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
 use Illuminate\Validation\Rules;
 use Illuminate\View\View;
 
 class RegisteredUserController extends Controller
 {
+    private const REGISTRATION_FORM_STARTED_AT = 'registration_form_started_at';
+    private const REGISTRATION_HONEYPOT_FIELD = 'company_website';
+    private const REGISTRATION_MIN_SECONDS = 4;
+
     /**
      * Display the registration view.
      */
@@ -35,6 +42,8 @@ class RegisteredUserController extends Controller
         if (!SystemSetting::getValue('registration_enabled', true)) {
             abort(403, 'Registration is currently disabled.');
         }
+
+        session()->put(self::REGISTRATION_FORM_STARTED_AT, now()->timestamp);
 
         $plans = Plan::where('is_active', true)
                     ->orderBy('sort_order')
@@ -59,14 +68,16 @@ class RegisteredUserController extends Controller
 
         // Log::info('Registration attempt started', ['email' => $request->email]);
 
+        $this->ensureRegistrationChallengePassed($request);
+
         $request->validate([
-            'name' => ['required', 'string', 'max:255'],
-            'email' => ['required', 'string', 'lowercase', 'email', 'max:255', 'unique:'.User::class],
+            'name' => RegistrationInputGuard::humanNameRules(),
+            'email' => RegistrationInputGuard::emailRules('unique:'.User::class),
             'password' => ['required', 'confirmed', Rules\Password::defaults()],
-            'business_name' => ['required', 'string', 'max:255'],
+            'business_name' => RegistrationInputGuard::businessNameRules(),
             'business_structure' => ['nullable', 'string'],
             'business_type_id' => ['required', 'integer', 'exists:business_types,id'],
-            'phone' => ['nullable', 'string', 'max:20'],
+            'phone' => RegistrationInputGuard::phoneRules(),
             'plan_id' => ['required', 'integer', 'exists:plans,id'],
             'terms' => ['required', 'accepted'],
         ]);
@@ -283,5 +294,33 @@ class RegisteredUserController extends Controller
                 'email' => 'Registration failed. Please try again. If the problem persists, contact support.'
             ]);
         }
+    }
+
+    private function ensureRegistrationChallengePassed(Request $request): void
+    {
+        if ($request->filled(self::REGISTRATION_HONEYPOT_FIELD)) {
+            $this->rejectSuspiciousRegistration($request, 'honeypot_filled');
+        }
+
+        $startedAt = (int) $request->session()->get(self::REGISTRATION_FORM_STARTED_AT, 0);
+        $elapsedSeconds = $startedAt > 0 ? now()->timestamp - $startedAt : 0;
+
+        if ($startedAt <= 0 || $elapsedSeconds < self::REGISTRATION_MIN_SECONDS) {
+            $this->rejectSuspiciousRegistration($request, 'form_submitted_too_quickly');
+        }
+    }
+
+    private function rejectSuspiciousRegistration(Request $request, string $reason): void
+    {
+        Log::warning('Suspicious registration rejected', [
+            'reason' => $reason,
+            'ip' => $request->ip(),
+            'email' => $request->input('email'),
+            'user_agent' => Str::limit((string) $request->userAgent(), 255),
+        ]);
+
+        throw ValidationException::withMessages([
+            'email' => 'Registration could not be completed. Please refresh the page and try again.',
+        ]);
     }
 }

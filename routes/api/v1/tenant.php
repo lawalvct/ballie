@@ -18,7 +18,7 @@ use App\Http\Controllers\Api\Tenant\DashboardApiController;
 
 // Public authentication routes (no auth required)
 Route::prefix('auth')->name('auth.')->group(function () {
-    Route::post('/register', [AuthController::class, 'register'])->name('register');
+    Route::post('/register', [AuthController::class, 'register'])->middleware('throttle:registration')->name('register');
     Route::post('/login', [AuthController::class, 'login'])->name('login');
     Route::post('/forgot-password', [AuthController::class, 'forgotPassword'])->name('forgot-password');
 });
