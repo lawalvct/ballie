@@ -11,6 +11,15 @@ return new class extends Migration
      */
     public function up(): void
     {
+        // Defensive guard. See note in 2025_01_15_000001_create_quotations_table.
+        // Deferred to 2025_09_03_000001 when running a fresh database.
+        if (Schema::hasTable('quotation_items')) {
+            return;
+        }
+        if (!Schema::hasTable('quotations') || !Schema::hasTable('products')) {
+            return;
+        }
+
         Schema::create('quotation_items', function (Blueprint $table) {
             $table->id();
             $table->foreignId('quotation_id')->constrained('quotations')->onDelete('cascade');

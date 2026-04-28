@@ -183,14 +183,25 @@ return [
             ],
         ],
 
-        // ── Documents (Phase 1: pull only; push lands in Phase 2) ────────
+        // ── Documents ────────────────────────────────────────────────────
+        // Phase 2: vouchers are pushable (offline invoice creation).
+        // Domain rules (double-entry + stock) are enforced by
+        // App\Services\MobileSync\InvoiceSyncService, which PushService
+        // delegates to when table === 'vouchers'.
         'vouchers' => [
             'model' => \App\Models\Voucher::class,
             'tenant_scoped' => true,
             'pullable' => true,
-            'pushable' => false,
-            'permissions' => ['pull' => 'mobile.sync.read.invoices', 'push' => null],
+            'pushable' => true,
+            'allowed_actions' => ['create'],
+            'permissions' => [
+                'pull' => 'mobile.sync.read.invoices',
+                'push' => 'mobile.sync.write.invoices',
+            ],
             'dependencies' => ['voucher_types', 'ledger_accounts', 'customers', 'vendors', 'products'],
+            // Marker telling PushService to delegate to InvoiceSyncService
+            // instead of using the generic master-data create path.
+            'custom_handler' => 'invoice_sync',
         ],
 
         'voucher_entries' => [

@@ -11,6 +11,22 @@ return new class extends Migration
      */
     public function up(): void
     {
+        // Defensive guard: this migration is dated before tables it depends on
+        // (vouchers, customers, vendors, ledger_accounts, users) when running
+        // a fresh `migrate` / `migrate:fresh`. On production this migration
+        // already ran successfully, so the table exists and we no-op. On a
+        // fresh DB the dependencies are not yet present and a later migration
+        // (2025_09_03_000001_ensure_quotation_tables_and_columns) creates
+        // everything once the deps exist.
+        if (Schema::hasTable('quotations')) {
+            return;
+        }
+        foreach (['tenants', 'customers', 'vendors', 'ledger_accounts', 'users', 'vouchers'] as $dep) {
+            if (!Schema::hasTable($dep)) {
+                return; // Deferred to 2025_09_03_000001.
+            }
+        }
+
         Schema::create('quotations', function (Blueprint $table) {
             $table->id();
             $table->foreignId('tenant_id')->constrained('tenants')->onDelete('cascade');

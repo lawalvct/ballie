@@ -23,6 +23,10 @@ Route::prefix('auth')->name('auth.')->group(function () {
     Route::post('/forgot-password', [AuthController::class, 'forgotPassword'])->name('forgot-password');
 });
 
+// Phase 2 mobile sync — signed download endpoint (auth via signature, not Sanctum)
+Route::get('/sync/documents/{exportUuid}/download', [\App\Http\Controllers\Api\Tenant\SyncController::class, 'downloadDocument'])
+    ->name('sync.documents.download');
+
 // Protected routes (requires auth:sanctum)
 Route::middleware('auth:sanctum')->group(function () {
 
@@ -87,6 +91,11 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/pull', [\App\Http\Controllers\Api\Tenant\SyncController::class, 'pull'])->name('pull');
         Route::post('/push', [\App\Http\Controllers\Api\Tenant\SyncController::class, 'push'])->name('push');
         Route::get('/status', [\App\Http\Controllers\Api\Tenant\SyncController::class, 'status'])->name('status');
+
+        // Phase 2: conflict resolution + document exports
+        Route::post('/resolve-conflict', [\App\Http\Controllers\Api\Tenant\SyncController::class, 'resolveConflict'])->name('resolve-conflict');
+        Route::get('/documents/invoices/{invoiceSyncUuid}/pdf', [\App\Http\Controllers\Api\Tenant\SyncController::class, 'invoicePdf'])->name('documents.invoice-pdf');
+        Route::post('/documents/customers/{customerSyncUuid}/statement', [\App\Http\Controllers\Api\Tenant\SyncController::class, 'customerStatement'])->name('documents.customer-statement');
     });
 
     // Onboarding

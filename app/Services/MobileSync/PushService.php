@@ -25,8 +25,10 @@ use Illuminate\Support\Str;
  */
 class PushService
 {
-    public function __construct(private SyncRegistry $registry)
-    {
+    public function __construct(
+        private SyncRegistry $registry,
+        private InvoiceSyncService $invoiceSync,
+    ) {
     }
 
     /**
@@ -118,6 +120,19 @@ class PushService
 
         $def = $this->registry->get($table);
         $modelClass = Arr::get($def, 'model');
+
+        // Phase 2: voucher creation goes through InvoiceSyncService so
+        // double-entry, stock and voucher-number generation reuse the
+        // canonical posting flow rather than a generic mass-assign path.
+        if (
+            $action === MobileMutation::ACTION_CREATE
+            && Arr::get($def, 'custom_handler') === 'invoice_sync'
+        ) {
+            return $this->applyInvoiceCreate(
+                $tenant, $user, $device, $clientMutationId, $table,
+                $syncUuid, $baseVersion, $payload,
+            );
+        }
 
         try {
             return DB::transaction(function () use (
@@ -484,5 +499,65 @@ class PushService
             'errors' => $errors,
             'server_response' => null,
         ];
+    }
+
+    /**
+     * Phase 2: delegate voucher (invoice) creation to the dedicated
+     * InvoiceSyncService which mirrors the web posting flow exactly.
+     *
+     * @return array<string, mixed>
+     */
+    private function applyInvoiceCreate(
+        Tenant $tenant, User $user, MobileDevice $device,
+        string $clientMutationId, string $table, string $syncUuid,
+        ?int $baseVersion, array $payload,
+    ): array {
+        // If a voucher with this sync_uuid already exists, treat as
+        // idempotent success (mutation will already have been recorded
+        // by the earlier mutation-id short-circuit; this is just defence).
+        $existing = \App\Models\Voucher::query()
+            ->where('sync_uuid', $syncUuid)
+            ->first();
+        if ($existing) {
+            return $this->persistAndReturn(
+                tenant: $tenant, user: $user, device: $device,
+                clientMutationId: $clientMutationId, table: $table,
+                action: MobileMutation::ACTION_CREATE, syncUuid: $syncUuid,
+                baseVersion: $baseVersion, payload: $payload,
+                status: MobileMutation::STATUS_APPLIED,
+                serverResponse: [
+                    'server_id' => $existing->id,
+                    'server_version' => (int) ($existing->server_version ?? 0),
+                    'sync_uuid' => $existing->sync_uuid,
+                    'official_voucher_number' => $existing->voucher_number,
+                    'status' => $existing->status,
+                    'idempotent' => true,
+                ],
+            );
+        }
+
+        $result = $this->invoiceSync->applyCreate($tenant, $user, $device, $syncUuid, $payload);
+
+        if (!($result['ok'] ?? false)) {
+            return $this->persistAndReturn(
+                tenant: $tenant, user: $user, device: $device,
+                clientMutationId: $clientMutationId, table: $table,
+                action: MobileMutation::ACTION_CREATE, syncUuid: $syncUuid,
+                baseVersion: $baseVersion, payload: $payload,
+                status: MobileMutation::STATUS_FAILED,
+                code: $result['error_code'] ?? 'invoice_apply_failed',
+                message: $result['error_message'] ?? 'Could not apply invoice',
+                errors: $result['errors'] ?? null,
+            );
+        }
+
+        return $this->persistAndReturn(
+            tenant: $tenant, user: $user, device: $device,
+            clientMutationId: $clientMutationId, table: $table,
+            action: MobileMutation::ACTION_CREATE, syncUuid: $syncUuid,
+            baseVersion: $baseVersion, payload: $payload,
+            status: MobileMutation::STATUS_APPLIED,
+            serverResponse: $result['server_response'] ?? [],
+        );
     }
 }
