@@ -8,7 +8,7 @@
 <div class="space-y-6">
     <!-- Header -->
     <div class="flex items-center justify-between">
-        <a href="{{ route('tenant.inventory.categories.index', ['tenant' => $tenant->slug]) }}" 
+        <a href="{{ route('tenant.inventory.categories.index', ['tenant' => $tenant->slug]) }}"
            class="inline-flex items-center text-sm text-gray-600 hover:text-gray-900">
             <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
@@ -184,7 +184,7 @@
                                         <p class="text-sm text-gray-500">{{ $product->sku }}</p>
                                     </div>
                                     <div class="text-right">
-                                        <p class="text-sm font-medium text-gray-900">${{ number_format($product->price, 2) }}</p>
+                                        <p class="text-sm font-medium text-gray-900">₦{{ number_format($product->price, 2) }}</p>
                                         <p class="text-xs text-gray-500">Stock: {{ $product->stock_quantity }}</p>
                                     </div>
                                 </div>
@@ -300,11 +300,11 @@
                         @if($category->products->count() > 0)
                             <div class="flex items-center justify-between">
                                 <span class="text-sm text-gray-500">Avg. Product Price</span>
-                                <span class="text-sm font-medium text-gray-900">${{ number_format($category->products->avg('price'), 2) }}</span>
+                                <span class="text-sm font-medium text-gray-900">₦{{ number_format($category->products->avg('price'), 2) }}</span>
                             </div>
                             <div class="flex items-center justify-between">
                                 <span class="text-sm text-gray-500">Total Stock Value</span>
-                                <span class="text-sm font-medium text-gray-900">${{ number_format($category->products->sum(function($product) { return $product->price * $product->stock_quantity; }), 2) }}</span>
+                                <span class="text-sm font-medium text-gray-900">₦{{ number_format($category->products->sum(function($product) { return $product->price * $product->stock_quantity; }), 2) }}</span>
                             </div>
                         @endif
                     </div>
