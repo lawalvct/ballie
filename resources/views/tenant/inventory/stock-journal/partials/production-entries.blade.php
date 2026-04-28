@@ -4,7 +4,46 @@
 
     @php
         $productionSource = $stockJournal ?? $duplicateFrom ?? null;
+        $hasProductionLocations = !empty($stockLocationsEnabled) && isset($stockLocations) && $stockLocations->isNotEmpty();
     @endphp
+
+    @if ($hasProductionLocations)
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6 p-4 bg-gray-50 rounded-lg border border-gray-200">
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">
+                    Raw Material From <span class="text-red-500">*</span>
+                </label>
+                <select name="from_stock_location_id" required
+                    class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500">
+                    <option value="">Select source location...</option>
+                    @foreach ($stockLocations as $loc)
+                        <option value="{{ $loc->id }}"
+                            {{ (string) old('from_stock_location_id', $productionSource->from_stock_location_id ?? '') === (string) $loc->id ? 'selected' : '' }}>
+                            {{ $loc->name }}{{ $loc->is_main ? ' (Main)' : '' }}
+                        </option>
+                    @endforeach
+                </select>
+                <p class="mt-1 text-[11px] text-gray-500">Where raw materials are consumed from.</p>
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">
+                    Finished Goods To <span class="text-red-500">*</span>
+                </label>
+                <select name="to_stock_location_id" required
+                    class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500/20 focus:border-green-500">
+                    <option value="">Select destination location...</option>
+                    @foreach ($stockLocations as $loc)
+                        <option value="{{ $loc->id }}"
+                            {{ (string) old('to_stock_location_id', $productionSource->to_stock_location_id ?? '') === (string) $loc->id ? 'selected' : '' }}>
+                            {{ $loc->name }}{{ $loc->is_main ? ' (Main)' : '' }}
+                        </option>
+                    @endforeach
+                </select>
+                <p class="mt-1 text-[11px] text-gray-500">Where finished goods are received.</p>
+            </div>
+        </div>
+    @endif
+
     <div class="mb-6 rounded-xl border border-blue-200 bg-blue-50/60 p-4">
         <div class="flex items-start justify-between gap-4 mb-4">
             <div>

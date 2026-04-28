@@ -6,7 +6,9 @@ use App\Http\Controllers\Controller;
 use App\Models\Tenant;
 use App\Models\Product;
 use App\Models\StockMovement;
+use App\Models\StockLocation;
 use App\Models\ProductCategory;
+use App\Services\ModuleRegistry;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use Illuminate\Pagination\LengthAwarePaginator;
@@ -49,6 +51,22 @@ class InventoryReportsController extends Controller
         $sortBy = $request->get('sort_by', 'name'); // name, stock_value, current_stock
         $sortOrder = $request->get('sort_order', 'asc');
 
+        $stockLocationsEnabled = ModuleRegistry::isModuleEnabled($tenant, 'stock_locations');
+        $stockLocations = $stockLocationsEnabled
+            ? StockLocation::forTenant($tenant->id)->active()->orderBy('sort_order')->orderBy('name')->get()
+            : collect();
+        $locationId = $stockLocationsEnabled ? $request->get('stock_location_id') : null;
+        if ($locationId !== null && $locationId !== '') {
+            // Validate the location belongs to this tenant; otherwise ignore.
+            if (! $stockLocations->contains('id', (int) $locationId)) {
+                $locationId = null;
+            } else {
+                $locationId = (int) $locationId;
+            }
+        } else {
+            $locationId = null;
+        }
+
         // Build query for products
         $query = Product::where('tenant_id', $tenant->id)
             ->where('maintain_stock', true)
@@ -60,8 +78,8 @@ class InventoryReportsController extends Controller
         }
 
         // Get products and calculate stock as of date
-        $products = $query->get()->map(function ($product) use ($asOfDate) {
-            $stockData = $product->getStockValueAsOfDate($asOfDate, 'weighted_average');
+        $products = $query->get()->map(function ($product) use ($asOfDate, $locationId) {
+            $stockData = $product->getStockValueAsOfDate($asOfDate, 'weighted_average', $locationId);
 
             $product->calculated_stock = $stockData['quantity'];
             $product->calculated_value = $stockData['value'];
@@ -148,6 +166,10 @@ class InventoryReportsController extends Controller
             'totalStockQuantity' => $totalStockQuantity,
             'outOfStockCount' => $outOfStockCount,
             'lowStockCount' => $lowStockCount,
+            'stockLocationsEnabled' => $stockLocationsEnabled,
+            'stockLocations' => $stockLocations,
+            'stockLocationId' => $locationId,
+            'selectedLocation' => $locationId ? $stockLocations->firstWhere('id', $locationId) : null,
         ];
     }
 

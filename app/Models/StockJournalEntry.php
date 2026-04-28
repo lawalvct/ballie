@@ -21,6 +21,8 @@ class StockJournalEntry extends Model
         'reference_number',
         'narration',
         'entry_type',
+        'from_stock_location_id',
+        'to_stock_location_id',
         'operator_id',
         'assistant_operator_id',
         'production_batch_number',
@@ -127,6 +129,16 @@ class StockJournalEntry extends Model
     public function assistantOperator(): BelongsTo
     {
         return $this->belongsTo(Employee::class, 'assistant_operator_id');
+    }
+
+    public function fromStockLocation(): BelongsTo
+    {
+        return $this->belongsTo(StockLocation::class, 'from_stock_location_id');
+    }
+
+    public function toStockLocation(): BelongsTo
+    {
+        return $this->belongsTo(StockLocation::class, 'to_stock_location_id');
     }
 
     /**
@@ -275,8 +287,24 @@ class StockJournalEntry extends Model
      */
     private function updateStockMovements(): void
     {
+        $isTransfer = $this->entry_type === 'transfer';
+
         foreach ($this->items as $item) {
-            // Create stock movement record using the StockMovement helper method
+            if ($isTransfer) {
+                // Build paired OUT (from) + IN (to) virtual items so a single
+                // transfer row produces two stock movements.
+                $outItem = clone $item;
+                $outItem->movement_type = 'out';
+                $outItem->stock_location_id = $this->from_stock_location_id ?? $item->stock_location_id;
+                StockMovement::createFromStockJournal($this, $outItem);
+
+                $inItem = clone $item;
+                $inItem->movement_type = 'in';
+                $inItem->stock_location_id = $this->to_stock_location_id ?? $item->stock_location_id;
+                StockMovement::createFromStockJournal($this, $inItem);
+                continue;
+            }
+
             StockMovement::createFromStockJournal($this, $item);
         }
     }

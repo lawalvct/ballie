@@ -35,6 +35,7 @@ class ModuleRegistry
     const MODULE_SUPPORT          = 'support';
     const MODULE_HELP             = 'help';
     const MODULE_ONLINE_PAYMENTS  = 'online_payments';
+    const MODULE_STOCK_LOCATIONS  = 'stock_locations';
 
     /**
      * All known module keys.
@@ -58,6 +59,7 @@ class ModuleRegistry
         self::MODULE_SUPPORT,
         self::MODULE_HELP,
         self::MODULE_ONLINE_PAYMENTS,
+        self::MODULE_STOCK_LOCATIONS,
     ];
 
     /**
@@ -87,7 +89,7 @@ class ModuleRegistry
             'dashboard', 'accounting', 'inventory', 'crm',
             'procurement', 'payroll', 'banking', 'reports',
             'statutory', 'audit', 'admin', 'settings',
-            'support', 'help',
+            'support', 'help', 'stock_locations',
         ],
         'service' => [
             'dashboard', 'accounting', 'crm', 'projects',
@@ -99,7 +101,7 @@ class ModuleRegistry
             'projects', 'pos', 'ecommerce', 'procurement',
             'payroll', 'banking', 'reports', 'statutory',
             'audit', 'admin', 'settings', 'support', 'help',
-            'online_payments',
+            'online_payments', 'stock_locations',
         ],
     ];
 
@@ -125,6 +127,7 @@ class ModuleRegistry
         'support'     => ['name' => 'Support',      'description' => 'Help desk & support tickets',            'icon' => 'fas fa-headset'],
         'help'              => ['name' => 'Help',              'description' => 'Documentation & guides',                                       'icon' => 'fas fa-question-circle'],
         'online_payments'   => ['name' => 'Online Payments',   'description' => 'Collect invoice payments online via Nomba/Paystack with payout management', 'icon' => 'fas fa-credit-card'],
+        'stock_locations'   => ['name' => 'Stock Locations',   'description' => 'Track inventory by store, department, warehouse and WIP location',         'icon' => 'fas fa-map-marker-alt'],
     ];
 
     /**

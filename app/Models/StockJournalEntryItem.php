@@ -13,6 +13,7 @@ class StockJournalEntryItem extends Model
     protected $fillable = [
         'stock_journal_entry_id',
         'product_id',
+        'stock_location_id',
         'movement_type',
         'quantity',
         'unit_snapshot',

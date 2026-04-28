@@ -117,6 +117,9 @@
                 <div class="report-title">Stock Summary</div>
                 <div class="report-subtitle">As of {{ $asOfLabel }}</div>
                 <div class="report-subtitle">{{ $valueModeLabel }}</div>
+                @if(!empty($selectedLocation))
+                    <div class="report-subtitle">Location: {{ $selectedLocation->name }}</div>
+                @endif
                 <div class="report-subtitle muted">Generated {{ now()->format('d M Y, H:i') }}</div>
             </td>
         </tr>

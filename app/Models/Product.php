@@ -174,9 +174,13 @@ class Product extends Model
     // Date-based Stock Calculation Methods
 
     /**
-     * Calculate stock quantity as of a specific date
+     * Calculate stock quantity as of a specific date.
+     *
+     * @param  string|\DateTimeInterface|null  $date
+     * @param  bool  $includeTime
+     * @param  int|null  $locationId  Optional stock location filter.
      */
-    public function getStockAsOfDate($date = null, $includeTime = false)
+    public function getStockAsOfDate($date = null, $includeTime = false, $locationId = null)
     {
         $date = $date ?? now();
 
@@ -189,23 +193,34 @@ class Product extends Model
                 ->where('created_at', '<=', $date);
         }
 
+        if (!empty($locationId)) {
+            $query->where('stock_location_id', $locationId);
+        }
+
         return $query->sum('quantity') ?? 0;
     }
 
     /**
-     * Calculate stock value as of a specific date with different valuation methods
+     * Calculate stock value as of a specific date with different valuation methods.
+     *
+     * @param  string|\DateTimeInterface|null  $date
+     * @param  string  $valuationMethod
+     * @param  int|null  $locationId  Optional stock location filter.
      */
-    public function getStockValueAsOfDate($date = null, $valuationMethod = 'weighted_average')
+    public function getStockValueAsOfDate($date = null, $valuationMethod = 'weighted_average', $locationId = null)
     {
         $date = $date ?? now()->toDateString();
 
-        $movements = $this->stockMovements()
+        $query = $this->stockMovements()
             ->where('transaction_date', '<=', $date)
             ->orderBy('transaction_date', 'asc')
-            ->orderBy('created_at', 'asc')
-            ->get();
+            ->orderBy('created_at', 'asc');
 
-        return $this->calculateStockValue($movements, $valuationMethod);
+        if (!empty($locationId)) {
+            $query->where('stock_location_id', $locationId);
+        }
+
+        return $this->calculateStockValue($query->get(), $valuationMethod);
     }
 
     /**

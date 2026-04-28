@@ -43,6 +43,12 @@
 
         </div>
           <div class="flex items-center space-x-3">
+              @if (!empty($stockLocationsEnabled))
+                  <a href="{{ route('tenant.inventory.stock-locations.index', ['tenant' => $tenant->slug]) }}"
+                     class="inline-flex items-center px-4 py-2 bg-white border border-gray-300 rounded-lg font-semibold text-xs text-gray-700 uppercase tracking-widest shadow-sm hover:bg-gray-50">
+                      <i class="fas fa-map-marker-alt mr-2"></i> Locations
+                  </a>
+              @endif
               <a href="{{ route('tenant.inventory.index', ['tenant' => $tenant->slug, 'type' => 'transfer']) }}"
                class="inline-flex items-center px-4 py-2 bg-white border border-gray-300 rounded-lg font-semibold text-xs text-gray-700 uppercase tracking-widest shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 transition ease-in-out duration-150">
           <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">

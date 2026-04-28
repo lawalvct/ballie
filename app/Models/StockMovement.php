@@ -13,6 +13,9 @@ class StockMovement extends Model
     protected $fillable = [
         'tenant_id',
         'product_id',
+        'stock_location_id',
+        'from_stock_location_id',
+        'to_stock_location_id',
         'type',
         'quantity',
         'old_stock',
@@ -64,6 +67,39 @@ class StockMovement extends Model
         return $this->belongsTo(Product::class);
     }
 
+    public function stockLocation(): BelongsTo
+    {
+        return $this->belongsTo(StockLocation::class, 'stock_location_id');
+    }
+
+    public function fromStockLocation(): BelongsTo
+    {
+        return $this->belongsTo(StockLocation::class, 'from_stock_location_id');
+    }
+
+    public function toStockLocation(): BelongsTo
+    {
+        return $this->belongsTo(StockLocation::class, 'to_stock_location_id');
+    }
+
+    /**
+     * Resolve the default stock location id for a tenant when the
+     * stock_locations module is enabled. Returns null otherwise.
+     */
+    protected static function defaultLocationIdForTenant($tenantId): ?int
+    {
+        $tenant = \App\Models\Tenant::find($tenantId);
+        if (!$tenant) {
+            return null;
+        }
+
+        if (!\App\Services\ModuleRegistry::isModuleEnabled($tenant, 'stock_locations')) {
+            return null;
+        }
+
+        return optional(StockLocation::getMainForTenant($tenantId))->id;
+    }
+
     /**
      * Get the user who created the stock movement.
      */
@@ -86,10 +122,12 @@ class StockMovement extends Model
     public static function createFromInvoice($invoice, $item, $movementType = 'out')
     {
         $invoiceNumber = $invoice->invoice_number ?? $invoice->id;
+        $locationId = self::defaultLocationIdForTenant($invoice->tenant_id);
 
         return self::create([
             'tenant_id' => $invoice->tenant_id,
             'product_id' => $item->product_id,
+            'stock_location_id' => $locationId,
             'type' => $movementType,
             'quantity' => $movementType === 'out' ? -abs($item->quantity) : abs($item->quantity),
             'rate' => $item->rate ?? 0,
@@ -129,10 +167,12 @@ class StockMovement extends Model
 
         $quantity = $movementType === 'out' ? -abs($item['quantity']) : abs($item['quantity']);
         $newStock = $oldStock + $quantity;
+        $locationId = self::defaultLocationIdForTenant($voucher->tenant_id);
 
         return self::create([
             'tenant_id' => $voucher->tenant_id,
             'product_id' => $item['product_id'],
+            'stock_location_id' => $locationId,
             'type' => $movementType,
             'quantity' => $quantity,
             'rate' => $item['rate'] ?? 0,
@@ -156,7 +196,27 @@ class StockMovement extends Model
         $movementType = $item->movement_type === 'in' ? 'in' : 'out';
         $quantity = $movementType === 'out' ? -abs($item->quantity) : abs($item->quantity);
         $journalNumber = $stockJournal->journal_number ?? $stockJournal->id;
-        $isProduction = ($stockJournal->entry_type ?? null) === 'production';
+        $entryType = $stockJournal->entry_type ?? null;
+        $isProduction = $entryType === 'production';
+        $isTransfer = $entryType === 'transfer';
+
+        // Resolve location for this movement
+        $itemLocationId = $item->stock_location_id ?? null;
+        $fromLocationId = $stockJournal->from_stock_location_id ?? null;
+        $toLocationId = $stockJournal->to_stock_location_id ?? null;
+
+        if (!$itemLocationId) {
+            $itemLocationId = $movementType === 'out' ? $fromLocationId : $toLocationId;
+        }
+
+        // Backfill default Store when module is enabled but nothing was provided
+        if (!$itemLocationId) {
+            $itemLocationId = self::defaultLocationIdForTenant($stockJournal->tenant_id);
+        }
+
+        $transactionType = $isProduction
+            ? 'manufacturing'
+            : ($isTransfer ? ($movementType === 'out' ? 'transfer_out' : 'transfer_in') : 'stock_journal');
 
         // Calculate old stock before this movement using date-based calculation
         $product = \App\Models\Product::find($item->product_id);
@@ -166,13 +226,16 @@ class StockMovement extends Model
         return self::create([
             'tenant_id' => $stockJournal->tenant_id,
             'product_id' => $item->product_id,
+            'stock_location_id' => $itemLocationId,
+            'from_stock_location_id' => $isTransfer || $isProduction ? $fromLocationId : null,
+            'to_stock_location_id' => $isTransfer || $isProduction ? $toLocationId : null,
             'type' => $movementType,
             'quantity' => $quantity,
             'rate' => $item->rate ?? 0,
-            'transaction_type' => $isProduction ? 'manufacturing' : 'stock_journal',
+            'transaction_type' => $transactionType,
             'transaction_date' => $stockJournal->journal_date ?? now()->toDateString(),
             'transaction_reference' => $journalNumber,
-            'reference' => $item->remarks ?? ($isProduction ? "Production Report #{$journalNumber}" : "Stock Journal #{$journalNumber}"),
+            'reference' => $item->remarks ?? ($isProduction ? "Production Report #{$journalNumber}" : ($isTransfer ? "Stock Transfer #{$journalNumber}" : "Stock Journal #{$journalNumber}")),
             'source_transaction_type' => get_class($stockJournal),
             'source_transaction_id' => $stockJournal->id,
             'batch_number' => $item->batch_number,
@@ -205,10 +268,12 @@ class StockMovement extends Model
     public static function createFromPurchase($purchase, $item)
     {
         $purchaseNumber = $purchase->purchase_number ?? $purchase->id;
+        $locationId = self::defaultLocationIdForTenant($purchase->tenant_id);
 
         return self::create([
             'tenant_id' => $purchase->tenant_id,
             'product_id' => $item->product_id,
+            'stock_location_id' => $locationId,
             'type' => 'in',
             'quantity' => abs($item->quantity),
             'rate' => $item->rate ?? 0,

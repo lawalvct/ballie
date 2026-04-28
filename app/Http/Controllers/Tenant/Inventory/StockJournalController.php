@@ -82,7 +82,9 @@ class StockJournalController extends Controller
             'journalEntries',
             'tenant',
             'stats'
-        ));
+        ) + [
+            'stockLocationsEnabled' => \App\Services\ModuleRegistry::isModuleEnabled($tenant, 'stock_locations'),
+        ]);
     }
 
     /**
@@ -253,11 +255,18 @@ class StockJournalController extends Controller
 
         $employees = $this->productionEmployees($tenant);
 
+        $stockLocationsEnabled = \App\Services\ModuleRegistry::isModuleEnabled($tenant, 'stock_locations');
+        $stockLocations = $stockLocationsEnabled
+            ? \App\Models\StockLocation::where('tenant_id', $tenant->id)->where('is_active', true)->orderBy('sort_order')->orderBy('name')->get()
+            : collect();
+
         return view('tenant.inventory.stock-journal.create', compact(
             'tenant',
             'entryType',
             'products',
-            'employees'
+            'employees',
+            'stockLocations',
+            'stockLocationsEnabled'
         ));
     }
 
@@ -271,6 +280,8 @@ class StockJournalController extends Controller
             'entry_type' => 'required|in:consumption,production,adjustment,transfer',
             'reference_number' => 'nullable|string|max:100',
             'narration' => 'nullable|string|max:500',
+            'from_stock_location_id' => ['nullable', 'required_if:entry_type,transfer', Rule::exists('stock_locations', 'id')->where('tenant_id', $tenant->id)],
+            'to_stock_location_id' => ['nullable', 'required_if:entry_type,transfer', 'different:from_stock_location_id', Rule::exists('stock_locations', 'id')->where('tenant_id', $tenant->id)],
             'operator_id' => ['nullable', 'required_if:entry_type,production', Rule::exists('employees', 'id')->where('tenant_id', $tenant->id)],
             'assistant_operator_id' => ['nullable', 'different:operator_id', Rule::exists('employees', 'id')->where('tenant_id', $tenant->id)],
             'production_batch_number' => 'nullable|string|max:100',
@@ -283,6 +294,7 @@ class StockJournalController extends Controller
             'items' => 'required|array|min:1',
             'items.*.product_id' => ['required', Rule::exists('products', 'id')->where('tenant_id', $tenant->id)],
             'items.*.movement_type' => 'required|in:in,out',
+            'items.*.stock_location_id' => ['nullable', Rule::exists('stock_locations', 'id')->where('tenant_id', $tenant->id)],
             'items.*.quantity' => 'required|numeric|min:0.0001',
             'items.*.rate' => 'required|numeric|min:0',
             'items.*.rejected_quantity' => 'nullable|numeric|min:0',
@@ -300,6 +312,8 @@ class StockJournalController extends Controller
                 'entry_type' => $request->entry_type,
                 'reference_number' => $request->reference_number,
                 'narration' => $request->narration,
+                'from_stock_location_id' => $request->from_stock_location_id,
+                'to_stock_location_id' => $request->to_stock_location_id,
                 ...$this->productionHeaderData($request),
                 'status' => 'draft',
                 'created_by' => Auth::id(),
@@ -312,6 +326,7 @@ class StockJournalController extends Controller
                 StockJournalEntryItem::create([
                     'stock_journal_entry_id' => $journalEntry->id,
                     'product_id' => $itemData['product_id'],
+                    'stock_location_id' => $itemData['stock_location_id'] ?? null,
                     'movement_type' => $itemData['movement_type'],
                     'quantity' => $itemData['quantity'],
                     'unit_snapshot' => $product->primaryUnit->symbol ?? $product->primaryUnit->name ?? null,
@@ -379,12 +394,19 @@ class StockJournalController extends Controller
         $employees = $this->productionEmployees($tenant);
         $entryType = $stockJournal->entry_type;
 
+        $stockLocationsEnabled = \App\Services\ModuleRegistry::isModuleEnabled($tenant, 'stock_locations');
+        $stockLocations = $stockLocationsEnabled
+            ? \App\Models\StockLocation::where('tenant_id', $tenant->id)->where('is_active', true)->orderBy('sort_order')->orderBy('name')->get()
+            : collect();
+
         return view('tenant.inventory.stock-journal.create', compact(
             'tenant',
             'stockJournal',
             'products',
             'employees',
-            'entryType'
+            'entryType',
+            'stockLocations',
+            'stockLocationsEnabled'
         ));
     }
 
@@ -405,6 +427,8 @@ class StockJournalController extends Controller
             'entry_type' => 'required|in:consumption,production,adjustment,transfer',
             'reference_number' => 'nullable|string|max:100',
             'narration' => 'nullable|string|max:500',
+            'from_stock_location_id' => ['nullable', 'required_if:entry_type,transfer', Rule::exists('stock_locations', 'id')->where('tenant_id', $tenant->id)],
+            'to_stock_location_id' => ['nullable', 'required_if:entry_type,transfer', 'different:from_stock_location_id', Rule::exists('stock_locations', 'id')->where('tenant_id', $tenant->id)],
             'operator_id' => ['nullable', 'required_if:entry_type,production', Rule::exists('employees', 'id')->where('tenant_id', $tenant->id)],
             'assistant_operator_id' => ['nullable', 'different:operator_id', Rule::exists('employees', 'id')->where('tenant_id', $tenant->id)],
             'production_batch_number' => 'nullable|string|max:100',
@@ -417,6 +441,7 @@ class StockJournalController extends Controller
             'items' => 'required|array|min:1',
             'items.*.product_id' => ['required', Rule::exists('products', 'id')->where('tenant_id', $tenant->id)],
             'items.*.movement_type' => 'required|in:in,out',
+            'items.*.stock_location_id' => ['nullable', Rule::exists('stock_locations', 'id')->where('tenant_id', $tenant->id)],
             'items.*.quantity' => 'required|numeric|min:0.0001',
             'items.*.rate' => 'required|numeric|min:0',
             'items.*.rejected_quantity' => 'nullable|numeric|min:0',
@@ -434,6 +459,8 @@ class StockJournalController extends Controller
                 'entry_type' => $request->entry_type,
                 'reference_number' => $request->reference_number,
                 'narration' => $request->narration,
+                'from_stock_location_id' => $request->from_stock_location_id,
+                'to_stock_location_id' => $request->to_stock_location_id,
                 ...$this->productionHeaderData($request),
                 'updated_by' => Auth::id(),
             ]);
@@ -451,6 +478,7 @@ class StockJournalController extends Controller
                 StockJournalEntryItem::create([
                     'stock_journal_entry_id' => $stockJournal->id,
                     'product_id' => $itemData['product_id'],
+                    'stock_location_id' => $itemData['stock_location_id'] ?? null,
                     'movement_type' => $itemData['movement_type'],
                     'quantity' => $itemData['quantity'],
                     'unit_snapshot' => $product->primaryUnit->symbol ?? $product->primaryUnit->name ?? null,

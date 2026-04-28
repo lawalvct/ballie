@@ -542,6 +542,17 @@ Route::prefix('ledger-accounts')->name('ledger-accounts.')->group(function () {
             Route::post('units/bulk', [UnitController::class, 'bulk'])->name('units.bulk');
             Route::post('units/bulk-action', [UnitController::class, 'bulkAction'])->name('units.bulk-action');
 
+            // Stock Locations (gated by stock_locations module via UI)
+            Route::prefix('stock-locations')->name('stock-locations.')->group(function () {
+                Route::get('/', [\App\Http\Controllers\Tenant\Inventory\StockLocationController::class, 'index'])->name('index');
+                Route::get('/create', [\App\Http\Controllers\Tenant\Inventory\StockLocationController::class, 'create'])->name('create');
+                Route::post('/', [\App\Http\Controllers\Tenant\Inventory\StockLocationController::class, 'store'])->name('store');
+                Route::get('/{stockLocation}/edit', [\App\Http\Controllers\Tenant\Inventory\StockLocationController::class, 'edit'])->name('edit');
+                Route::put('/{stockLocation}', [\App\Http\Controllers\Tenant\Inventory\StockLocationController::class, 'update'])->name('update');
+                Route::patch('/{stockLocation}/set-main', [\App\Http\Controllers\Tenant\Inventory\StockLocationController::class, 'setMain'])->name('set-main');
+                Route::delete('/{stockLocation}', [\App\Http\Controllers\Tenant\Inventory\StockLocationController::class, 'destroy'])->name('destroy');
+            });
+
             // Stock Journal Entries
             Route::prefix('stock-journal')->name('stock-journal.')->group(function () {
                 Route::get('/', [StockJournalController::class, 'index'])->name('index');

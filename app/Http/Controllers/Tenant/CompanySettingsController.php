@@ -246,11 +246,19 @@ class CompanySettingsController extends Controller
         $onlinePaymentsNewlyEnabled = in_array('online_payments', $enabledModules)
             && !in_array('online_payments', $previousModules);
 
+        $stockLocationsNewlyEnabled = in_array('stock_locations', $enabledModules)
+            && !in_array('stock_locations', $previousModules);
+
         $tenant->update(['enabled_modules' => $enabledModules]);
 
         // Create Ballie Collections ledger account when online_payments is first enabled
         if ($onlinePaymentsNewlyEnabled) {
             $this->createBallieCollectionsAccount($tenant);
+        }
+
+        // Auto-create default Store location when stock_locations is first enabled
+        if ($stockLocationsNewlyEnabled) {
+            \App\Models\StockLocation::ensureMainForTenant($tenant->id);
         }
 
         return redirect()

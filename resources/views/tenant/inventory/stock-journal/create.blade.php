@@ -500,92 +500,85 @@ function productionEntryForm() {
 
 function transferEntryForm() {
     return {
-        fromLocation: '',
-        toLocation: '',
-        fromItems: [],
-        toItems: [],
-        fromTotal: 0,
-        toTotal: 0,
+        fromLocationId: @json((string) old('from_stock_location_id', $stockJournal->from_stock_location_id ?? '')),
+        toLocationId: @json((string) old('to_stock_location_id', $stockJournal->to_stock_location_id ?? '')),
+        transferItems: [],
 
-        get difference() {
-            return this.fromTotal - this.toTotal;
-        },
-
-        get isBalanced() {
-            return Math.abs(this.difference) < 0.01;
-        },
-
-        addFromItem() {
-            this.fromItems.push({
+        addTransferItem() {
+            this.transferItems.push({
                 product_id: '',
                 current_stock: 0,
+                unit: '',
                 quantity: 0,
                 rate: 0,
-                amount: 0
+                amount: 0,
+                remarks: '',
             });
         },
 
-        addToItem() {
-            this.toItems.push({
-                product_id: '',
-                current_stock: 0,
-                quantity: 0,
-                rate: 0,
-                amount: 0
+        removeTransferItem(index) {
+            this.transferItems.splice(index, 1);
+        },
+
+        onTransferProductSelect(index) {
+            // Picker already populated product_id, current_stock, rate, unit.
+            this.onTransferAmountChange(index);
+        },
+
+        onTransferAmountChange(index) {
+            const item = this.transferItems[index];
+            item.amount = (parseFloat(item.quantity) || 0) * (parseFloat(item.rate) || 0);
+        },
+
+        onFromLocationChange() {
+            // Future: refetch per-location stock for each row via AJAX.
+        },
+
+        totalTransferQuantity() {
+            return this.transferItems
+                .reduce((sum, item) => sum + (parseFloat(item.quantity) || 0), 0)
+                .toFixed(4);
+        },
+
+        totalTransferAmount() {
+            return this.transferItems
+                .reduce((sum, item) => sum + (parseFloat(item.amount) || 0), 0);
+        },
+
+        canPostTransfer() {
+            if (!this.fromLocationId || !this.toLocationId) return false;
+            if (this.fromLocationId === this.toLocationId) return false;
+            if (this.transferItems.length === 0) return false;
+            return this.transferItems.every(i => i.product_id && parseFloat(i.quantity) > 0);
+        },
+
+        formatTransferCurrency(amount) {
+            return '₦' + parseFloat(amount || 0).toLocaleString('en-NG', {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2,
             });
-        },
-
-        removeFromItem(index) {
-            this.fromItems.splice(index, 1);
-            this.calculateFromTotal();
-        },
-
-        removeToItem(index) {
-            this.toItems.splice(index, 1);
-            this.calculateToTotal();
-        },
-
-        updateFromProductInfo(index) {
-            const select = event.target;
-            const option = select.options[select.selectedIndex];
-            this.fromItems[index].current_stock = parseFloat(option.dataset.stock || 0);
-            this.fromItems[index].rate = parseFloat(option.dataset.rate || 0);
-            this.calculateFromAmount(index);
-        },
-
-        updateToProductInfo(index) {
-            const select = event.target;
-            const option = select.options[select.selectedIndex];
-            this.toItems[index].current_stock = parseFloat(option.dataset.stock || 0);
-            this.toItems[index].rate = parseFloat(option.dataset.rate || 0);
-            this.calculateToAmount(index);
-        },
-
-        calculateFromAmount(index) {
-            const item = this.fromItems[index];
-            item.amount = (parseFloat(item.quantity) || 0) * (parseFloat(item.rate) || 0);
-            this.calculateFromTotal();
-        },
-
-        calculateToAmount(index) {
-            const item = this.toItems[index];
-            item.amount = (parseFloat(item.quantity) || 0) * (parseFloat(item.rate) || 0);
-            this.calculateToTotal();
-        },
-
-        calculateFromTotal() {
-            this.fromTotal = this.fromItems.reduce((sum, item) => sum + (parseFloat(item.amount) || 0), 0);
-        },
-
-        calculateToTotal() {
-            this.toTotal = this.toItems.reduce((sum, item) => sum + (parseFloat(item.amount) || 0), 0);
         },
 
         init() {
-            this.addFromItem();
-            this.addToItem();
-        }
-    }
+            @if (isset($stockJournal) && $stockJournal->entry_type === 'transfer')
+                @foreach ($stockJournal->items->where('movement_type', 'out') as $item)
+                    this.transferItems.push({
+                        product_id: @json((string) $item->product_id),
+                        current_stock: {{ (float) $item->stock_before }},
+                        unit: @json($item->unit_snapshot ?: ($item->product->primaryUnit->symbol ?? $item->product->primaryUnit->name ?? '')),
+                        quantity: {{ (float) $item->quantity }},
+                        rate: {{ (float) $item->rate }},
+                        amount: {{ (float) $item->amount }},
+                        remarks: @json($item->remarks ?? ''),
+                    });
+                @endforeach
+            @endif
+
+            if (this.transferItems.length === 0) {
+                this.addTransferItem();
+            }
+        },
+    };
 }
 
 function journalEntryForm() {

@@ -14,6 +14,7 @@
         'stock_status' => $stockStatus ?? null,
         'sort_by'      => $sortBy ?? null,
         'sort_order'   => $sortOrder ?? null,
+        'stock_location_id' => $stockLocationId ?? null,
     ], fn($v) => $v !== null && $v !== '');
     $pdfWithUrl    = route('tenant.reports.stock-summary.pdf', array_merge(['tenant' => $tenant->slug], $pdfQuery));
     $pdfWithoutUrl = route('tenant.reports.stock-summary.pdf', array_merge(['tenant' => $tenant->slug], $pdfQuery, ['hide_values' => 1]));
@@ -163,7 +164,7 @@
     <div class="print-only print-header">
         <div class="print-company">{{ $tenant->company_name ?? $tenant->name }}</div>
         <div class="print-title">Stock Summary Report</div>
-        <div class="print-meta">As of {{ \Carbon\Carbon::parse($asOfDate)->format('d M Y') }} | Generated {{ now()->format('d M Y, H:i') }}</div>
+        <div class="print-meta">As of {{ \Carbon\Carbon::parse($asOfDate)->format('d M Y') }} | Generated {{ now()->format('d M Y, H:i') }}@if(!empty($selectedLocation)) | Location: {{ $selectedLocation->name }}@endif</div>
         <div class="print-meta">Products: {{ number_format($totalProducts) }} | Stock Value: NGN {{ number_format($totalStockValue, 2) }} | Total Qty: {{ number_format($totalStockQuantity, 2) }} | Low: {{ number_format($lowStockCount) }} | Out: {{ number_format($outOfStockCount) }}</div>
     </div>
 
@@ -241,6 +242,27 @@
                         <option value="current_stock" {{ $sortBy === 'current_stock' ? 'selected' : '' }}>Stock Quantity</option>
                     </select>
                 </div>
+
+                @if(!empty($stockLocationsEnabled) && $stockLocations->isNotEmpty())
+                    <!-- Stock Location Filter -->
+                    <div>
+                        <label for="stock_location_id" class="block text-sm font-medium text-gray-700 mb-2">
+                            <svg class="w-4 h-4 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
+                            </svg>
+                            Location
+                        </label>
+                        <select name="stock_location_id" id="stock_location_id" class="block w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 transition-all">
+                            <option value="">All Locations</option>
+                            @foreach($stockLocations as $location)
+                                <option value="{{ $location->id }}" {{ (string) ($stockLocationId ?? '') === (string) $location->id ? 'selected' : '' }}>
+                                    {{ $location->name }}{{ $location->is_main ? ' (Main)' : '' }}
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
+                @endif
             </div>
 
             <!-- Action Buttons -->
@@ -275,6 +297,12 @@
             </div>
             <div class="text-sm text-gray-600">
                 Report Date: <span class="font-semibold text-gray-900">{{ \Carbon\Carbon::parse($asOfDate)->format('M d, Y') }}</span>
+                @if(!empty($selectedLocation))
+                    <span class="ml-3 inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-50 text-blue-700 border border-blue-200">
+                        <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                        {{ $selectedLocation->name }}
+                    </span>
+                @endif
             </div>
         </div>
         <div class="overflow-x-auto">

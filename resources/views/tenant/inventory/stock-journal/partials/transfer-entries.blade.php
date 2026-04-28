@@ -1,214 +1,179 @@
-<!-- Transfer Entries: Two-sided view (FROM location → TO location) -->
+<!-- Transfer Entry: single-row layout (From Location -> To Location) -->
 <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-    <h3 class="text-lg font-semibold text-gray-900 mb-6">Stock Transfer Entry</h3>
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6">
+        <div>
+            <h3 class="text-lg font-semibold text-gray-900">Stock Transfer</h3>
+            <p class="text-xs text-gray-500 mt-1">Move stock from one location to another. The same items leave the source and arrive at the destination.</p>
+        </div>
+        <span class="inline-flex items-center self-start rounded-full bg-amber-50 border border-amber-200 px-3 py-1 text-xs font-medium text-amber-800">
+            <i class="fas fa-exchange-alt mr-1.5"></i> Transfer
+        </span>
+    </div>
+
+    @php
+        $hasLocations = !empty($stockLocationsEnabled) && isset($stockLocations) && $stockLocations->isNotEmpty();
+    @endphp
+
+    @if (!$hasLocations)
+        <div class="rounded-lg bg-amber-50 border border-amber-200 px-4 py-3 text-sm text-amber-800 mb-6">
+            <i class="fas fa-exclamation-triangle mr-2"></i>
+            Stock Transfers require the <strong>Stock Locations</strong> module to be enabled and at least two locations to be configured.
+            <a href="{{ route('tenant.inventory.stock-locations.index', ['tenant' => $tenant->slug]) }}" class="underline font-semibold">Manage locations</a>.
+        </div>
+    @endif
 
     <!-- Location Selection -->
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6 p-4 bg-gray-50 rounded-lg border border-gray-200">
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6 p-4 bg-gray-50 rounded-lg border border-gray-200">
         <div>
             <label class="block text-sm font-medium text-gray-700 mb-2">
-                FROM Location/Branch <span class="text-red-500">*</span>
+                From Location <span class="text-red-500">*</span>
             </label>
-                 <input type="text" name="from_location" x-model="fromLocation" required
-                     class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500/20 focus:border-red-500"
-                   placeholder="e.g., Main Warehouse, Lagos Branch">
+            <select name="from_stock_location_id" x-model="fromLocationId" @change="onFromLocationChange()" required
+                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500">
+                <option value="">Select source location...</option>
+                @if ($hasLocations)
+                    @foreach ($stockLocations as $loc)
+                        <option value="{{ $loc->id }}"
+                            {{ (string) old('from_stock_location_id', $stockJournal->from_stock_location_id ?? '') === (string) $loc->id ? 'selected' : '' }}>
+                            {{ $loc->name }}{{ $loc->is_main ? ' (Main)' : '' }}
+                        </option>
+                    @endforeach
+                @endif
+            </select>
         </div>
         <div>
             <label class="block text-sm font-medium text-gray-700 mb-2">
-                TO Location/Branch <span class="text-red-500">*</span>
+                To Location <span class="text-red-500">*</span>
             </label>
-                 <input type="text" name="to_location" x-model="toLocation" required
-                     class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500/20 focus:border-green-500"
-                   placeholder="e.g., Retail Store, Abuja Branch">
+            <select name="to_stock_location_id" x-model="toLocationId" required
+                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500/20 focus:border-green-500">
+                <option value="">Select destination location...</option>
+                @if ($hasLocations)
+                    @foreach ($stockLocations as $loc)
+                        <option value="{{ $loc->id }}"
+                            {{ (string) old('to_stock_location_id', $stockJournal->to_stock_location_id ?? '') === (string) $loc->id ? 'selected' : '' }}>
+                            {{ $loc->name }}{{ $loc->is_main ? ' (Main)' : '' }}
+                        </option>
+                    @endforeach
+                @endif
+            </select>
+            <p x-show="fromLocationId && toLocationId && fromLocationId === toLocationId" class="mt-1 text-xs text-red-600">
+                From and To locations must be different.
+            </p>
         </div>
     </div>
 
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <!-- LEFT SIDE: FROM Location (OUT) -->
-        <div class="border border-red-200 rounded-xl p-4 bg-red-50/60">
-            <div class="flex items-center justify-between mb-4">
-                <h4 class="font-semibold text-red-800 flex items-center">
-                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"></path>
-                    </svg>
-                    FROM Location (OUT)
-                </h4>
-                <button type="button" @click="addFromItem()"
-                    class="px-3 py-1 bg-red-600 text-white text-sm rounded-lg shadow-sm hover:bg-red-700">
-                    + Add Item
-                </button>
-            </div>
+    <!-- Items Table -->
+    <div class="border border-gray-200 rounded-xl">
+        <div class="flex items-center justify-between p-4 border-b border-gray-200 bg-gray-50 rounded-t-xl">
+            <h4 class="text-sm font-semibold text-gray-800 flex items-center">
+                <i class="fas fa-boxes mr-2 text-gray-500"></i> Items to Transfer
+            </h4>
+            <button type="button" @click="addTransferItem()"
+                class="inline-flex items-center px-3 py-1.5 bg-primary-600 text-white text-xs font-semibold rounded-lg shadow-sm hover:bg-primary-700">
+                <i class="fas fa-plus mr-1.5"></i> Add Item
+            </button>
+        </div>
 
-            <div class="space-y-3">
-                <template x-for="(item, index) in fromItems" :key="index">
-                    <div class="bg-white rounded-lg p-3 border border-red-200">
-                        <div class="grid grid-cols-12 gap-2 items-start">
-                            <div class="col-span-5">
-                                <label class="text-xs text-gray-600">Product</label>
+        <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-white">
+                    <tr>
+                        <th class="px-3 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider w-2/5">Product</th>
+                        <th class="px-3 py-3 text-right text-xs font-semibold text-gray-600 uppercase tracking-wider w-24">Stock at Source</th>
+                        <th class="px-3 py-3 text-right text-xs font-semibold text-gray-600 uppercase tracking-wider w-24">Quantity</th>
+                        <th class="px-3 py-3 text-right text-xs font-semibold text-gray-600 uppercase tracking-wider w-28">Rate</th>
+                        <th class="px-3 py-3 text-right text-xs font-semibold text-gray-600 uppercase tracking-wider w-28">Amount</th>
+                        <th class="px-3 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider w-32">Remarks</th>
+                        <th class="px-3 py-3 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider w-12"></th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-100">
+                    <template x-for="(item, index) in transferItems" :key="index">
+                        <tr class="hover:bg-gray-50/60">
+                            <td class="px-3 py-2 align-top">
                                 @include('tenant.inventory.stock-journal.partials._product-picker', [
                                     'rateField' => 'purchase_rate',
-                                    'onSelect'  => 'calculateFromAmount(index)',
-                                    'accent'    => 'red',
+                                    'onSelect'  => 'onTransferProductSelect(index)',
+                                    'accent'    => 'primary',
                                 ])
-                            </div>
-                            <div class="col-span-2">
-                                <label class="text-xs text-gray-600">Stock</label>
-                                    <input type="text" x-model="item.current_stock" readonly
-                                        class="w-full px-2 py-1 text-sm border rounded-lg bg-gray-50 text-gray-600">
-                            </div>
-                            <div class="col-span-2">
-                                <label class="text-xs text-gray-600">Qty</label>
-                                    <input type="number" x-model="item.quantity" @input="calculateFromAmount(index)"
-                                        class="w-full px-2 py-1 text-sm border rounded-lg focus:ring-2 focus:ring-red-500/20" step="0.01" min="0">
-                            </div>
-                            <div class="col-span-2">
-                                <label class="text-xs text-gray-600">Rate</label>
-                                    <input type="number" x-model="item.rate" @input="calculateFromAmount(index)"
-                                        class="w-full px-2 py-1 text-sm border rounded-lg focus:ring-2 focus:ring-red-500/20" step="0.01" min="0">
-                            </div>
-                            <div class="col-span-1 flex items-end">
-                                <button type="button" @click="removeFromItem(index)"
-                                    class="p-1 text-red-600 hover:bg-red-100 rounded-lg">
-                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-                                    </svg>
+                                <input type="hidden" :name="`items[${index}][product_id]`" :value="item.product_id">
+                                <input type="hidden" :name="`items[${index}][movement_type]`" value="out">
+                                <input type="hidden" :name="`items[${index}][stock_location_id]`" :value="fromLocationId">
+                            </td>
+                            <td class="px-3 py-2 align-top text-right">
+                                <span class="text-sm text-gray-700" x-text="(parseFloat(item.current_stock) || 0).toFixed(2) + ' ' + (item.unit || '')"></span>
+                            </td>
+                            <td class="px-3 py-2 align-top">
+                                <input type="number" :name="`items[${index}][quantity]`" x-model="item.quantity"
+                                       @input="onTransferAmountChange(index)"
+                                       step="0.0001" min="0.0001" required
+                                       class="w-full px-2 py-1.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 text-right">
+                                <p x-show="parseFloat(item.quantity) > parseFloat(item.current_stock || 0)"
+                                   class="mt-1 text-[11px] text-red-600">Exceeds source stock</p>
+                            </td>
+                            <td class="px-3 py-2 align-top">
+                                <input type="number" :name="`items[${index}][rate]`" x-model="item.rate"
+                                       @input="onTransferAmountChange(index)"
+                                       step="0.01" min="0" required
+                                       class="w-full px-2 py-1.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 text-right">
+                            </td>
+                            <td class="px-3 py-2 align-top text-right">
+                                <span class="text-sm font-medium text-gray-900" x-text="formatTransferCurrency(item.amount)"></span>
+                            </td>
+                            <td class="px-3 py-2 align-top">
+                                <input type="text" :name="`items[${index}][remarks]`" x-model="item.remarks"
+                                       placeholder="Optional"
+                                       class="w-full px-2 py-1.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500">
+                            </td>
+                            <td class="px-3 py-2 align-top text-center">
+                                <button type="button" @click="removeTransferItem(index)"
+                                        class="p-1 rounded text-red-600 hover:text-red-800 hover:bg-red-50">
+                                    <i class="fas fa-trash text-sm"></i>
                                 </button>
-                            </div>
-                        </div>
-                        <div class="mt-2 text-right">
-                            <span class="text-xs text-gray-600">Amount: </span>
-                            <span class="text-sm font-semibold text-red-700" x-text="'₦' + (item.amount || 0).toLocaleString('en-NG', {minimumFractionDigits: 2})"></span>
-                        </div>
-                    </div>
-                </template>
-            </div>
-
-            <div class="mt-4 pt-3 border-t border-red-300">
-                <div class="flex justify-between items-center">
-                    <span class="font-semibold text-red-800">Total OUT:</span>
-                    <span class="text-lg font-bold text-red-700" x-text="'₦' + fromTotal.toLocaleString('en-NG', {minimumFractionDigits: 2})"></span>
-                </div>
-            </div>
+                            </td>
+                        </tr>
+                    </template>
+                    <tr x-show="transferItems.length === 0">
+                        <td colspan="7" class="px-3 py-8 text-center text-sm text-gray-500">
+                            No items added yet. Click <span class="font-semibold">Add Item</span> to get started.
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
         </div>
 
-        <!-- RIGHT SIDE: TO Location (IN) -->
-        <div class="border border-green-200 rounded-xl p-4 bg-green-50/60">
-            <div class="flex items-center justify-between mb-4">
-                <h4 class="font-semibold text-green-800 flex items-center">
-                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16l-4-4m0 0l4-4m-4 4h18"></path>
-                    </svg>
-                    TO Location (IN)
-                </h4>
-                <button type="button" @click="addToItem()"
-                    class="px-3 py-1 bg-green-600 text-white text-sm rounded-lg shadow-sm hover:bg-green-700">
-                    + Add Item
-                </button>
+        <div class="flex flex-col sm:flex-row sm:justify-end gap-4 p-4 border-t border-gray-200 bg-gray-50 rounded-b-xl">
+            <div class="text-sm text-gray-600">
+                Items: <span class="font-semibold text-gray-900" x-text="transferItems.length"></span>
             </div>
-
-            <div class="space-y-3">
-                <template x-for="(item, index) in toItems" :key="index">
-                    <div class="bg-white rounded-lg p-3 border border-green-200">
-                        <div class="grid grid-cols-12 gap-2 items-start">
-                            <div class="col-span-5">
-                                <label class="text-xs text-gray-600">Product</label>
-                                @include('tenant.inventory.stock-journal.partials._product-picker', [
-                                    'rateField' => 'purchase_rate',
-                                    'onSelect'  => 'calculateToAmount(index)',
-                                    'accent'    => 'green',
-                                ])
-                            </div>
-                            <div class="col-span-2">
-                                <label class="text-xs text-gray-600">Stock</label>
-                                    <input type="text" x-model="item.current_stock" readonly
-                                        class="w-full px-2 py-1 text-sm border rounded-lg bg-gray-50 text-gray-600">
-                            </div>
-                            <div class="col-span-2">
-                                <label class="text-xs text-gray-600">Qty</label>
-                                    <input type="number" x-model="item.quantity" @input="calculateToAmount(index)"
-                                        class="w-full px-2 py-1 text-sm border rounded-lg focus:ring-2 focus:ring-green-500/20" step="0.01" min="0">
-                            </div>
-                            <div class="col-span-2">
-                                <label class="text-xs text-gray-600">Rate</label>
-                                    <input type="number" x-model="item.rate" @input="calculateToAmount(index)"
-                                        class="w-full px-2 py-1 text-sm border rounded-lg focus:ring-2 focus:ring-green-500/20" step="0.01" min="0">
-                            </div>
-                            <div class="col-span-1 flex items-end">
-                                <button type="button" @click="removeToItem(index)"
-                                    class="p-1 text-red-600 hover:bg-red-100 rounded-lg">
-                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-                                    </svg>
-                                </button>
-                            </div>
-                        </div>
-                        <div class="mt-2 text-right">
-                            <span class="text-xs text-gray-600">Amount: </span>
-                            <span class="text-sm font-semibold text-green-700" x-text="'₦' + (item.amount || 0).toLocaleString('en-NG', {minimumFractionDigits: 2})"></span>
-                        </div>
-                    </div>
-                </template>
+            <div class="text-sm text-gray-600">
+                Total Quantity: <span class="font-semibold text-gray-900" x-text="totalTransferQuantity()"></span>
             </div>
-
-            <div class="mt-4 pt-3 border-t border-green-300">
-                <div class="flex justify-between items-center">
-                    <span class="font-semibold text-green-800">Total IN:</span>
-                    <span class="text-lg font-bold text-green-700" x-text="'₦' + toTotal.toLocaleString('en-NG', {minimumFractionDigits: 2})"></span>
-                </div>
+            <div class="text-sm text-gray-600">
+                Total Value: <span class="font-semibold text-primary-700" x-text="formatTransferCurrency(totalTransferAmount())"></span>
             </div>
         </div>
     </div>
-
-    <!-- Balance Check -->
-    <div class="mt-6 p-4 rounded-lg" :class="isBalanced ? 'bg-green-100 border border-green-300' : 'bg-yellow-100 border border-yellow-300'">
-        <div class="flex items-center justify-between">
-            <div class="flex items-center">
-                <svg class="w-5 h-5 mr-2" :class="isBalanced ? 'text-green-600' : 'text-yellow-600'" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                </svg>
-                <span class="font-semibold" :class="isBalanced ? 'text-green-800' : 'text-yellow-800'">
-                    <span x-show="isBalanced">Transfer Balanced</span>
-                    <span x-show="!isBalanced">Transfer Not Balanced</span>
-                </span>
-            </div>
-            <div class="text-right">
-                <div class="text-sm text-gray-600">Difference:</div>
-                <div class="text-lg font-bold" :class="isBalanced ? 'text-green-700' : 'text-yellow-700'" x-text="'₦' + Math.abs(difference).toLocaleString('en-NG', {minimumFractionDigits: 2})"></div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Hidden inputs to format data for backend -->
-    <template x-for="(item, index) in fromItems" :key="'from-' + index">
-        <div>
-            <input type="hidden" :name="`items[${index}][product_id]`" x-model="item.product_id">
-            <input type="hidden" :name="`items[${index}][quantity]`" x-model="item.quantity">
-            <input type="hidden" :name="`items[${index}][rate]`" x-model="item.rate">
-            <input type="hidden" :name="`items[${index}][movement_type]`" value="out">
-        </div>
-    </template>
-
-    <template x-for="(item, index) in toItems" :key="'to-' + index">
-        <div>
-            <input type="hidden" :name="`items[${fromItems.length + index}][product_id]`" x-model="item.product_id">
-            <input type="hidden" :name="`items[${fromItems.length + index}][quantity]`" x-model="item.quantity">
-            <input type="hidden" :name="`items[${fromItems.length + index}][rate]`" x-model="item.rate">
-            <input type="hidden" :name="`items[${fromItems.length + index}][movement_type]`" value="in">
-        </div>
-    </template>
 
     <!-- Action Buttons -->
     <div class="mt-6 flex items-center justify-end gap-3">
-        <a href="{{ route('tenant.inventory.stock-journal.index', $tenant->slug) }}"
+        <a href="{{ route('tenant.inventory.stock-journal.index', ['tenant' => $tenant->slug]) }}"
            class="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50">
             Cancel
         </a>
-        <button type="submit" name="action" value="save" @click="$el.form.querySelector('#stock-journal-action').value = 'save'"
-            class="px-4 py-2 bg-gray-600 text-white rounded-lg shadow-sm hover:bg-gray-700 disabled:opacity-60 disabled:cursor-not-allowed">
-            Save as Draft
+        <button type="submit" name="action" value="save"
+                @click="$el.form.querySelector('#stock-journal-action').value = 'save'"
+                class="px-4 py-2 bg-gray-600 text-white rounded-lg shadow-sm hover:bg-gray-700 disabled:opacity-60 disabled:cursor-not-allowed">
+            {{ isset($stockJournal) ? 'Update Transfer' : 'Save as Draft' }}
         </button>
-        <button type="submit" name="action" value="save_and_post" @click="$el.form.querySelector('#stock-journal-action').value = 'save_and_post'"
-            class="px-4 py-2 bg-green-600 text-white rounded-lg shadow-sm hover:bg-green-700 disabled:opacity-60 disabled:cursor-not-allowed">
-            Save & Post
-        </button>
+        @if (!isset($stockJournal))
+            <button type="submit" name="action" value="save_and_post"
+                    :disabled="!canPostTransfer()"
+                    @click="$el.form.querySelector('#stock-journal-action').value = 'save_and_post'"
+                    class="px-4 py-2 bg-primary-600 text-white rounded-lg shadow-sm hover:bg-primary-700 disabled:opacity-60 disabled:cursor-not-allowed">
+                Save &amp; Post
+            </button>
+        @endif
     </div>
 </div>
