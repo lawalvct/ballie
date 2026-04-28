@@ -80,6 +80,15 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/modules/reset', [CompanySettingsApiController::class, 'resetModules'])->name('modules.reset');
     });
 
+    // Mobile Offline Sync (Phase 1)
+    Route::prefix('sync')->name('sync.')->group(function () {
+        Route::post('/register-device', [\App\Http\Controllers\Api\Tenant\SyncController::class, 'registerDevice'])->name('register-device');
+        Route::get('/bootstrap', [\App\Http\Controllers\Api\Tenant\SyncController::class, 'bootstrap'])->name('bootstrap');
+        Route::post('/pull', [\App\Http\Controllers\Api\Tenant\SyncController::class, 'pull'])->name('pull');
+        Route::post('/push', [\App\Http\Controllers\Api\Tenant\SyncController::class, 'push'])->name('push');
+        Route::get('/status', [\App\Http\Controllers\Api\Tenant\SyncController::class, 'status'])->name('status');
+    });
+
     // Onboarding
     Route::prefix('onboarding')->name('onboarding.')->group(function () {
         Route::get('/status', [OnboardingController::class, 'status'])->name('status');

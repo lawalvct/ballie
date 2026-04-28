@@ -8,10 +8,11 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 use App\Models\LedgerAccount;
 use App\Models\AccountGroup;
 use App\Traits\HasAudit;
+use App\Traits\Syncable;
 
 class Vendor extends Model
 {
-    use HasFactory, SoftDeletes, HasAudit;
+    use HasFactory, SoftDeletes, HasAudit, Syncable;
 
     protected $fillable = [
         'tenant_id',

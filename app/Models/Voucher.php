@@ -7,10 +7,27 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Carbon;
 use App\Traits\HasAudit;
 use App\Traits\HasPosting;
+use App\Traits\Syncable;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Voucher extends Model
 {
-    use HasFactory, HasAudit, HasPosting;
+    use HasFactory, HasAudit, HasPosting, Syncable, SoftDeletes;
+
+    /**
+     * Soft-deleting a voucher must also soft-delete its line entries
+     * so reads via `withTrashed()` and the mobile sync pull stay
+     * consistent. Force-deletes still cascade via the FK.
+     */
+    protected static function bootSoftDeleteCascade(): void
+    {
+        static::deleting(function (self $voucher) {
+            if (method_exists($voucher, 'isForceDeleting') && $voucher->isForceDeleting()) {
+                return;
+            }
+            $voucher->entries()->get()->each->delete();
+        });
+    }
 
     protected $fillable = [
         'tenant_id',

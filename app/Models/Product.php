@@ -10,10 +10,11 @@ use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use App\Traits\HasAudit;
+use App\Traits\Syncable;
 
 class Product extends Model
 {
-    use HasFactory, SoftDeletes, HasAudit;
+    use HasFactory, SoftDeletes, HasAudit, Syncable;
 
     protected static function booted()
     {

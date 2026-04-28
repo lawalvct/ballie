@@ -11,10 +11,11 @@ use App\Models\Voucher;
 use App\Models\VoucherEntry;
 use App\Traits\HasAudit;
 use App\Traits\NormalizesNameCase;
+use App\Traits\Syncable;
 
 class Customer extends Model
 {
-    use HasFactory, SoftDeletes, HasAudit, NormalizesNameCase;
+    use HasFactory, SoftDeletes, HasAudit, NormalizesNameCase, Syncable;
 
     /**
      * The attributes that are mass assignable.

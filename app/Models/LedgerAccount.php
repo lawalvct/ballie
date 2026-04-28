@@ -6,10 +6,11 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use App\Traits\HasAudit;
 use App\Traits\NormalizesNameCase;
+use App\Traits\Syncable;
 
 class LedgerAccount extends Model
 {
-    use HasFactory, HasAudit, NormalizesNameCase;
+    use HasFactory, HasAudit, NormalizesNameCase, Syncable;
 
     protected $fillable = [
         'tenant_id',

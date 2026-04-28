@@ -8,10 +8,11 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use App\Traits\HasAudit;
+use App\Traits\Syncable;
 
 class ProductCategory extends Model
 {
-    use HasFactory, SoftDeletes, HasAudit;
+    use HasFactory, SoftDeletes, HasAudit, Syncable;
 
     /**
      * The attributes that are mass assignable.
