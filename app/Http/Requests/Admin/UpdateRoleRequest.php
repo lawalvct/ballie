@@ -54,6 +54,7 @@ class UpdateRoleRequest extends FormRequest
             'permissions' => ['nullable', 'array'],
             'permissions.*' => ['exists:permissions,id'],
             'is_active' => ['boolean'],
+            'is_default' => ['boolean'],
             'color' => ['nullable', 'string', 'max:7', 'regex:/^#[0-9A-Fa-f]{6}$/'],
             'priority' => ['nullable', 'integer', 'min:0', 'max:999'],
         ];
@@ -97,6 +98,7 @@ class UpdateRoleRequest extends FormRequest
             'description' => 'role description',
             'permissions' => 'permissions',
             'is_active' => 'status',
+            'is_default' => 'default role',
             'color' => 'color',
             'priority' => 'priority',
         ];

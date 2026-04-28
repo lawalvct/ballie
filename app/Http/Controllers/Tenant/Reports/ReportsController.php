@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\LedgerAccount;
 use App\Models\Product;
 use App\Models\Tenant;
+use App\Support\ReportPermissionMatrix;
 use Illuminate\Http\Request;
 use Barryvdh\DomPDF\Facade\Pdf;
 
@@ -18,7 +19,9 @@ class ReportsController extends Controller
 {
     public function index(Tenant $tenant)
     {
-        return view('tenant.reports.index', compact('tenant'));
+        $reportAccess = ReportPermissionMatrix::accessMap(auth()->user());
+
+        return view('tenant.reports.index', compact('tenant', 'reportAccess'));
     }
 
     public function profitLoss(Request $request, Tenant $tenant)

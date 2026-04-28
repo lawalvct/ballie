@@ -5,6 +5,11 @@
 @section('page-description', 'Generate and view business reports and analytics.')
 
 @section('content')
+@php
+    $reportAccess = $reportAccess ?? [];
+    $visibleReportCount = 0;
+@endphp
+
 <div class="space-y-6">
     <!-- Header -->
     <div class="flex items-center justify-between">
@@ -24,6 +29,8 @@
     <!-- Report Categories -->
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         <!-- Financial Reports -->
+        @if($reportAccess['financial'] ?? false)
+        @php($visibleReportCount++)
         <div class="bg-white rounded-2xl p-6 shadow-lg hover:shadow-xl transition-shadow">
             <div class="flex items-center mb-4">
                 <div class="w-12 h-12 bg-gradient-to-br from-green-400 to-green-600 rounded-xl flex items-center justify-center">
@@ -43,8 +50,11 @@
                 <a href="{{ route('tenant.reports.trial-balance', $tenant->slug) }}" class="block text-sm text-blue-600 hover:text-blue-800 hover:underline">• Trial Balance</a>
             </div>
         </div>
+        @endif
 
         <!-- Sales Reports -->
+        @if($reportAccess['sales'] ?? false)
+        @php($visibleReportCount++)
         <div class="bg-white rounded-2xl p-6 shadow-lg hover:shadow-xl transition-shadow">
             <div class="flex items-center mb-4">
                 <div class="w-12 h-12 bg-gradient-to-br from-blue-400 to-blue-600 rounded-xl flex items-center justify-center">
@@ -64,9 +74,12 @@
                 <a href="{{ route('tenant.reports.sales-by-period', $tenant->slug) }}" class="block text-sm text-blue-600 hover:text-blue-800 hover:underline">• Sales by Period</a>
             </div>
         </div>
+        @endif
 
         <!-- Purchase Reports -->
+        @if($reportAccess['purchase'] ?? false)
         @module('procurement')
+        @php($visibleReportCount++)
         <div class="bg-white rounded-2xl p-6 shadow-lg hover:shadow-xl transition-shadow">
             <div class="flex items-center mb-4">
                 <div class="w-12 h-12 bg-gradient-to-br from-purple-400 to-purple-600 rounded-xl flex items-center justify-center">
@@ -87,9 +100,12 @@
             </div>
         </div>
         @endmodule
+        @endif
 
         <!-- Inventory Reports -->
+        @if($reportAccess['inventory'] ?? false)
         @module('inventory')
+        @php($visibleReportCount++)
         <div class="bg-white rounded-2xl p-6 shadow-lg hover:shadow-xl transition-shadow">
             <div class="flex items-center mb-4">
                 <div class="w-12 h-12 bg-gradient-to-br from-yellow-400 to-yellow-600 rounded-xl flex items-center justify-center">
@@ -110,9 +126,12 @@
             </div>
         </div>
         @endmodule
+        @endif
 
         <!-- Payroll Reports -->
+        @if($reportAccess['payroll'] ?? false)
         @module('payroll')
+        @php($visibleReportCount++)
         <div class="bg-white rounded-2xl p-6 shadow-lg hover:shadow-xl transition-shadow">
             <div class="flex items-center mb-4">
                 <div class="w-12 h-12 bg-gradient-to-br from-indigo-400 to-indigo-600 rounded-xl flex items-center justify-center">
@@ -133,9 +152,12 @@
             </div>
         </div>
         @endmodule
+        @endif
 
         <!-- CRM Reports -->
+        @if($reportAccess['crm'] ?? false)
         @module('crm')
+        @php($visibleReportCount++)
         <div class="bg-white rounded-2xl p-6 shadow-lg hover:shadow-xl transition-shadow">
             <div class="flex items-center mb-4">
                 <div class="w-12 h-12 bg-gradient-to-br from-pink-400 to-pink-600 rounded-xl flex items-center justify-center">
@@ -156,9 +178,12 @@
             </div>
         </div>
         @endmodule
+        @endif
 
         <!-- POS Reports -->
+        @if($reportAccess['pos'] ?? false)
         @module('pos')
+        @php($visibleReportCount++)
         <div class="bg-white rounded-2xl p-6 shadow-lg hover:shadow-xl transition-shadow">
             <div class="flex items-center mb-4">
                 <div class="w-12 h-12 bg-gradient-to-br from-emerald-400 to-emerald-600 rounded-xl flex items-center justify-center">
@@ -179,9 +204,12 @@
             </div>
         </div>
         @endmodule
+        @endif
 
         <!-- E-commerce Reports -->
+        @if($reportAccess['ecommerce'] ?? false)
         @module('ecommerce')
+        @php($visibleReportCount++)
         <div class="bg-white rounded-2xl p-6 shadow-lg hover:shadow-xl transition-shadow">
             <div class="flex items-center mb-4">
                 <div class="w-12 h-12 bg-gradient-to-br from-orange-400 to-orange-600 rounded-xl flex items-center justify-center">
@@ -203,9 +231,12 @@
             </div>
         </div>
         @endmodule
+        @endif
 
         <!-- Project Reports -->
+        @if($reportAccess['projects'] ?? false)
         @module('projects')
+        @php($visibleReportCount++)
         <div class="bg-white rounded-2xl p-6 shadow-lg hover:shadow-xl transition-shadow">
             <div class="flex items-center mb-4">
                 <div class="w-12 h-12 bg-gradient-to-br from-violet-400 to-violet-600 rounded-xl flex items-center justify-center">
@@ -227,6 +258,19 @@
             </div>
         </div>
         @endmodule
+        @endif
     </div>
+
+    @if($visibleReportCount === 0)
+        <div class="bg-white rounded-2xl p-8 shadow-lg text-center">
+            <div class="mx-auto w-12 h-12 bg-gray-100 rounded-xl flex items-center justify-center mb-4">
+                <svg class="w-6 h-6 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                </svg>
+            </div>
+            <h3 class="text-lg font-semibold text-gray-900">No report sections available</h3>
+            <p class="mt-2 text-sm text-gray-500">Ask an administrator to assign the needed Business Report Type permissions to your role.</p>
+        </div>
+    @endif
 </div>
 @endsection

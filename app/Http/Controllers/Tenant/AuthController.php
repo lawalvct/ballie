@@ -11,6 +11,7 @@ use Illuminate\Support\Facades\RateLimiter;
 use App\Models\User;
 use App\Models\SystemSetting;
 use App\Support\RegistrationInputGuard;
+use App\Support\TenantLandingPage;
 use Illuminate\Auth\Events\Registered;
 use App\Notifications\WelcomeNotification;
 
@@ -66,10 +67,11 @@ class AuthController extends Controller
             RateLimiter::clear($throttleKey);
             $request->session()->regenerate();
 
-            // Always redirect to the user's own tenant dashboard
-            $userTenantSlug = $user->tenant ? $user->tenant->slug : null;
-            if ($userTenantSlug) {
-                return redirect()->intended(route('tenant.dashboard', ['tenant' => $userTenantSlug]));
+            // Send the user to the first tenant area their role can access.
+            if ($user->tenant) {
+                $intendedUrl = $request->session()->pull('url.intended');
+
+                return redirect()->to(TenantLandingPage::intendedUrlOrLandingUrl($user, $user->tenant, $intendedUrl));
             }
 
             return redirect()->intended(route('tenant.dashboard'));

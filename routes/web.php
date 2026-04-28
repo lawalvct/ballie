@@ -6,6 +6,7 @@ use App\Http\Controllers\HomeController;
 use App\Http\Controllers\SuperAdmin\DashboardController as SuperAdminDashboardController;
 use App\Http\Controllers\SuperAdmin\TenantController;
 use App\Http\Controllers\SuperAdmin\AuthController as SuperAdminAuthController;
+use App\Support\TenantLandingPage;
     use App\Http\Controllers\Storefront\StorefrontController;
     use App\Http\Controllers\Storefront\CartController;
     use App\Http\Controllers\Storefront\CheckoutController;
@@ -122,7 +123,7 @@ Route::middleware('guest')->group(function () {
 Route::middleware(['auth'])->get('/dashboard', function () {
     $user = auth()->user();
     if ($user && $user->tenant) {
-        return redirect()->route('tenant.dashboard', ['tenant' => $user->tenant->slug]);
+        return redirect(TenantLandingPage::urlFor($user, $user->tenant));
     }
     return redirect()->route('home');
 })->name('dashboard');

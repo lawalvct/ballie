@@ -111,6 +111,7 @@ class PermissionsSeeder extends Seeder
             ['name' => 'View Procurement', 'slug' => 'procurement.view', 'module' => 'Procurement', 'description' => 'View procurement module'],
             ['name' => 'Manage Purchase Orders', 'slug' => 'procurement.po.manage', 'module' => 'Procurement', 'description' => 'Create, edit, delete purchase orders'],
             ['name' => 'Approve Purchase Orders', 'slug' => 'procurement.po.approve', 'module' => 'Procurement', 'description' => 'Approve or reject purchase orders'],
+            ['name' => 'View Procurement Reports', 'slug' => 'procurement.reports.view', 'module' => 'Procurement', 'description' => 'View procurement and purchase reports'],
 
             // =============================================
             // BANKING MODULE
@@ -127,7 +128,13 @@ class PermissionsSeeder extends Seeder
             ['name' => 'Export Reports', 'slug' => 'reports.export', 'module' => 'Reports', 'description' => 'Export reports to PDF/Excel'],
             ['name' => 'View Reports Financial Analysis', 'slug' => 'reports.financial.view', 'module' => 'Reports', 'description' => 'View financial reports (P&L, Balance Sheet)'],
             ['name' => 'View Sales Reports', 'slug' => 'reports.sales.view', 'module' => 'Reports', 'description' => 'View sales and revenue reports'],
+            ['name' => 'View Reports Purchase Analysis', 'slug' => 'reports.purchase.view', 'module' => 'Reports', 'description' => 'View purchase and vendor reports'],
             ['name' => 'View Reports Inventory Analysis', 'slug' => 'reports.inventory.view', 'module' => 'Reports', 'description' => 'View stock and inventory reports'],
+            ['name' => 'View Reports Payroll Analysis', 'slug' => 'reports.payroll.view', 'module' => 'Reports', 'description' => 'View payroll reports'],
+            ['name' => 'View Reports CRM Analysis', 'slug' => 'reports.crm.view', 'module' => 'Reports', 'description' => 'View CRM reports'],
+            ['name' => 'View Reports POS Analysis', 'slug' => 'reports.pos.view', 'module' => 'Reports', 'description' => 'View POS reports'],
+            ['name' => 'View Reports E-commerce Analysis', 'slug' => 'reports.ecommerce.view', 'module' => 'Reports', 'description' => 'View e-commerce reports'],
+            ['name' => 'View Reports Project Analysis', 'slug' => 'reports.projects.view', 'module' => 'Reports', 'description' => 'View project reports'],
 
             // =============================================
             // STATUTORY (TAX) MODULE

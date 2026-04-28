@@ -24,7 +24,7 @@ class CreateRoleRequest extends FormRequest
         }
 
         // Check for explicit permission
-        return $user->can('admin.roles.manage');
+        return $user->hasPermission('admin.roles.manage');
     }
 
     /**
@@ -49,6 +49,7 @@ class CreateRoleRequest extends FormRequest
             'permissions' => ['nullable', 'array'],
             'permissions.*' => ['exists:permissions,id'],
             'is_active' => ['boolean'],
+            'is_default' => ['boolean'],
             'color' => ['nullable', 'string', 'max:7', 'regex:/^#[0-9A-Fa-f]{6}$/'],
             'priority' => ['nullable', 'integer', 'min:0', 'max:999'],
         ];
@@ -92,6 +93,7 @@ class CreateRoleRequest extends FormRequest
             'description' => 'role description',
             'permissions' => 'permissions',
             'is_active' => 'status',
+            'is_default' => 'default role',
             'color' => 'color',
             'priority' => 'priority',
         ];

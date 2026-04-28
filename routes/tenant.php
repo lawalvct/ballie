@@ -40,6 +40,7 @@ use App\Models\Tenant\Team;
 use App\Models\SubscriptionPayment;
 use App\Http\Controllers\Tenant\Accounting\LedgerAccountController;
 use App\Http\Controllers\Auth\SocialAuthController;
+use App\Support\TenantLandingPage;
 
 // Additional organized controller imports
 // use App\Http\Controllers\Tenant\Inventory\StockAdjustmentController;
@@ -127,7 +128,7 @@ Route::middleware(['guest'])->group(function () {
 });
 
 Route::get('/', function (Tenant $tenant) {
-    return redirect()->route('tenant.dashboard', ['tenant' => $tenant->slug]);
+    return redirect(TenantLandingPage::urlFor(auth()->user(), $tenant));
 })->middleware('auth')->name('tenant.home');
 
 // Authenticated routes
@@ -163,7 +164,7 @@ Route::middleware(['auth'])->group(function () {
         });
 
         // Dashboard
-        Route::get('/dashboard', [DashboardController::class, 'index'])->name('tenant.dashboard');
+        Route::get('/dashboard', [DashboardController::class, 'index'])->name('tenant.dashboard')->middleware('permission:dashboard.view');
 
         // Audit Trail Routes
         Route::prefix('audit')->name('tenant.audit.')->middleware('module.access:audit')->group(function () {
@@ -1113,47 +1114,47 @@ Route::prefix('ledger-accounts')->name('ledger-accounts.')->group(function () {
 
         // Reports & Analytics Module
         Route::prefix('reports')->name('tenant.reports.')->group(function () {
-            Route::get('/', [ReportsController::class, 'index'])->name('index');
+            Route::get('/', [ReportsController::class, 'index'])->name('index')->middleware('permission.any:reports.view,reports.financial.view,accounting.reports.view,reports.sales.view,reports.purchase.view,procurement.reports.view,reports.inventory.view,inventory.reports.view,reports.payroll.view,payroll.reports.view,reports.crm.view,crm.reports.view,reports.pos.view,pos.reports.view,reports.ecommerce.view,ecommerce.reports.view,reports.projects.view,projects.reports.view');
 
             // Financial Reports
-            Route::get('/financial', [ReportsController::class, 'financial'])->name('financial');
-            Route::get('/profit-loss', [ReportsController::class, 'profitLoss'])->name('profit-loss');
-            Route::get('/balance-sheet', [ReportsController::class, 'balanceSheet'])->name('balance-sheet');
-            Route::get('/trial-balance', [ReportsController::class, 'trialBalance'])->name('trial-balance');
-            Route::get('/cash-flow', [ReportsController::class, 'cashFlow'])->name('cash-flow');
-            Route::get('/statement-of-changes-in-equity', [ReportsController::class, 'statementOfChangesInEquity'])->name('statement-of-changes-in-equity');
-            Route::get('/statement-of-changes-in-equity-pdf', [ReportsController::class, 'statementOfChangesInEquityPdf'])->name('statement-of-changes-in-equity-pdf');
+            Route::get('/financial', [ReportsController::class, 'financial'])->name('financial')->middleware('permission.any:reports.financial.view,accounting.reports.view');
+            Route::get('/profit-loss', [ReportsController::class, 'profitLoss'])->name('profit-loss')->middleware('permission.any:reports.financial.view,accounting.reports.view');
+            Route::get('/balance-sheet', [ReportsController::class, 'balanceSheet'])->name('balance-sheet')->middleware('permission.any:reports.financial.view,accounting.reports.view');
+            Route::get('/trial-balance', [ReportsController::class, 'trialBalance'])->name('trial-balance')->middleware('permission.any:reports.financial.view,accounting.reports.view');
+            Route::get('/cash-flow', [ReportsController::class, 'cashFlow'])->name('cash-flow')->middleware('permission.any:reports.financial.view,accounting.reports.view');
+            Route::get('/statement-of-changes-in-equity', [ReportsController::class, 'statementOfChangesInEquity'])->name('statement-of-changes-in-equity')->middleware('permission.any:reports.financial.view,accounting.reports.view');
+            Route::get('/statement-of-changes-in-equity-pdf', [ReportsController::class, 'statementOfChangesInEquityPdf'])->name('statement-of-changes-in-equity-pdf')->middleware('permission.any:reports.financial.view,accounting.reports.view');
 
             // Inventory Reports
-            Route::get('/inventory', [ReportsController::class, 'inventory'])->name('inventory');
-            Route::get('/stock-movement', [ReportsController::class, 'stockMovement'])->name('stock-movement');
-            Route::get('/low-stock', [ReportsController::class, 'lowStock'])->name('low-stock');
-            Route::get('/inventory-valuation', [ReportsController::class, 'inventoryValuation'])->name('inventory-valuation');
+            Route::get('/inventory', [ReportsController::class, 'inventory'])->name('inventory')->middleware('permission.any:reports.inventory.view,inventory.reports.view');
+            Route::get('/stock-movement', [ReportsController::class, 'stockMovement'])->name('stock-movement')->middleware('permission.any:reports.inventory.view,inventory.reports.view');
+            Route::get('/low-stock', [ReportsController::class, 'lowStock'])->name('low-stock')->middleware('permission.any:reports.inventory.view,inventory.reports.view');
+            Route::get('/inventory-valuation', [ReportsController::class, 'inventoryValuation'])->name('inventory-valuation')->middleware('permission.any:reports.inventory.view,inventory.reports.view');
 
             // Sales Reports
-            Route::get('/sales', [ReportsController::class, 'sales'])->name('sales');
-            Route::get('/sales-summary', [SalesReportsController::class, 'salesSummary'])->name('sales-summary');
-            Route::get('/customer-sales', [SalesReportsController::class, 'customerSales'])->name('customer-sales');
-            Route::get('/product-sales', [SalesReportsController::class, 'productSales'])->name('product-sales');
-            Route::get('/sales-by-period', [SalesReportsController::class, 'salesByPeriod'])->name('sales-by-period');
-            Route::get('/customer-analysis', [ReportsController::class, 'customerAnalysis'])->name('customer-analysis');
-            Route::get('/product-performance', [ReportsController::class, 'productPerformance'])->name('product-performance');
+            Route::get('/sales', [ReportsController::class, 'sales'])->name('sales')->middleware('permission.any:reports.sales.view');
+            Route::get('/sales-summary', [SalesReportsController::class, 'salesSummary'])->name('sales-summary')->middleware('permission.any:reports.sales.view');
+            Route::get('/customer-sales', [SalesReportsController::class, 'customerSales'])->name('customer-sales')->middleware('permission.any:reports.sales.view,reports.crm.view,crm.reports.view');
+            Route::get('/product-sales', [SalesReportsController::class, 'productSales'])->name('product-sales')->middleware('permission.any:reports.sales.view');
+            Route::get('/sales-by-period', [SalesReportsController::class, 'salesByPeriod'])->name('sales-by-period')->middleware('permission.any:reports.sales.view');
+            Route::get('/customer-analysis', [ReportsController::class, 'customerAnalysis'])->name('customer-analysis')->middleware('permission.any:reports.sales.view,reports.crm.view,crm.reports.view');
+            Route::get('/product-performance', [ReportsController::class, 'productPerformance'])->name('product-performance')->middleware('permission.any:reports.sales.view');
 
             // Purchase Reports
-            Route::get('/purchase-summary', [PurchaseReportsController::class, 'purchaseSummary'])->name('purchase-summary');
-            Route::get('/vendor-purchases', [PurchaseReportsController::class, 'vendorPurchases'])->name('vendor-purchases');
-            Route::get('/product-purchases', [PurchaseReportsController::class, 'productPurchases'])->name('product-purchases');
-            Route::get('/purchases-by-period', [PurchaseReportsController::class, 'purchasesByPeriod'])->name('purchases-by-period');
+            Route::get('/purchase-summary', [PurchaseReportsController::class, 'purchaseSummary'])->name('purchase-summary')->middleware('permission.any:reports.purchase.view,procurement.reports.view');
+            Route::get('/vendor-purchases', [PurchaseReportsController::class, 'vendorPurchases'])->name('vendor-purchases')->middleware('permission.any:reports.purchase.view,procurement.reports.view');
+            Route::get('/product-purchases', [PurchaseReportsController::class, 'productPurchases'])->name('product-purchases')->middleware('permission.any:reports.purchase.view,procurement.reports.view');
+            Route::get('/purchases-by-period', [PurchaseReportsController::class, 'purchasesByPeriod'])->name('purchases-by-period')->middleware('permission.any:reports.purchase.view,procurement.reports.view');
 
             // Inventory Reports
-            Route::get('/stock-summary/pdf', [\App\Http\Controllers\Tenant\Reports\InventoryReportsController::class, 'stockSummaryPdf'])->name('stock-summary.pdf');
-            Route::get('/stock-summary', [\App\Http\Controllers\Tenant\Reports\InventoryReportsController::class, 'stockSummary'])->name('stock-summary');
-            Route::get('/low-stock-alert', [\App\Http\Controllers\Tenant\Reports\InventoryReportsController::class, 'lowStockAlert'])->name('low-stock-alert');
-            Route::get('/stock-valuation', [\App\Http\Controllers\Tenant\Reports\InventoryReportsController::class, 'stockValuation'])->name('stock-valuation');
-            Route::get('/stock-movement', [\App\Http\Controllers\Tenant\Reports\InventoryReportsController::class, 'stockMovement'])->name('stock-movement');
+            Route::get('/stock-summary/pdf', [\App\Http\Controllers\Tenant\Reports\InventoryReportsController::class, 'stockSummaryPdf'])->name('stock-summary.pdf')->middleware('permission.any:reports.inventory.view,inventory.reports.view');
+            Route::get('/stock-summary', [\App\Http\Controllers\Tenant\Reports\InventoryReportsController::class, 'stockSummary'])->name('stock-summary')->middleware('permission.any:reports.inventory.view,inventory.reports.view');
+            Route::get('/low-stock-alert', [\App\Http\Controllers\Tenant\Reports\InventoryReportsController::class, 'lowStockAlert'])->name('low-stock-alert')->middleware('permission.any:reports.inventory.view,inventory.reports.view');
+            Route::get('/stock-valuation', [\App\Http\Controllers\Tenant\Reports\InventoryReportsController::class, 'stockValuation'])->name('stock-valuation')->middleware('permission.any:reports.inventory.view,inventory.reports.view');
+            Route::get('/stock-movement', [\App\Http\Controllers\Tenant\Reports\InventoryReportsController::class, 'stockMovement'])->name('stock-movement')->middleware('permission.any:reports.inventory.view,inventory.reports.view');
             // Bin Card (Inventory Ledger) - per product running balance
-            Route::get('/bin-card/pdf', [\App\Http\Controllers\Tenant\Reports\InventoryReportsController::class, 'binCardPdf'])->name('bin-card.pdf');
-            Route::get('/bin-card', [\App\Http\Controllers\Tenant\Reports\InventoryReportsController::class, 'binCard'])->name('bin-card');
+            Route::get('/bin-card/pdf', [\App\Http\Controllers\Tenant\Reports\InventoryReportsController::class, 'binCardPdf'])->name('bin-card.pdf')->middleware('permission.any:reports.inventory.view,inventory.reports.view');
+            Route::get('/bin-card', [\App\Http\Controllers\Tenant\Reports\InventoryReportsController::class, 'binCard'])->name('bin-card')->middleware('permission.any:reports.inventory.view,inventory.reports.view');
         });
 
         // Statutory & Tax Management Module

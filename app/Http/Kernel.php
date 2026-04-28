@@ -89,6 +89,7 @@ class Kernel extends HttpKernel
         'onboarding.completed' => \App\Http\Middleware\OnboardingCompleted::class,
         'role' => \App\Http\Middleware\CheckUserRole::class,
         'permission' => \App\Http\Middleware\CheckPermission::class,
+        'permission.any' => \App\Http\Middleware\CheckAnyPermission::class,
         'track.affiliate' => \App\Http\Middleware\TrackAffiliateReferral::class,
         'email.verified' => \App\Http\Middleware\EnsureEmailIsVerified::class,
         'affiliate.verified' => \App\Http\Middleware\EnsureAffiliateEmailIsVerified::class,

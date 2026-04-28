@@ -46,7 +46,7 @@ Route::middleware('auth:sanctum')->group(function () {
     });
 
     // Dashboard
-    Route::prefix('dashboard')->name('dashboard.')->group(function () {
+    Route::prefix('dashboard')->name('dashboard.')->middleware('permission:dashboard.view')->group(function () {
         Route::get('/', [DashboardApiController::class, 'index'])->name('index');
         Route::get('/summary', [DashboardApiController::class, 'summary'])->name('summary');
         Route::get('/revenue-chart', [DashboardApiController::class, 'revenueChart'])->name('revenue-chart');

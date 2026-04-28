@@ -93,6 +93,8 @@
                             <h3 class="text-lg font-semibold text-gray-900">Permissions</h3>
                         </div>
 
+                        @include('tenant.admin.roles.partials.report-permissions')
+
                         @if(isset($permissions) && count($permissions) > 0)
                             <div class="space-y-4">
                                 @foreach($permissions as $module => $modulePermissions)
@@ -102,7 +104,7 @@
                                                 <span class="w-2 h-2 bg-purple-500 rounded-full mr-2"></span>
                                                 {{ ucfirst(str_replace('_', ' ', $module)) }}
                                             </h5>
-                                            <button type="button" onclick="toggleModulePermissions('{{ $module }}')"
+                                            <button type="button" onclick="toggleModulePermissions(@js($module))"
                                                     class="text-xs font-medium text-purple-600 hover:text-purple-700 px-3 py-1 rounded-md hover:bg-purple-50 transition">
                                                 Select All
                                             </button>
@@ -116,6 +118,7 @@
                                                            type="checkbox"
                                                            value="{{ $permission->id }}"
                                                            data-module="{{ $module }}"
+                                                           {{ in_array($permission->id, old('permissions', [])) ? 'checked' : '' }}
                                                            class="h-4 w-4 text-purple-600 focus:ring-purple-500 border-gray-300 rounded">
                                                     <span class="ml-3 text-sm text-gray-900">
                                                         {{ $permission->display_name ?? $permission->name }}
@@ -144,7 +147,8 @@
                         <div class="space-y-4">
                             {{-- Is Active --}}
                             <label class="flex items-center p-4 rounded-lg border-2 border-gray-200 hover:border-purple-300 cursor-pointer transition">
-                                <input id="is_active" name="is_active" type="checkbox" value="1" checked
+                                <input id="is_active" name="is_active" type="checkbox" value="1"
+                                       {{ old('is_active', true) ? 'checked' : '' }}
                                        class="h-4 w-4 text-purple-600 focus:ring-purple-500 border-gray-300 rounded">
                                 <span class="ml-3">
                                     <span class="block text-sm font-medium text-gray-900">Active Role</span>
@@ -155,6 +159,7 @@
                             {{-- Is Default --}}
                             <label class="flex items-center p-4 rounded-lg border-2 border-gray-200 hover:border-purple-300 cursor-pointer transition">
                                 <input id="is_default" name="is_default" type="checkbox" value="1"
+                                       {{ old('is_default') ? 'checked' : '' }}
                                        class="h-4 w-4 text-purple-600 focus:ring-purple-500 border-gray-300 rounded">
                                 <span class="ml-3">
                                     <span class="block text-sm font-medium text-gray-900">Default Role</span>
@@ -189,7 +194,7 @@
     function toggleModulePermissions(module) {
         const checkboxes = document.querySelectorAll(`input[data-module="${module}"]`);
         const allChecked = Array.from(checkboxes).every(cb => cb.checked);
-        
+
         checkboxes.forEach(checkbox => {
             checkbox.checked = !allChecked;
         });

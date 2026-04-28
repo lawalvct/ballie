@@ -219,7 +219,7 @@
             @endhasAnyPermission
 
             <!-- Reports -->
-            @permission('reports.view')
+            @hasAnyPermission('reports.view', 'reports.financial.view', 'accounting.reports.view', 'reports.sales.view', 'reports.purchase.view', 'procurement.reports.view', 'reports.inventory.view', 'inventory.reports.view', 'reports.payroll.view', 'payroll.reports.view', 'reports.crm.view', 'crm.reports.view', 'reports.pos.view', 'pos.reports.view', 'reports.ecommerce.view', 'ecommerce.reports.view', 'reports.projects.view', 'projects.reports.view')
             <li>
                 <a href="{{ route('tenant.reports.index', ['tenant' => tenant()->slug]) }}"
                    class="menu-item flex items-center px-4 py-3 rounded-xl group {{ request()->routeIs('tenant.reports.*') ? 'active' : '' }}"
@@ -232,7 +232,7 @@
                     <span class="menu-title whitespace-nowrap font-medium">Reports</span>
                 </a>
             </li>
-            @endpermission
+            @endhasAnyPermission
 
             <!-- Statutory (Tax) -->
             @module('statutory')

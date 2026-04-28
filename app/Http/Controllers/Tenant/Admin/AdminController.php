@@ -19,6 +19,7 @@ use App\Http\Requests\Admin\UpdateUserRequest;
 use App\Http\Requests\Admin\CreateRoleRequest;
 use App\Http\Requests\Admin\UpdateRoleRequest;
 use App\Models\Tenant;
+use App\Support\ReportPermissionMatrix;
 use Exception;
 
 class AdminController extends Controller
@@ -521,8 +522,9 @@ class AdminController extends Controller
      */
     public function createRole()
     {
-        $permissions = Permission::all()->groupBy('module');
-        return view('tenant.admin.roles.create', compact('permissions'));
+        [$permissions, $reportPermissionGroups] = $this->rolePermissionFormData();
+
+        return view('tenant.admin.roles.create', compact('permissions', 'reportPermissionGroups'));
     }
 
     /**
@@ -533,17 +535,19 @@ class AdminController extends Controller
         try {
             DB::beginTransaction();
 
+            if ($request->boolean('is_default')) {
+                Role::where('tenant_id', tenant()->id)->update(['is_default' => false]);
+            }
+
             $role = Role::create([
                 'name' => $request->name,
                 'description' => $request->description,
                 'tenant_id' => tenant()->id,
                 'is_active' => $request->boolean('is_active', true),
+                'is_default' => $request->boolean('is_default'),
             ]);
 
-            // Assign permissions
-            if ($request->filled('permissions')) {
-                $role->permissions()->sync($request->permissions);
-            }
+            $role->permissions()->sync($this->expandRolePermissionIds($request->input('permissions', [])));
 
             DB::commit();
 
@@ -577,10 +581,10 @@ class AdminController extends Controller
         $roleId = $roleId instanceof Role ? $roleId->id : $roleId;
         $role = Role::where('tenant_id', tenant()->id)
             ->findOrFail($roleId);
-        $permissions = Permission::all()->groupBy('module');
+        [$permissions, $reportPermissionGroups] = $this->rolePermissionFormData();
         $role->load('permissions');
 
-        return view('tenant.admin.roles.edit', compact('role', 'permissions'));
+        return view('tenant.admin.roles.edit', compact('role', 'permissions', 'reportPermissionGroups'));
     }
 
     /**
@@ -595,18 +599,20 @@ class AdminController extends Controller
         try {
             DB::beginTransaction();
 
+            if ($request->boolean('is_default')) {
+                Role::where('tenant_id', tenant()->id)
+                    ->where('id', '!=', $role->id)
+                    ->update(['is_default' => false]);
+            }
+
             $role->update([
                 'name' => $request->name,
                 'description' => $request->description,
                 'is_active' => $request->boolean('is_active', true),
+                'is_default' => $request->boolean('is_default'),
             ]);
 
-            // Update permissions
-            if ($request->filled('permissions')) {
-                $role->permissions()->sync($request->permissions);
-            } else {
-                $role->permissions()->detach();
-            }
+            $role->permissions()->sync($this->expandRolePermissionIds($request->input('permissions', [])));
 
             DB::commit();
 
@@ -831,6 +837,56 @@ class AdminController extends Controller
     {
         $permissions = Permission::all()->groupBy('module');
         return response()->json($permissions);
+    }
+
+    private function rolePermissionFormData(): array
+    {
+        $permissions = Permission::query()
+            ->active()
+            ->whereNotIn('slug', ReportPermissionMatrix::allSlugs())
+            ->orderBy('module')
+            ->orderBy('priority')
+            ->orderBy('display_name')
+            ->get()
+            ->groupBy('module');
+
+        return [$permissions, ReportPermissionMatrix::formGroups()];
+    }
+
+    private function expandRolePermissionIds(array $permissionIds): array
+    {
+        $permissionIds = collect($permissionIds)
+            ->filter()
+            ->map(fn ($id) => (int) $id)
+            ->unique()
+            ->values();
+
+        if ($permissionIds->isEmpty()) {
+            return [];
+        }
+
+        $selectedSlugs = Permission::whereIn('id', $permissionIds)->pluck('slug')->all();
+        $slugsToSync = [];
+
+        foreach (ReportPermissionMatrix::groups() as $key => $group) {
+            $groupSlugs = ReportPermissionMatrix::groupSlugs($key);
+
+            if (! empty(array_intersect($selectedSlugs, $groupSlugs))) {
+                $slugsToSync = array_merge($slugsToSync, $groupSlugs);
+            }
+        }
+
+        if (! empty($slugsToSync)) {
+            $slugsToSync[] = 'reports.view';
+        }
+
+        $expandedIds = Permission::whereIn('slug', array_unique($slugsToSync))->pluck('id');
+
+        return $permissionIds
+            ->merge($expandedIds)
+            ->unique()
+            ->values()
+            ->all();
     }
 
     /**

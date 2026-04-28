@@ -244,11 +244,15 @@ class GlobalSearchController extends Controller
             ['name' => 'tenant.notifications.index', 'title' => 'Notifications', 'description' => 'View all notifications', 'icon' => 'fas fa-bell', 'category' => 'Settings', 'keywords' => 'notification alert message'],
 
             // Dashboard
-            ['name' => 'tenant.dashboard', 'title' => 'Dashboard', 'description' => 'Main dashboard overview', 'icon' => 'fas fa-tachometer-alt', 'category' => 'Dashboard', 'keywords' => 'dashboard home overview summary'],
+            ['name' => 'tenant.dashboard', 'title' => 'Dashboard', 'description' => 'Main dashboard overview', 'icon' => 'fas fa-tachometer-alt', 'category' => 'Dashboard', 'keywords' => 'dashboard home overview summary', 'permission' => 'dashboard.view'],
             ['name' => 'tenant.help', 'title' => 'Help', 'description' => 'Getting started and help center', 'icon' => 'fas fa-question-circle', 'category' => 'Support', 'keywords' => 'help getting started tutorial'],
         ];
 
         $matched = collect($searchableRoutes)->filter(function ($route) use ($query) {
+            if (! empty($route['permission']) && ! auth()->user()?->hasPermission($route['permission'])) {
+                return false;
+            }
+
             $searchString = strtolower($query);
             $keywords = strtolower($route['keywords'] ?? '');
             return str_contains(strtolower($route['title']), $searchString) ||
@@ -262,7 +266,7 @@ class GlobalSearchController extends Controller
                     $url .= '?' . http_build_query($route['queryParams']);
                 }
                 $route['url'] = $url;
-                unset($route['queryParams'], $route['keywords']);
+                unset($route['queryParams'], $route['keywords'], $route['permission']);
                 return $route;
             }
             return null;
