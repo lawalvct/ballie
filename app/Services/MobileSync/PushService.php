@@ -28,6 +28,9 @@ class PushService
     public function __construct(
         private SyncRegistry $registry,
         private InvoiceSyncService $invoiceSync,
+        private QuotationSyncService $quotationSync,
+        private StockJournalSyncService $stockJournalSync,
+        private PosSaleSyncService $posSaleSync,
     ) {
     }
 
@@ -129,6 +132,45 @@ class PushService
             && Arr::get($def, 'custom_handler') === 'invoice_sync'
         ) {
             return $this->applyInvoiceCreate(
+                $tenant, $user, $device, $clientMutationId, $table,
+                $syncUuid, $baseVersion, $payload,
+            );
+        }
+
+        // Phase 3: quotation creation (parent + items + totals) is also
+        // delegated so the server-side quotation_number stays authoritative.
+        if (
+            $action === MobileMutation::ACTION_CREATE
+            && Arr::get($def, 'custom_handler') === 'quotation_sync'
+        ) {
+            return $this->applyQuotationCreate(
+                $tenant, $user, $device, $clientMutationId, $table,
+                $syncUuid, $baseVersion, $payload,
+            );
+        }
+
+        // Phase 4: draft stock journal creation (parent + items) is
+        // delegated so the server-side journal_number stays authoritative.
+        // Posting (status -> 'posted') remains online-only.
+        if (
+            $action === MobileMutation::ACTION_CREATE
+            && Arr::get($def, 'custom_handler') === 'stock_journal_sync'
+        ) {
+            return $this->applyStockJournalCreate(
+                $tenant, $user, $device, $clientMutationId, $table,
+                $syncUuid, $baseVersion, $payload,
+            );
+        }
+
+        // Phase 5: POS sale creation (parent + items + payments + stock
+        // movements + receipt + accounting voucher) is delegated so the
+        // server-side sale_number stays authoritative and stock is
+        // validated against fresh server state.
+        if (
+            $action === MobileMutation::ACTION_CREATE
+            && Arr::get($def, 'custom_handler') === 'pos_sale_sync'
+        ) {
+            return $this->applyPosSaleCreate(
                 $tenant, $user, $device, $clientMutationId, $table,
                 $syncUuid, $baseVersion, $payload,
             );
@@ -412,12 +454,29 @@ class PushService
             'products' => [
                 'name' => 'sometimes|string|max:255',
                 'sku' => 'sometimes|nullable|string|max:100',
+                'description' => 'sometimes|nullable|string',
+                'sales_price' => 'sometimes|nullable|numeric|min:0',
+                'purchase_price' => 'sometimes|nullable|numeric|min:0',
+                'mrp' => 'sometimes|nullable|numeric|min:0',
+                'is_active' => 'sometimes|boolean',
+                'is_saleable' => 'sometimes|boolean',
+                'is_purchasable' => 'sometimes|boolean',
+                'category_id' => 'sometimes|nullable|integer',
+                'primary_unit_id' => 'sometimes|nullable|integer',
+                'hsn_code' => 'sometimes|nullable|string|max:32',
+                'barcode' => 'sometimes|nullable|string|max:64',
             ],
             'units' => [
                 'name' => 'sometimes|string|max:100',
+                'symbol' => 'sometimes|nullable|string|max:32',
+                'description' => 'sometimes|nullable|string',
+                'is_active' => 'sometimes|boolean',
             ],
             'product_categories' => [
                 'name' => 'sometimes|string|max:255',
+                'description' => 'sometimes|nullable|string',
+                'parent_id' => 'sometimes|nullable|integer',
+                'is_active' => 'sometimes|boolean',
             ],
             default => [],
         };
@@ -547,6 +606,193 @@ class PushService
                 status: MobileMutation::STATUS_FAILED,
                 code: $result['error_code'] ?? 'invoice_apply_failed',
                 message: $result['error_message'] ?? 'Could not apply invoice',
+                errors: $result['errors'] ?? null,
+            );
+        }
+
+        return $this->persistAndReturn(
+            tenant: $tenant, user: $user, device: $device,
+            clientMutationId: $clientMutationId, table: $table,
+            action: MobileMutation::ACTION_CREATE, syncUuid: $syncUuid,
+            baseVersion: $baseVersion, payload: $payload,
+            status: MobileMutation::STATUS_APPLIED,
+            serverResponse: $result['server_response'] ?? [],
+        );
+    }
+
+    /**
+     * Phase 3: delegate quotation creation (parent + items + totals) to
+     * QuotationSyncService so server-assigned quotation_numbers stay
+     * authoritative even when the client created the record offline.
+     *
+     * @return array<string, mixed>
+     */
+    private function applyQuotationCreate(
+        Tenant $tenant, User $user, MobileDevice $device,
+        string $clientMutationId, string $table, string $syncUuid,
+        ?int $baseVersion, array $payload,
+    ): array {
+        // Idempotency defence — the mutation_id short-circuit at the top
+        // of applyOne() already covers the common retry path.
+        $existing = \App\Models\Quotation::query()
+            ->where('sync_uuid', $syncUuid)
+            ->first();
+        if ($existing) {
+            return $this->persistAndReturn(
+                tenant: $tenant, user: $user, device: $device,
+                clientMutationId: $clientMutationId, table: $table,
+                action: MobileMutation::ACTION_CREATE, syncUuid: $syncUuid,
+                baseVersion: $baseVersion, payload: $payload,
+                status: MobileMutation::STATUS_APPLIED,
+                serverResponse: [
+                    'server_id' => $existing->id,
+                    'server_version' => (int) ($existing->server_version ?? 0),
+                    'sync_uuid' => $existing->sync_uuid,
+                    'official_quotation_number' => $existing->quotation_number,
+                    'status' => $existing->status,
+                    'idempotent' => true,
+                ],
+            );
+        }
+
+        $result = $this->quotationSync->applyCreate($tenant, $user, $device, $syncUuid, $payload);
+
+        if (!($result['ok'] ?? false)) {
+            return $this->persistAndReturn(
+                tenant: $tenant, user: $user, device: $device,
+                clientMutationId: $clientMutationId, table: $table,
+                action: MobileMutation::ACTION_CREATE, syncUuid: $syncUuid,
+                baseVersion: $baseVersion, payload: $payload,
+                status: MobileMutation::STATUS_FAILED,
+                code: $result['error_code'] ?? 'quotation_apply_failed',
+                message: $result['error_message'] ?? 'Could not apply quotation',
+                errors: $result['errors'] ?? null,
+            );
+        }
+
+        return $this->persistAndReturn(
+            tenant: $tenant, user: $user, device: $device,
+            clientMutationId: $clientMutationId, table: $table,
+            action: MobileMutation::ACTION_CREATE, syncUuid: $syncUuid,
+            baseVersion: $baseVersion, payload: $payload,
+            status: MobileMutation::STATUS_APPLIED,
+            serverResponse: $result['server_response'] ?? [],
+        );
+    }
+
+    /**
+     * Phase 4: delegate draft stock-journal creation (parent + items) to
+     * StockJournalSyncService so server-assigned journal_numbers stay
+     * authoritative even when the client created the record offline.
+     *
+     * Posting (writing to stock_movements) is intentionally NOT done
+     * here — that path is online-only until conflict rules mature.
+     *
+     * @return array<string, mixed>
+     */
+    private function applyStockJournalCreate(
+        Tenant $tenant, User $user, MobileDevice $device,
+        string $clientMutationId, string $table, string $syncUuid,
+        ?int $baseVersion, array $payload,
+    ): array {
+        // Idempotency defence — the mutation_id short-circuit at the top
+        // of applyOne() already covers the common retry path.
+        $existing = \App\Models\StockJournalEntry::query()
+            ->where('sync_uuid', $syncUuid)
+            ->first();
+        if ($existing) {
+            return $this->persistAndReturn(
+                tenant: $tenant, user: $user, device: $device,
+                clientMutationId: $clientMutationId, table: $table,
+                action: MobileMutation::ACTION_CREATE, syncUuid: $syncUuid,
+                baseVersion: $baseVersion, payload: $payload,
+                status: MobileMutation::STATUS_APPLIED,
+                serverResponse: [
+                    'server_id' => $existing->id,
+                    'server_version' => (int) ($existing->server_version ?? 0),
+                    'sync_uuid' => $existing->sync_uuid,
+                    'official_journal_number' => $existing->journal_number,
+                    'status' => $existing->status,
+                    'entry_type' => $existing->entry_type,
+                    'idempotent' => true,
+                ],
+            );
+        }
+
+        $result = $this->stockJournalSync->applyCreate($tenant, $user, $device, $syncUuid, $payload);
+
+        if (!($result['ok'] ?? false)) {
+            return $this->persistAndReturn(
+                tenant: $tenant, user: $user, device: $device,
+                clientMutationId: $clientMutationId, table: $table,
+                action: MobileMutation::ACTION_CREATE, syncUuid: $syncUuid,
+                baseVersion: $baseVersion, payload: $payload,
+                status: MobileMutation::STATUS_FAILED,
+                code: $result['error_code'] ?? 'stock_journal_apply_failed',
+                message: $result['error_message'] ?? 'Could not apply stock journal entry',
+                errors: $result['errors'] ?? null,
+            );
+        }
+
+        return $this->persistAndReturn(
+            tenant: $tenant, user: $user, device: $device,
+            clientMutationId: $clientMutationId, table: $table,
+            action: MobileMutation::ACTION_CREATE, syncUuid: $syncUuid,
+            baseVersion: $baseVersion, payload: $payload,
+            status: MobileMutation::STATUS_APPLIED,
+            serverResponse: $result['server_response'] ?? [],
+        );
+    }
+
+    /**
+     * Phase 5: delegate POS sale creation to PosSaleSyncService so the
+     * server-assigned sale_number, fresh stock validation, stock_movements
+     * writes, receipt, and RV accounting voucher all happen authoritatively.
+     *
+     * Stock-validation failures are persisted as `failed` mutations with
+     * `error_code: insufficient_stock` so the mobile sync inbox can
+     * surface them for manager review.
+     *
+     * @return array<string, mixed>
+     */
+    private function applyPosSaleCreate(
+        Tenant $tenant, User $user, MobileDevice $device,
+        string $clientMutationId, string $table, string $syncUuid,
+        ?int $baseVersion, array $payload,
+    ): array {
+        $existing = \App\Models\Sale::query()
+            ->where('sync_uuid', $syncUuid)
+            ->first();
+        if ($existing) {
+            return $this->persistAndReturn(
+                tenant: $tenant, user: $user, device: $device,
+                clientMutationId: $clientMutationId, table: $table,
+                action: MobileMutation::ACTION_CREATE, syncUuid: $syncUuid,
+                baseVersion: $baseVersion, payload: $payload,
+                status: MobileMutation::STATUS_APPLIED,
+                serverResponse: [
+                    'server_id' => $existing->id,
+                    'server_version' => (int) ($existing->server_version ?? 0),
+                    'sync_uuid' => $existing->sync_uuid,
+                    'official_sale_number' => $existing->sale_number,
+                    'status' => $existing->status,
+                    'total_amount' => (float) $existing->total_amount,
+                    'idempotent' => true,
+                ],
+            );
+        }
+
+        $result = $this->posSaleSync->applyCreate($tenant, $user, $device, $syncUuid, $payload);
+
+        if (!($result['ok'] ?? false)) {
+            return $this->persistAndReturn(
+                tenant: $tenant, user: $user, device: $device,
+                clientMutationId: $clientMutationId, table: $table,
+                action: MobileMutation::ACTION_CREATE, syncUuid: $syncUuid,
+                baseVersion: $baseVersion, payload: $payload,
+                status: MobileMutation::STATUS_FAILED,
+                code: $result['error_code'] ?? 'pos_sale_apply_failed',
+                message: $result['error_message'] ?? 'Could not apply POS sale',
                 errors: $result['errors'] ?? null,
             );
         }

@@ -96,6 +96,12 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/resolve-conflict', [\App\Http\Controllers\Api\Tenant\SyncController::class, 'resolveConflict'])->name('resolve-conflict');
         Route::get('/documents/invoices/{invoiceSyncUuid}/pdf', [\App\Http\Controllers\Api\Tenant\SyncController::class, 'invoicePdf'])->name('documents.invoice-pdf');
         Route::post('/documents/customers/{customerSyncUuid}/statement', [\App\Http\Controllers\Api\Tenant\SyncController::class, 'customerStatement'])->name('documents.customer-statement');
+
+        // Phase 6: cacheable reports manifest. Mobile uses this list to
+        // decide which report endpoints to persist via React Query, with
+        // suggested TTLs and a hard max-age. Filtered by the calling
+        // user's existing tenant permissions.
+        Route::get('/reports/manifest', [\App\Http\Controllers\Api\Tenant\SyncController::class, 'reportsManifest'])->name('reports.manifest');
     });
 
     // Onboarding

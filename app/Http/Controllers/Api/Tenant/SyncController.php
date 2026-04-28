@@ -309,11 +309,14 @@ class SyncController extends BaseApiController
             $row->fill($clean)->save();
         }
 
+        $diff = $conflict->diff ?? [];
+        $diff['resolution_payload'] = $resolvedPayload;
+
         $conflict->forceFill([
-            'resolved_at'         => now(),
-            'resolved_by'         => $user->id,
-            'resolution_strategy' => $strategy,
-            'resolved_payload'    => $resolvedPayload,
+            'resolved_at' => now(),
+            'resolved_by' => $user->id,
+            'resolution' => $strategy,
+            'diff'       => $diff,
         ])->save();
 
         return $this->success([
@@ -526,5 +529,87 @@ class SyncController extends BaseApiController
         }
 
         return null;
+    }
+
+    // ── Phase 6: cacheable reports manifest ──────────────────────────────
+
+    /**
+     * GET /sync/reports/manifest
+     *
+     * Returns the catalog of report endpoints that mobile may persist
+     * via React Query, filtered by the user's existing tenant
+     * permissions. Reports themselves stay online-calculated — this
+     * manifest is purely metadata so the client knows:
+     *   - which endpoints to subscribe to in the persistent cache;
+     *   - how long each cached snapshot is "fresh" (`ttl_minutes`);
+     *   - the hard `max_age_minutes` after which the snapshot must be
+     *     visually demoted to "stale" or refused outright.
+     *
+     * Mobile is expected to also stamp each cached response with the
+     * receive-side wallclock time as `cached_at` and display that as
+     * the user-facing "Last updated at" label.
+     */
+    public function reportsManifest(Request $request, Tenant $tenant): JsonResponse
+    {
+        if ($guard = $this->guardTenant($request, $tenant)) {
+            return $guard;
+        }
+
+        $user = $request->user();
+
+        // Coarse gate — the user must at least have generic mobile pull
+        // capability. Per-report gating is then applied below.
+        if (
+            method_exists($user, 'hasPermissionTo')
+            && !$user->hasPermissionTo('mobile.sync.read')
+            && !$user->hasPermissionTo('mobile.sync.read.invoices')
+        ) {
+            return $this->forbidden('mobile.sync.read permission required');
+        }
+
+        $reports = (array) config('mobile_sync.reports', []);
+
+        $hasPermission = function (string $slug) use ($user): bool {
+            if (!method_exists($user, 'hasPermissionTo')) {
+                return true;
+            }
+            try {
+                return (bool) $user->hasPermissionTo($slug);
+            } catch (\Throwable) {
+                return false;
+            }
+        };
+
+        $base = "/api/v1/tenant/{$tenant->slug}/";
+
+        $manifest = [];
+        foreach ($reports as $key => $entry) {
+            $perm = $entry['permission'] ?? null;
+            if ($perm && !$hasPermission($perm)) {
+                continue;
+            }
+
+            $manifest[] = [
+                'key'              => (string) $key,
+                'method'           => strtoupper($entry['method'] ?? 'GET'),
+                'path'             => $entry['path'] ?? '',
+                'absolute_path'    => $base . ltrim($entry['path'] ?? '', '/'),
+                'module'           => $entry['module'] ?? null,
+                'description'      => $entry['description'] ?? null,
+                'ttl_minutes'      => (int) ($entry['ttl_minutes'] ?? 15),
+                'max_age_minutes'  => (int) ($entry['max_age_minutes'] ?? 60 * 24),
+                'permission'       => $perm,
+            ];
+        }
+
+        return $this->success([
+            'server_time'    => Carbon::now()->toIso8601String(),
+            'schema_version' => (int) config('mobile_sync.schema_version', 1),
+            'reports'        => $manifest,
+            // The mobile client should treat the manifest itself as
+            // refreshable hourly — it changes only when permissions or
+            // the server-side report catalog changes.
+            'manifest_ttl_minutes' => 60,
+        ], 'Reports manifest');
     }
 }

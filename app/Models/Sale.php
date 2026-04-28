@@ -8,10 +8,11 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use App\Traits\BelongsToTenant;
 use App\Traits\HasAudit;
+use App\Traits\Syncable;
 
 class Sale extends Model
 {
-    use HasFactory, BelongsToTenant, HasAudit;
+    use HasFactory, BelongsToTenant, HasAudit, Syncable;
 
     protected $fillable = [
         'tenant_id',

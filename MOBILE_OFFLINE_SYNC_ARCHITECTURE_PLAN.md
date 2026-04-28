@@ -1,4 +1,4 @@
-# Mobile Offline Sync Architecture Plan
+﻿# Mobile Offline Sync Architecture Plan
 
 Date: 2026-04-28
 
@@ -1150,6 +1150,293 @@ src/storage/expoFileStorage.ts
 - Should customer statements include pending unsynced invoices in a separate provisional section by default?
 - Should local SQLite be encrypted from day one, knowing Expo encryption may require EAS Build, a custom native module, or a config plugin?
 - How long should mobile keep cached data after a user's permissions are removed?
+
+
+---
+
+## Phase 4 Deployment Runbook (Inventory Operations Offline)
+
+**Status:** Code-shipped. Adds offline draft creation for stock journal entries (transfer / production / consumption / adjustment).
+
+### Scope
+
+- Mobile may push DRAFT `stock_journal_entries` (parent + items) created while offline.
+- Server assigns the official `journal_number` atomically.
+- Posting (`status = 'posted'`, writing to `stock_movements`, ledger effects) remains online-only — Phase 5+ will introduce stock-validation conflict rules before flipping that lever.
+- Stock locations are resolved by `sync_uuid` for transfer entries.
+- Permission gate: `mobile.sync.write.inventory` (already provisioned in Phase 1).
+
+### What Shipped
+
+| Layer | File | Change |
+|------|------|--------|
+| Migration | `database/migrations/2026_05_05_000001_add_sync_columns_to_stock_journal_tables.php` | Adds `sync_uuid`, `server_version`, `client_created_at`, `client_updated_at`, `last_modified_by_device_id` (+ unique + indexes) to `stock_journal_entries` and `stock_journal_entry_items`. Idempotent, all guards `Schema::hasColumn` / `hasIndex`. |
+| Model | `app/Models/StockJournalEntry.php` | `use Syncable` |
+| Model | `app/Models/StockJournalEntryItem.php` | `use Syncable` |
+| Service | `app/Services/MobileSync/StockJournalSyncService.php` | `applyCreate(Tenant, User, MobileDevice, syncUuid, payload)` — validates, resolves products + locations by `sync_uuid`, locks for next number, creates draft journal + items in one transaction. |
+| Wiring | `app/Services/MobileSync/PushService.php` | Constructor injects `StockJournalSyncService`. New dispatch branch for `custom_handler === 'stock_journal_sync'` and private `applyStockJournalCreate()` (mirrors `applyQuotationCreate`). |
+| Registry | `config/mobile_sync.php` | `stock_journal_entries` flipped to `pushable=true`, `allowed_actions=['create']`, `custom_handler='stock_journal_sync'`, `dependencies=['products','stock_locations']`, `protected_attributes=['status','posted_at','posted_by','journal_number']`. `stock_journal_entry_items` registered as pull-only child via parent relation `stockJournalEntry`. |
+| Tests | `tests/Feature/Api/Tenant/MobileStockJournalSyncTest.php` | 6 feature tests: draft creation, transfer location resolution, idempotency, missing-items rejection, transfer-without-both-locations rejection, unknown-product rejection. |
+
+### Deployment Steps (Production)
+
+1. **Pull code** to staging / production.
+2. **Run migration** in a low-traffic window:
+   ```
+   php artisan migrate --path=database/migrations/2026_05_05_000001_add_sync_columns_to_stock_journal_tables.php
+   ```
+   Migration is additive and idempotent — safe to re-run.
+3. **Backfill existing rows** with `sync_uuid` (reuse the existing command):
+   ```
+   php artisan ballie:sync:backfill-uuids --tables=stock_journal_entries,stock_journal_entry_items --chunk=500
+   ```
+   *(Run during off-peak — chunked + throttled per `config/mobile_sync.backfill`.)*
+4. **Clear config cache**:
+   ```
+   php artisan config:clear
+   php artisan config:cache
+   ```
+5. **Verify registry**:
+   ```
+   php artisan tinker --execute="echo json_encode(app(\App\Services\MobileSync\SyncRegistry::class)->get('stock_journal_entries'), JSON_PRETTY_PRINT);"
+   ```
+   Expected: `pushable: true`, `custom_handler: stock_journal_sync`.
+6. **Verify DI**:
+   ```
+   php artisan tinker --execute="app(\App\Services\MobileSync\PushService::class); echo 'OK';"
+   ```
+
+### Smoke Test (Post-Deploy)
+
+POST to `/api/v1/tenant/{tenant}/sync/push` with a single `stock_journal_entries` create mutation. Confirm:
+
+- Response `data.results.0.status == "applied"`.
+- `data.results.0.server_response.official_journal_number` is populated and follows the server pattern (`SJYYYYMMDD####`).
+- `data.results.0.server_response.status == "draft"`.
+- DB row exists in `stock_journal_entries` with `status='draft'`, matching `sync_uuid`, and `posted_at IS NULL`.
+- Zero rows in `stock_movements` referencing the new journal id.
+- Re-pushing the same `client_mutation_id` returns `applied` again with `idempotent: true` in the server response.
+
+### Permissions
+
+No new permissions. Reuses `mobile.sync.write.inventory` (already provisioned in Phase 1's `MobileSyncPermissionsSeeder`). Users who can create products / categories already have inventory write capability.
+
+### Rollback
+
+If issues are observed:
+
+1. Revert the registry by editing `config/mobile_sync.php` and setting `pushable => false` for `stock_journal_entries`. Run `config:cache`. Pushes will start failing with `not_pushable` immediately.
+2. The migration is additive and safe to leave in place. Do NOT run `migrate:rollback` blindly — it would attempt to drop sync columns that other phases may also depend on.
+3. The `Syncable` trait no-ops on legacy tables that lack sync columns, so even a partial rollback won't break creates.
+
+### Out of Scope (Phase 5+)
+
+- Online posting from mobile (`status: 'draft' → 'posted'`).
+- Stock availability checks / negative-stock rejection.
+- Bin-level / batch-level conflict resolution on parallel adjustments.
+- Multi-location production reports with operator handoff.
+
+### Test Status
+
+The new feature tests (6) are written but not run in CI yet due to a pre-existing legacy migration issue in the SQLite test database (unrelated to mobile sync — see prior Phase 3 notes). Production MySQL is unaffected because the migration is gated by `Schema::hasTable` / `hasColumn`. Manual smoke-testing on staging is the verification path until the test-infra issue is fixed.
+
+
+---
+
+## Phase 5 Deployment Runbook (POS Offline Sales)
+
+**Status:** Code-shipped. Adds offline POS sale capture against an already-open cash register session, with full server-side stock validation, stock movement writes, receipt generation, and accounting voucher posting.
+
+### Scope
+
+- Mobile may push completed `sales` (parent + items + payments) captured offline.
+- Server assigns the official `sale_number` atomically.
+- The cash register session is server-validated: must exist, must be **open** (`closed_at IS NULL`), and must belong to the pushing user.
+- Server runs **fresh stock checks** (`Product::getStockAsOfDate(now(), true)`) under `lockForUpdate()` per item; insufficient stock surfaces as a `failed` mutation with `error_code: insufficient_stock` for manager review.
+- Server writes `stock_movements`, generates a `Receipt`, and posts an RV accounting voucher (debit Cash, credit Sales/Tax) — same logic as the canonical web/mobile POS controller.
+- **Sessions remain online-only** — opening / closing a cash register session requires connectivity. Mobile pulls the session record and uses its `sync_uuid` while offline.
+- Permission gate: `mobile.sync.write.invoices` (already provisioned in Phase 1).
+
+### What Shipped
+
+| Layer | File | Change |
+|------|------|--------|
+| Migration | `database/migrations/2026_05_12_000001_add_sync_columns_to_pos_tables.php` | Adds `sync_uuid` / `server_version` / `client_*_at` / `last_modified_by_device_id` (+ unique + indexes) to `cash_registers`, `cash_register_sessions`, `payment_methods`, `sales`, `sale_items`, `sale_payments`. Idempotent. |
+| Models | `app/Models/Sale.php`, `SaleItem.php`, `SalePayment.php`, `CashRegister.php`, `CashRegisterSession.php`, `PaymentMethod.php` | `use Syncable` |
+| Service | `app/Services/MobileSync/PosSaleSyncService.php` | `applyCreate(Tenant, User, MobileDevice, syncUuid, payload)` — validates session ownership + open state, resolves customer/products/payment_methods by `sync_uuid`, locks for fresh stock, creates Sale + items + payments, writes stock movements, generates receipt + RV voucher. |
+| Wiring | `app/Services/MobileSync/PushService.php` | Constructor injects `PosSaleSyncService`. New dispatch branch for `custom_handler === 'pos_sale_sync'` and private `applyPosSaleCreate()`. |
+| Registry | `config/mobile_sync.php` | Six new entries: `cash_registers`, `cash_register_sessions`, `payment_methods` (pull-only); `sales` (pushable, `custom_handler='pos_sale_sync'`, server-derived totals + `sale_number` listed in `protected_attributes`); `sale_items`, `sale_payments` (pull-only children). |
+| Tests | `tests/Feature/Api/Tenant/MobilePosSaleSyncTest.php` | 5 feature tests: completed sale creation, closed-session rejection, session-user-mismatch rejection, idempotency, missing-payments rejection. |
+
+### Deployment Steps (Production)
+
+1. **Pull code** to staging / production.
+2. **Run migration** in a low-traffic window:
+   ```
+   php artisan migrate --path=database/migrations/2026_05_12_000001_add_sync_columns_to_pos_tables.php
+   ```
+   Migration is additive and idempotent — safe to re-run.
+3. **Backfill existing rows** with `sync_uuid`:
+   ```
+   php artisan ballie:sync:backfill-uuids --tables=cash_registers,cash_register_sessions,payment_methods,sales,sale_items,sale_payments --chunk=500
+   ```
+   Chunked + throttled per `config/mobile_sync.backfill`.
+4. **Clear and warm caches**:
+   ```
+   php artisan config:clear
+   php artisan config:cache
+   php artisan route:cache
+   ```
+5. **Verify registry**:
+   ```
+   php artisan tinker --execute="echo json_encode(app(\App\Services\MobileSync\SyncRegistry::class)->get('sales'), JSON_PRETTY_PRINT);"
+   ```
+   Expected: `pushable: true`, `custom_handler: pos_sale_sync`, dependencies include `cash_register_sessions`.
+6. **Verify DI**:
+   ```
+   php artisan tinker --execute="app(\App\Services\MobileSync\PushService::class); echo 'OK';"
+   ```
+
+### Smoke Test (Post-Deploy)
+
+Open a cash register session online, then POST to `/api/v1/tenant/{tenant}/sync/push` with a single `sales` create mutation referencing that session's `sync_uuid`. Confirm:
+
+- Response `data.results.0.status == "applied"`.
+- `data.results.0.server_response.official_sale_number` is populated and matches the `SALE-YYYY-######` pattern.
+- DB row exists in `sales` with `status='completed'`, matching `sync_uuid`, server-recalculated `total_amount`.
+- Matching rows in `sale_items` and `sale_payments`.
+- A `receipts` row exists for the new sale.
+- An RV `vouchers` row exists with two/three `voucher_entries` (debit Cash, credit Sales, optional credit Tax) — provided the tenant has the standard `CASH-001` / `SALES-001` ledger accounts and `RV` voucher type. If not, a `Log::warning` is emitted and the sale still succeeds (sale + receipt + stock movement, but no voucher); this matches the canonical POS controller behavior.
+- For products with `maintain_stock=true`, a `stock_movements` row exists with `type='out'`, `transaction_type='sales'`, `source_transaction_type=Sale::class`.
+- Re-pushing the same `client_mutation_id` returns `applied` again with `idempotent: true` in the server response.
+- Pushing against a closed session returns `failed` with `error_code: session_closed`.
+- Pushing for an item that exceeds available stock returns `failed` with `error_code: insufficient_stock` and the available quantity in `errors.available`.
+
+### Permissions
+
+No new permissions. Reuses `mobile.sync.write.invoices` (already provisioned in Phase 1's `MobileSyncPermissionsSeeder`). Cashiers who can push offline invoices may also push offline POS sales.
+
+### Rollback
+
+If issues are observed:
+
+1. Edit `config/mobile_sync.php` and set `pushable => false` on `sales`. Run `config:cache`. Pushes will fail with `not_pushable` immediately. Pull-only access to cash registers / sessions / payment methods can remain enabled (no harm).
+2. The migration is additive — leave it in place. Sales already accepted via the new pipeline are standard `status='completed'` sales and remain valid records under the previous controller code.
+3. Stock movements + receipts + accounting vouchers created via the sync path are indistinguishable from those created via the web/mobile POS controllers — no cleanup required.
+
+### Out of Scope (Phase 6+)
+
+- Offline session opening / closing (still requires connectivity).
+- Refunds, voids, or sale corrections from offline.
+- Manager-review UX for `insufficient_stock` conflicts (the data is in `mobile_mutations.error_code` and `mobile_sync_conflicts`; the UI is a Phase 6+ deliverable).
+- Multi-currency POS sales.
+- Per-device reserved `sale_number` blocks (currently each push gets the next number atomically; for very high-volume offline operations, a reservation scheme can be considered later).
+
+### Test Status
+
+The 5 new feature tests are written but not run in CI yet due to the same pre-existing legacy migration issue in the SQLite test database that affected Phases 3 and 4. Production MySQL is unaffected because the migration is gated by `Schema::hasTable` / `hasColumn`. Manual smoke-testing on staging per the steps above is the verification path until the test-infra cleanup ticket is picked up.
+
+
+---
+
+## Phase 6 Deployment Runbook (Reports & Dashboard Cache)
+
+**Status:** Code-shipped. **Code-only, no migrations, no new permissions.** Reports and dashboards remain server-calculated at all times — the work here is purely metadata so the mobile React Query persistence layer can decide what to keep on disk and how stale to render it.
+
+### Scope
+
+- Reports stay **online-calculated** — there is no offline editing of report data, ever. Mobile only persists the *last successful response* per cacheable report.
+- The new endpoint `GET /api/v1/tenant/{tenant}/sync/reports/manifest` returns the catalog of cacheable reports filtered by the user's existing tenant permissions. A user lacking `dashboard.view` does not even learn that dashboard endpoints exist in the cache catalog.
+- Each manifest entry carries `ttl_minutes` (when to background-refresh) and `max_age_minutes` (the hard cap after which mobile must demote the snapshot to "stale" or refuse to render it offline). Financial reports use a tighter `max_age_minutes` than operational reports.
+- **Mobile-side label semantics** (documented for the RN handoff):
+  - `cached_at` is stamped client-side with the device wallclock when the response arrives. There is no server-side `generated_at` injected into the 57 existing report controllers — that would be high-risk multi-controller surgery for a label.
+  - "Last updated at" = `cached_at`.
+  - "Offline cached data" badge shown whenever `now() - cached_at > ttl_minutes`.
+  - Snapshot is hidden / replaced by "Snapshot too old to display" when `now() - cached_at > max_age_minutes`.
+- Permission gating is **double-layered**: (a) the manifest only lists reports the user can view; (b) the underlying report endpoints continue to enforce their own auth as before — a stolen manifest cannot be used to bypass anything.
+
+### What Shipped
+
+| Layer | File | Change |
+|------|------|--------|
+| Config | `config/mobile_sync.php` | New top-level `'reports'` block enumerating 15 cacheable report endpoints (dashboard ×4, sales ×2, inventory ×3, financial ×4, CRM ×2). Each entry: `method`, `path`, `permission`, `ttl_minutes`, `max_age_minutes`, `module`, `description`. |
+| Controller | `app/Http/Controllers/Api/Tenant/SyncController.php` | New public `reportsManifest(Request, Tenant): JsonResponse` method. Coarse-gates on `mobile.sync.read` (or `mobile.sync.read.invoices`), then per-entry filters by the user's tenant permission. Returns `{ server_time, schema_version, reports: [...], manifest_ttl_minutes }`. |
+| Route | `routes/api/v1/tenant.php` | `GET /sync/reports/manifest` mounted inside the existing `auth:sanctum` sync group, name `sync.reports.manifest`. |
+| Tests | `tests/Feature/Api/Tenant/MobileReportsManifestTest.php` | 4 feature tests: 401 unauthenticated, 403 without `mobile.sync.read`, manifest filters by permission (no dashboard.view → no dashboard.* entries), TTL / max_age / absolute_path shape per entry. |
+
+### Deployment Steps (Production)
+
+1. **Pull code** to staging / production.
+2. **No migration. No seeder. No backfill.**
+3. **Refresh caches**:
+   ```
+   php artisan config:clear
+   php artisan route:clear
+   php artisan config:cache
+   php artisan route:cache
+   ```
+4. **Verify route**:
+   ```
+   php artisan route:list --path=sync/reports
+   ```
+   Expected: `GET|HEAD api/v1/tenant/{tenant}/sync/reports/manifest`.
+5. **Verify config**:
+   ```
+   php artisan tinker --execute="echo count(config('mobile_sync.reports')) . ' cacheable reports';"
+   ```
+   Expected: `15 cacheable reports`.
+
+### Smoke Test (Post-Deploy)
+
+With a Sanctum token whose role has `mobile.sync.read` plus at least `dashboard.view`:
+
+```
+GET /api/v1/tenant/{tenant}/sync/reports/manifest
+```
+
+Confirm:
+- HTTP 200, `data.schema_version == 1`, `data.server_time` populated.
+- `data.reports` is a non-empty array.
+- Every entry contains `key`, `method`, `path`, `absolute_path` starting with `/api/v1/tenant/{tenant}/`, `ttl_minutes > 0`, `max_age_minutes >= ttl_minutes`, and a non-null `permission`.
+- Re-issuing the request with a token whose role lacks `dashboard.view` returns the same envelope but **without** any `dashboard.*` keys.
+- Re-issuing without `mobile.sync.read` returns HTTP 403.
+
+### Permissions
+
+No new permissions. Reuses:
+- `mobile.sync.read` (Phase 1) — coarse gate on the manifest endpoint itself.
+- `dashboard.view`, `reports.view`, `inventory.view` (already in tenant permission catalog) — used as per-report filters inside the manifest.
+
+If your tenant permission catalog uses different slugs for the report modules, edit `config/mobile_sync.php` and adjust the `permission` field on each entry — no code change needed.
+
+### Rollback
+
+Trivial — this phase is read-only metadata:
+
+1. To disable a single report from the cache catalog, remove its entry from `config/mobile_sync.php` and run `config:cache`. Mobile clients will drop it from their persisted set on the next manifest refresh (default `manifest_ttl_minutes: 60`).
+2. To kill the entire feature, comment out the route line in `routes/api/v1/tenant.php` and run `route:cache`. The endpoint will return 404 and mobile clients will fall back to their last-known cached responses (which is exactly the safe behavior).
+3. No data, no migrations, nothing to clean up.
+
+### What Was Intentionally NOT Shipped
+
+To keep Phase 6 small and safe, the following were considered and explicitly deferred:
+
+- **Server-side `generated_at` field on the 57 existing report controllers.** Touching every controller for one display label would be a high-blast-radius change for negligible benefit. Mobile stamps `cached_at` on receipt instead. If a future audit need arises, a single `AppendsGeneratedAt` middleware on the reports route group can add an `X-Ballie-Generated-At` header without touching controllers.
+- **Server-side report snapshot table (`mobile_report_snapshots`).** Persistence lives on the device via React Query persistence + WatermelonDB; storing snapshots server-side adds I/O and privacy surface area for no offline benefit.
+- **Granular `reports.read.*` permission slugs.** The existing tenant permission catalog already gates report access via `dashboard.view`, `reports.view`, `inventory.view`. Splitting them per-module is a separate authorization-cleanup ticket, independent of mobile sync.
+- **Push of cached report annotations.** Reports are read-only by policy.
+- **Multi-tenant report aggregation.** Out of scope for this product.
+
+### Out of Scope (Phase 7+)
+
+- Server-side warm caching of report responses (currently only `dashboard.summary` uses `Cache::remember`).
+- Report-specific incremental sync (e.g. delta dashboard updates).
+- Push notifications when a cached report becomes stale due to upstream data changes.
+- A unified mobile "what's stale" inbox combining sync conflicts + stale snapshots.
+
+### Test Status
+
+The 4 new feature tests are written but not run in CI yet due to the same pre-existing legacy SQLite migration blocker that affected Phases 3 / 4 / 5. Production MySQL is unaffected because Phase 6 ships **no migrations at all**. Manual smoke-test path documented above.
 - Should conflicts be resolved only on mobile, only on web/admin, or both?
 - Should the team commit to WatermelonDB with custom dev client immediately, or start UI work in Expo Go with `expo-sqlite` and switch before production?
 
@@ -1176,8 +1463,8 @@ Phase 1 is strictly additive (new columns are nullable, new tables are new, no d
 
 ```bash
 # 1. Apply the four new sync migrations only.
-#    Running plain `php artisan migrate` is also safe — these are the only
-#    pending migrations — but the explicit --path form documents intent and
+#    Running plain `php artisan migrate` is also safe â€” these are the only
+#    pending migrations â€” but the explicit --path form documents intent and
 #    avoids surprises if other branches add migrations.
 php artisan migrate \
   --path=database/migrations/2026_04_28_000001_add_sync_columns_to_mobile_sync_tables.php \
@@ -1195,7 +1482,7 @@ php artisan migrate \
 # 2. Seed the new mobile.sync.* permissions (idempotent).
 php artisan db:seed --class=Database\\Seeders\\MobileSyncPermissionsSeeder --force
 
-# 3. Preview the UUID backfill — read-only, just reports counts.
+# 3. Preview the UUID backfill â€” read-only, just reports counts.
 php artisan ballie:sync:backfill-uuids --dry-run
 
 # 4. Run the real backfill. Chunked + idempotent; safe to re-run.
@@ -1237,10 +1524,208 @@ The seeded permissions remain in `permissions` after rollback; remove them manua
 DELETE FROM permissions WHERE slug LIKE 'mobile.sync.%';
 ```
 
-> ⚠️ **Test isolation note.** Earlier in development, `phpunit.xml` had its
+> âš ï¸ **Test isolation note.** Earlier in development, `phpunit.xml` had its
 > sqlite test-DB lines commented out, which caused `RefreshDatabase` feature
 > tests to wipe the developer's local MySQL database. The file has been
 > corrected to use `DB_CONNECTION=sqlite` + `DB_DATABASE=:memory:`. **Do not
 > re-comment those lines.** Verify on every environment before running
 > `php artisan test`.
 
+
+
+## Phase 2 Deployment Runbook
+
+Phase 2 is **code-only** â€” no new schema migrations, no data backfills, no
+new permissions. It builds on the Phase 1 sync infrastructure (the
+mobile_* tables, sync_uuid columns, and mobile.sync.* permissions
+seeded in Phase 1) and ships:
+
+- `app/Services/MobileSync/InvoiceSyncService.php` â€” applies offline
+  invoice (voucher) creates from the mobile push pipeline.
+- `app/Services/MobileSync/DocumentExportService.php` â€” generates and
+  caches the official invoice PDF using the existing Barryvdh DomPDF
+  templates already used by the web app.
+- `app/Services/MobileSync/CustomerStatementSnapshotService.php` â€”
+  generates and caches customer statement PDFs.
+- `app/Http/Controllers/Api/Tenant/SyncController.php` (extended) â€”
+  adds 4 endpoints: resolve-conflict, invoice PDF, customer statement,
+  signed-URL document download.
+- `config/mobile_sync.php` (vouchers entry) â€” registers `vouchers`
+  with `custom_handler: 'invoice_sync'` and the appropriate
+  permissions and dependencies.
+- `app/Services/MobileSync/PushService.php` â€” wires the custom
+  invoice handler into the push pipeline.
+
+### Pre-deployment checklist
+
+1. **Confirm Phase 1 is already deployed.** Required:
+   - All four `2026_04_28_0000*` migrations are `Ran`.
+   - `mobile_devices`, `mobile_mutations`, `mobile_sync_conflicts`,
+     `mobile_document_exports` tables exist.
+   - The five `mobile.sync.*` permissions exist in `permissions`.
+   - At least one role with `mobile.sync.read` has been validated
+     against `GET /sync/bootstrap`.
+2. Take a fresh database backup before deploy (defensive â€” Phase 2 does
+   not touch the schema, but production deploys should always have one).
+3. Pull the new code.
+4. Verify `config/mobile_sync.php` exists and contains the
+   `documents` block (`invoice_pdf_cache_minutes`,
+   `statement_cache_minutes`, `signed_url_ttl_minutes`, `disk`,
+   `directory`). Defaults are safe; override only if you need a
+   non-`local` disk for exports.
+5. Confirm the storage directory `storage/app/mobile-exports` is
+   writable by the web user. Subdirectories `invoices/` and
+   `statements/` will be created automatically on first export.
+
+### Live server commands (run in order)
+
+```bash
+# 1. Install / refresh dependencies (no new packages added in Phase 2,
+#    but always run on deploy to lock down autoload/optimised classes).
+composer install --no-dev --optimize-autoloader
+
+# 2. Refresh caches so the new routes, config entries, and registry
+#    bindings are picked up.
+php artisan config:clear
+php artisan route:clear
+php artisan cache:clear
+
+# 3. (Optional but recommended) Re-warm caches for production.
+php artisan config:cache
+php artisan route:cache
+```
+
+> No `migrate`. No seeder. No backfill.
+
+### Post-deployment verification
+
+- `php artisan route:list | grep -E "sync/(resolve-conflict|documents)"`
+  shows four routes:
+  - `POST   api/v1/tenant/{tenant}/sync/resolve-conflict`
+  - `GET    api/v1/tenant/{tenant}/sync/documents/invoices/{invoiceSyncUuid}/pdf`
+  - `POST   api/v1/tenant/{tenant}/sync/documents/customers/{customerSyncUuid}/statement`
+  - `GET    api/v1/tenant/{tenant}/sync/documents/{exportUuid}/download`
+    (named `api.v1.tenant.sync.documents.download`; signature-protected,
+    no Sanctum guard).
+- Invoice push smoke test (against staging) â€” register a test device,
+  push a `vouchers` create mutation with one item, expect `status:
+  applied` and a populated `server_response.official_voucher_number`.
+- Invoice PDF smoke test â€” `GET /sync/documents/invoices/{sync_uuid}/pdf`
+  with the device's Sanctum token returns a 200 with a signed
+  `download_url`; following that URL returns the PDF and
+  `mobile_document_exports.downloaded_at` is populated.
+- Customer statement smoke test â€” `POST /sync/documents/customers/{sync_uuid}/statement`
+  with a `from_date` / `to_date` returns 200 with a signed
+  `download_url` and a `summary` block.
+- Conflict resolution smoke test â€” `POST /sync/resolve-conflict` with
+  `strategy: server_wins` on an existing pending conflict marks
+  `resolved_at` / `resolved_by` / `resolution` and stores the
+  resolution payload under `diff.resolution_payload`.
+
+### Rollback
+
+Phase 2 is code-only, so rollback is a code revert:
+
+```bash
+git revert <phase-2 merge commit>
+composer install --no-dev --optimize-autoloader
+php artisan config:clear && php artisan route:clear && php artisan cache:clear
+```
+
+No data needs to be cleaned up. `mobile_document_exports` rows
+generated under Phase 2 are harmless after rollback (just orphaned
+cached PDFs); they can be expired via the existing `expires_at`
+column or pruned manually:
+
+```sql
+DELETE FROM mobile_document_exports WHERE generated_at < NOW() - INTERVAL 7 DAY;
+```
+
+### Test-suite notes (Phase 2 carryover)
+
+Running `php artisan test tests/Feature/Api/Tenant/MobileInvoiceSyncTest.php`
+or `MobileDocumentExportTest.php` against the test sqlite `:memory:`
+database currently requires the following migration patches (already
+applied in this branch) to make MySQL-only DDL skip on sqlite:
+
+- `2025_06_15_000001_add_item_type_to_invoice_items_table` â€”
+  `hasTable` guard + skip `change()` on sqlite.
+- `2025_10_19_070500_update_account_groups_nature_enum` â€” skip on sqlite.
+- `2025_11_03_07_23_create_invoice_items_table` â€” `hasTable` guard,
+  inlines `item_type` and `unit` columns for fresh installs.
+- `2025_11_09_174626_update_payroll_run_details_component_type_enum` â€” skip on sqlite.
+- `2025_11_10_153711_make_salary_component_id_nullable_in_payroll_run_details` â€” skip on sqlite.
+- `2025_11_11_095831_fix_cash_register_sessions_foreign_keys` â€” skip on sqlite.
+- `2025_11_14_204956_make_overtime_type_nullable_in_overtime_records` â€” skip on sqlite.
+
+Production MySQL behaviour is unchanged by these guards. Additional
+legacy migrations in the repository may still be MySQL-specific and
+require similar guards before the full `php artisan test` suite is
+green; this is tracked separately and is not a Phase 2 deliverable.
+
+---
+
+## Phase 3 Deployment Runbook
+
+**Scope.** Code-only release. Adds:
+
+- `app/Services/MobileSync/QuotationSyncService.php` (new) — applies offline quotation creates with server-assigned `quotation_number` and totals.
+- `app/Services/MobileSync/PushService.php` — injects `QuotationSyncService` and adds a `quotation_sync` dispatch branch in `applyOne()`; tightens validation rules for `products`, `units`, `product_categories` master data.
+- `config/mobile_sync.php` — `quotations` entry flipped to `pushable: true` with `allowed_actions: ['create']`, `custom_handler: quotation_sync`, dependencies extended to `[customers, vendors, products]`.
+- `tests/Feature/Api/Tenant/MobileInventoryAndQuotationSyncTest.php` (new).
+
+**No migrations. No new permissions. No seeders.** `mobile.sync.write.invoices` is reused as the push gate for quotations (any user already authorised to push invoices may push quotations).
+
+### Pre-deploy checklist
+
+- Phase 2 deployed and healthy in production (mobile devices already registered, `mobile_sync_*` tables present).
+- Tag the previous release (`git tag pre-phase-3`) so rollback is a single `git reset`.
+
+### Live deploy
+
+```bash
+git pull --ff-only
+composer install --no-dev --optimize-autoloader
+php artisan config:clear
+php artisan route:clear
+php artisan cache:clear
+php artisan config:cache
+php artisan route:cache
+```n
+### Post-deploy verification
+
+1. **Routes unchanged** — no new endpoints; `php artisan route:list --path=sync` should match the Phase 2 output.
+2. **Registry flip** — open a tinker shell:
+   ```php
+   config('mobile_sync.tables.quotations.pushable')    // => true
+   config('mobile_sync.tables.quotations.custom_handler') // => 'quotation_sync'
+   ```n3. **Smoke test** — using a Sanctum token belonging to a user with `mobile.sync.write.invoices`:
+   - `POST /api/v1/tenant/{slug}/sync/register-device` with a fresh `device_uuid`.
+   - `POST /api/v1/tenant/{slug}/sync/push` with a `quotations` `create` mutation referencing existing `customer_sync_uuid` and `product_sync_uuid`.
+   - Expect `data.results[0].status == 'applied'` and an `official_quotation_number` in `server_response`. The new row in `quotations` should have `status='draft'` and recalculated `total_amount`.
+4. **Inventory push regression** — push a `units` create and a `product_categories` create; confirm rows appear with the device-supplied `sync_uuid`.
+5. **Stock-fields guard** — push a `products` create with `current_stock=9999`. The created product must NOT show 9999 stock; SyncRegistry strips server-derived columns from inbound payloads.
+
+### Rollback
+
+```bash
+git reset --hard pre-phase-3
+composer install --no-dev --optimize-autoloader
+php artisan config:clear && php artisan route:clear && php artisan cache:clear
+```n
+No data rollback is required: any quotations created via the new pipeline are standard `draft` quotations and remain valid records under the previous code (only the inbound push path goes away).
+
+### Out-of-scope for Phase 3
+
+- Quotation **updates / status transitions** (sent / accepted / converted) remain online-only.
+- Quotation **deletion** from mobile is not supported.
+- Product **stock adjustments** still require the dedicated stock-adjustment voucher flow (Phase 2).
+
+### Test suite notes (carried over from Phase 2)
+
+The new feature test `tests/Feature/Api/Tenant/MobileInventoryAndQuotationSyncTest.php` could not be run end-to-end in this branch because the workspace `RefreshDatabase` SQLite path is broken by pre-existing legacy migrations (duplicate `Schema::create('attendance_records')`, `DB::statement('SHOW INDEX …')`, `dropForeign` on SQLite, etc.) that affect every feature test, not just this one. Production MySQL is unaffected. Smoke testing the live API path per the verification steps above is the recommended substitute until the test-infra cleanup ticket is picked up.
+
+
+---
+
+## Phase 4 Deployment Runbook (Inventory Operations Offline)

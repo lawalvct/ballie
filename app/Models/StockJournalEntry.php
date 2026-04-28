@@ -9,10 +9,11 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Str;
 use App\Traits\HasAudit;
 use App\Traits\HasPosting;
+use App\Traits\Syncable;
 
 class StockJournalEntry extends Model
 {
-    use HasFactory, HasAudit, HasPosting;
+    use HasFactory, HasAudit, HasPosting, Syncable;
 
     protected $fillable = [
         'tenant_id',
