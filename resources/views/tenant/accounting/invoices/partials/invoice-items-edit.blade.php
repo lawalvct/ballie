@@ -306,9 +306,7 @@
         <div class="mt-6 border-t border-gray-200 pt-6">
             <div class="flex items-center mb-4">
                 <input type="checkbox"
-                       name="vat_enabled"
                        id="vat_enabled"
-                       value="1"
                        x-model="vatEnabled"
                        class="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded">
                 <label for="vat_enabled" class="ml-2 block text-sm font-medium text-gray-900">
@@ -322,7 +320,6 @@
                     <div class="space-y-2">
                         <label class="inline-flex items-center">
                             <input type="radio"
-                                   name="vat_applies_to"
                                    value="items_only"
                                    x-model="vatAppliesTo"
                                    class="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300">
@@ -330,7 +327,6 @@
                         </label>
                         <label class="inline-flex items-center ml-6">
                             <input type="radio"
-                                   name="vat_applies_to"
                                    value="items_and_charges"
                                    x-model="vatAppliesTo"
                                    class="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300">
@@ -352,7 +348,9 @@
                 </div>
             </div>
 
+            <input type="hidden" name="vat_enabled" x-bind:value="vatEnabled ? 1 : 0">
             <input type="hidden" name="vat_amount" x-bind:value="vatAmount.toFixed(2)">
+            <input type="hidden" name="vat_applies_to" x-bind:value="vatAppliesTo">
         </div>
 
         <!-- Grand Total Section -->
@@ -422,10 +420,10 @@ window.invoiceItemsEdit = function() {
             ];
         })->values()) !!},
         voucherTypes: @json($voucherTypesForJs),
-        ledgerAccounts: [],
-        vatEnabled: false,
+        ledgerAccounts: @json($additionalLedgerAccounts ?? []),
+        vatEnabled: @json((bool) ($vatEnabled ?? false)),
         vatRate: 0.075, // 7.5%
-        vatAppliesTo: 'items_only', // 'items_only' or 'items_and_charges'
+        vatAppliesTo: @json($vatAppliesTo ?? 'items_only'), // 'items_only' or 'items_and_charges'
         _updateTimeout: null,
 
         get totalAmount() {

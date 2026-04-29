@@ -768,7 +768,7 @@ class InvoiceController extends Controller
                 ->with('error', 'Only draft invoices can be edited.');
         }
 
-        $invoice->load(['items', 'entries.ledgerAccount.accountGroup']);
+        $invoice->load(['items', 'entries.ledgerAccount.accountGroup', 'voucherType']);
 
         // Most of this is copied from the 'create' method to ensure the view has all necessary data
         $voucherTypes = VoucherType::where('tenant_id', $tenant->id)
@@ -806,12 +806,17 @@ class InvoiceController extends Controller
         });
         $partyLedger = $partyEntry ? $partyEntry->ledgerAccount : null;
 
-        // Extract inventory items from meta_data
+        // Extract inventory items and additional charges from meta_data
+        $metaData = [];
         $inventoryItems = collect();
+        $additionalLedgerAccounts = collect();
         if ($invoice->meta_data) {
             $metaData = is_array($invoice->meta_data) ? $invoice->meta_data : json_decode($invoice->meta_data, true);
             if (isset($metaData['inventory_items'])) {
                 $inventoryItems = collect($metaData['inventory_items']);
+            }
+            if (isset($metaData['additional_ledger_accounts'])) {
+                $additionalLedgerAccounts = collect($metaData['additional_ledger_accounts']);
             }
         }
 
@@ -838,6 +843,73 @@ class InvoiceController extends Controller
             return $item;
         });
 
+        $vatAccountIds = LedgerAccount::where('tenant_id', $tenant->id)
+            ->whereIn('code', ['VAT-OUT-001', 'VAT-IN-001'])
+            ->pluck('id');
+
+        if ($additionalLedgerAccounts->isEmpty()) {
+            $itemRelatedAccountIds = $inventoryItems->map(function ($item) use ($productsById) {
+                if (($item['item_type'] ?? 'product') !== 'product' || empty($item['product_id'])) {
+                    return [];
+                }
+
+                $product = $productsById->get($item['product_id']);
+
+                return $product ? [
+                    $product->sales_account_id,
+                    $product->purchase_account_id,
+                    $product->stock_asset_account_id,
+                ] : [];
+            })->flatten()->filter()->unique()->values();
+
+            $isPurchaseInvoice = ($invoice->voucherType->inventory_effect ?? '') === 'increase';
+
+            $additionalLedgerAccounts = $invoice->entries->filter(function ($entry) use ($isPurchaseInvoice, $itemRelatedAccountIds) {
+                $ledgerAccount = $entry->ledgerAccount;
+                if (!$ledgerAccount) {
+                    return false;
+                }
+
+                $accountGroupCode = $ledgerAccount->accountGroup->code ?? '';
+                if (in_array($accountGroupCode, ['AR', 'AP'])) {
+                    return false;
+                }
+
+                if ($itemRelatedAccountIds->contains($ledgerAccount->id)) {
+                    return false;
+                }
+
+                $accountName = strtolower($ledgerAccount->name ?? '');
+                $accountCode = strtoupper($ledgerAccount->code ?? '');
+                if (str_contains($accountName, 'cost of goods sold') || in_array($accountCode, ['COGS', 'INV'])) {
+                    return false;
+                }
+
+                return $isPurchaseInvoice
+                    ? ((float) $entry->debit_amount > 0)
+                    : ((float) $entry->credit_amount > 0);
+            })->map(function ($entry) use ($isPurchaseInvoice) {
+                return [
+                    'ledger_account_id' => $entry->ledger_account_id,
+                    'amount' => $isPurchaseInvoice ? (float) $entry->debit_amount : (float) $entry->credit_amount,
+                    'narration' => $entry->particulars ?? '',
+                ];
+            })->values();
+        }
+
+        $vatLedgerAccount = $additionalLedgerAccounts->first(function ($ledgerAccount) use ($vatAccountIds) {
+            return $vatAccountIds->contains((int) ($ledgerAccount['ledger_account_id'] ?? 0));
+        });
+
+        $vatEnabled = $vatLedgerAccount !== null;
+        $vatAppliesTo = str_contains(strtolower($vatLedgerAccount['narration'] ?? ''), 'items + charges')
+            ? 'items_and_charges'
+            : 'items_only';
+
+        $additionalLedgerAccounts = $additionalLedgerAccounts->reject(function ($ledgerAccount) use ($vatAccountIds) {
+            return $vatAccountIds->contains((int) ($ledgerAccount['ledger_account_id'] ?? 0));
+        })->values();
+
         return view('tenant.accounting.invoices.edit', compact(
             'tenant',
             'invoice',
@@ -848,7 +920,10 @@ class InvoiceController extends Controller
             'ledgerAccounts',
             'units',
             'partyLedger',
-            'inventoryItems'
+            'inventoryItems',
+            'additionalLedgerAccounts',
+            'vatEnabled',
+            'vatAppliesTo'
         ));
     }
 
@@ -888,6 +963,9 @@ class InvoiceController extends Controller
             'ledger_accounts.*.ledger_account_id' => 'required_with:ledger_accounts|exists:ledger_accounts,id',
             'ledger_accounts.*.amount' => 'required_with:ledger_accounts|numeric|min:0',
             'ledger_accounts.*.narration' => 'nullable|string',
+            'vat_enabled' => 'nullable|boolean',
+            'vat_amount' => 'nullable|numeric|min:0',
+            'vat_applies_to' => 'nullable|in:items_only,items_and_charges',
         ], [
             'customer_id.required' => 'Please select a customer or vendor.',
             'customer_id.exists' => 'The selected customer or vendor is invalid.',
@@ -977,6 +1055,38 @@ class InvoiceController extends Controller
                             'amount' => $amount,
                             'narration' => $ledgerAccount['narration'] ?? '',
                         ];
+                    }
+                }
+            }
+
+            if ($request->boolean('vat_enabled')) {
+                $vatAmount = (float) $request->input('vat_amount', 0);
+                $vatAppliesTo = $request->input('vat_applies_to', 'items_only');
+
+                if ($vatAmount > 0) {
+                    $isSales = $voucherType->inventory_effect === 'decrease';
+                    $vatAccountCode = $isSales ? 'VAT-OUT-001' : 'VAT-IN-001';
+
+                    $vatAccount = LedgerAccount::where('tenant_id', $tenant->id)
+                        ->where('code', $vatAccountCode)
+                        ->first();
+
+                    if ($vatAccount) {
+                        $totalAmount += $vatAmount;
+
+                        $additionalLedgerAccounts[] = [
+                            'ledger_account_id' => $vatAccount->id,
+                            'amount' => $vatAmount,
+                            'narration' => $vatAppliesTo === 'items_only'
+                                ? 'VAT @ 7.5% (on items)'
+                                : 'VAT @ 7.5% (on items + charges)',
+                        ];
+                    } else {
+                        Log::warning('VAT Account Not Found During Invoice Update', [
+                            'vat_account_code' => $vatAccountCode,
+                            'tenant_id' => $tenant->id,
+                            'invoice_id' => $invoice->id,
+                        ]);
                     }
                 }
             }
