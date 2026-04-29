@@ -12,7 +12,9 @@ use App\Traits\Syncable;
 
 class Sale extends Model
 {
-    use HasFactory, BelongsToTenant, HasAudit, Syncable;
+    use HasFactory, BelongsToTenant, HasAudit, Syncable {
+        Syncable::scopeForTenant insteadof BelongsToTenant;
+    }
 
     protected $fillable = [
         'tenant_id',

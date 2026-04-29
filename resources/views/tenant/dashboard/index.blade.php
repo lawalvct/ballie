@@ -29,7 +29,56 @@
     .sparkline-container { height: 40px; }
     .chart-container { position: relative; }
     .gradient-card { background: linear-gradient(135deg, var(--from) 0%, var(--to) 100%); }
+    /* Stock-alert toasts */
+    #stock-alerts-container { display: none; }
+    .stock-alert-toast {
+        display: flex;
+        align-items: flex-start;
+        gap: 12px;
+        padding: 14px 16px;
+        border-radius: 12px;
+        border-left: 4px solid transparent;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+        transition: opacity 0.35s ease, transform 0.35s ease, max-height 0.35s ease;
+        overflow: hidden;
+        max-height: 120px;
+    }
+    .stock-alert-toast.is-hiding {
+        opacity: 0;
+        transform: translateX(30px);
+        max-height: 0;
+        padding-top: 0;
+        padding-bottom: 0;
+        margin: 0;
+    }
+    .stock-alert-toast.yellow { background:#fffbeb; border-color:#f59e0b; }
+    .stock-alert-toast.red    { background:#fff1f2; border-color:#f43f5e; }
+    .stock-alert-toast-icon  { flex-shrink:0; margin-top:1px; }
+    .stock-alert-toast-body  { flex:1; min-width:0; }
+    .stock-alert-toast-title { font-size:0.8rem; font-weight:700; margin-bottom:2px; }
+    .stock-alert-toast-msg   { font-size:0.78rem; opacity:0.85; }
+    .stock-alert-dismiss-btn {
+        flex-shrink:0;
+        background:none; border:none; cursor:pointer;
+        opacity:0.5; padding:2px; line-height:1;
+        transition: opacity 0.15s;
+    }
+    .stock-alert-dismiss-btn:hover { opacity:1; }
 </style>
+{{-- Pre-paint hide: run synchronously before the DOM is shown --}}
+<script>
+(function(){
+    var types = ['low_stock','out_of_stock'];
+    var TTL = 24 * 3600 * 1000;
+    window.__alertDismissed = {};
+    types.forEach(function(t){
+        var v = localStorage.getItem('dismissed_stock_alert_' + t);
+        if (v && (Date.now() - parseInt(v)) < TTL) {
+            window.__alertDismissed[t] = true;
+        }
+    });
+})();
+</script>
 @endpush
 
 @section('content')
@@ -71,11 +120,17 @@
     @endif
 
     {{-- ═══════════════════════════════════════════════════════
-         ALERTS
+         STOCK ALERTS (dismissible flash toasts, 24h persistence)
          ═══════════════════════════════════════════════════════ --}}
-    @if(count($alerts) > 0)
+    @php
+        $stockAlerts = array_filter($alerts ?? [], fn($a) => in_array($a['type'], ['low_stock', 'out_of_stock']));
+        $otherAlerts = array_filter($alerts ?? [], fn($a) => !in_array($a['type'], ['low_stock', 'out_of_stock']));
+    @endphp
+
+    {{-- Non-stock alerts rendered normally (unchanged behaviour) --}}
+    @if(count($otherAlerts) > 0)
     <div class="space-y-3">
-        @foreach($alerts as $alert)
+        @foreach($otherAlerts as $alert)
         <div id="alert-{{ $alert['type'] }}" class="bg-{{ $alert['color'] }}-50 border-l-4 border-{{ $alert['color'] }}-400 p-4 rounded-lg">
             <div class="flex items-center justify-between">
                 <div class="flex items-center">
@@ -93,6 +148,44 @@
                     </svg>
                 </button>
             </div>
+        </div>
+        @endforeach
+    </div>
+    @endif
+
+    {{-- Stock alerts as dismissible flash toasts --}}
+    @if(count($stockAlerts) > 0)
+    <div id="stock-alerts-container" class="space-y-2">
+        @foreach($stockAlerts as $alert)
+        @php
+            $toastColor = $alert['color'] === 'red' ? 'red' : 'yellow';
+            $iconColor  = $toastColor === 'red' ? '#f43f5e' : '#d97706';
+            $titleColor = $toastColor === 'red' ? '#9f1239' : '#92400e';
+            $msgColor   = $toastColor === 'red' ? '#be123c' : '#b45309';
+        @endphp
+        <div id="stock-alert-{{ $alert['type'] }}"
+             class="stock-alert-toast {{ $toastColor }}"
+             data-alert-type="{{ $alert['type'] }}"
+             style="display:none">
+            {{-- icon --}}
+            <div class="stock-alert-toast-icon">
+                <svg width="20" height="20" fill="{{ $iconColor }}" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/>
+                </svg>
+            </div>
+            {{-- body --}}
+            <div class="stock-alert-toast-body">
+                <div class="stock-alert-toast-title" style="color:{{ $titleColor }}">{{ $alert['title'] }}</div>
+                <div class="stock-alert-toast-msg"  style="color:{{ $msgColor }}">{{ $alert['message'] }}</div>
+            </div>
+            {{-- dismiss --}}
+            <button class="stock-alert-dismiss-btn" style="color:{{ $iconColor }}"
+                    aria-label="Dismiss"
+                    onclick="dismissStockAlert('{{ $alert['type'] }}')">
+                <svg width="16" height="16" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"/>
+                </svg>
+            </button>
         </div>
         @endforeach
     </div>
@@ -599,6 +692,7 @@ function dashboardApp() {
     return {};
 }
 
+// ─── Legacy general-alert dismiss (used by non-stock alerts) ───────────────
 function dismissAlert(alertType) {
     const el = document.getElementById('alert-' + alertType);
     if (el) {
@@ -607,18 +701,41 @@ function dismissAlert(alertType) {
         el.style.transform = 'translateX(-20px)';
         setTimeout(() => el.style.display = 'none', 300);
     }
-    localStorage.setItem('dismissed_alert_' + alertType, Date.now());
+}
+
+// ─── Stock-alert toast dismiss (24-hour localStorage persistence) ───────────
+function dismissStockAlert(alertType) {
+    const el = document.getElementById('stock-alert-' + alertType);
+    if (el) {
+        el.classList.add('is-hiding');
+        setTimeout(function () {
+            el.style.display = 'none';
+            el.classList.remove('is-hiding');
+            // Hide the container entirely if all toasts are now gone
+            var container = document.getElementById('stock-alerts-container');
+            if (container) {
+                var visible = container.querySelectorAll('.stock-alert-toast:not([style*="display: none"]):not([style*="display:none"])');
+                if (visible.length === 0) container.style.display = 'none';
+            }
+        }, 380);
+    }
+    localStorage.setItem('dismissed_stock_alert_' + alertType, Date.now());
 }
 
 document.addEventListener('DOMContentLoaded', function() {
-    // Restore dismissed alerts
-    ['low_stock', 'out_of_stock', 'receivables'].forEach(function(type) {
-        const dismissed = localStorage.getItem('dismissed_alert_' + type);
-        if (dismissed && (Date.now() - parseInt(dismissed)) < 86400000) {
-            const el = document.getElementById('alert-' + type);
-            if (el) el.style.display = 'none';
+    // Reveal stock-alert toasts that have NOT been dismissed within 24 h
+    var TTL = 24 * 3600 * 1000;
+    var container = document.getElementById('stock-alerts-container');
+    var anyVisible = false;
+    document.querySelectorAll('.stock-alert-toast[data-alert-type]').forEach(function (el) {
+        var type = el.dataset.alertType;
+        var dismissed = localStorage.getItem('dismissed_stock_alert_' + type);
+        if (!dismissed || (Date.now() - parseInt(dismissed)) >= TTL) {
+            el.style.display = 'flex';
+            anyVisible = true;
         }
     });
+    if (container && anyVisible) container.style.display = 'block';
 
     // ─── Shared chart defaults ──────────────────────────
     Chart.defaults.font.family = "'Inter', 'system-ui', '-apple-system', sans-serif";

@@ -11,7 +11,9 @@ use App\Traits\Syncable;
 
 class CashRegisterSession extends Model
 {
-    use HasFactory, BelongsToTenant, Syncable;
+    use HasFactory, BelongsToTenant, Syncable {
+        Syncable::scopeForTenant insteadof BelongsToTenant;
+    }
 
     protected $fillable = [
         'tenant_id',
