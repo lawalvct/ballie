@@ -768,4 +768,7 @@ document.addEventListener('DOMContentLoaded', function() {
     };
 });
 </script>
+
+{{-- Import Products Modal (defines openImportProductsModal()) --}}
+@include('tenant.inventory.products.partials.import-modal')
 @endsection
