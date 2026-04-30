@@ -26,7 +26,7 @@ class VendorController extends Controller
         $vendors = Vendor::where('tenant_id', $tenant->id)
             ->with('ledgerAccount')
             ->orderBy('created_at', 'desc')
-            ->paginate(10);
+            ->paginate(100);
 
         $totalVendors = Vendor::where('tenant_id', tenant()->id)->count();
         $activeVendors = Vendor::where('tenant_id', tenant()->id)->where('status', 'active')->count();
