@@ -365,6 +365,7 @@ Route::prefix('ledger-accounts')->name('ledger-accounts.')->group(function () {
     // Search API - MUST be before parameterized routes
     Route::get('/search', [LedgerAccountController::class, 'search'])->name('search');
     Route::get('/next-code', [LedgerAccountController::class, 'nextCode'])->name('next-code');
+    Route::get('/check-duplicate', [LedgerAccountController::class, 'checkDuplicate'])->name('check-duplicate');
     Route::get('/download-pdf', [LedgerAccountController::class, 'downloadPdf'])->name('download-pdf');
 
     // Opening balance reclassification
@@ -689,6 +690,7 @@ Route::prefix('ledger-accounts')->name('ledger-accounts.')->group(function () {
             Route::post('customers/import', [CustomerController::class, 'import'])->name('customers.import');
             Route::post('customers/bulk', [CustomerController::class, 'bulk'])->name('customers.bulk');
             Route::post('customers/bulk-action', [CustomerController::class, 'bulkAction'])->name('customers.bulk-action');
+            Route::get('customers/check-duplicate', [CustomerController::class, 'checkDuplicate'])->name('customers.check-duplicate');
             Route::resource('customers', CustomerController::class);
 
             // Vendors
@@ -697,6 +699,7 @@ Route::prefix('ledger-accounts')->name('ledger-accounts.')->group(function () {
             Route::post('vendors/import', [VendorController::class, 'import'])->name('vendors.import');
             Route::post('vendors/bulk', [VendorController::class, 'bulk'])->name('vendors.bulk');
             Route::post('vendors/bulk-action', [VendorController::class, 'bulkAction'])->name('vendors.bulk-action');
+            Route::get('vendors/check-duplicate', [VendorController::class, 'checkDuplicate'])->name('vendors.check-duplicate');
             Route::resource('vendors', VendorController::class);
 
             // CRM Dashboard

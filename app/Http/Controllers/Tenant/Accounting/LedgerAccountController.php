@@ -208,6 +208,26 @@ class LedgerAccountController extends Controller
             throw $e;
         }
 
+        // Check for duplicate ledger account name within the same tenant (case-insensitive, trimmed)
+        $nameInput = trim((string) $request->name);
+        $duplicate = LedgerAccount::where('tenant_id', $tenant->id)
+            ->whereRaw('LOWER(TRIM(name)) = ?', [strtolower($nameInput)])
+            ->exists();
+
+        if ($duplicate) {
+            $msg = "A ledger account with the name \"{$nameInput}\" already exists in your account.";
+            if ($request->expectsJson() || $request->ajax() || $request->wantsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Validation failed',
+                    'errors' => ['name' => [$msg]],
+                ], 422);
+            }
+            return redirect()->back()
+                ->withErrors(['name' => $msg])
+                ->withInput();
+        }
+
         try {
             $ledgerAccount = null;
 
@@ -427,6 +447,19 @@ public function show(Request $request, Tenant $tenant, LedgerAccount $ledgerAcco
             'parent_id' => 'nullable|exists:ledger_accounts,id',
             'is_active' => 'boolean',
         ]);
+
+        // Check for duplicate ledger account name within the same tenant (case-insensitive, trimmed, excluding current)
+        $nameInput = trim((string) $request->name);
+        $duplicate = LedgerAccount::where('tenant_id', $tenant->id)
+            ->where('id', '!=', $ledgerAccount->id)
+            ->whereRaw('LOWER(TRIM(name)) = ?', [strtolower($nameInput)])
+            ->exists();
+
+        if ($duplicate) {
+            return redirect()->back()
+                ->withErrors(['name' => "A ledger account with the name \"{$nameInput}\" already exists in your account."])
+                ->withInput();
+        }
 
         try {
             DB::transaction(function () use ($request, $ledgerAccount) {
@@ -1277,6 +1310,42 @@ public function show(Request $request, Tenant $tenant, LedgerAccount $ledgerAcco
             Log::error('Ledger account search error: ' . $e->getMessage());
             return response()->json(['error' => 'Search failed'], 500);
         }
+    }
+
+    /**
+     * Check if a ledger account with the given name already exists for this tenant.
+     * Used by create/edit forms to warn about duplicate ledger names before submit.
+     */
+    public function checkDuplicate(Request $request, Tenant $tenant)
+    {
+        $name     = trim((string) $request->get('name', ''));
+        $exceptId = $request->get('except_id');
+
+        if ($name === '') {
+            return response()->json(['exists' => false]);
+        }
+
+        $query = LedgerAccount::where('tenant_id', $tenant->id)
+            ->whereRaw('LOWER(TRIM(name)) = ?', [strtolower($name)]);
+
+        if ($exceptId) {
+            $query->where('id', '!=', $exceptId);
+        }
+
+        $existing = $query->first(['id', 'name', 'code', 'account_type']);
+
+        if (!$existing) {
+            return response()->json(['exists' => false]);
+        }
+
+        return response()->json([
+            'exists' => true,
+            'id'     => $existing->id,
+            'name'   => $existing->name,
+            'code'   => $existing->code,
+            'type'   => $existing->account_type,
+            'url'    => route('tenant.accounting.ledger-accounts.edit', ['tenant' => $tenant->slug, 'ledgerAccount' => $existing->id]),
+        ]);
     }
 
     /**

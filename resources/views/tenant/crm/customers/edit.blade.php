@@ -732,6 +732,110 @@ document.addEventListener('DOMContentLoaded', function() {
             section.style.transform = 'translateY(0)';
         }, 100);
     });
+
+    // -----------------------------------------------------------------
+    // Duplicate name / company name detection
+    // -----------------------------------------------------------------
+    (function () {
+        const checkUrl = @json(route('tenant.crm.customers.check-duplicate', ['tenant' => tenant()->slug]));
+        const exceptId = @json($customer->id);
+        const firstName = document.getElementById('first_name');
+        const lastName  = document.getElementById('last_name');
+        const company   = document.getElementById('company_name');
+        const individualWrap = document.getElementById('individualFields');
+        const businessWrap   = document.getElementById('businessFields');
+
+        function ensureWarning(parentEl, id) {
+            if (!parentEl) return null;
+            let el = document.getElementById(id);
+            if (!el) {
+                el = document.createElement('div');
+                el.id = id;
+                el.className = 'hidden mt-2 rounded-md border border-amber-300 bg-amber-50 p-3 text-sm text-amber-800';
+                parentEl.appendChild(el);
+            }
+            return el;
+        }
+
+        const indWarn = ensureWarning(individualWrap, 'duplicate-warning-individual');
+        const bizWarn = ensureWarning(businessWrap, 'duplicate-warning-business');
+
+        let timer = null;
+
+        function getCustomerType() {
+            const checked = document.querySelector('input[name="customer_type"]:checked');
+            return checked ? checked.value : 'individual';
+        }
+
+        function hide(el) { if (el) { el.classList.add('hidden'); el.innerHTML = ''; } }
+
+        function render(el, data) {
+            if (!el) return;
+            const safeName = (data.name || '').replace(/[<>&"]/g, c => ({'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;'}[c]));
+            const emailHtml = data.email ? ` &middot; <span class="text-amber-700">${data.email}</span>` : '';
+            el.innerHTML = `
+                <div class="flex items-start">
+                    <svg class="h-5 w-5 text-amber-500 mr-2 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l6.518 11.59c.75 1.334-.213 2.99-1.743 2.99H3.482c-1.53 0-2.493-1.656-1.743-2.99L8.257 3.1zM11 13a1 1 0 10-2 0 1 1 0 002 0zm-1-8a1 1 0 00-1 1v3a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/>
+                    </svg>
+                    <div class="flex-1">
+                        <p class="font-medium">Another customer named &ldquo;${safeName}&rdquo; already exists in this company.${emailHtml}</p>
+                        <p class="mt-1">Saving will create a duplicate ledger.
+                            <a href="${data.url}" target="_blank" class="underline font-medium">Open existing record</a>
+                        </p>
+                    </div>
+                </div>`;
+            el.classList.remove('hidden');
+        }
+
+        async function check() {
+            const type = getCustomerType();
+            const params = new URLSearchParams({ customer_type: type, except_id: exceptId });
+            if (type === 'business') {
+                const v = (company?.value || '').trim();
+                if (!v) { hide(bizWarn); hide(indWarn); return; }
+                params.append('company_name', v);
+            } else {
+                const f = (firstName?.value || '').trim();
+                const l = (lastName?.value || '').trim();
+                if (!f || !l) { hide(bizWarn); hide(indWarn); return; }
+                params.append('first_name', f);
+                params.append('last_name', l);
+            }
+
+            try {
+                const res = await fetch(`${checkUrl}?${params.toString()}`, {
+                    headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+                    credentials: 'same-origin'
+                });
+                if (!res.ok) return;
+                const data = await res.json();
+                if (data.exists) {
+                    if (type === 'business') { render(bizWarn, data); hide(indWarn); }
+                    else { render(indWarn, data); hide(bizWarn); }
+                } else {
+                    hide(bizWarn); hide(indWarn);
+                }
+            } catch (e) { /* silent */ }
+        }
+
+        function schedule() {
+            clearTimeout(timer);
+            timer = setTimeout(check, 350);
+        }
+
+        [firstName, lastName, company].forEach(el => {
+            if (!el) return;
+            el.addEventListener('input', schedule);
+            el.addEventListener('blur', check);
+        });
+        document.querySelectorAll('input[name="customer_type"]').forEach(r => {
+            r.addEventListener('change', () => { hide(bizWarn); hide(indWarn); check(); });
+        });
+
+        // Run once on load to flag pre-existing duplicates (rare).
+        check();
+    })();
 });
 </script>
 

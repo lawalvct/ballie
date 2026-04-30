@@ -85,6 +85,31 @@ class VendorController extends Controller
                 ->withInput();
         }
 
+        // Check for duplicate vendor name within the same tenant (case-insensitive, trimmed)
+        $duplicateQuery = Vendor::where('tenant_id', $tenant->id);
+        if ($request->vendor_type === 'business') {
+            $duplicateQuery->whereRaw('LOWER(TRIM(company_name)) = ?', [strtolower(trim((string) $request->company_name))]);
+        } else {
+            $duplicateQuery->whereRaw('LOWER(TRIM(first_name)) = ?', [strtolower(trim((string) $request->first_name))])
+                           ->whereRaw('LOWER(TRIM(last_name)) = ?', [strtolower(trim((string) $request->last_name))]);
+        }
+
+        if ($duplicateQuery->exists()) {
+            $nameLabel = $request->vendor_type === 'business'
+                ? trim((string) $request->company_name)
+                : trim($request->first_name . ' ' . $request->last_name);
+
+            $msg = "A vendor with the name \"{$nameLabel}\" already exists in your account.";
+
+            if ($request->ajax() || $request->expectsJson()) {
+                return response()->json(['success' => false, 'message' => $msg], 422);
+            }
+
+            return redirect()->back()
+                ->withErrors(['company_name' => $msg])
+                ->withInput();
+        }
+
         try {
             DB::beginTransaction();
 
@@ -399,6 +424,26 @@ class VendorController extends Controller
                 ->withInput();
         }
 
+        // Check for duplicate vendor name within the same tenant (case-insensitive, trimmed, excluding current vendor)
+        $duplicateQuery = Vendor::where('tenant_id', $tenant->id)
+            ->where('id', '!=', $vendor->id);
+        if ($request->vendor_type === 'business') {
+            $duplicateQuery->whereRaw('LOWER(TRIM(company_name)) = ?', [strtolower(trim((string) $request->company_name))]);
+        } else {
+            $duplicateQuery->whereRaw('LOWER(TRIM(first_name)) = ?', [strtolower(trim((string) $request->first_name))])
+                           ->whereRaw('LOWER(TRIM(last_name)) = ?', [strtolower(trim((string) $request->last_name))]);
+        }
+
+        if ($duplicateQuery->exists()) {
+            $nameLabel = $request->vendor_type === 'business'
+                ? trim((string) $request->company_name)
+                : trim($request->first_name . ' ' . $request->last_name);
+
+            return redirect()->back()
+                ->withErrors(['company_name' => "A vendor with the name \"{$nameLabel}\" already exists in your account."])
+                ->withInput();
+        }
+
         $vendor->update($request->all());
 
         return redirect()->route('tenant.crm.vendors.index', ['tenant' => tenant()->slug])
@@ -530,5 +575,55 @@ class VendorController extends Controller
             ->values();
 
         return response()->json($vendors);
+    }
+
+    /**
+     * Check if a vendor with the given name/company already exists for this tenant.
+     * Used by create/edit forms to warn about potential duplicates before submit.
+     */
+    public function checkDuplicate(Request $request, Tenant $tenant)
+    {
+        $type        = $request->get('vendor_type', 'individual');
+        $firstName   = trim((string) $request->get('first_name', ''));
+        $lastName    = trim((string) $request->get('last_name', ''));
+        $companyName = trim((string) $request->get('company_name', ''));
+        $exceptId    = $request->get('except_id');
+
+        $query = Vendor::where('tenant_id', $tenant->id);
+
+        if ($type === 'business') {
+            if ($companyName === '') {
+                return response()->json(['exists' => false]);
+            }
+            $query->whereRaw('LOWER(TRIM(company_name)) = ?', [strtolower($companyName)]);
+        } else {
+            if ($firstName === '' || $lastName === '') {
+                return response()->json(['exists' => false]);
+            }
+            $query->whereRaw('LOWER(TRIM(first_name)) = ?', [strtolower($firstName)])
+                  ->whereRaw('LOWER(TRIM(last_name)) = ?', [strtolower($lastName)]);
+        }
+
+        if ($exceptId) {
+            $query->where('id', '!=', $exceptId);
+        }
+
+        $existing = $query->first(['id', 'first_name', 'last_name', 'company_name', 'vendor_type', 'email']);
+
+        if (!$existing) {
+            return response()->json(['exists' => false]);
+        }
+
+        $displayName = $existing->vendor_type === 'business'
+            ? $existing->company_name
+            : trim($existing->first_name . ' ' . $existing->last_name);
+
+        return response()->json([
+            'exists' => true,
+            'id'     => $existing->id,
+            'name'   => $displayName,
+            'email'  => $existing->email,
+            'url'    => route('tenant.crm.vendors.edit', ['tenant' => $tenant->slug, 'vendor' => $existing->id]),
+        ]);
     }
 }

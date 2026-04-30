@@ -864,6 +864,63 @@ function submitAIAccount() {
     document.body.appendChild(form);
     form.submit();
 }
+
+// -----------------------------------------------------------------
+// Duplicate ledger account name detection
+// -----------------------------------------------------------------
+document.addEventListener('DOMContentLoaded', function () {
+    const checkUrl = @json(route('tenant.accounting.ledger-accounts.check-duplicate', ['tenant' => tenant()->slug]));
+    const nameInput = document.getElementById('name');
+    if (!nameInput) return;
+
+    let warn = document.getElementById('duplicate-warning-ledger');
+    if (!warn) {
+        warn = document.createElement('div');
+        warn.id = 'duplicate-warning-ledger';
+        warn.className = 'hidden mt-2 rounded-md border border-amber-300 bg-amber-50 p-3 text-sm text-amber-800';
+        nameInput.parentNode.appendChild(warn);
+    }
+
+    let timer = null;
+
+    function hide() { warn.classList.add('hidden'); warn.innerHTML = ''; }
+
+    function render(data) {
+        const safeName = (data.name || '').replace(/[<>&"]/g, c => ({'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;'}[c]));
+        const codeHtml = data.code ? `<span class="ml-2 text-amber-700">[${data.code}]</span>` : '';
+        const typeHtml = data.type ? ` &middot; <span class="capitalize">${data.type}</span>` : '';
+        warn.innerHTML = `
+            <div class="flex items-start">
+                <svg class="h-5 w-5 text-amber-500 mr-2 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l6.518 11.59c.75 1.334-.213 2.99-1.743 2.99H3.482c-1.53 0-2.493-1.656-1.743-2.99L8.257 3.1zM11 13a1 1 0 10-2 0 1 1 0 002 0zm-1-8a1 1 0 00-1 1v3a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/>
+                </svg>
+                <div class="flex-1">
+                    <p class="font-medium">A ledger account named &ldquo;${safeName}&rdquo;${codeHtml} already exists in this company.${typeHtml}</p>
+                    <p class="mt-1">Continuing will create a duplicate ledger.
+                        <a href="${data.url}" target="_blank" class="underline font-medium">Open existing account</a>
+                    </p>
+                </div>
+            </div>`;
+        warn.classList.remove('hidden');
+    }
+
+    async function check() {
+        const v = nameInput.value.trim();
+        if (!v) { hide(); return; }
+        try {
+            const res = await fetch(`${checkUrl}?name=${encodeURIComponent(v)}`, {
+                headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+                credentials: 'same-origin'
+            });
+            if (!res.ok) return;
+            const data = await res.json();
+            data.exists ? render(data) : hide();
+        } catch (e) { /* silent */ }
+    }
+
+    nameInput.addEventListener('input', () => { clearTimeout(timer); timer = setTimeout(check, 350); });
+    nameInput.addEventListener('blur', check);
+});
 </script>
 @endsection
 

@@ -69,7 +69,7 @@ class CustomerController extends Controller
             }
         }
 
-        $customers = $query->paginate(10);
+        $customers = $query->paginate(100);
 
         // Calculate statistics for the index page
         $totalCustomers = Customer::where('tenant_id', $tenant->id)->count();
@@ -139,18 +139,18 @@ class CustomerController extends Controller
                 ->withInput();
         }
 
-        // Check for duplicate customer name within the same tenant
+        // Check for duplicate customer name within the same tenant (case-insensitive, trimmed)
         $duplicateQuery = Customer::where('tenant_id', $tenant->id);
         if ($request->customer_type === 'business') {
-            $duplicateQuery->where('company_name', $request->company_name);
+            $duplicateQuery->whereRaw('LOWER(TRIM(company_name)) = ?', [strtolower(trim((string) $request->company_name))]);
         } else {
-            $duplicateQuery->where('first_name', $request->first_name)
-                           ->where('last_name', $request->last_name);
+            $duplicateQuery->whereRaw('LOWER(TRIM(first_name)) = ?', [strtolower(trim((string) $request->first_name))])
+                           ->whereRaw('LOWER(TRIM(last_name)) = ?', [strtolower(trim((string) $request->last_name))]);
         }
 
         if ($duplicateQuery->exists()) {
             $nameLabel = $request->customer_type === 'business'
-                ? $request->company_name
+                ? trim((string) $request->company_name)
                 : trim($request->first_name . ' ' . $request->last_name);
 
             if ($request->ajax() || $request->expectsJson()) {
@@ -433,14 +433,14 @@ class CustomerController extends Controller
                 ->withInput();
         }
 
-        // Check for duplicate customer name within the same tenant (excluding current customer)
+        // Check for duplicate customer name within the same tenant (case-insensitive, trimmed, excluding current customer)
         $duplicateQuery = Customer::where('tenant_id', $tenant->id)
             ->where('id', '!=', $customer->id);
         if ($request->customer_type === 'business') {
-            $duplicateQuery->where('company_name', $request->company_name);
+            $duplicateQuery->whereRaw('LOWER(TRIM(company_name)) = ?', [strtolower(trim((string) $request->company_name))]);
         } else {
-            $duplicateQuery->where('first_name', $request->first_name)
-                           ->where('last_name', $request->last_name);
+            $duplicateQuery->whereRaw('LOWER(TRIM(first_name)) = ?', [strtolower(trim((string) $request->first_name))])
+                           ->whereRaw('LOWER(TRIM(last_name)) = ?', [strtolower(trim((string) $request->last_name))]);
         }
 
         if ($duplicateQuery->exists()) {
@@ -990,5 +990,55 @@ class CustomerController extends Controller
         $paymentCount = $payments->count();
 
         return view('tenant.crm.payment-reports', compact('tenant', 'payments', 'totalPayments', 'paymentCount', 'startDate', 'endDate'));
+    }
+
+    /**
+     * Check if a customer with the given name/company already exists for this tenant.
+     * Used by the create/edit forms to warn about potential duplicates before submit.
+     */
+    public function checkDuplicate(Request $request, Tenant $tenant)
+    {
+        $type        = $request->get('customer_type', 'individual');
+        $firstName   = trim((string) $request->get('first_name', ''));
+        $lastName    = trim((string) $request->get('last_name', ''));
+        $companyName = trim((string) $request->get('company_name', ''));
+        $exceptId    = $request->get('except_id');
+
+        $query = Customer::where('tenant_id', $tenant->id);
+
+        if ($type === 'business') {
+            if ($companyName === '') {
+                return response()->json(['exists' => false]);
+            }
+            $query->whereRaw('LOWER(TRIM(company_name)) = ?', [strtolower($companyName)]);
+        } else {
+            if ($firstName === '' || $lastName === '') {
+                return response()->json(['exists' => false]);
+            }
+            $query->whereRaw('LOWER(TRIM(first_name)) = ?', [strtolower($firstName)])
+                  ->whereRaw('LOWER(TRIM(last_name)) = ?', [strtolower($lastName)]);
+        }
+
+        if ($exceptId) {
+            $query->where('id', '!=', $exceptId);
+        }
+
+        $existing = $query->first(['id', 'first_name', 'last_name', 'company_name', 'customer_type', 'email']);
+
+        if (!$existing) {
+            return response()->json(['exists' => false]);
+        }
+
+        $displayName = $existing->customer_type === 'business'
+            ? $existing->company_name
+            : trim($existing->first_name . ' ' . $existing->last_name);
+
+        return response()->json([
+            'exists' => true,
+            'id'     => $existing->id,
+            'name'   => $displayName,
+            'email'  => $existing->email,
+            'url'    => route('tenant.crm.customers.edit', ['tenant' => $tenant->slug, 'customer' => $existing->id]),
+        ]);
     }
 }

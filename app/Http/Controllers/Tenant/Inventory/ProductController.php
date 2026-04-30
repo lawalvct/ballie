@@ -68,7 +68,7 @@ class ProductController extends Controller
             }
         }
 
-        $products = $query->latest()->paginate(15);
+        $products = $query->latest()->paginate(100);
 
         // Calculate date-based stock for each product
         $products->getCollection()->transform(function ($product) use ($asOfDate, $valuationMethod) {
