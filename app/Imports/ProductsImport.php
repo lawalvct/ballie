@@ -77,13 +77,16 @@ class ProductsImport implements ToCollection, WithHeadingRow, WithBatchInserts, 
                     }
                 }
 
-                // Find or validate category
+                // Find or validate category (match by name case-insensitively, or id if numeric)
                 $categoryId = null;
                 if (!empty($row['category'])) {
+                    $catInput = trim((string) $row['category']);
                     $category = ProductCategory::where('tenant_id', $this->tenant->id)
-                        ->where(function ($query) use ($row) {
-                            $query->where('name', trim($row['category']))
-                                  ->orWhere('id', trim($row['category']));
+                        ->where(function ($query) use ($catInput) {
+                            $query->whereRaw('LOWER(name) = ?', [strtolower($catInput)]);
+                            if (ctype_digit($catInput)) {
+                                $query->orWhere('id', (int) $catInput);
+                            }
                         })
                         ->first();
 
@@ -95,12 +98,15 @@ class ProductsImport implements ToCollection, WithHeadingRow, WithBatchInserts, 
                     $categoryId = $category->id;
                 }
 
-                // Find primary unit
+                // Find primary unit (match by name or symbol, case-insensitive)
+                $unitInput = trim((string) $row['primary_unit']);
                 $unit = Unit::where('tenant_id', $this->tenant->id)
-                    ->where(function ($query) use ($row) {
-                        $query->where('name', trim($row['primary_unit']))
-                              ->orWhere('short_name', trim($row['primary_unit']))
-                              ->orWhere('id', trim($row['primary_unit']));
+                    ->where(function ($query) use ($unitInput) {
+                        $query->whereRaw('LOWER(name) = ?', [strtolower($unitInput)])
+                              ->orWhereRaw('LOWER(symbol) = ?', [strtolower($unitInput)]);
+                        if (ctype_digit($unitInput)) {
+                            $query->orWhere('id', (int) $unitInput);
+                        }
                     })
                     ->first();
 
@@ -291,11 +297,15 @@ class ProductsImport implements ToCollection, WithHeadingRow, WithBatchInserts, 
             return null;
         }
 
+        $input = trim((string) $accountName);
+
         $account = LedgerAccount::where('tenant_id', $this->tenant->id)
-            ->where(function ($query) use ($accountName) {
-                $query->where('name', trim($accountName))
-                      ->orWhere('account_code', trim($accountName))
-                      ->orWhere('id', trim($accountName));
+            ->where(function ($query) use ($input) {
+                $query->whereRaw('LOWER(name) = ?', [strtolower($input)])
+                      ->orWhere('account_code', $input);
+                if (ctype_digit($input)) {
+                    $query->orWhere('id', (int) $input);
+                }
             })
             ->first();
 
