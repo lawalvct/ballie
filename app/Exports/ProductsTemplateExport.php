@@ -48,17 +48,17 @@ class ProductsTemplateExport implements FromCollection, WithHeadings, WithStyles
     public function headings(): array
     {
         return [
-            'Product Name*',
-            'Type* (item/service)',
+            'Product Name',
+            'Type',
             'SKU',
             'Description',
             'Category',
             'Brand',
             'HSN Code',
-            'Purchase Rate*',
-            'Sales Rate*',
+            'Purchase Rate',
+            'Sales Rate',
             'MRP',
-            'Primary Unit*',
+            'Primary Unit',
             'Unit Conversion Factor',
             'Opening Stock',
             'Opening Stock Date',
@@ -66,13 +66,13 @@ class ProductsTemplateExport implements FromCollection, WithHeadings, WithStyles
             'Stock Asset Account',
             'Sales Account',
             'Purchase Account',
-            'Tax Rate (%)',
-            'Tax Inclusive (yes/no)',
+            'Tax Rate',
+            'Tax Inclusive',
             'Barcode',
-            'Maintain Stock (yes/no)',
-            'Is Active (yes/no)',
-            'Is Saleable (yes/no)',
-            'Is Purchasable (yes/no)',
+            'Maintain Stock',
+            'Is Active',
+            'Is Saleable',
+            'Is Purchasable',
         ];
     }
 

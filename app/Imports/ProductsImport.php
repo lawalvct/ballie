@@ -34,8 +34,17 @@ class ProductsImport implements ToCollection, WithHeadingRow, WithBatchInserts, 
             $rowNumber = $index + 2; // +2 because of header row and 0-based index
 
             try {
+                // Normalize the row so legacy/template header variants still resolve.
+                // e.g. "Type* (item/service)" → "type_item_service" — map back to "type".
+                $data = $this->normalizeRow($row->toArray());
+
+                // Skip completely blank rows silently
+                if ($this->isRowBlank($data)) {
+                    continue;
+                }
+
                 // Validate required fields
-                $validator = Validator::make($row->toArray(), [
+                $validator = Validator::make($data, [
                     'product_name' => 'required|string|max:255',
                     'type' => 'required|in:item,service,Item,Service,ITEM,SERVICE',
                     'purchase_rate' => 'required|numeric|min:0',
@@ -48,6 +57,9 @@ class ProductsImport implements ToCollection, WithHeadingRow, WithBatchInserts, 
                     $this->skipped++;
                     continue;
                 }
+
+                // Use $data going forward (already normalized + sanitized)
+                $row = $data;
 
                 // Normalize type
                 $type = strtolower(trim($row['type']));
@@ -176,6 +188,101 @@ class ProductsImport implements ToCollection, WithHeadingRow, WithBatchInserts, 
                 $this->skipped++;
             }
         }
+    }
+
+    /**
+     * Normalize the heading-row keys produced by Maatwebsite Excel.
+     *
+     * Templates may have headers like "Type* (item/service)" which get slugged to
+     * "type_item_service". This maps known variants back to the canonical keys
+     * the importer expects, and sanitizes numeric values (strips currency symbols,
+     * commas and whitespace) so values like "₦1,500.00" pass `numeric` validation.
+     */
+    protected function normalizeRow(array $row): array
+    {
+        $aliasMap = [
+            'product_name'             => ['product_name', 'product_name_required', 'name'],
+            'type'                     => ['type', 'type_item_service', 'type_itemservice', 'product_type'],
+            'sku'                      => ['sku', 'sku_code'],
+            'description'              => ['description', 'desc'],
+            'category'                 => ['category', 'category_name'],
+            'brand'                    => ['brand'],
+            'hsn_code'                 => ['hsn_code', 'hsn'],
+            'purchase_rate'            => ['purchase_rate', 'purchase_price', 'cost_price', 'cost'],
+            'sales_rate'               => ['sales_rate', 'sales_price', 'selling_price', 'price'],
+            'mrp'                      => ['mrp'],
+            'primary_unit'             => ['primary_unit', 'unit', 'unit_name'],
+            'unit_conversion_factor'   => ['unit_conversion_factor', 'conversion_factor'],
+            'opening_stock'            => ['opening_stock'],
+            'opening_stock_date'       => ['opening_stock_date'],
+            'reorder_level'            => ['reorder_level', 'minimum_stock', 'minimum_stock_level'],
+            'stock_asset_account'      => ['stock_asset_account', 'stock_account'],
+            'sales_account'            => ['sales_account', 'sales_income_account', 'income_account'],
+            'purchase_account'         => ['purchase_account', 'purchase_expense_account', 'expense_account'],
+            'tax_rate'                 => ['tax_rate', 'tax_rate_percent', 'tax', 'tax_percentage'],
+            'tax_inclusive'            => ['tax_inclusive', 'tax_inclusive_yesno', 'tax_inclusive_yes_no'],
+            'barcode'                  => ['barcode'],
+            'maintain_stock'           => ['maintain_stock', 'maintain_stock_yesno', 'maintain_stock_yes_no', 'track_stock'],
+            'is_active'                => ['is_active', 'is_active_yesno', 'is_active_yes_no', 'active'],
+            'is_saleable'              => ['is_saleable', 'is_saleable_yesno', 'is_saleable_yes_no', 'saleable'],
+            'is_purchasable'           => ['is_purchasable', 'is_purchasable_yesno', 'is_purchasable_yes_no', 'purchasable'],
+        ];
+
+        // Lower-case and trim every key once so lookup is consistent.
+        $rowLower = [];
+        foreach ($row as $k => $v) {
+            $rowLower[strtolower(trim((string) $k))] = $v;
+        }
+
+        $normalized = [];
+        foreach ($aliasMap as $canonical => $aliases) {
+            $normalized[$canonical] = null;
+            foreach ($aliases as $alias) {
+                if (array_key_exists($alias, $rowLower) && $rowLower[$alias] !== null && $rowLower[$alias] !== '') {
+                    $normalized[$canonical] = $rowLower[$alias];
+                    break;
+                }
+            }
+        }
+
+        // Sanitize numeric fields: strip currency symbols, thousand separators and spaces.
+        $numericFields = [
+            'purchase_rate', 'sales_rate', 'mrp',
+            'unit_conversion_factor', 'opening_stock', 'reorder_level', 'tax_rate',
+        ];
+        foreach ($numericFields as $field) {
+            if ($normalized[$field] !== null && $normalized[$field] !== '') {
+                $normalized[$field] = $this->sanitizeNumeric($normalized[$field]);
+            }
+        }
+
+        return $normalized;
+    }
+
+    /**
+     * Strip currency symbols, commas and whitespace from a numeric-looking value.
+     */
+    protected function sanitizeNumeric($value)
+    {
+        if (is_numeric($value)) {
+            return $value;
+        }
+
+        $clean = preg_replace('/[^0-9.\-]/', '', (string) $value);
+        return $clean === '' ? null : $clean;
+    }
+
+    /**
+     * Return true if every value in the row is null/empty — i.e. a blank row.
+     */
+    protected function isRowBlank(array $row): bool
+    {
+        foreach ($row as $value) {
+            if ($value !== null && trim((string) $value) !== '') {
+                return false;
+            }
+        }
+        return true;
     }
 
     protected function findLedgerAccount($accountName)
