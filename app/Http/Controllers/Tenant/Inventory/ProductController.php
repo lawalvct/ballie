@@ -983,18 +983,28 @@ public function importProcess(Request $request, Tenant $tenant)
 
             Excel::import($import, $file);
 
-            $message = "{$import->getImported()} products imported successfully.";
+            $imported = $import->getImported();
+            $skipped  = $import->getSkipped();
+            $errors   = $import->getErrors();
 
-            if ($import->getSkipped() > 0) {
-                $message .= " {$import->getSkipped()} rows skipped.";
+            if ($imported > 0 && $skipped === 0) {
+                $message  = "{$imported} products imported successfully.";
+                $flashKey = 'success';
+            } elseif ($imported > 0 && $skipped > 0) {
+                $message  = "{$imported} products imported. {$skipped} rows skipped — see details below.";
+                $flashKey = 'warning';
+            } else {
+                $message  = "No products were imported. {$skipped} rows skipped — see details below.";
+                $flashKey = 'error';
             }
 
             $response = redirect()
                 ->route('tenant.inventory.products.index', ['tenant' => $tenant->slug])
-                ->with('success', $message);
+                ->with($flashKey, $message);
 
-            if (count($import->getErrors()) > 0) {
-                $response->with('import_errors', $import->getErrors());
+            if (count($errors) > 0) {
+                // Cap to avoid bloating the session with thousands of messages.
+                $response->with('import_errors', array_slice($errors, 0, 200));
             }
 
             return $response;

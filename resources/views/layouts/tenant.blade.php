@@ -433,10 +433,11 @@
                      and then removed from the session. This prevents child views that also render
                      their own flash blocks from showing the same message a second time. --}}
                 @php
-                    $flashSuccess = session()->pull('success');
-                    $flashError   = session()->pull('error');
-                    $flashWarning = session()->pull('warning');
-                    $flashInfo    = session()->pull('info');
+                    $flashSuccess      = session()->pull('success');
+                    $flashError        = session()->pull('error');
+                    $flashWarning      = session()->pull('warning');
+                    $flashInfo         = session()->pull('info');
+                    $flashImportErrors = session()->pull('import_errors');
                 @endphp
 
                 @if($flashSuccess)
@@ -484,6 +485,44 @@
                                 <path d="M14.348 14.849a1.2 1.2 0 0 1-1.697 0L10 11.819l-2.651 3.029a1.2 1.2 0 1 1-1.697-1.697l2.758-3.15-2.759-3.152a1.2 1.2 0 1 1 1.697-1.697L10 8.183l2.651-3.031a1.2 1.2 0 1 1 1.697 1.697l-2.758 3.152 2.758 3.15a1.2 1.2 0 0 1 0 1.698z"/>
                             </svg>
                         </span>
+                    </div>
+                @endif
+
+                @if(!empty($flashImportErrors) && is_iterable($flashImportErrors))
+                    <div x-data="{ open: true, showAll: false }" x-show="open"
+                         class="mb-6 rounded-md bg-red-50 p-4 border border-red-200 relative" role="alert">
+                        <div class="flex">
+                            <div class="flex-shrink-0">
+                                <svg class="h-5 w-5 text-red-400" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"></path>
+                                </svg>
+                            </div>
+                            <div class="ml-3 flex-1">
+                                <h3 class="text-sm font-medium text-red-800">
+                                    Import Errors ({{ count($flashImportErrors) }} {{ count($flashImportErrors) === 1 ? 'row' : 'rows' }} skipped)
+                                </h3>
+                                <div class="mt-2 text-sm text-red-700">
+                                    <ul class="list-disc list-inside space-y-1 max-h-60 overflow-y-auto pr-2">
+                                        @foreach($flashImportErrors as $i => $error)
+                                            <li x-show="showAll || {{ $i }} < 20">{{ $error }}</li>
+                                        @endforeach
+                                    </ul>
+                                    @if(count($flashImportErrors) > 20)
+                                        <button type="button" @click="showAll = !showAll"
+                                                class="mt-2 text-xs font-medium text-red-800 underline hover:text-red-900">
+                                            <span x-show="!showAll">Show all {{ count($flashImportErrors) }} errors</span>
+                                            <span x-show="showAll" x-cloak>Show less</span>
+                                        </button>
+                                    @endif
+                                </div>
+                            </div>
+                            <button type="button" @click="open = false"
+                                    class="ml-3 flex-shrink-0 text-red-400 hover:text-red-600">
+                                <svg class="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"></path>
+                                </svg>
+                            </button>
+                        </div>
                     </div>
                 @endif
 
